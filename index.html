@@ -188,7 +188,11 @@
     padding: 9px 14px; cursor: pointer; transition: all 0.2s;
   }
   .wallet-btn:hover { background: rgba(84,147,247,0.08); border-color: var(--accent); }
-  .wallet-btn.connected { border-color: rgba(102,255,170,0.4); color: var(--green); background: rgba(102,255,170,0.05); }
+  .wallet-btn.connected { border-color: rgba(102,255,170,0.4); color: var(--green); background: rgba(102,255,170,0.05); padding: 9px 10px; }
+  .wallet-btn.connected #wallet-btn-label { display: none; }
+  .wallet-btn.connected svg { width: 18px; height: 18px; }
+  .wallet-btn .wallet-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: none; animation: pulse-dot 2s infinite; flex-shrink: 0; }
+  .wallet-btn.connected .wallet-dot { display: block; }
   .wallet-btn svg { width: 14px; height: 14px; }
 
   .wallet-dropdown {
@@ -296,6 +300,7 @@
           <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/>
         </svg>
         <span id="wallet-btn-label">Connect</span>
+        <span class="wallet-dot"></span>
       </button>
       <div class="wallet-dropdown" id="wallet-dropdown">
         <div class="wallet-dropdown-title">Select Wallet</div>
