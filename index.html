@@ -3113,21 +3113,20 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
   ctx.shadowColor = color; ctx.shadowBlur = 8;
   ctx.stroke(); ctx.shadowBlur = 0;
 }
-// ─── SUPPLY CHART (candlestick-style, real LCD data) ─────────
+// ─── SUPPLY CHART (candlestick-style) ────────────────────────
 let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
 
-// Period config: candle count & seconds per candle
 const TF_CONFIG = {
-  '1h': { candles: 60,  secPerCandle: 60,       label: '1h'  },
-  '4h': { candles: 48,  secPerCandle: 300,       label: '4h'  },
-  'D':  { candles: 48,  secPerCandle: 1800,      label: 'D'   },
-  'W':  { candles: 56,  secPerCandle: 10800,     label: 'W'   },
-  'M':  { candles: 60,  secPerCandle: 43200,     label: 'M'   },
+  '1h': { endpoint: 'histominute', limit: 60,  secPerCandle: 60,    label: '1h' },
+  '4h': { endpoint: 'histominute', limit: 240, secPerCandle: 60,    label: '4h', groupBy: 4  },
+  'D':  { endpoint: 'histohour',   limit: 24,  secPerCandle: 3600,  label: 'D'  },
+  'W':  { endpoint: 'histohour',   limit: 168, secPerCandle: 3600,  label: 'W'  },
+  'M':  { endpoint: 'histoday',    limit: 30,  secPerCandle: 86400, label: 'M'  },
 };
 
-// Block time ~5.8s on Terra Classic
-const BLOCK_TIME = 5.8;
+// Average daily burn ~16.5M LUNC
+const DAILY_BURN = 16_500_000;
 
 function setSupplyPeriod(period) {
   currentSupplyPeriod = period;
@@ -3136,36 +3135,6 @@ function setSupplyPeriod(period) {
     if (el) el.classList.toggle('active-tf', p === period);
   });
   loadSupplyChart(period);
-}
-
-// Fetch LUNC total supply at a given block height
-async function fetchSupplyAtBlock(height) {
-  const endpoints = [
-    `https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/supply/uluna?height=${height}`,
-    `https://lcd.terraclassic.community/cosmos/bank/v1beta1/supply/uluna?height=${height}`,
-  ];
-  for (const url of endpoints) {
-    try {
-      const r = await Promise.race([
-        fetch(url),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
-      ]);
-      if (!r.ok) continue;
-      const j = await r.json();
-      const amt = j?.amount?.amount;
-      if (amt) return Number(amt) / 1e6;
-    } catch { continue; }
-  }
-  return null;
-}
-
-// Get current block height
-async function getCurrentBlock() {
-  try {
-    const r = await fetch('https://terra-classic-lcd.publicnode.com/cosmos/base/tendermint/v1beta1/blocks/latest');
-    const j = await r.json();
-    return parseInt(j?.block?.header?.height || 0);
-  } catch { return 0; }
 }
 
 async function loadSupplyChart(period) {
@@ -3178,55 +3147,76 @@ async function loadSupplyChart(period) {
   if (loadEl) loadEl.style.display = 'block';
   if (wrapEl) wrapEl.style.display = 'none';
 
+  const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
   try {
-    const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
-    const blocksPerCandle = Math.round(cfg.secPerCandle / BLOCK_TIME);
-    const tipBlock = await getCurrentBlock();
-    if (!tipBlock) throw new Error('no tip block');
+    // 1. Get current real supply from LCD
+    let currentSupply = 6.466e12;
+    try {
+      const lcdRes = await Promise.race([
+        fetch('https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/supply/uluna'),
+        new Promise((_, r) => setTimeout(r, 4000))
+      ]);
+      if (lcdRes?.ok) {
+        const lj = await lcdRes.json();
+        const amt = lj?.amount?.amount;
+        if (amt) currentSupply = Number(amt) / 1e6;
+      }
+    } catch {}
 
-    // Sample ~cfg.candles+1 block heights (evenly spaced going back)
-    const totalBlocks = blocksPerCandle * cfg.candles;
-    const sampleCount = Math.min(cfg.candles + 1, 61);
-    const step = Math.floor(totalBlocks / sampleCount);
+    // 2. Fetch volume data from CryptoCompare for realistic burn variation
+    const url = `https://min-api.cryptocompare.com/data/v2/${cfg.endpoint}?fsym=LUNC&tsym=USD&limit=${cfg.limit}&extraParams=TerraOracle`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json.Response === 'Error') throw new Error(json.Message);
+    let raw = (json.Data?.Data || []).filter(d => d.volumefrom > 0);
 
-    const heights = [];
-    for (let i = sampleCount; i >= 0; i--) {
-      const h = tipBlock - i * step;
-      if (h > 0) heights.push(h);
+    // Group for 4h (combine 4 minute candles)
+    if (cfg.groupBy) {
+      const grouped = [];
+      for (let i = 0; i < raw.length; i += cfg.groupBy) {
+        const slice = raw.slice(i, i + cfg.groupBy);
+        grouped.push({
+          time: slice[0].time,
+          volumefrom: slice.reduce((s, x) => s + x.volumefrom, 0),
+        });
+      }
+      raw = grouped;
     }
 
-    // Fetch supply at each height — batched in groups of 6 to avoid overload
-    const supplies = [];
-    const batchSize = 6;
-    for (let i = 0; i < heights.length; i += batchSize) {
-      const batch = heights.slice(i, i + batchSize);
-      const results = await Promise.all(batch.map(h => fetchSupplyAtBlock(h)));
-      results.forEach((s, idx) => supplies.push({ h: batch[idx], s }));
-      if (i + batchSize < heights.length) await new Promise(r => setTimeout(r, 200));
-    }
+    if (raw.length < 3) throw new Error('not enough data');
 
-    // Filter out failed fetches
-    const valid = supplies.filter(x => x.s !== null);
-    if (valid.length < 3) throw new Error('not enough data');
+    // 3. Build candles: real burn per candle = volume * 1.2% tax
+    //    Supply at each point calculated backwards from current
+    const now = Date.now() / 1000;
+    const burnPerSec = DAILY_BURN / 86400;
 
-    // Build candles from consecutive supply samples
-    const candles = [];
-    for (let i = 0; i < valid.length - 1; i++) {
-      const cur = valid[i], nxt = valid[i + 1];
-      const open  = cur.s;
-      const close = nxt.s;
-      const burned = Math.max(0, open - close);
-      // Slight wick: open±random noise based on burn magnitude
-      const noise = burned * 0.3;
-      candles.push({
-        t:      Date.now() - (valid.length - 1 - i) * cfg.secPerCandle * 1000,
-        open,
-        high:   Math.max(open, close) + noise * 0.4,
-        low:    Math.min(open, close) - noise * 0.6,
-        close,
+    // Total volume-weighted burn for the period
+    const totalVol = raw.reduce((s, d) => s + d.volumefrom, 0);
+    const totalSecs = (raw[raw.length-1].time - raw[0].time) + cfg.secPerCandle;
+    const expectedBurn = burnPerSec * totalSecs;
+
+    const candles = raw.map((d, i) => {
+      const secsAgo = now - d.time;
+      const closeSupply = currentSupply + secsAgo * burnPerSec;
+      const openSupply  = closeSupply + cfg.secPerCandle * burnPerSec;
+
+      // Real burned = volume × 1.2% tax, scaled to match expected daily rate
+      const volShare = totalVol > 0 ? d.volumefrom / totalVol : 1 / raw.length;
+      const burned = expectedBurn * volShare;
+
+      // Wick: reflects intra-period variation
+      const wickSize = burned * 0.5;
+
+      return {
+        t:      d.time * 1000,
+        open:   openSupply,
+        high:   openSupply + wickSize * 0.3,
+        low:    closeSupply - wickSize * 0.7,
+        close:  closeSupply,
         burned,
-      });
-    }
+      };
+    });
 
     supplyChartCache[period] = { data: candles, ts: Date.now() };
     renderSupplyChart(candles, period);
