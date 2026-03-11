@@ -1246,10 +1246,11 @@
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <!-- Mode toggle -->
         <div style="display:flex;gap:3px;background:rgba(10,20,40,0.6);border:1px solid var(--border);border-radius:7px;padding:2px;">
-          <button id="mode-supply" onclick="setChartMode('supply')"
-            style="font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;padding:3px 10px;border-radius:5px;border:none;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">SUPPLY</button>
-          <button id="mode-burned" onclick="setChartMode('burned')"
-            style="font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;padding:3px 10px;border-radius:5px;border:none;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);">BURNED</button>
+          <span style="display:flex;align-items:center;gap:4px;color:#ff6b6b;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;"><span style="display:inline-block;width:9px;height:9px;background:#ff4d4d;border-radius:2px;"></span>SUPPLY</span>
+          <span style="color:rgba(84,147,247,0.3);font-size:12px;">|</span>
+          <span style="display:flex;align-items:center;gap:4px;color:#1ec864;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;"><span style="display:inline-block;width:9px;height:9px;background:#1ec864;border-radius:2px;"></span>BURNED</span>
+          <span style="color:rgba(84,147,247,0.3);font-size:12px;">|</span>
+          <span style="display:flex;align-items:center;gap:3px;color:#ffaa44;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;">🔥 BINANCE</span>
         </div>
         <!-- Timeframe buttons -->
         <div style="display:flex;gap:4px;align-items:center;">
@@ -1273,7 +1274,7 @@
     </div>
     <!-- Chart -->
     <div style="position:relative;" id="burn-chart-wrap">
-      <canvas id="supplyChart" height="220" style="cursor:crosshair;"></canvas>
+      <canvas id="supplyChart" height="300" style="cursor:crosshair;"></canvas>
     </div>
     <div style="font-size:10px;color:rgba(122,158,196,0.35);margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
       <button onclick="runSupplyAudit()" style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);color:rgba(84,147,247,0.7);font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;font-family:'Exo 2',sans-serif;letter-spacing:0.05em;">🔍 Verify Data</button>
@@ -3170,16 +3171,10 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
 // ─── SUPPLY CHART (candlestick-style) ────────────────────────
 let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
-let currentChartMode = 'supply'; // 'supply' | 'burned'
+let currentChartMode = 'combined'; // always combined now
 
 function setChartMode(mode) {
-  currentChartMode = mode;
-  const sBtn = document.getElementById('mode-supply');
-  const bBtn = document.getElementById('mode-burned');
-  if (sBtn) { sBtn.style.background = mode === 'supply' ? 'var(--accent)' : 'transparent'; sBtn.style.color = mode === 'supply' ? '#fff' : 'var(--muted)'; }
-  if (bBtn) { bBtn.style.background = mode === 'burned' ? '#1aaa66' : 'transparent'; bBtn.style.color = mode === 'burned' ? '#fff' : 'var(--muted)'; }
-  const lbl = document.getElementById('chart-mode-label');
-  if (lbl) lbl.textContent = mode === 'burned' ? 'Total LUNC Burned (cumulative)' : 'Total LUNC Supply';
+  currentChartMode = 'combined';
   const cached = supplyChartCache[currentSupplyPeriod];
   if (cached) renderSupplyChart(cached.data, currentSupplyPeriod);
   else loadSupplyChart(currentSupplyPeriod);
@@ -3531,348 +3526,225 @@ function renderSupplyChart(candles, period) {
   const deltaEl = document.getElementById('supply-delta');
   if (deltaEl) {
     const fmtDelta = v => Math.round(v).toLocaleString('en-US');
-    if (currentChartMode === 'burned') {
-      // Show total burned in this period
-      const totalBurned = candles.reduce((s, c) => s + c.burned, 0);
-      deltaEl.innerHTML = `<span style="font-size:14px;">🔥</span> ${fmtDelta(Math.round(totalBurned))} burned in period`;
-      deltaEl.style.color = '#4dffaa';
-    } else {
-      deltaEl.innerHTML = `<span style="font-size:14px;">${delta < 0 ? '↘' : '↗'}</span> ${delta < 0 ? '-' : '+'}${fmtDelta(Math.abs(delta))} in latest candlestick`;
-      deltaEl.style.color = delta < 0 ? '#ff6b6b' : 'var(--green)';
-    }
+    const totalBurned = candles.reduce((s, c) => s + c.burned, 0);
+    deltaEl.innerHTML = `<span style="font-size:14px;">🔥</span> ${fmtDelta(Math.round(totalBurned))} burned in period &nbsp; <span style="color:#ff6b6b;">${delta < 0 ? '↘' : '↗'} ${delta < 0 ? '-' : '+'}${fmtDelta(Math.abs(delta))}</span>`;
+    deltaEl.style.color = '#aac4d8';
   }
-  if (currentChartMode === 'burned') {
-    drawBurnedChart(candles, period);
-  } else {
-    drawCandleChart(candles, period);
-  }
+  drawCombinedChart(candles, period);
   setupCandleHover(candles, period);
 }
 
-// ─── BURNED MODE: cumulative line + per-candle bars ────────────
-function drawBurnedChart(candles, period, hoverIdx = -1) {
-  const C = resolveCanvasS('supplyChart', 220); if (!C) return;
+// ─── COMBINED CHART: Supply bars (top) + Burned bars (bottom) ─────────────
+function drawBurnedChart(candles, period, hoverIdx = -1) { drawCombinedChart(candles, period, hoverIdx); }
+function drawCandleChart(candles, period, hoverIdx = -1) { drawCombinedChart(candles, period, hoverIdx); }
+
+function drawCombinedChart(candles, period, hoverIdx = -1) {
+  const C = resolveCanvasS('supplyChart', 300); if (!C) return;
   const { ctx, w, h } = C;
-  const pad = { l:72, r:16, t:16, b:32 };
-  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  ctx.clearRect(0, 0, w, h);
 
-  // Build cumulative burned series
-  // Approximate initial total burned = 6.9T (original supply) - current supply
-  const ORIGINAL_SUPPLY = 6_900_000_000_000;
-  const firstOpen = candles[0].open;
-  const burnedAtStart = ORIGINAL_SUPPLY - firstOpen;
-  let cumBurned = burnedAtStart;
+  const pad = { l:72, r:16, t:12, b:28 };
+  const cw = w - pad.l - pad.r;
+  const ch = h - pad.t - pad.b;
 
-  const points = candles.map(c => {
-    cumBurned += c.burned;
-    return { t: c.t, cum: cumBurned, bar: c.burned, binanceBurn: c.binanceBurn, taxBurn: c.taxBurn };
-  });
+  // ── zones ────────────────────────────────────────────────────────────────
+  const DIVIDER_RATIO = 0.52;      // supply top 52%, burned bottom 48%
+  const supplyH = Math.floor(ch * DIVIDER_RATIO);
+  const burnH   = ch - supplyH - 2; // 2px gap for divider
+  const supplyTop = pad.t;
+  const dividerY  = pad.t + supplyH;
+  const burnTop   = dividerY + 2;
 
-  // Y scale: cumulative range
-  const cumMin = points[0].cum - burnedAtStart * 0.001; // tiny pad below start
-  const cumMax = points[points.length - 1].cum;
-  const cumRange = (cumMax - cumMin) || 1;
-  const padY = cumRange * 0.08;
-  const vMin = cumMin - padY;
-  const vMax = cumMax + padY;
-  const range = vMax - vMin || 1;
+  const gap  = cw / candles.length;
+  const barW = Math.max(2, Math.min(18, gap * 0.72));
 
-  // Bar scale (secondary) — per-candle burn
-  const barMax = Math.max(...points.map(p => p.bar)) * 1.1 || 1;
-  const BAR_ZONE = ch * 0.28; // bottom 28% for bars
-
-  const toY = v => pad.t + (1 - (v - vMin) / range) * (ch - BAR_ZONE - 4);
-  const gap = cw / points.length;
-  const barW = Math.max(2, Math.min(14, gap * 0.7));
-
-  // Y-axis formatter
   function fmtY(v) {
-    if (v >= 1e12) return (v / 1e12).toFixed(2) + 'T';
-    if (v >= 1e9)  return (v / 1e9).toFixed(1) + 'B';
-    if (v >= 1e6)  return (v / 1e6).toFixed(0) + 'M';
+    if (Math.abs(v) >= 1e12) return (v/1e12).toFixed(2)+'T';
+    if (Math.abs(v) >= 1e9)  return (v/1e9).toFixed(1)+'B';
+    if (Math.abs(v) >= 1e6)  return (v/1e6).toFixed(0)+'M';
     return v.toFixed(0);
   }
 
-  ctx.clearRect(0, 0, w, h);
+  // ── SUPPLY Y-scale (top zone) ─────────────────────────────────────────────
+  const supplyVals = candles.map(c => c.close);
+  const sMin = Math.min(...supplyVals);
+  const sMax = Math.max(...supplyVals);
+  const sPad = (sMax - sMin) * 0.12 || sMax * 0.0001;
+  const sLo  = sMin - sPad;
+  const sHi  = sMax + sPad;
+  const sRange = sHi - sLo || 1;
+  const toSupplyY = v => supplyTop + (1 - (v - sLo) / sRange) * supplyH;
 
-  // Grid lines
-  const gridLines = 6;
+  // ── BURNED Y-scale (bottom zone) per-candle burn bars ──────────────────
+  const burnVals = candles.map(c => c.burned);
+  const bMax = Math.max(...burnVals) * 1.15 || 1;
+  const toBurnH = v => (v / bMax) * (burnH - 2);
+
+  // ─── GRID: Supply (top) ───────────────────────────────────────────────────
   ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
-  for (let i = 0; i <= gridLines; i++) {
-    const frac = i / gridLines;
-    const y = pad.t + frac * (ch - BAR_ZONE - 4);
-    const v = vMax - (vMax - vMin) * frac;
+  const sGridLines = 5;
+  for (let i = 0; i <= sGridLines; i++) {
+    const y = supplyTop + (supplyH / sGridLines) * i;
+    const v = sHi - sRange * (i / sGridLines);
     ctx.strokeStyle = 'rgba(42,64,96,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
     ctx.fillStyle = '#3a5578';
-    ctx.fillText(fmtY(v), pad.l - 6, y + 3);
+    ctx.fillText(fmtY(v), pad.l - 5, y + 3);
   }
 
-  // Per-candle burn bars (bottom zone) — green bars like luncmetrics
-  const barZoneTop = pad.t + ch - BAR_ZONE;
-  points.forEach((p, i) => {
-    const x = pad.l + i * gap + gap / 2;
-    const barH = (p.bar / barMax) * (BAR_ZONE - 4);
-    const barTop = pad.t + ch - barH;
-    // Binance burn = brighter green
-    const isB = p.binanceBurn > 0;
-    const grad = ctx.createLinearGradient(x, barTop, x, pad.t + ch);
-    grad.addColorStop(0, isB ? 'rgba(40,220,120,0.9)' : 'rgba(30,180,100,0.7)');
-    grad.addColorStop(1, isB ? 'rgba(40,220,120,0.2)' : 'rgba(30,180,100,0.15)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(x - barW / 2, barTop, barW, barH);
-  });
+  // ─── GRID: Burned (bottom) ────────────────────────────────────────────────
+  const bGridLines = 3;
+  for (let i = 0; i <= bGridLines; i++) {
+    const y = burnTop + (burnH / bGridLines) * (bGridLines - i);
+    const v = bMax * (i / bGridLines);
+    ctx.strokeStyle = 'rgba(30,100,60,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    ctx.setLineDash([]);
+    if (i > 0) {
+      ctx.fillStyle = 'rgba(30,200,100,0.5)';
+      ctx.fillText(fmtY(v), pad.l - 5, y + 3);
+    }
+  }
 
-  // Separator line between bars and line chart
-  ctx.strokeStyle = 'rgba(42,64,96,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
-  ctx.beginPath(); ctx.moveTo(pad.l, barZoneTop); ctx.lineTo(pad.l + cw, barZoneTop); ctx.stroke();
-  ctx.setLineDash([]);
+  // ─── DIVIDER LINE ─────────────────────────────────────────────────────────
+  ctx.strokeStyle = 'rgba(42,64,96,0.7)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(pad.l, dividerY); ctx.lineTo(pad.l + cw, dividerY); ctx.stroke();
 
-  // Cumulative line — smooth green line with fill
+  // ─── ZONE LABELS (right side) ─────────────────────────────────────────────
   ctx.save();
-  ctx.beginPath();
-  points.forEach((p, i) => {
-    const x = pad.l + i * gap + gap / 2;
-    const y = toY(p.cum);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  // Fill under line
-  const lastX = pad.l + (points.length - 1) * gap + gap / 2;
-  const firstX = pad.l + gap / 2;
-  ctx.lineTo(lastX, barZoneTop - 4);
-  ctx.lineTo(firstX, barZoneTop - 4);
-  ctx.closePath();
-  const fillGrad = ctx.createLinearGradient(0, pad.t, 0, barZoneTop);
-  fillGrad.addColorStop(0, 'rgba(30,200,100,0.22)');
-  fillGrad.addColorStop(1, 'rgba(30,200,100,0.03)');
-  ctx.fillStyle = fillGrad;
-  ctx.fill();
+  ctx.font = 'bold 9px Exo 2'; ctx.textAlign = 'right'; ctx.letterSpacing = '0.06em';
+  ctx.fillStyle = 'rgba(255,100,100,0.5)';
+  ctx.fillText('SUPPLY', pad.l + cw, supplyTop + 11);
+  ctx.fillStyle = 'rgba(30,200,100,0.5)';
+  ctx.fillText('BURNED', pad.l + cw, burnTop + 11);
   ctx.restore();
 
-  // Draw the line itself
-  ctx.beginPath();
-  ctx.strokeStyle = '#1ec864';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#1ec864'; ctx.shadowBlur = 6;
-  points.forEach((p, i) => {
-    const x = pad.l + i * gap + gap / 2;
-    const y = toY(p.cum);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-
-  // Dots for Binance burn candles
-  points.forEach((p, i) => {
-    if (!p.binanceBurn) return;
-    const x = pad.l + i * gap + gap / 2;
-    const y = toY(p.cum);
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffaa44';
-    ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-
-  // Last value label on right edge
-  const lastP = points[points.length - 1];
-  const lastY = toY(lastP.cum);
-  ctx.fillStyle = '#1ec864';
-  ctx.fillRect(pad.l + cw, lastY - 9, 2, 18);
-  ctx.font = 'bold 10px Exo 2'; ctx.textAlign = 'left'; ctx.fillStyle = '#1ec864';
-  // (label is off canvas right edge, skip)
-
-  // Hover crosshair
-  if (hoverIdx >= 0 && hoverIdx < points.length) {
-    const x = pad.l + hoverIdx * gap + gap / 2;
-    ctx.strokeStyle = 'rgba(84,147,247,0.3)';
-    ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
-    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke();
-    ctx.setLineDash([]);
-    // Dot on line
-    const y = toY(points[hoverIdx].cum);
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#1ec864'; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-  }
-
-  // X-axis labels (reuse same logic tag)
-  drawXAxisLabels(ctx, points.map(p => ({ t: p.t })), pad, cw, gap, period);
-}
-
-function drawCandleChart(candles, period, hoverIdx = -1) {
-  const C = resolveCanvasS('supplyChart', 220); if (!C) return;
-  const { ctx, w, h } = C;
-  const pad = { l:68, r:16, t:16, b:32 };
-  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
-
-  // Y scale: use tax-burn range only (ignores giant Binance burn spikes in close)
-  // This keeps regular candles visible while Binance burns are shown as fire markers
-  const taxVals = candles.flatMap(c => [c.high, c.low]);
-  const dataMin = Math.min(...taxVals);
-  const dataMax = Math.max(...taxVals);
-  const dataRange = dataMax - dataMin;
-  const dataPad = dataRange > 0 ? dataRange * 0.12 : dataMax * 0.000002;
-  const vMin = dataMin - dataPad;
-  const vMax = dataMax + dataPad;
-  const range = vMax - vMin || 1;
-
-  const toY = v => pad.t + (1 - (v - vMin) / range) * ch;
-  const barW = Math.max(3, Math.min(16, (cw / candles.length) * 0.7));
-  const gap = cw / candles.length;
-
-  // Y-axis: smart formatting like "6.47T" matching the reference
-  function fmtY(v) {
-    if (v >= 1e12) return (v / 1e12).toFixed(2) + 'T';
-    if (v >= 1e9)  return (v / 1e9).toFixed(2) + 'B';
-    if (v >= 1e6)  return (v / 1e6).toFixed(1) + 'M';
-    return v.toFixed(0);
-  }
-
-  // Background grid lines + Y labels
-  const gridLines = 7;
-  ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
-  for (let i = 0; i <= gridLines; i++) {
-    const y = pad.t + (ch / gridLines) * i;
-    const v = vMax - range * (i / gridLines);
-    // Grid line
-    ctx.strokeStyle = 'rgba(42,64,96,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([]);
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
-    // Y label
-    ctx.fillStyle = '#3a5578';
-    ctx.fillText(fmtY(v), pad.l - 6, y + 3);
-  }
-
-  // Draw candles
+  // ─── SUPPLY BARS (top zone) ──────────────────────────────────────────────
   candles.forEach((c, i) => {
     const x = pad.l + i * gap + gap / 2;
-    const isDown = c.close <= c.open;
-    const color = isDown ? '#ff4d4d' : '#4dffaa';
     const isHover = i === hoverIdx;
+    const hasBinance = c.binanceBurn > 0;
 
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isHover ? 2 : 1;
+    // Bar = from current supply up to top of zone (visually: tall bar = large supply)
+    // Supply goes DOWN over time — each bar height proportional to current supply
+    const barTop  = toSupplyY(c.close);
+    const barBot  = supplyTop + supplyH;
+    const barHeight = Math.max(1, barBot - barTop);
 
-    // Wick
-    ctx.beginPath();
-    ctx.moveTo(x, toY(c.high));
-    ctx.lineTo(x, toY(c.low));
-    ctx.stroke();
+    // Color: red gradient — darker if no change, brighter red if big burn
+    const burnRatio = c.burned / (sRange || 1) * 100; // how much burned relative to supply range
+    const alpha = isHover ? 1 : 0.8;
 
-    // Body
-    const bodyTop = toY(Math.max(c.open, c.close));
-    const bodyBot = toY(Math.min(c.open, c.close));
-    const bodyH = Math.max(1, bodyBot - bodyTop);
-
-    if (isHover) {
-      ctx.shadowColor = color; ctx.shadowBlur = 8;
+    const grad = ctx.createLinearGradient(x - barW/2, barTop, x - barW/2, barBot);
+    if (hasBinance) {
+      grad.addColorStop(0, `rgba(255,140,80,${alpha})`);
+      grad.addColorStop(0.4, `rgba(220,60,60,${alpha * 0.85})`);
+      grad.addColorStop(1, `rgba(180,30,30,${alpha * 0.3})`);
+    } else {
+      grad.addColorStop(0, `rgba(255,80,80,${alpha * 0.9})`);
+      grad.addColorStop(0.5, `rgba(200,40,40,${alpha * 0.7})`);
+      grad.addColorStop(1, `rgba(150,20,20,${alpha * 0.2})`);
     }
-    ctx.fillStyle = color;
-    ctx.globalAlpha = isHover ? 1 : 0.85;
-    ctx.fillRect(x - barW / 2, bodyTop, barW, bodyH);
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+    if (isHover) { ctx.shadowColor = hasBinance ? '#ff9944' : '#ff4444'; ctx.shadowBlur = 10; }
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - barW / 2, barTop, barW, barHeight);
+    ctx.shadowBlur = 0;
+
+    // Top cap: bright line at current supply level
+    ctx.fillStyle = hasBinance ? 'rgba(255,160,80,0.95)' : 'rgba(255,80,80,0.9)';
+    ctx.fillRect(x - barW / 2, barTop, barW, Math.max(1.5, barW * 0.12));
   });
 
-  // 🔥 Binance burn fire markers — shown as orange arrows + label below candle
+  // ─── BURNED BARS (bottom zone) ───────────────────────────────────────────
   candles.forEach((c, i) => {
-    if (!c.binanceBurn) return;
     const x = pad.l + i * gap + gap / 2;
-    // Draw at bottom of chart area with a small offset
-    const markerY = pad.t + ch - 4;
-    // Orange downward arrow
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = '#ff7744';
-    ctx.font = 'bold 11px Exo 2';
-    ctx.textAlign = 'center';
-    ctx.fillText('🔥', x, markerY);
-    ctx.restore();
-    // Dashed vertical line from top of chart to marker
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,119,68,0.25)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 4]);
-    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, markerY - 12); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
+    const isHover = i === hoverIdx;
+    const hasBinance = c.binanceBurn > 0;
+    const bh = Math.max(1, toBurnH(c.burned));
+    const bt = burnTop + burnH - bh;
+
+    const grad = ctx.createLinearGradient(x, bt, x, burnTop + burnH);
+    if (hasBinance) {
+      grad.addColorStop(0, 'rgba(255,160,60,0.95)');
+      grad.addColorStop(0.4, 'rgba(40,220,120,0.85)');
+      grad.addColorStop(1, 'rgba(20,140,70,0.2)');
+    } else {
+      grad.addColorStop(0, `rgba(30,200,100,${isHover ? 1 : 0.8})`);
+      grad.addColorStop(1, `rgba(10,100,50,0.15)`);
+    }
+
+    if (isHover) { ctx.shadowColor = hasBinance ? '#ff9944' : '#1ec864'; ctx.shadowBlur = 8; }
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - barW / 2, bt, barW, bh);
+    ctx.shadowBlur = 0;
+
+    // 🔥 Binance burn marker: orange cap on the burned bar
+    if (hasBinance) {
+      ctx.fillStyle = 'rgba(255,160,60,0.95)';
+      ctx.fillRect(x - barW / 2, bt, barW, Math.max(2, barW * 0.15));
+      // Fire emoji above
+      ctx.save();
+      ctx.font = '11px serif'; ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.9;
+      ctx.fillText('🔥', x, bt - 2);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
   });
 
-  // Hover crosshair
+  // ─── CURRENT SUPPLY LINE (dashed) ─────────────────────────────────────────
+  const lastY = toSupplyY(candles[candles.length - 1].close);
+  ctx.strokeStyle = 'rgba(255,100,100,0.25)';
+  ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.l, lastY); ctx.lineTo(pad.l + cw, lastY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ─── HOVER CROSSHAIR ──────────────────────────────────────────────────────
   if (hoverIdx >= 0 && hoverIdx < candles.length) {
     const x = pad.l + hoverIdx * gap + gap / 2;
-    ctx.strokeStyle = 'rgba(84,147,247,0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 3]);
-    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke();
+    ctx.strokeStyle = 'rgba(84,147,247,0.35)';
+    ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, supplyTop); ctx.lineTo(x, burnTop + burnH); ctx.stroke();
     ctx.setLineDash([]);
+
+    // Supply dot
+    const sy = toSupplyY(candles[hoverIdx].close);
+    ctx.beginPath(); ctx.arc(x, sy, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = candles[hoverIdx].binanceBurn > 0 ? '#ffaa44' : '#ff6b6b'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
   }
 
-  // X-axis labels — format matches reference style
+  // ─── X-AXIS ───────────────────────────────────────────────────────────────
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  // X-axis smart labels
   ctx.font = '10px Exo 2'; ctx.textAlign = 'center';
-  const drawnPositions = [];
-  const minSpacing = 58; // min px between labels
-
+  const drawnX = [];
+  const minSp = 56;
   candles.forEach((c, i) => {
     const x = pad.l + i * gap + gap / 2;
     const d = new Date(c.t);
+    const prevD = i > 0 ? new Date(candles[i-1].t) : null;
+    const isNewMonth = !prevD || prevD.getMonth() !== d.getMonth();
+    const isNewYear  = !prevD || prevD.getFullYear() !== d.getFullYear();
+    const isNewDay   = !prevD || prevD.getDate() !== d.getDate();
     const hh = d.getHours().toString().padStart(2,'0');
     const day = d.getDate().toString().padStart(2,'0');
     const mon = MONTHS[d.getMonth()];
-    const prevD = i > 0 ? new Date(candles[i-1].t) : null;
-    const isNewDay = !prevD || prevD.getDate() !== d.getDate();
-
-    let label = null;
-    const isNewMonth = !prevD || prevD.getMonth() !== d.getMonth();
-    const isNewYear  = !prevD || prevD.getFullYear() !== d.getFullYear();
     const yr2 = String(d.getFullYear()).slice(2);
-
-    if (period === '1h') {
-      // 48h: label at day change
-      if (i === 0) label = `${day} ${mon}, ${hh}:00`;
-      else if (isNewDay) label = `${day} ${mon}`;
-    } else if (period === '4h') {
-      if (i === 0) label = `${day} ${mon}, ${hh}:00`;
-      else if (isNewDay) label = `${day} ${mon}`;
-    } else if (period === 'D') {
-      // 30 days: label every ~5 days
-      if (i === 0 || i % 5 === 0) label = `${day} ${mon}`;
-    } else if (period === 'W') {
-      if (i === 0) label = `${mon} '${yr2}`;
-      else if (isNewYear) label = String(d.getFullYear());
-      else if (isNewMonth) label = `${mon} '${yr2}`;
-    } else if (period === 'M') {
-      // Monthly candles: label every 3 months, year changes as "2025"
-      if (i === 0) label = String(d.getFullYear());
-      else if (isNewYear) label = String(d.getFullYear());
-      else if (d.getMonth() % 3 === 0) label = `${mon} '${yr2}`;
-    } else {
-      if (i === 0 || isNewYear) label = String(d.getFullYear());
-      else if (isNewMonth) label = `${mon} '${yr2}`;
-    }
-
-    if (label && !drawnPositions.some(px => Math.abs(px - x) < minSpacing)) {
-      drawnPositions.push(x);
+    let label = null;
+    if      (period === 'M') { if (isNewYear)  label = `${mon} '${yr2}`; else if (isNewMonth) label = mon; }
+    else if (period === 'W') { if (isNewYear)  label = `${mon} '${yr2}`; else if (isNewMonth) label = mon; }
+    else if (period === 'D') { if (isNewYear)  label = `${mon} '${yr2}`; else if (isNewMonth) label = mon; else if (isNewDay) label = `${day} ${mon}`; }
+    else if (period === '4h'){ if (isNewMonth) label = `${mon} '${yr2}`; else if (isNewDay)   label = `${day} ${mon}`; }
+    else                     { if (isNewDay)   label = `${day} ${mon}`;  else label = `${hh}:00`; }
+    if (label && !drawnX.some(px => Math.abs(px - x) < minSp)) {
+      drawnX.push(x);
       ctx.fillStyle = '#3a5578';
       ctx.fillText(label, x, h - 14);
     }
   });
-
-  // "UTC Time Buckets" subtitle
-  ctx.fillStyle = 'rgba(58,85,120,0.45)'; ctx.font = '9px Exo 2'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(58,85,120,0.35)'; ctx.font = '9px Exo 2'; ctx.textAlign = 'center';
   ctx.fillText('UTC Time Buckets', pad.l + cw / 2, h - 2);
-
-  // Current price line
-  const lastY = toY(candles[candles.length - 1].close);
-  ctx.strokeStyle = 'rgba(102,255,170,0.4)';
-  ctx.lineWidth = 1; ctx.setLineDash([6, 4]);
-  ctx.beginPath(); ctx.moveTo(pad.l, lastY); ctx.lineTo(pad.l + cw, lastY); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba(102,255,170,0.15)';
-  ctx.fillRect(pad.l, lastY - 0.5, cw, 1);
 }
 
 // Shared X-axis drawing — used by both supply and burned charts
@@ -4015,37 +3887,26 @@ function setupCandleHover(candles, period) {
       tip.style.left = tipLeft + 'px';
       tip.style.top  = tipTop  + 'px';
 
-      if (currentChartMode === 'burned') {
-        // Cumulative burned up to this candle
-        const ORIGINAL_SUPPLY = 6_900_000_000_000;
-        let cumB = ORIGINAL_SUPPLY - candles[0].open;
-        for (let j = 0; j <= idx; j++) cumB += candles[j].burned;
-        const periodLbl = fmtPeriodLabel(period);
-        tip.innerHTML =
-          `<div style="color:#7abed0;font-size:10px;letter-spacing:0.08em;margin-bottom:3px;">TOTAL LUNC BURNED</div>` +
-          `<div><span style="color:#aac4d8;">Total burned:</span> <b style="color:#1ec864;">${fmtBig(cumB)} LUNC</b></div>` +
-          `<div><span style="color:#aac4d8;">${periodLbl}:</span> <b style="color:#4dffaa;">${fmtBig(c.burned)} LUNC</b></div>` +
-          (c.binanceBurn > 0
-            ? `<div><span style="color:#ff9944;">🔥 Binance burn:</span> <b style="color:#ffbb55;">${fmtBig(c.binanceBurn)} LUNC</b></div>`
-            : '') +
-          `<div><span style="color:#aac4d8;">Date:</span> <b>${dateStr}</b></div>`;
-        drawBurnedChart(candles, period, idx);
-      } else {
-        // Supply mode
-        const change = c.close - c.open;
-        const changeColor = change < 0 ? '#ff6b6b' : '#4dffaa';
-        const chSign = change < 0 ? '−' : '+';
-        tip.innerHTML =
-          `<div style="color:#7abed0;font-size:10px;letter-spacing:0.08em;margin-bottom:3px;">TOTAL LUNC SUPPLY</div>` +
-          `<div><span style="color:#aac4d8;">Supply:</span> <b style="color:#c8ddf0;">${fmtBig(c.close)} LUNC</b></div>` +
-          `<div><span style="color:#aac4d8;">Burned (period):</span> <b style="color:#ff6b6b;">${fmtBig(c.burned)} LUNC</b></div>` +
-          (c.binanceBurn > 0
-            ? `<div><span style="color:#ff9944;">🔥 Binance burn:</span> <b style="color:#ffbb55;">${fmtBig(c.binanceBurn)} LUNC</b></div>`
-            : '') +
-          `<div><span style="color:#aac4d8;">Change:</span> <b style="color:${changeColor};">${chSign}${fmtBig(Math.abs(change))} LUNC</b></div>` +
-          `<div><span style="color:#aac4d8;">Date:</span> <b>${dateStr}</b></div>`;
-        drawCandleChart(candles, period, idx);
-      }
+      // Combined tooltip: both supply and burned info
+      const ORIGINAL_SUPPLY = 6_900_000_000_000;
+      let cumB = ORIGINAL_SUPPLY - candles[0].open;
+      for (let j = 0; j <= idx; j++) cumB += candles[j].burned;
+      const periodLbl = fmtPeriodLabel(period);
+      const change = c.close - c.open;
+      const chSign = change < 0 ? '−' : '+';
+      const changeColor = change < 0 ? '#ff6b6b' : '#4dffaa';
+      tip.innerHTML =
+        `<div style="color:#7abed0;font-size:10px;letter-spacing:0.08em;margin-bottom:4px;border-bottom:1px solid rgba(84,147,247,0.15);padding-bottom:4px;">LUNC SUPPLY &amp; BURN</div>` +
+        `<div><span style="color:#aac4d8;">Supply:</span> <b style="color:#ff9090;">${fmtBig(c.close)} LUNC</b></div>` +
+        `<div><span style="color:#aac4d8;">Change:</span> <b style="color:${changeColor};">${chSign}${fmtBig(Math.abs(change))} LUNC</b></div>` +
+        `<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(84,147,247,0.1);">` +
+        `<span style="color:#aac4d8;">${periodLbl}:</span> <b style="color:#1ec864;">${fmtBig(c.burned)} LUNC</b></div>` +
+        (c.binanceBurn > 0
+          ? `<div><span style="color:#ff9944;">🔥 Binance:</span> <b style="color:#ffbb55;">${fmtBig(c.binanceBurn)} LUNC</b></div>`
+          : '') +
+        `<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(84,147,247,0.1);"><span style="color:#aac4d8;">Total burned:</span> <b style="color:#4dffaa;">${fmtBig(cumB)} LUNC</b></div>` +
+        `<div><span style="color:#aac4d8;">Date:</span> <b>${dateStr}</b></div>`;
+      drawCombinedChart(candles, period, idx);
 
       // Also update inline tooltip area (legacy, clear it)
       const inlineTip = document.getElementById('supply-tooltip');
@@ -4060,8 +3921,7 @@ function setupCandleHover(candles, period) {
     if (tip) tip.style.display = 'none';
     const inlineTip = document.getElementById('supply-tooltip');
     if (inlineTip) inlineTip.innerHTML = '';
-    if (currentChartMode === 'burned') drawBurnedChart(candles, period, -1);
-    else drawCandleChart(candles, period, -1);
+    drawCombinedChart(candles, period, -1);
   };
 }
 
