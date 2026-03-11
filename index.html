@@ -3974,12 +3974,18 @@ function setupCandleHover(candles, period) {
     }
   };
 
-  canvas.onmouseleave = () => {
-    const tip = getOrCreateOverlayTooltip();
-    if (tip) tip.style.display = 'none';
-    const inlineTip = document.getElementById('supply-tooltip');
-    if (inlineTip) inlineTip.innerHTML = '';
-    drawCombinedChart(candles, period, -1);
+  let _leaveTimer = null;
+  canvas.onmouseleave = (e) => {
+    _leaveTimer = setTimeout(() => {
+      const tip = getOrCreateOverlayTooltip();
+      if (tip) tip.style.display = 'none';
+      const inlineTip = document.getElementById('supply-tooltip');
+      if (inlineTip) inlineTip.innerHTML = '';
+      drawCombinedChart(candles, period, -1);
+    }, 80);
+  };
+  canvas.onmouseenter = () => {
+    if (_leaveTimer) { clearTimeout(_leaveTimer); _leaveTimer = null; }
   };
 }
 
