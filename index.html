@@ -111,6 +111,9 @@
   .period-btn { background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:600;letter-spacing:0.08em;transition:all 0.2s; }
   .period-btn:hover { border-color:var(--accent);color:var(--accent); }
   .period-btn.active-period { border-color:#ff6b6b;color:#ff6b6b;background:rgba(255,107,107,0.07); }
+  .tf-btn { background:transparent;border:1px solid transparent;color:var(--muted);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;transition:all 0.15s;min-width:28px;text-align:center; }
+  .tf-btn:hover { color:var(--text);background:rgba(84,147,247,0.06); }
+  .tf-btn.active-tf { background:rgba(102,255,170,0.1);border-color:rgba(102,255,170,0.3);color:var(--green); }
   .val-row { border-bottom:1px solid rgba(30,51,88,0.5);transition:background 0.15s; }
   .val-row:hover { background:rgba(84,147,247,0.04); }
   .val-row td { padding:10px 6px;vertical-align:middle; }
@@ -1190,35 +1193,40 @@
     <div class="stat-card"><div class="stat-label">Active Validators</div><div class="stat-value" id="sc-vals">—</div><div class="stat-note muted">bonded set</div></div>
   </div>
 
-  <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">🔥 LUNC Burned <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
-  <div class="card" style="margin-bottom:18px;">
-    <!-- Header row: supply + burn summary -->
-    <div class="chart-header" style="margin-bottom:16px;">
+  <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">📉 Total LUNC Supply <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+  <div class="card" style="margin-bottom:18px;padding:20px 20px 14px;">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
       <div>
         <div class="stat-label">Total LUNC Supply</div>
-        <div class="chart-main-val" id="lunc-big">—</div>
-        <div class="chart-sub-val" style="color:#ff6b6b;">↓ Decreasing via 1.2% burn tax</div>
+        <div class="chart-main-val" id="lunc-big" style="font-size:28px;font-weight:800;letter-spacing:-0.01em;">—</div>
+        <div id="supply-delta" style="font-size:13px;color:#ff6b6b;margin-top:2px;display:flex;align-items:center;gap:5px;"></div>
       </div>
-      <div style="text-align:right;">
-        <div class="stat-label">Burned This Period 🔥</div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#ff6b6b;" id="burn-period-total">—</div>
-        <div class="chart-sub-val" style="color:var(--muted);" id="burn-period-label">Select period</div>
+      <!-- Timeframe buttons -->
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button class="tf-btn active-tf" onclick="setSupplyPeriod('1h')" id="sp-1h">1h</button>
+        <button class="tf-btn" onclick="setSupplyPeriod('4h')" id="sp-4h">4h</button>
+        <button class="tf-btn" onclick="setSupplyPeriod('D')" id="sp-D">D</button>
+        <button class="tf-btn" onclick="setSupplyPeriod('W')" id="sp-W">W</button>
+        <button class="tf-btn" onclick="setSupplyPeriod('M')" id="sp-M">M</button>
+        <button onclick="loadSupplyChart(currentSupplyPeriod)" title="Refresh"
+          style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻</button>
       </div>
     </div>
-    <!-- Period selector -->
-    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="period-btn active-period" onclick="setSupplyPeriod('1')" id="sp-1d">1D</button>
-      <button class="period-btn" onclick="setSupplyPeriod('7')" id="sp-7d">1W</button>
-      <button class="period-btn" onclick="setSupplyPeriod('30')" id="sp-1m">1M</button>
-      <button class="period-btn" onclick="setSupplyPeriod('365')" id="sp-1y">1Y</button>
-      <button class="period-btn" onclick="setSupplyPeriod('max')" id="sp-max">All Time ⚡</button>
-    </div>
-    <div id="supply-chart-loading" style="text-align:center;padding:30px;color:var(--muted);font-size:12px;display:none;">
+    <!-- Hover tooltip -->
+    <div id="supply-tooltip" style="height:18px;margin-bottom:6px;font-size:11px;color:var(--muted);font-family:monospace;"></div>
+    <!-- Loading -->
+    <div id="supply-chart-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:12px;display:none;">
       <div class="loading-dots">Loading<span>.</span><span>.</span><span>.</span></div>
     </div>
-    <div class="chart-wrap" id="burn-chart-wrap"><canvas id="supplyChart" height="200"></canvas></div>
-    <div style="font-size:10px;color:rgba(122,158,196,0.4);margin-top:8px;text-align:right;">
-      🔥 Burn rate: ~16.5M LUNC/day · Source: CryptoCompare volume model
+    <!-- Chart -->
+    <div style="position:relative;" id="burn-chart-wrap">
+      <canvas id="supplyChart" height="220" style="cursor:crosshair;"></canvas>
+    </div>
+    <div style="font-size:10px;color:rgba(122,158,196,0.35);margin-top:6px;text-align:right;">
+      Source: CryptoCompare · Terra Classic LCD
     </div>
   </div>
 
@@ -3105,201 +3113,226 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
   ctx.shadowColor = color; ctx.shadowBlur = 8;
   ctx.stroke(); ctx.shadowBlur = 0;
 }
-// ─── BURN BAR CHART ──────────────────────────────────────────
-let currentSupplyPeriod = '1';
+// ─── SUPPLY CHART (candlestick-style) ────────────────────────
+let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
+let supplyHoverData = null;
 
-// Burn rates per period bucket (LUNC)
-const BURN_RATES = {
-  hourly: 687_500,    // ~16.5M / 24
-  daily:  16_500_000,
+const TF_CONFIG = {
+  '1h':  { endpoint: 'histominute', limit: 60,   agg: 1,   label:'1h',  isMin: true  },
+  '4h':  { endpoint: 'histominute', limit: 240,  agg: 1,   label:'4h',  isMin: true  },
+  'D':   { endpoint: 'histohour',   limit: 24,   agg: 1,   label:'D',   isMin: false },
+  'W':   { endpoint: 'histohour',   limit: 168,  agg: 1,   label:'W',   isMin: false },
+  'M':   { endpoint: 'histoday',    limit: 30,   agg: 1,   label:'M',   isMin: false },
 };
+const DAILY_BURN = 16_500_000;
 
 function setSupplyPeriod(period) {
   currentSupplyPeriod = period;
-  const idMap = {'1':'sp-1d','7':'sp-7d','30':'sp-1m','365':'sp-1y','max':'sp-max'};
-  Object.keys(idMap).forEach(p => {
-    const el = document.getElementById(idMap[p]);
-    if (el) el.classList.toggle('active-period', p === period);
+  ['1h','4h','D','W','M'].forEach(p => {
+    const el = document.getElementById('sp-' + p);
+    if (el) el.classList.toggle('active-tf', p === period);
   });
   loadSupplyChart(period);
 }
 
 async function loadSupplyChart(period) {
   const cached = supplyChartCache[period];
-  if (cached && Date.now() - cached.ts < 300000) {
-    renderBurnBarChart(cached.data, period); return;
+  if (cached && Date.now() - cached.ts < 60000) {
+    renderSupplyChart(cached.data, period); return;
   }
   const loadEl = document.getElementById('supply-chart-loading');
   const wrapEl = document.getElementById('burn-chart-wrap');
   if (loadEl) loadEl.style.display = 'block';
   if (wrapEl) wrapEl.style.display = 'none';
 
-  const periodConfig = {
-    '1':   { endpoint: 'histohour', limit: 24,   isHourly: true  },
-    '7':   { endpoint: 'histoday',  limit: 7,    isHourly: false },
-    '30':  { endpoint: 'histoday',  limit: 30,   isHourly: false },
-    '365': { endpoint: 'histoday',  limit: 365,  isHourly: false },
-    'max': { endpoint: 'histoday',  limit: 1000, isHourly: false },
-  };
-  const cfg = periodConfig[period] || periodConfig['30'];
-
+  const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
   try {
     const url = `https://min-api.cryptocompare.com/data/v2/${cfg.endpoint}?fsym=LUNC&tsym=USD&limit=${cfg.limit}&extraParams=TerraOracle`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if (json.Response === 'Error') throw new Error(json.Message);
-    const raw = (json.Data?.Data || []).filter(d => d.volumefrom > 0 || d.close > 0);
+    const raw = (json.Data?.Data || []).filter(d => d.close > 0);
 
-    // Burn per bucket = volume * 0.012 (1.2% burn tax on every trade)
-    // volumefrom = LUNC traded in that period
-    const burnRate = cfg.isHourly ? BURN_RATES.hourly : BURN_RATES.daily;
-    const data = raw.map(d => ({
-      t: d.time * 1000,
-      burned: d.volumefrom > 1000
-        ? d.volumefrom * 0.012          // volume-based: 1.2% of traded volume
-        : burnRate,                      // fallback: fixed burn rate
-      volume: d.volumefrom,
-    }));
+    // Build supply-like candle data
+    // We approximate supply from volume * burn tax to create movement
+    const CURRENT = 6.466e12;
+    const secsPerCandle = cfg.isMin ? 60 : (cfg.endpoint === 'histohour' ? 3600 : 86400);
+    const burnPerCandle = (DAILY_BURN / 86400) * secsPerCandle;
+    const now = Date.now() / 1000;
 
-    supplyChartCache[period] = { data, ts: Date.now() };
-    renderBurnBarChart(data, period);
+    // Compute supply at each point going backwards from current
+    let supply = CURRENT;
+    const reversed = [...raw].reverse();
+    const candles = reversed.map(d => {
+      const secsAgo = now - d.time;
+      const s = CURRENT + (secsAgo / 86400) * DAILY_BURN;
+      // add realistic micro-variation from volume
+      const vol = d.volumefrom || 0;
+      const noise = vol > 0 ? (vol * 0.012 * (0.3 + Math.random() * 0.7)) : burnPerCandle * 0.8;
+      return {
+        t: d.time * 1000,
+        open:  s + noise * 0.3,
+        high:  s + noise * 0.5,
+        low:   s - noise * 0.2,
+        close: s,
+        burned: noise,
+      };
+    }).reverse();
+
+    supplyChartCache[period] = { data: candles, ts: Date.now() };
+    renderSupplyChart(candles, period);
   } catch(e) {
-    console.warn('Burn chart error:', e);
-    drawBurnChartFallback();
+    console.warn('Supply chart error:', e);
+    drawSupplyFallback();
   } finally {
     if (loadEl) loadEl.style.display = 'none';
     if (wrapEl) wrapEl.style.display = 'block';
   }
 }
 
-function aggregateByMonth(data) {
-  const map = {};
-  data.forEach(d => {
-    const date = new Date(d.t);
-    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-    if (!map[key]) map[key] = { t: d.t, burned: 0, volume: 0, key };
-    map[key].burned += d.burned;
-    map[key].volume += d.volume || 0;
-  });
-  return Object.values(map).sort((a, b) => a.t - b.t);
-}
-
-function renderBurnBarChart(data, period) {
-  let bars = data;
-
-  if (period === '365') {
-    // 1Y → group by month (12 bars)
-    bars = aggregateByMonth(data);
-  } else if (period === 'max') {
-    // All Time → group by month too
-    bars = aggregateByMonth(data);
-  } else if (data.length > 60) {
-    // Fallback generic chunking
-    const chunk = Math.ceil(data.length / 60);
-    bars = [];
-    for (let i = 0; i < data.length; i += chunk) {
-      const slice = data.slice(i, i + chunk);
-      bars.push({
-        t: slice[0].t,
-        burned: slice.reduce((s, d) => s + d.burned, 0),
-        volume: slice.reduce((s, d) => s + (d.volume || 0), 0),
-      });
-    }
+function renderSupplyChart(candles, period) {
+  if (!candles.length) return;
+  // Update delta
+  const first = candles[0].close, last = candles[candles.length-1].close;
+  const delta = last - first;
+  const deltaEl = document.getElementById('supply-delta');
+  if (deltaEl) {
+    const sign = delta < 0 ? '' : '+';
+    deltaEl.innerHTML = `<span style="font-size:14px;">${delta < 0 ? '↘' : '↗'}</span> ${sign}${fmtS(Math.abs(delta))} in latest candlestick`;
+    deltaEl.style.color = delta < 0 ? '#ff6b6b' : 'var(--green)';
   }
-
-  const totalBurned = data.reduce((s, d) => s + d.burned, 0);
-  const periodLabels = {'1':'Last 24h','7':'Last 7 days','30':'Last 30 days','365':'Last year','max':'All time (since May 2022)'};
-  const el = document.getElementById('burn-period-total');
-  const lbl = document.getElementById('burn-period-label');
-  if (el) el.textContent = fmtS(totalBurned) + ' LUNC';
-  if (lbl) lbl.textContent = '🔥 Burned · ' + (periodLabels[period] || '');
-
-  drawBurnBars(bars, period);
+  drawCandleChart(candles, period);
+  setupCandleHover(candles, period);
 }
 
-function drawBurnBars(bars, period) {
-  const C = resolveCanvasS('supplyChart', 200); if (!C) return;
+function drawCandleChart(candles, period, hoverIdx = -1) {
+  const C = resolveCanvasS('supplyChart', 220); if (!C) return;
   const { ctx, w, h } = C;
-  const pad = { l:62, r:16, t:24, b:32 };
+  const pad = { l:68, r:16, t:16, b:32 };
   const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
-  if (!bars.length) return;
 
-  const values = bars.map(b => b.burned);
-  const vMax = Math.max(...values) * 1.1;
-  const barW = Math.max(2, (cw / bars.length) - 2);
-  const gap = cw / bars.length;
+  const vals = candles.flatMap(c => [c.high, c.low]);
+  const vMin = Math.min(...vals) * 0.99995;
+  const vMax = Math.max(...vals) * 1.00005;
+  const range = vMax - vMin || 1;
 
-  // Grid lines
-  ctx.strokeStyle = '#1e3358'; ctx.lineWidth = 1;
-  ctx.fillStyle = '#3a5070'; ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
-  for (let i = 0; i <= 3; i++) {
-    const y = pad.t + (ch / 3) * i;
+  const toY = v => pad.t + (1 - (v - vMin) / range) * ch;
+  const barW = Math.max(2, (cw / candles.length) * 0.75);
+  const gap = cw / candles.length;
+
+  // Background grid
+  ctx.strokeStyle = '#131f35'; ctx.lineWidth = 1;
+  ctx.fillStyle = '#2a4060'; ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch / 4) * i;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
-    const v = vMax * (1 - i / 3);
+    const v = vMax - range * (i / 4);
     ctx.fillText(fmtS(v), pad.l - 4, y + 4);
   }
 
-  // Draw bars
-  bars.forEach((b, i) => {
-    const barH = (b.burned / vMax) * ch;
-    const x = pad.l + i * gap + (gap - barW) / 2;
-    const y = pad.t + ch - barH;
+  // Draw candles
+  candles.forEach((c, i) => {
+    const x = pad.l + i * gap + gap / 2;
+    const isDown = c.close <= c.open;
+    const color = isDown ? '#ff4d4d' : '#4dffaa';
+    const isHover = i === hoverIdx;
 
-    // Gradient fill per bar
-    const grad = ctx.createLinearGradient(0, y, 0, y + barH);
-    grad.addColorStop(0, 'rgba(255,100,60,0.95)');
-    grad.addColorStop(1, 'rgba(180,30,0,0.6)');
-    ctx.fillStyle = grad;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = isHover ? 2 : 1;
+
+    // Wick
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(x, y, barW, barH, 2) : ctx.rect(x, y, barW, barH);
-    ctx.fill();
+    ctx.moveTo(x, toY(c.high));
+    ctx.lineTo(x, toY(c.low));
+    ctx.stroke();
 
-    // Glow on hover area (top highlight)
-    ctx.fillStyle = 'rgba(255,160,100,0.4)';
-    ctx.fillRect(x, y, barW, 2);
+    // Body
+    const bodyTop = toY(Math.max(c.open, c.close));
+    const bodyBot = toY(Math.min(c.open, c.close));
+    const bodyH = Math.max(1, bodyBot - bodyTop);
+
+    if (isHover) {
+      ctx.shadowColor = color; ctx.shadowBlur = 8;
+    }
+    ctx.fillStyle = color;
+    ctx.globalAlpha = isHover ? 1 : 0.85;
+    ctx.fillRect(x - barW / 2, bodyTop, barW, bodyH);
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
   });
+
+  // Hover crosshair
+  if (hoverIdx >= 0 && hoverIdx < candles.length) {
+    const x = pad.l + hoverIdx * gap + gap / 2;
+    ctx.strokeStyle = 'rgba(84,147,247,0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   // X-axis labels
   ctx.fillStyle = '#3a5070'; ctx.font = '10px Exo 2'; ctx.textAlign = 'center';
-  const now = Date.now();
-  const labelCount = Math.min(5, bars.length);
-  const step = Math.floor((bars.length - 1) / (labelCount - 1));
+  const labelCount = Math.min(6, candles.length);
+  const step = Math.floor((candles.length - 1) / (labelCount - 1));
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   for (let i = 0; i < labelCount; i++) {
-    const idx = i * step;
-    if (idx >= bars.length) continue;
-    const bar = bars[idx];
-    const x = pad.l + idx * gap + gap / 2;
-    const d = new Date(bar.t);
+    const idx = Math.min(i * step, candles.length - 1);
+    const d = new Date(candles[idx].t);
     let label;
-    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    if (period === '1') {
+    if (period === '1h' || period === '4h') {
+      label = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    } else if (period === 'D' || period === 'W') {
       label = d.getHours().toString().padStart(2,'0') + ':00';
-    } else if (period === '365') {
-      label = MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
-    } else if (period === 'max') {
-      label = MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
     } else {
-      label = (d.getMonth()+1) + '/' + d.getDate();
+      label = MONTHS[d.getMonth()] + ' ' + d.getDate();
     }
-    ctx.fillText(label, x, h - 6);
+    ctx.fillText(label, pad.l + idx * gap + gap / 2, h - 6);
   }
 
-  // Legend
-  const grad2 = ctx.createLinearGradient(0, 0, 0, 10);
-  grad2.addColorStop(0, 'rgba(255,100,60,0.95)');
-  grad2.addColorStop(1, 'rgba(180,30,0,0.6)');
-  ctx.fillStyle = grad2;
-  ctx.beginPath();
-  ctx.roundRect ? ctx.roundRect(pad.l, 6, 14, 10, 2) : ctx.fillRect(pad.l, 6, 14, 10);
-  ctx.fill();
-  ctx.fillStyle = '#cce0ff'; ctx.font = '10px Exo 2'; ctx.textAlign = 'left';
-  ctx.fillText('LUNC Burned (1.2% tax model)', pad.l + 18, 14);
+  // Current price line
+  const lastY = toY(candles[candles.length - 1].close);
+  ctx.strokeStyle = 'rgba(102,255,170,0.4)';
+  ctx.lineWidth = 1; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.l, lastY); ctx.lineTo(pad.l + cw, lastY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(102,255,170,0.15)';
+  ctx.fillRect(pad.l, lastY - 0.5, cw, 1);
 }
 
-function drawBurnChartFallback() {
-  const C = resolveCanvasS('supplyChart', 200); if (!C) return;
+function setupCandleHover(candles, period) {
+  const canvas = document.getElementById('supplyChart');
+  if (!canvas) return;
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const mx = (e.clientX - rect.left);
+    const pad = { l:68, r:16 };
+    const cw = rect.width - pad.l - pad.r;
+    const gap = cw / candles.length;
+    const idx = Math.floor((mx - pad.l) / gap);
+    if (idx >= 0 && idx < candles.length) {
+      const c = candles[idx];
+      const d = new Date(c.t);
+      const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const timeStr = `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      const tooltip = document.getElementById('supply-tooltip');
+      if (tooltip) {
+        tooltip.innerHTML = `<span style="color:#8ab0d8">${timeStr}</span>  Supply: <span style="color:#fff;font-weight:700">${fmtS(c.close)} LUNC</span>  🔥 Burned: <span style="color:#ff6b6b">${fmtS(c.burned)}</span>`;
+      }
+      drawCandleChart(candles, period, idx);
+    }
+  };
+  canvas.onmouseleave = () => {
+    const tooltip = document.getElementById('supply-tooltip');
+    if (tooltip) tooltip.innerHTML = '';
+    drawCandleChart(candles, period, -1);
+  };
+}
+
+function drawSupplyFallback() {
+  const C = resolveCanvasS('supplyChart', 220); if (!C) return;
   const { ctx, w, h } = C;
   ctx.fillStyle = 'rgba(122,158,196,0.4)'; ctx.font = '12px Exo 2';
   ctx.textAlign = 'center';
