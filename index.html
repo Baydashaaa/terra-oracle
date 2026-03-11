@@ -3175,8 +3175,8 @@ const DAILY_BURN = 16_500_000;
 // ─── FETCH BINANCE BURNS FROM BLOCKCHAIN ─────────────────────
 // Reads large transfers TO burn wallet (terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu)
 // Filters: amount > 50B uluna (50M LUNC) — only big batch burns qualify
-const BURN_WALLET = 'terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu';
-const MIN_BURN_ULUNA = 50_000_000_000_000; // 50B uluna = 50M LUNC (Binance burns hundreds of billions)
+const BINANCE_BURN_DEST = 'terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu'; // Official LUNC burn address (Binance sends here)
+const MIN_BINANCE_BURN_ULUNA = 50_000_000_000_000; // 50B uluna = 50M LUNC (Binance burns hundreds of billions)
 let _binanceBurnsCache = null;
 let _binanceBurnsCacheTs = 0;
 const BINANCE_BURN_CACHE_MS = 60 * 60 * 1000; // 1 hour
@@ -3221,7 +3221,7 @@ async function fetchBinanceBurnsFromChain() {
 
     while (page < MAX_PAGES) {
       page++;
-      let url = `${LCD_NODES[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${BURN_WALLET}%27&order_by=ORDER_BY_DESC&pagination.limit=100`;
+      let url = `${LCD_NODES[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${BINANCE_BURN_DEST}%27&order_by=ORDER_BY_DESC&pagination.limit=100`;
       if (nextKey) url += `&pagination.key=${encodeURIComponent(nextKey)}`;
 
       let res = null;
@@ -3242,18 +3242,10 @@ async function fetchBinanceBurnsFromChain() {
       if (!txs.length) break;
 
       let reachedOld = false;
-      for (const tx of txs) {
-        const blockTime = tx.body?.memo !== undefined
-          ? (data.tx_responses?.find(r => r.txhash === tx.body?.memo)?.timestamp)
-          : null;
-        // tx_responses has timestamps — find matching response
-        const txhash = tx.body ? null : tx.txhash;
-      }
-
       // Use tx_responses which has timestamp + events
       const responses = data.tx_responses || [];
       for (const resp of responses) {
-        const timestamp = resp.timestamp; // ISO string
+        const timestamp = resp.timestamp; // ISO string e.g. "2026-03-01T00:12:34Z"
         if (!timestamp) continue;
         const ts = Math.floor(new Date(timestamp).getTime() / 1000);
 
@@ -3269,20 +3261,22 @@ async function fetchBinanceBurnsFromChain() {
           let receiver = null, amount = null;
 
           for (const a of attrs) {
-            const key = a.key ? (atob(a.key).catch ? a.key : (() => { try { return atob(a.key); } catch { return a.key; } })()) : '';
-            const val = a.value ? (atob(a.value).catch ? a.value : (() => { try { return atob(a.value); } catch { return a.value; } })()) : '';
+            // LCD may return attributes as plain strings or base64-encoded
+            const decodeAttr = v => { try { return atob(v); } catch { return v; } };
+            const key = a.key ? decodeAttr(a.key) : '';
+            const val = a.value ? decodeAttr(a.value) : '';
             if (key === 'receiver' || key === 'recipient') receiver = val;
             if (key === 'amount') amount = val;
           }
 
-          if (receiver === BURN_WALLET && amount) {
+          if (receiver === BINANCE_BURN_DEST && amount) {
             // Parse amount like "1234567890000000uluna"
             const match = amount.match(/(\d+)uluna/);
             if (match) totalBurned += parseInt(match[1]);
           }
         }
 
-        if (totalBurned >= MIN_BURN_ULUNA) {
+        if (totalBurned >= MIN_BINANCE_BURN_ULUNA) {
           // Convert uluna → LUNC (÷1e6)
           onchainBurns.push({ ts, amount: Math.round(totalBurned / 1e6) });
         }
