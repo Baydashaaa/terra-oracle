@@ -3440,80 +3440,75 @@ async function loadSupplyChart(period) {
     // Fetch Binance burns: on-chain (last 12 months) + historical fallback
     const BINANCE_BURNS = await fetchBinanceBurnsFromChain();
 
+    // Actual seconds per candle — CORRECT for grouped periods
+    const actualCandleSec = {
+      '1h': 3600,
+      '4h': 4 * 3600,      // 4h grouped from hourly
+      'D':  86400,
+      'W':  7 * 86400,      // week grouped from daily
+      'M':  30.44 * 86400,  // calendar month
+    }[period] || 86400;
+
     // Helper: get Binance burn for a candle's time window
-    function getBinanceBurn(candleStartTs, candleEndTs, period) {
+    function getBinanceBurn(candleStartTs, period) {
+      const candleEndTs = candleStartTs + actualCandleSec;
       if (period === 'M') {
+        // Match by calendar month
         const cDate = new Date(candleStartTs * 1000);
-        const cY = cDate.getFullYear(), cM = cDate.getMonth();
+        const cY = cDate.getUTCFullYear(), cM = cDate.getUTCMonth();
         return BINANCE_BURNS
-          .filter(b => { const d = new Date(b.ts*1000); return d.getFullYear()===cY && d.getMonth()===cM; })
+          .filter(b => { const d = new Date(b.ts * 1000); return d.getUTCFullYear() === cY && d.getUTCMonth() === cM; })
           .reduce((s, b) => s + b.amount, 0);
       }
-      if (period === 'W') {
-        const candleMidTs = (candleStartTs + candleEndTs) / 2;
-        return BINANCE_BURNS
-          .filter(b => Math.abs(b.ts - candleMidTs) <= 7 * 86400 / 2)
-          .reduce((s, b) => s + b.amount, 0);
-      }
+      // For all other periods: strict window [start, end)
       return BINANCE_BURNS
         .filter(b => b.ts >= candleStartTs && b.ts < candleEndTs)
         .reduce((s, b) => s + b.amount, 0);
     }
 
-    // 3. Build candles: tax burn (volume × price × 0.5% rate) + Binance event burns
+    // 3. Build candles: tax burn (volume-proportional) + Binance event burns
     const burnPerSec = DAILY_BURN / 86400;
-    const candleSec = period === 'M' ? 30.44 * 86400 : cfg.secPerCandle;
-    const avgBurnPerCandle = burnPerSec * candleSec;
+    const avgBurnPerCandle = burnPerSec * actualCandleSec;
 
-    // Use actual LUNC volume from CryptoCompare (volumefrom = LUNC traded)
-    // Tax burn ≈ volume × 0.5% burn tax — this gives REAL variation between candles
-    // volumefrom is in LUNC, so burn = volumefrom * 0.005 (0.5% tax)
-    const TAX_RATE = 0.005; // 0.5% on-chain tax
-
-    // Compute per-candle tax burn from actual trading volume
-    // If vol data is too uniform, add slight noise to differentiate bars
+    const TAX_RATE = 0.005; // 0.5% on-chain burn tax
     const vols = raw.map(d => d.volumefrom || 0);
     const totalVol = vols.reduce((s, v) => s + v, 0);
     const avgVol = totalVol / raw.length || 1;
 
-    // Scale factor: ensure total vol-based burn matches expected DAILY_BURN × period
-    // This anchors the cumulative supply correctly while keeping per-bar variation
+    // Scale factor anchors cumulative burn to realistic total
     const totalVolBurn = vols.reduce((s, v) => s + v * TAX_RATE, 0);
     const expectedTotalBurn = avgBurnPerCandle * raw.length;
     const scaleFactor = totalVolBurn > 0 ? expectedTotalBurn / totalVolBurn : 1;
 
-    const totalSecs = raw[raw.length-1].time - raw[0].time + cfg.secPerCandle;
+    // Reconstruct historical supply: start from current supply + sum of all burns in period
+    const totalSecs = raw[raw.length - 1].time - raw[0].time + actualCandleSec;
     const totalPeriodBurn = burnPerSec * totalSecs;
     let runningSupply = currentSupply + totalPeriodBurn;
 
     const candles = raw.map((d, i) => {
       const open = runningSupply;
-      const actualSec = period === 'M' ? (30.44 * 86400) : cfg.secPerCandle;
-      const candleEnd = d.time + actualSec;
 
-      // Tax burn: volume-based with scaling — gives real bar height variation
+      // Tax burn: scaled volume-based — real variation per candle
       const rawVolBurn = (d.volumefrom || avgVol) * TAX_RATE * scaleFactor;
-      // Clamp to reasonable range (0.3× to 4× average) to avoid extremes
-      const taxBurn = Math.max(avgBurnPerCandle * 0.3, Math.min(avgBurnPerCandle * 4.0, rawVolBurn));
+      const taxBurn = Math.max(avgBurnPerCandle * 0.25, Math.min(avgBurnPerCandle * 5.0, rawVolBurn));
 
-      // Binance event burn (if this candle covers a burn date)
-      const binanceBurn = getBinanceBurn(d.time, candleEnd, period);
+      // Binance event burn — uses correct window for this period
+      const binanceBurn = getBinanceBurn(d.time, period);
       const burned = taxBurn + binanceBurn;
 
       const close = open - burned;
       runningSupply = close;
 
       return {
-        t:           d.time * 1000,
+        t:          d.time * 1000,
         open,
         close,
         burned,
         taxBurn,
         binanceBurn,
-        // keep for compatibility
-        high:        open,
-        low:         close,
-        closeNoB:    open - taxBurn,
+        high:       open,
+        low:        close,
+        closeNoB:   open - taxBurn,
       };
     });
 
@@ -3575,19 +3570,17 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
   }
 
   // ── SUPPLY Y-scale (top zone) ─────────────────────────────────────────────
-  // Use 'open' values for scale — avoids Binance burn spikes distorting the axis
-  const supplyVals = candles.map(c => c.open);
-  supplyVals.push(candles[candles.length - 1].close); // include last close
-  const sMin = Math.min(...supplyVals);
-  const sMax = Math.max(...supplyVals);
-  const sPad = (sMax - sMin) * 0.10 || sMax * 0.0001;
-  const sLo  = sMin - sPad;
-  const sHi  = sMax + sPad;
+  // sMax = highest open, sMin = lowest tax-based close (ignoring Binance spikes)
+  // This keeps the axis stable even when a Binance batch drops supply 5B in one candle
+  const sMax = Math.max(...candles.map(c => c.open));
+  const sMin = Math.min(...candles.map(c => c.open - c.taxBurn), candles[candles.length - 1].close);
+  const sPad  = (sMax - sMin) * 0.08 || sMax * 0.00005;
+  const sLo   = sMin - sPad;
+  const sHi   = sMax + sPad;
   const sRange = sHi - sLo || 1;
-  const toSupplyY = v => supplyTop + (1 - (v - sLo) / sRange) * supplyH;
+  const toSupplyY = v => Math.max(supplyTop, Math.min(supplyTop + supplyH, supplyTop + (1 - (v - sLo) / sRange) * supplyH));
 
-  // ── BURNED Y-scale (bottom zone) — taxBurn ONLY, no Binance spikes ────────
-  // Binance burns are shown as separate markers, not as bar height
+  // ── BURNED Y-scale (bottom zone) — taxBurn ONLY, Binance shown separately ─
   const taxBurnVals = candles.map(c => c.taxBurn).filter(v => v > 0);
   const bMax = (taxBurnVals.length ? Math.max(...taxBurnVals) : 1) * 1.3;
   const toBurnH = v => (Math.min(v, bMax) / bMax) * (burnH - 2);
@@ -3881,7 +3874,7 @@ function setupCandleHover(candles, period) {
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
     const my = (e.clientY - rect.top)  * (canvas.height / rect.height);
-    const padL = 68, padR = 16;
+    const padL = 72, padR = 16;
     const cw = canvas.width - padL - padR;
     const gap = cw / candles.length;
     const idx = Math.floor((mx - padL) / gap);
