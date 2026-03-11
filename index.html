@@ -1379,6 +1379,7 @@ function showPage(name, e) {
   if (name === 'board') renderBoard();
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
+  if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
   smoothScrollTop();
 }
 
@@ -2788,6 +2789,43 @@ function castVote(voteId, optionIdx) {
 
 
 // ─── LUNC STATS ───────────────────────────────────────────────
+let statsAutoRefreshInterval = null;
+let statsCountdownInterval = null;
+let statsNextRefresh = 0;
+
+function startStatsAutoRefresh() {
+  stopStatsAutoRefresh();
+  statsNextRefresh = Date.now() + 30000;
+  startStatsAutoRefresh._valTick = 0;
+
+  // Countdown ticker every second
+  statsCountdownInterval = setInterval(() => {
+    const el = document.getElementById('updated-time');
+    if (!el) return;
+    const secsLeft = Math.max(0, Math.round((statsNextRefresh - Date.now()) / 1000));
+    const timeStr = el.dataset.lastUpdate || '';
+    el.textContent = timeStr + (secsLeft > 0 ? ' · 🔄 ' + secsLeft + 's' : ' · updating...');
+  }, 1000);
+
+  // Main refresh every 30s
+  statsAutoRefreshInterval = setInterval(() => {
+    const pg = document.getElementById('page-stats');
+    if (!pg || !pg.classList.contains('active')) return;
+    statsNextRefresh = Date.now() + 30000;
+    loadStatsData();
+    loadOraclePoolS();
+    startStatsAutoRefresh._valTick = (startStatsAutoRefresh._valTick || 0) + 1;
+    if (startStatsAutoRefresh._valTick % 2 === 0) loadValidatorsS();
+    const el = document.getElementById('updated-time');
+    if (el) el.dataset.lastUpdate = 'Updated ' + new Date().toLocaleTimeString();
+  }, 30000);
+}
+
+function stopStatsAutoRefresh() {
+  if (statsAutoRefreshInterval) { clearInterval(statsAutoRefreshInterval); statsAutoRefreshInterval = null; }
+  if (statsCountdownInterval)   { clearInterval(statsCountdownInterval);   statsCountdownInterval = null; }
+}
+
 function showPage_stats(e) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -2795,6 +2833,7 @@ function showPage_stats(e) {
   smoothScrollTop();
   loadValidatorsS();
   loadAllStats();
+  startStatsAutoRefresh();
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
@@ -3081,12 +3120,14 @@ function drawOracleChartS(lunc, ustc) {
 }
 
 async function loadAllStats() {
-  setTxt('updated-time', 'Refreshing...');
-  // Load validators immediately (independent), rest in parallel
-  const validatorsPromise = loadValidatorsS();
-  const [,, ] = await Promise.allSettled([loadStatsData(), loadOraclePoolS(), validatorsPromise]);
   const el = document.getElementById('updated-time');
-  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  if (el) { el.textContent = 'Refreshing...'; el.dataset.lastUpdate = 'Refreshing...'; }
+  const validatorsPromise = loadValidatorsS();
+  await Promise.allSettled([loadStatsData(), loadOraclePoolS(), validatorsPromise]);
+  const timeStr = 'Updated ' + new Date().toLocaleTimeString();
+  if (el) { el.dataset.lastUpdate = timeStr; el.textContent = timeStr + ' · 🔄 30s'; }
+  // Reset countdown
+  statsNextRefresh = Date.now() + 30000;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
