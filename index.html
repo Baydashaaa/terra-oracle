@@ -3885,15 +3885,19 @@ function setupCandleHover(candles, period) {
       const d = new Date(c.t);
       const dateStr = fmtDate(d, period);
 
-      // Position tooltip: follow mouse, flip if near right edge
+      // Position tooltip: follow mouse, flip if near right/bottom edge
       const canvasRect = canvas.getBoundingClientRect();
       const wrapRect = canvas.parentElement.getBoundingClientRect();
+      tip.style.display = 'block';
+      const tipW = tip.offsetWidth  || 240;
+      const tipH = tip.offsetHeight || 160;
       let tipLeft = e.clientX - wrapRect.left + 14;
       let tipTop  = e.clientY - wrapRect.top  - 20;
-      tip.style.display = 'block';
-      // Temporarily show to measure width
-      const tipW = tip.offsetWidth || 240;
+      // Flip left if near right edge
       if (tipLeft + tipW > wrapRect.width - 10) tipLeft = e.clientX - wrapRect.left - tipW - 14;
+      // Flip up if near bottom edge
+      if (tipTop + tipH > wrapRect.height - 8) tipTop = e.clientY - wrapRect.top - tipH - 10;
+      // Never go above top
       if (tipTop < 4) tipTop = 4;
       tip.style.left = tipLeft + 'px';
       tip.style.top  = tipTop  + 'px';
