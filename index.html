@@ -108,6 +108,9 @@
   .vfilter-btn { background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Exo 2',sans-serif;letter-spacing:0.08em;transition:all 0.2s; }
   .vfilter-btn:hover { border-color:var(--accent);color:var(--accent); }
   .vfilter-btn.active-vf { border-color:var(--green);color:var(--green);background:rgba(102,255,170,0.05); }
+  .period-btn { background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:600;letter-spacing:0.08em;transition:all 0.2s; }
+  .period-btn:hover { border-color:var(--accent);color:var(--accent); }
+  .period-btn.active-period { border-color:#ff6b6b;color:#ff6b6b;background:rgba(255,107,107,0.07); }
   .val-row { border-bottom:1px solid rgba(30,51,88,0.5);transition:background 0.15s; }
   .val-row:hover { background:rgba(84,147,247,0.04); }
   .val-row td { padding:10px 6px;vertical-align:middle; }
@@ -1187,7 +1190,7 @@
     <div class="stat-card"><div class="stat-label">Active Validators</div><div class="stat-value" id="sc-vals">—</div><div class="stat-note muted">bonded set</div></div>
   </div>
 
-  <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">🔴 Supply (30-day trend) <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+  <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">🔴 LUNC Supply History <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
   <div class="card" style="margin-bottom:18px;">
     <div class="chart-header">
       <div>
@@ -1201,7 +1204,17 @@
         <div class="chart-sub-val" style="color:#ff6b6b;">↓ Decreasing via arbitrage burn</div>
       </div>
     </div>
+    <!-- Period selector -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="period-btn active-period" onclick="setSupplyPeriod('1')" id="sp-1d">1D</button>
+      <button class="period-btn" onclick="setSupplyPeriod('7')" id="sp-7d">1W</button>
+      <button class="period-btn" onclick="setSupplyPeriod('30')" id="sp-1m">1M</button>
+      <button class="period-btn" onclick="setSupplyPeriod('365')" id="sp-1y">1Y</button>
+      <button class="period-btn" onclick="setSupplyPeriod('max')" id="sp-max">All Time ⚡</button>
+    </div>
+    <div id="supply-chart-loading" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:12px;">Loading data...</div>
     <div class="chart-wrap"><canvas id="supplyChart" height="180"></canvas></div>
+    <div style="font-size:10px;color:rgba(122,158,196,0.5);margin-top:8px;text-align:right;">Source: CoinGecko · circulating supply proxy</div>
   </div>
 
   <div class="card" style="margin-bottom:18px;">
@@ -3087,26 +3100,115 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
   ctx.shadowColor = color; ctx.shadowBlur = 8;
   ctx.stroke(); ctx.shadowBlur = 0;
 }
-function mockDeclineS(base, days, delta, noise=0.002) {
-  return Array.from({length:days}, (_, i) => {
-    const trend = base + (days-1-i) * delta;
-    return trend + trend * noise * (Math.random()-0.5);
+// ─── SUPPLY CHART WITH REAL HISTORY ─────────────────────────
+let currentSupplyPeriod = '1';
+let supplyChartCache = {};
+
+function setSupplyPeriod(period) {
+  currentSupplyPeriod = period;
+  ['1','7','30','365','max'].forEach(p => {
+    const idMap = {'1':'sp-1d','7':'sp-7d','30':'sp-1m','365':'sp-1y','max':'sp-max'};
+    const el = document.getElementById(idMap[p]);
+    if (el) el.classList.toggle('active-period', p === period);
   });
+  loadSupplyChart(period);
 }
-function drawSupplyChartS(lunc, ustc) {
+
+async function loadSupplyChart(period) {
+  // Use cache if available (expire after 5 min)
+  const cached = supplyChartCache[period];
+  if (cached && Date.now() - cached.ts < 300000) {
+    drawSupplyChartFromData(cached.data, period);
+    return;
+  }
+  const loadEl = document.getElementById('supply-chart-loading');
+  if (loadEl) loadEl.style.display = 'block';
+  try {
+    const days = period === 'max' ? 'max' : period;
+    const url = `https://api.coingecko.com/api/v3/coins/terra-luna/market_chart?vs_currency=usd&days=${days}&interval=${period === '1' ? 'hourly' : 'daily'}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('CoinGecko error');
+    const json = await res.json();
+    // market_caps proxy for circulating supply: marketcap / price
+    const prices = json.prices || [];
+    const mcaps = json.market_caps || [];
+    const data = prices.map((p, i) => ({
+      t: p[0],
+      supply: mcaps[i] ? mcaps[i][1] / p[1] : null
+    })).filter(d => d.supply && d.supply > 0);
+    supplyChartCache[period] = { data, ts: Date.now() };
+    drawSupplyChartFromData(data, period);
+  } catch(e) {
+    // Fallback: draw simple flat line with current value
+    const lunc = parseFloat(document.getElementById('lunc-big')?.textContent) || 6466000000000;
+    drawSupplyChartFallback(lunc);
+  } finally {
+    if (loadEl) loadEl.style.display = 'none';
+  }
+}
+
+function drawSupplyChartFromData(data, period) {
   const C = resolveCanvasS('supplyChart', 180); if (!C) return;
   const { ctx, w, h } = C;
-  const pad = { l:56, r:16, t:12, b:28 };
-  const cw = w-pad.l-pad.r, ch = h-pad.t-pad.b, DAYS=30;
-  const data = mockDeclineS(lunc, DAYS, 16527173, 0.001);
-  const lMin = Math.min(...data)*0.9998, lMax = Math.max(...data)*1.0002;
-  ctx.strokeStyle='#1e3358'; ctx.lineWidth=1; ctx.fillStyle='#3a5070'; ctx.font='10px Exo 2'; ctx.textAlign='right';
-  for(let i=0;i<=3;i++){const y=pad.t+(ch/3)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();const v=lMax-(lMax-lMin)*(i/3);ctx.fillText(fmtS(v),pad.l-4,y+4);}
-  drawLineS(ctx, data, pad, cw, ch, lMin, lMax, '#ff6b6b', 2);
-  data.forEach((v,i)=>{if(i%5!==0)return;const x=pad.l+(i/(DAYS-1))*cw;const y=pad.t+(1-(v-lMin)/(lMax-lMin))*ch;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle='#ff6b6b';ctx.fill();});
-  ctx.fillStyle='#3a5070';ctx.font='10px Exo 2';ctx.textAlign='center';
-  ['30d ago','20d ago','10d ago','Today'].forEach((l,i)=>ctx.fillText(l,pad.l+(i/3)*cw,h-4));
-  ctx.fillStyle='#ff6b6b';ctx.fillRect(pad.l,4,14,3);ctx.fillStyle='#b0d0b0';ctx.font='10px Exo 2';ctx.textAlign='left';ctx.fillText('LUNC Supply',pad.l+18,10);
+  const pad = { l:62, r:16, t:20, b:28 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  if (!data.length) return;
+  const values = data.map(d => d.supply);
+  const vMin = Math.min(...values) * 0.9998;
+  const vMax = Math.max(...values) * 1.0002;
+  // Grid lines
+  ctx.strokeStyle = '#1e3358'; ctx.lineWidth = 1;
+  ctx.fillStyle = '#3a5070'; ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (ch / 3) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    const v = vMax - (vMax - vMin) * (i / 3);
+    ctx.fillText(fmtS(v), pad.l - 4, y + 4);
+  }
+  // Gradient fill under line
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+  grad.addColorStop(0, 'rgba(255,107,107,0.18)');
+  grad.addColorStop(1, 'rgba(255,107,107,0.01)');
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = pad.l + (i / (data.length - 1)) * cw;
+    const y = pad.t + (1 - (d.supply - vMin) / (vMax - vMin + 0.0001)) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  const lastX = pad.l + cw, firstX = pad.l;
+  ctx.lineTo(lastX, pad.t + ch); ctx.lineTo(firstX, pad.t + ch);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  // Main line
+  drawLineS(ctx, values, pad, cw, ch, vMin, vMax, '#ff6b6b', 2);
+  // X-axis labels
+  ctx.fillStyle = '#3a5070'; ctx.font = '10px Exo 2'; ctx.textAlign = 'center';
+  const labelMap = {
+    '1':   ['12h ago', '6h ago', 'Now'],
+    '7':   ['7d ago', '4d ago', '1d ago', 'Today'],
+    '30':  ['30d ago', '20d ago', '10d ago', 'Today'],
+    '365': ['1y ago', '9mo ago', '3mo ago', 'Today'],
+    'max': ['May 2022', '2023', '2024', 'Today']
+  };
+  const labels = labelMap[period] || ['Start', 'Mid', 'Today'];
+  labels.forEach((l, i) => ctx.fillText(l, pad.l + (i / (labels.length - 1)) * cw, h - 4));
+  // Legend
+  ctx.fillStyle = '#ff6b6b'; ctx.fillRect(pad.l, 6, 14, 3);
+  ctx.fillStyle = '#b0d0b0'; ctx.font = '10px Exo 2'; ctx.textAlign = 'left';
+  ctx.fillText('LUNC Circulating Supply', pad.l + 18, 12);
+}
+
+function drawSupplyChartFallback(lunc) {
+  const C = resolveCanvasS('supplyChart', 180); if (!C) return;
+  const { ctx, w, h } = C;
+  const pad = { l:62, r:16, t:20, b:28 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  ctx.fillStyle = 'rgba(122,158,196,0.4)'; ctx.font = '12px Exo 2';
+  ctx.textAlign = 'center'; ctx.fillText('Historical data unavailable — try again later', pad.l + cw/2, pad.t + ch/2);
+}
+
+function drawSupplyChartS(lunc, ustc) {
+  // On first load, trigger real data fetch for current period
+  loadSupplyChart(currentSupplyPeriod);
 }
 function drawStakedChartS(bonded, ratio) {
   const C = resolveCanvasS('stakedChart', 160); if (!C) return;
