@@ -2952,8 +2952,8 @@ function showPage_stats(e) {
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
-const LCD_S2 = 'https://api-terra-ia.cosmosia.notional.ventures';
-const LCD_S3 = 'https://terraclassic-mainnet-lcd.autostake.com';
+const LCD_S2 = 'https://terra-classic-lcd.publicnode.com'; // fallback same
+const LCD_S3 = 'https://terra-classic-lcd.publicnode.com'; // fallback same
 const ORACLE_POOL_ADDR = 'terra1jgp27m8fykex4e4jtt0l7ze8q528ux2lh4zh0f';
 
 let allValidators = [];
@@ -3058,40 +3058,37 @@ async function loadOraclePoolS() {
 
 async function loadValidatorsS() {
   try {
-    const endpoints = [LCD_S, LCD_S2, LCD_S3];
-    let best = [];
+    // publicnode caps responses at ~100 per page — use pagination.next_key to get all pages
+    const BASE = 'https://terra-classic-lcd.publicnode.com';
+    let all = [];
+    let nextKey = null;
+    let attempts = 0;
 
-    // Try all 3 nodes in parallel, pick the one that returns the most validators
-    const results = await Promise.allSettled(
-      endpoints.map(base =>
-        Promise.race([
-          fetch(`${base}/cosmos/staking/v1beta1/validators?pagination.limit=500`)
-            .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`)),
-          new Promise((_, rej) => setTimeout(() => rej('timeout'), 8000))
-        ])
-      )
-    );
+    do {
+      let url = `${BASE}/cosmos/staking/v1beta1/validators?pagination.limit=100`;
+      if (nextKey) url += `&pagination.key=${encodeURIComponent(nextKey)}`;
 
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled') {
-        const cnt = r.value?.validators?.length || 0;
-        console.log(`[validators] ${endpoints[i]} → ${cnt} validators`);
-        if (cnt > best.length) best = r.value.validators;
-      } else {
-        console.warn(`[validators] ${endpoints[i]} → FAILED:`, r.reason);
-      }
-    });
+      const r = await Promise.race([
+        fetch(url),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      const page = d.validators || [];
+      all = all.concat(page);
+      nextKey = d.pagination?.next_key || null;
+      attempts++;
+      console.log(`[validators] page ${attempts}: got ${page.length}, next_key: ${nextKey ? 'yes' : 'no'}, total so far: ${all.length}`);
+    } while (nextKey && attempts < 10);
 
-    console.log(`[validators] Best result: ${best.length} validators`);
-    if (!best.length) throw new Error('empty');
-
-    allValidators = best.sort((a, b) => Number(b.tokens) - Number(a.tokens));
+    if (!all.length) throw new Error('empty');
+    allValidators = all.sort((a, b) => Number(b.tokens) - Number(a.tokens));
     const active = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED').length;
-    console.log(`[validators] Active: ${active}`);
+    console.log(`[validators] Done: ${all.length} total, ${active} active`);
     setTxt('sc-vals', active);
     renderValidatorsS();
   } catch(e) {
-    console.error('[validators] Fatal error:', e);
+    console.error('[validators] Error:', e);
     const tb = document.getElementById('validators-tbody');
     if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted);">Could not load validators</td></tr>';
   }
