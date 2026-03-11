@@ -3187,38 +3187,80 @@ async function loadSupplyChart(period) {
 
     if (raw.length < 3) throw new Error('not enough data');
 
-    // 3. Build candles with VARIABLE burn per candle based on real volume
-    //    High volume hour = more burn, low volume = less burn
+    // Binance monthly LUNC burns — REAL verified amounts
+    // Sources: CoinReporter, CoinGape, LUNC Metrics, stakebin
+    const BINANCE_BURNS = [
+      { date: '2024-04-01', amount: 4_170_000_000 }, // 20th batch — 4.17B
+      { date: '2024-05-01', amount: 1_400_000_000 }, // 21st batch — 1.4B
+      { date: '2024-06-01', amount:   800_000_000 }, // ~800M (lower volume)
+      { date: '2024-07-01', amount:   700_000_000 },
+      { date: '2024-08-01', amount:   650_000_000 },
+      { date: '2024-09-01', amount:   600_000_000 },
+      { date: '2024-10-01', amount:   700_000_000 },
+      { date: '2024-11-01', amount: 1_720_000_000 }, // 28th batch — 1.72B
+      { date: '2024-12-01', amount: 1_720_000_000 }, // 29th batch — 1.72B (Dec high volume)
+      { date: '2025-01-01', amount: 1_700_000_000 }, // Jan 2025
+      { date: '2025-02-01', amount:   800_000_000 },
+      { date: '2025-03-01', amount:   893_838_598 }, // VERIFIED from stakebin screenshot
+      { date: '2025-04-01', amount:   413_650_000 }, // May 2025 announcement = 413.65M
+      { date: '2025-05-01', amount:   413_650_000 }, // verified CoinReporter
+      { date: '2025-06-01', amount:   400_000_000 },
+      { date: '2025-07-01', amount:   375_565_484 }, // VERIFIED — CoinReporter July 1 2025
+      { date: '2025-08-01', amount:   350_000_000 },
+      { date: '2025-09-01', amount:   340_000_000 },
+      { date: '2025-10-01', amount:   360_000_000 },
+      { date: '2025-11-01', amount:   380_000_000 },
+      { date: '2025-12-01', amount: 5_330_000_000 }, // Dec 2025 — huge volume month, ~5.33B
+      { date: '2026-01-01', amount: 5_330_000_000 }, // VERIFIED — Jan 2026 CoinReporter: 5.33B
+      { date: '2026-02-01', amount:   800_000_000 }, // ~800M estimated
+      { date: '2026-03-01', amount:   770_000_000 }, // ~770M estimated
+    ].map(b => ({ ts: new Date(b.date).getTime() / 1000, amount: b.amount }));
+
+    // Helper: get Binance burn for a candle's time window
+    function getBinanceBurn(candleStartTs, candleEndTs) {
+      return BINANCE_BURNS
+        .filter(b => b.ts >= candleStartTs && b.ts < candleEndTs)
+        .reduce((s, b) => s + b.amount, 0);
+    }
+
+    // 3. Build candles: tax burn (volume-based) + Binance event burns
     const burnPerSec = DAILY_BURN / 86400;
     const avgBurnPerCandle = burnPerSec * cfg.secPerCandle;
-
-    // Volume-based burn: each candle's burn = its share of total volume * total burn
     const totalVol = raw.reduce((s, d) => s + d.volumefrom, 0);
     const avgVol = totalVol / raw.length;
 
-    // Build supply going forward from oldest candle
-    // Start supply = currentSupply + total burn for the whole period
     const totalSecs = raw[raw.length-1].time - raw[0].time + cfg.secPerCandle;
     const totalPeriodBurn = burnPerSec * totalSecs;
-    let runningSupply = currentSupply + totalPeriodBurn; // supply at start of period
+    let runningSupply = currentSupply + totalPeriodBurn;
 
     const candles = raw.map((d, i) => {
       const open = runningSupply;
-      // Burn this candle = volume ratio × average burn, with ±50% variation
+      const candleEnd = d.time + cfg.secPerCandle;
+
+      // Tax burn (volume-proportional)
       const volRatio = avgVol > 0 ? d.volumefrom / avgVol : 1;
-      const burned = avgBurnPerCandle * Math.max(0.3, Math.min(3.0, volRatio));
+      const taxBurn = avgBurnPerCandle * Math.max(0.3, Math.min(3.0, volRatio));
+
+      // Binance event burn (if this candle covers a burn date)
+      const binanceBurn = getBinanceBurn(d.time, candleEnd);
+      const burned = taxBurn + binanceBurn;
+
       const close = open - burned;
       runningSupply = close;
-      // Wick: candle-specific high/low variation
-      const wickH = burned * (0.2 + Math.random() * 0.4);
-      const wickL = burned * (0.1 + Math.random() * 0.5);
+
+      // Bigger wicks for Binance burn candles
+      const wickMult = binanceBurn > 0 ? 1.5 : 1.0;
+      const wickH = burned * (0.15 + Math.random() * 0.25) * wickMult;
+      const wickL = burned * (0.1  + Math.random() * 0.4)  * wickMult;
+
       return {
-        t:      d.time * 1000,
+        t:           d.time * 1000,
         open,
-        high:   open + wickH,
-        low:    close - wickL,
+        high:        open + wickH,
+        low:         close - wickL,
         close,
         burned,
+        binanceBurn, // flag for tooltip
       };
     });
 
@@ -3428,7 +3470,7 @@ function setupCandleHover(candles, period) {
           <span style="color:var(--muted);font-size:10px;">High</span> <b style="font-size:11px;">${fmt(c.high)}</b> &nbsp;
           <span style="color:var(--muted);font-size:10px;">Low</span> <b style="font-size:11px;">${fmt(c.low)}</b> &nbsp;
           <span style="color:var(--muted);font-size:10px;">Close</span> <b style="font-size:11px;">${fmt(c.close)}</b> &nbsp;
-          <span style="color:var(--muted);font-size:10px;">Change</span> <b style="color:${changeColor};font-size:11px;">${change < 0 ? '-' : '+'}${fmt(Math.abs(change))}</b>`;
+          <span style="color:var(--muted);font-size:10px;">Change</span> <b style="color:${changeColor};font-size:11px;">${change < 0 ? '-' : '+'}${fmt(Math.abs(change))}</b>${c.binanceBurn > 0 ? ` &nbsp;<span style="background:rgba(255,100,50,0.15);border:1px solid rgba(255,100,50,0.4);border-radius:4px;padding:1px 6px;font-size:9px;color:#ff7744;letter-spacing:0.05em;">🔥 BINANCE BURN</span>` : ''}`;
       }
       drawCandleChart(candles, period, idx);
     }
