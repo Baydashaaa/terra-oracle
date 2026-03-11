@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if (history.scrollRestoration) history.scrollRestoration = 'manual';</script>
 <title>Terra Oracle · Anonymous Q&A Protocol</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1378,6 +1379,7 @@ function showPage(name, e) {
   if (name === 'board') renderBoard();
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 // ─── TREASURY ─────────────────────────────────────────────────
@@ -1493,6 +1495,7 @@ function showPage_treasury(e) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-treasury').classList.add('active');
   loadTreasuryData();
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 // ─── HASHTAG LOGIC ────────────────────────────────────────────
@@ -2790,6 +2793,7 @@ function showPage_stats(e) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-stats').classList.add('active');
   setTimeout(loadAllStats, 50);
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
@@ -3052,6 +3056,7 @@ renderBoard();
 // Scroll to top on every page load/refresh
 window.scrollTo(0, 0);
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
+window.addEventListener('load', () => { window.scrollTo(0, 0); });
 
 </script>
 </body>
