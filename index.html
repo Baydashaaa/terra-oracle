@@ -1313,12 +1313,20 @@
 
   <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">⚡ Validators <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
       <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:#fff;" id="val-title">Validators</div>
-      <div class="val-tabs">
-        <button class="vfilter-btn active-vf" onclick="filterValidators('active')" id="vf-active">Active</button>
-        <button class="vfilter-btn" onclick="filterValidators('inactive')" id="vf-inactive">Inactive</button>
-        <button class="vfilter-btn" onclick="filterValidators('all')" id="vf-all">All</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <input id="val-search" type="text" placeholder="🔍 Search validator…" oninput="valPage=1;renderValidatorsS()"
+          style="background:rgba(84,147,247,0.07);border:1px solid rgba(84,147,247,0.2);border-radius:6px;
+                 padding:5px 10px;font-family:'Exo 2',sans-serif;font-size:12px;color:#c8ddf0;
+                 outline:none;width:190px;transition:border-color .2s;"
+          onfocus="this.style.borderColor='rgba(84,147,247,0.55)'"
+          onblur="this.style.borderColor='rgba(84,147,247,0.2)'" />
+        <div class="val-tabs">
+          <button class="vfilter-btn active-vf" onclick="filterValidators('active')" id="vf-active">Active</button>
+          <button class="vfilter-btn" onclick="filterValidators('inactive')" id="vf-inactive">Inactive</button>
+          <button class="vfilter-btn" onclick="filterValidators('all')" id="vf-all">All</button>
+        </div>
       </div>
     </div>
     <div style="overflow-x:auto;">
@@ -3083,6 +3091,11 @@ function renderValidatorsS() {
   let list = allValidators;
   if (valFilter === 'active')   list = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED');
   if (valFilter === 'inactive') list = allValidators.filter(v => v.status !== 'BOND_STATUS_BONDED');
+
+  // Search filter
+  const searchVal = (document.getElementById('val-search')?.value || '').trim().toLowerCase();
+  if (searchVal) list = list.filter(v => (v.description?.moniker || '').toLowerCase().includes(searchVal));
+
   setTxt('val-title', list.length + ' Validators (' + valFilter + ')');
   const totalBonded = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED').reduce((s,v) => s + Number(v.tokens), 0);
   const pages = Math.ceil(list.length / VAL_PER_PAGE);
