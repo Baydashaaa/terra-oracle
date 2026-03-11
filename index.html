@@ -3186,34 +3186,37 @@ async function loadSupplyChart(period) {
 
     if (raw.length < 3) throw new Error('not enough data');
 
-    // 3. Build candles: real burn per candle = volume * 1.2% tax
-    //    Supply at each point calculated backwards from current
-    const now = Date.now() / 1000;
+    // 3. Build candles with VARIABLE burn per candle based on real volume
+    //    High volume hour = more burn, low volume = less burn
     const burnPerSec = DAILY_BURN / 86400;
+    const avgBurnPerCandle = burnPerSec * cfg.secPerCandle;
 
-    // Total volume-weighted burn for the period
+    // Volume-based burn: each candle's burn = its share of total volume * total burn
     const totalVol = raw.reduce((s, d) => s + d.volumefrom, 0);
-    const totalSecs = (raw[raw.length-1].time - raw[0].time) + cfg.secPerCandle;
-    const expectedBurn = burnPerSec * totalSecs;
+    const avgVol = totalVol / raw.length;
+
+    // Build supply going forward from oldest candle
+    // Start supply = currentSupply + total burn for the whole period
+    const totalSecs = raw[raw.length-1].time - raw[0].time + cfg.secPerCandle;
+    const totalPeriodBurn = burnPerSec * totalSecs;
+    let runningSupply = currentSupply + totalPeriodBurn; // supply at start of period
 
     const candles = raw.map((d, i) => {
-      const secsAgo = now - d.time;
-      const closeSupply = currentSupply + secsAgo * burnPerSec;
-      const openSupply  = closeSupply + cfg.secPerCandle * burnPerSec;
-
-      // Real burned = volume × 1.2% tax, scaled to match expected daily rate
-      const volShare = totalVol > 0 ? d.volumefrom / totalVol : 1 / raw.length;
-      const burned = expectedBurn * volShare;
-
-      // Wick: reflects intra-period variation
-      const wickSize = burned * 0.5;
-
+      const open = runningSupply;
+      // Burn this candle = volume ratio × average burn, with ±50% variation
+      const volRatio = avgVol > 0 ? d.volumefrom / avgVol : 1;
+      const burned = avgBurnPerCandle * Math.max(0.3, Math.min(3.0, volRatio));
+      const close = open - burned;
+      runningSupply = close;
+      // Wick: candle-specific high/low variation
+      const wickH = burned * (0.2 + Math.random() * 0.4);
+      const wickL = burned * (0.1 + Math.random() * 0.5);
       return {
         t:      d.time * 1000,
-        open:   openSupply,
-        high:   openSupply + wickSize * 0.3,
-        low:    closeSupply - wickSize * 0.7,
-        close:  closeSupply,
+        open,
+        high:   open + wickH,
+        low:    close - wickL,
+        close,
         burned,
       };
     });
@@ -3253,7 +3256,9 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
   const vals = candles.flatMap(c => [c.high, c.low]);
   const dataMin = Math.min(...vals);
   const dataMax = Math.max(...vals);
-  const dataPad = (dataMax - dataMin) * 0.15 || dataMax * 0.0001;
+  const dataRange = dataMax - dataMin;
+  // Tight zoom: pad only 20% of the actual data range
+  const dataPad = dataRange > 0 ? dataRange * 0.2 : dataMax * 0.000005;
   const vMin = dataMin - dataPad;
   const vMax = dataMax + dataPad;
   const range = vMax - vMin || 1;
