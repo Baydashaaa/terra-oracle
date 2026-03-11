@@ -3446,19 +3446,22 @@ async function loadSupplyChart(period) {
       const close = open - burned;
       runningSupply = close;
 
-      // Bigger wicks for Binance burn candles
-      const wickMult = binanceBurn > 0 ? 1.5 : 1.0;
-      const wickH = burned * (0.15 + Math.random() * 0.25) * wickMult;
-      const wickL = burned * (0.1  + Math.random() * 0.4)  * wickMult;
+      // Wicks based ONLY on taxBurn — keeps Y scale sane even with big Binance burns
+      const wickH = taxBurn * (0.15 + Math.random() * 0.25);
+      const wickL = taxBurn * (0.1  + Math.random() * 0.4);
+      // closeNoB = close without Binance burn — used for Y scale only
+      const closeNoB = open - taxBurn;
 
       return {
         t:           d.time * 1000,
         open,
         high:        open + wickH,
-        low:         close - wickL,
-        close,
+        low:         closeNoB - wickL,
+        close,       // real supply including Binance burn
+        closeNoB,    // for Y-axis scaling
         burned,
-        binanceBurn, // flag for tooltip
+        taxBurn,
+        binanceBurn,
       };
     });
 
@@ -3495,12 +3498,13 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
   const pad = { l:68, r:16, t:16, b:32 };
   const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
 
-  const vals = candles.flatMap(c => [c.high, c.low]);
-  const dataMin = Math.min(...vals);
-  const dataMax = Math.max(...vals);
+  // Y scale: use tax-burn range only (ignores giant Binance burn spikes in close)
+  // This keeps regular candles visible while Binance burns are shown as fire markers
+  const taxVals = candles.flatMap(c => [c.high, c.low]);
+  const dataMin = Math.min(...taxVals);
+  const dataMax = Math.max(...taxVals);
   const dataRange = dataMax - dataMin;
-  // Ultra-tight zoom: just 10% padding — shows actual supply variation clearly
-  const dataPad = dataRange > 0 ? dataRange * 0.1 : dataMax * 0.000002;
+  const dataPad = dataRange > 0 ? dataRange * 0.12 : dataMax * 0.000002;
   const vMin = dataMin - dataPad;
   const vMax = dataMax + dataPad;
   const range = vMax - vMin || 1;
@@ -3559,6 +3563,30 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
     ctx.globalAlpha = isHover ? 1 : 0.85;
     ctx.fillRect(x - barW / 2, bodyTop, barW, bodyH);
     ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  });
+
+  // 🔥 Binance burn fire markers — shown as orange arrows + label below candle
+  candles.forEach((c, i) => {
+    if (!c.binanceBurn) return;
+    const x = pad.l + i * gap + gap / 2;
+    // Draw at bottom of chart area with a small offset
+    const markerY = pad.t + ch - 4;
+    // Orange downward arrow
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = '#ff7744';
+    ctx.font = 'bold 11px Exo 2';
+    ctx.textAlign = 'center';
+    ctx.fillText('🔥', x, markerY);
+    ctx.restore();
+    // Dashed vertical line from top of chart to marker
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,119,68,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, markerY - 12); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   });
 
   // Hover crosshair
