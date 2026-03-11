@@ -4,23 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terra Oracle · Anonymous Q&A Protocol</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
 <style>
   :root {
     --bg: #03070f;
     --surface: #080e1c;
-    --surface2: #0d1628;
-    --border: #0f1e38;
+    --surface2: #0e1c30;
+    --border: #1e3358;
     --accent: #5493f7;
     --accent-dark: #0e3ca5;
-    --text: #c8d8f0;
-    --muted: #3a5070;
+    --text: #e8f2ff;
+    --muted: #7a9ec4;
     --green: #66ffaa;
     --gold: #f5c518;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: 'Exo 2', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
   body::before {
     content: ''; position: fixed; inset: 0;
@@ -42,11 +42,11 @@
   }
   .nav-logo { display: flex; align-items: center; gap: 12px; }
   .nav-logo svg { width: 32px; height: 32px; filter: drop-shadow(0 0 8px rgba(84,147,247,0.4)); }
-  .nav-logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.12em; color: #fff; text-transform: uppercase; }
+  .nav-logo-text { font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.12em; color: #fff; text-transform: uppercase; }
   .nav-logo-badge { font-size: 8px; color: var(--accent); background: rgba(84,147,247,0.1); border: 1px solid rgba(84,147,247,0.25); padding: 1px 6px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
   .nav-tabs { display: flex; gap: 4px; }
-  .nav-tab { background: transparent; border: 1px solid transparent; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-  .nav-tab:hover { color: var(--text); border-color: var(--border); }
+  .nav-tab { background: transparent; border: 1px solid transparent; color: #8ab0d8; font-family: 'Exo 2', sans-serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .nav-tab:hover { color: #e8f0ff; border-color: var(--border); }
   .nav-tab.active { color: var(--accent); border-color: rgba(84,147,247,0.3); background: rgba(84,147,247,0.06); }
 
   /* PAGES */
@@ -56,7 +56,7 @@
   /* HEADER */
   .page-header { text-align: center; margin-bottom: 48px; }
   .tag { display: inline-block; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(84,147,247,0.3); padding: 4px 14px; border-radius: 20px; margin-bottom: 18px; background: rgba(84,147,247,0.05); }
-  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(26px,4vw,40px); line-height: 1.15; color: #fff; margin-bottom: 12px; }
+  h1 { font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: clamp(26px,4vw,40px); line-height: 1.15; color: #fff; margin-bottom: 12px; }
   h1 span { color: var(--accent); }
   .subtitle { font-size: 12px; line-height: 1.75; color: var(--muted); }
 
@@ -69,7 +69,7 @@
   label { display: block; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
   select, textarea, input[type="text"], input[type="password"] {
     width: 100%; background: rgba(84,147,247,0.03); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); font-family: 'Space Mono', monospace;
+    border-radius: 8px; color: var(--text); font-family: 'Exo 2', sans-serif;
     font-size: 13px; padding: 12px 14px; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
   }
@@ -87,7 +87,7 @@
   .admin-key-wrap.valid .admin-key-hint { color: var(--gold); }
 
   /* BUTTONS */
-  .btn { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 13px 28px; border-radius: 8px; cursor: pointer; transition: all 0.25s; border: 1.5px solid; }
+  .btn { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 13px 28px; border-radius: 8px; cursor: pointer; transition: all 0.25s; border: 1.5px solid; }
   .btn-primary { background: transparent; border-color: var(--accent); color: var(--accent); position: relative; overflow: hidden; z-index: 1; }
   .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--accent-dark), var(--accent)); transform: translateX(-101%); transition: transform 0.3s; z-index: -1; }
   .btn-primary:hover { color: #fff; box-shadow: 0 0 24px rgba(84,147,247,0.3); }
@@ -105,7 +105,7 @@
 
   /* QUESTION BOARD */
   .board-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-  .board-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: #fff; }
+  .board-title { font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 18px; color: #fff; }
   .board-count { font-size: 11px; color: var(--muted); }
 
   .q-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 12px; transition: border-color 0.2s; }
@@ -134,7 +134,7 @@
 
   .q-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .q-votes { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
-  .vote-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .vote-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Exo 2', sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
   .vote-btn:hover { border-color: var(--green); color: var(--green); }
   .vote-btn.voted { border-color: var(--green); color: var(--green); background: rgba(102,255,170,0.06); }
 
@@ -162,7 +162,7 @@
   .success-state.visible { display: block; }
   .success-icon { font-size: 48px; margin-bottom: 14px; animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-  .success-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; color: var(--green); margin-bottom: 10px; }
+  .success-title { font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 22px; color: var(--green); margin-bottom: 10px; }
   .success-text { font-size: 12px; color: var(--muted); line-height: 1.8; }
   .success-ref { display: inline-block; margin-top: 14px; font-size: 11px; color: var(--accent); background: rgba(84,147,247,0.07); border: 1px solid rgba(84,147,247,0.2); padding: 5px 16px; border-radius: 20px; letter-spacing: 0.1em; }
 
@@ -182,7 +182,7 @@
   .chat-page-msg-text { font-size: 13px; line-height: 1.6; color: var(--text); }
   .chat-page-msg-time { font-size: 10px; color: var(--muted); margin-left: auto; }
   .chat-page-input-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-  .chat-page-textarea { width: 100%; background: rgba(84,147,247,0.04); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; padding: 12px 14px; outline: none; resize: none; min-height: 80px; transition: border-color 0.2s; }
+  .chat-page-textarea { width: 100%; background: rgba(84,147,247,0.04); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Exo 2', sans-serif; font-size: 13px; padding: 12px 14px; outline: none; resize: none; min-height: 80px; transition: border-color 0.2s; }
   .chat-page-textarea:focus { border-color: var(--accent); }
   .chat-send-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 10px; }
   .chat-send-info { font-size: 11px; color: var(--muted); }
@@ -195,7 +195,7 @@
   .q-tags { display:flex;flex-wrap:wrap;gap:5px;margin-top:8px; }
   .q-tag { font-size:10px;color:var(--accent);background:rgba(84,147,247,0.07);
     border:1px solid rgba(84,147,247,0.15);border-radius:12px;padding:2px 9px;
-    cursor:pointer;transition:all 0.15s;letter-spacing:0.03em;font-family:'Space Mono',monospace; }
+    cursor:pointer;transition:all 0.15s;letter-spacing:0.03em;font-family:'Exo 2',sans-serif; }
   .q-tag:hover { background:rgba(84,147,247,0.15);border-color:rgba(84,147,247,0.4); }
   .q-tag.active-tag { background:rgba(84,147,247,0.2);border-color:var(--accent);color:#fff; }
   .tag-input-wrap { display:flex;flex-wrap:wrap;gap:6px;align-items:center;
@@ -207,7 +207,7 @@
   .tag-pill button { background:none;border:none;color:var(--muted);cursor:pointer;
     font-size:11px;padding:0;line-height:1;margin-left:2px; }
   .tag-pill button:hover { color:#ff6060; }
-  .tag-input { border:none;background:transparent;color:var(--text);font-family:'Space Mono',monospace;
+  .tag-input { border:none;background:transparent;color:var(--text);font-family:'Exo 2',sans-serif;
     font-size:11px;outline:none;min-width:80px;flex:1; }
   .tag-input::placeholder { color:var(--muted);opacity:0.5; }
   .tag-suggestions { display:flex;flex-wrap:wrap;gap:5px;margin-top:6px; }
@@ -220,7 +220,7 @@
   .chat-reaction { background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.12);
     border-radius:20px;padding:3px 9px;font-size:13px;cursor:pointer;transition:all 0.15s;
     display:flex;align-items:center;gap:4px;color:var(--text); }
-  .chat-reaction span { font-size:10px;color:var(--muted);font-family:'Space Mono',monospace; }
+  .chat-reaction span { font-size:10px;color:var(--muted);font-family:'Exo 2',sans-serif; }
   .chat-reaction:hover { background:rgba(84,147,247,0.14);border-color:rgba(84,147,247,0.35);transform:scale(1.08); }
   .my-reaction { background:rgba(84,147,247,0.18);border-color:rgba(84,147,247,0.5); }
   .my-reaction span { color:var(--accent); }
@@ -239,12 +239,12 @@
   /* VOTE PAGE */
   .vote-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
   .vote-tabs { display: flex; gap: 6px; }
-  .vote-tab { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .vote-tab { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Exo 2', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
   .vote-tab.active { color: var(--accent); border-color: rgba(84,147,247,0.3); background: rgba(84,147,247,0.06); }
   .vote-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin-bottom: 16px; position: relative; overflow: hidden; }
   .vote-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
   .vote-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
-  .vote-card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; color: #fff; }
+  .vote-card-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; color: #fff; }
   .vote-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .vote-type-badge { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 10px; border-radius: 10px; }
   .vote-type-weekly { background: rgba(84,147,247,0.1); color: var(--accent); border: 1px solid rgba(84,147,247,0.2); }
@@ -285,7 +285,7 @@
     display: inline-flex; align-items: center; gap: 7px;
     background: transparent; border: 1px solid rgba(84,147,247,0.3);
     border-radius: 8px; color: var(--accent);
-    font-family: 'Space Mono', monospace; font-size: 11px;
+    font-family: 'Exo 2', sans-serif; font-size: 11px;
     font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 9px 14px; cursor: pointer; transition: all 0.2s;
   }
@@ -321,7 +321,7 @@
     padding: 10px 10px; border-radius: 7px; cursor: pointer;
     transition: background 0.15s; border: none; background: none;
     width: 100%; text-align: left; color: var(--text);
-    font-family: 'Space Mono', monospace; font-size: 11px;
+    font-family: 'Exo 2', sans-serif; font-size: 11px;
   }
   .wallet-option:hover { background: rgba(84,147,247,0.07); }
   .wallet-option img { width: 28px; height: 28px; border-radius: 6px; }
@@ -339,7 +339,7 @@
     display: flex; align-items: center; gap: 8px;
     padding: 8px 10px; border-radius: 7px; cursor: pointer;
     transition: background 0.15s; border: none; background: none;
-    width: 100%; color: #ff6060; font-family: 'Space Mono', monospace;
+    width: 100%; color: #ff6060; font-family: 'Exo 2', sans-serif;
     font-size: 11px;
   }
   .wallet-disconnect:hover { background: rgba(255,60,60,0.08); }
@@ -349,7 +349,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     background: linear-gradient(135deg, #8B0000, #cc2200, #ff6600);
     border: none; border-radius: 8px; color: #fff;
-    font-family: 'Space Mono', monospace; font-size: 11px;
+    font-family: 'Exo 2', sans-serif; font-size: 11px;
     font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
     padding: 10px 20px; cursor: pointer; text-decoration: none;
     box-shadow: 0 0 20px rgba(204,34,0,0.35);
@@ -366,7 +366,7 @@
     background: transparent;
     border: 1px solid rgba(255,215,0,0.35); border-radius: 6px;
     color: var(--gold);
-    font-family: 'Space Mono', monospace; font-size: 10px;
+    font-family: 'Exo 2', sans-serif; font-size: 10px;
     font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 5px 12px; cursor: pointer; text-decoration: none;
     box-shadow: 0 0 10px rgba(255,215,0,0.1);
@@ -455,7 +455,7 @@
 
       <!-- Text -->
       <div style="display:flex;flex-direction:column;justify-content:center;">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;
+        <div style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:14px;
           letter-spacing:0.1em;color:#fff;text-transform:uppercase;line-height:1.2;white-space:nowrap;">
           Terra Oracle <span style="color:#7eb8ff;">Classic</span>
         </div>
@@ -546,16 +546,16 @@
 
   <!-- HERO -->
   <div style="text-align:center;padding:48px 20px 56px;position:relative;">
-    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(84,147,247,0.06),transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(84,147,247,0.1),transparent 70%);pointer-events:none;"></div>
     <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold);margin-bottom:16px;text-transform:uppercase;">Terra Classic Ecosystem</div>
-    <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(36px,7vw,64px);line-height:1.1;margin:0 0 16px;">
-      Terra Oracle<br><span style="color:var(--accent);">Classic</span>
+    <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(36px,7vw,64px);line-height:1.1;margin:0 0 16px;color:#ffffff;">
+      Terra Oracle<br><span style="color:#7eb8ff;">Classic</span>
     </h1>
-    <div style="font-size:13px;color:var(--muted);max-width:480px;margin:0 auto 12px;line-height:1.7;">
-      A decentralized Q&A, governance and lottery protocol<br>built on Terra Classic — powered by LUNC.
+    <div style="font-size:14px;color:#b0c4e8;max-width:480px;margin:0 auto 16px;line-height:1.8;font-weight:400;">
+      A decentralized Q&amp;A, governance and lottery protocol<br>built on Terra Classic — powered by LUNC.
     </div>
-    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(245,197,24,0.07);
-      border:1px solid rgba(245,197,24,0.2);border-radius:20px;padding:6px 16px;font-size:11px;color:var(--gold);">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(245,197,24,0.1);
+      border:1px solid rgba(245,197,24,0.35);border-radius:20px;padding:7px 18px;font-size:12px;color:#ffd700;font-weight:600;">
       🪙 Future token: <strong style="letter-spacing:0.1em;">TCO</strong> · Terra Classic Oracle
     </div>
   </div>
@@ -563,44 +563,44 @@
   <!-- ECOSYSTEM CARDS -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:40px;">
 
-    <div onclick="showPage('board')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;
-      padding:24px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;"
-      onmouseover="this.style.borderColor='rgba(84,147,247,0.4)';this.style.transform='translateY(-2px)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+    <div onclick="showPage('board')" style="background:#0d1f3c;border:1px solid rgba(84,147,247,0.25);border-radius:14px;
+      padding:24px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='rgba(84,147,247,0.6)';this.style.transform='translateY(-2px)';this.style.background='#112244'"
+      onmouseout="this.style.borderColor='rgba(84,147,247,0.25)';this.style.transform='translateY(0)';this.style.background='#0d1f3c'">
       <div style="font-size:28px;margin-bottom:12px;">🔮</div>
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">Oracle Board</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
-      <div style="margin-top:14px;font-size:10px;color:var(--accent);letter-spacing:0.08em;">200,000 LUNC per question →</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#ffffff;">Oracle Board</div>
+      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
+      <div style="margin-top:16px;font-size:11px;color:#7eb8ff;letter-spacing:0.08em;font-weight:600;">200,000 LUNC per question →</div>
     </div>
 
-    <div onclick="showPage('chat')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;
-      padding:24px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;"
-      onmouseover="this.style.borderColor='rgba(84,147,247,0.4)';this.style.transform='translateY(-2px)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+    <div onclick="showPage('chat')" style="background:#0d1f3c;border:1px solid rgba(84,147,247,0.25);border-radius:14px;
+      padding:24px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='rgba(84,147,247,0.6)';this.style.transform='translateY(-2px)';this.style.background='#112244'"
+      onmouseout="this.style.borderColor='rgba(84,147,247,0.25)';this.style.transform='translateY(0)';this.style.background='#0d1f3c'">
       <div style="font-size:28px;margin-bottom:12px;">💬</div>
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">DAO Chat</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
-      <div style="margin-top:14px;font-size:10px;color:var(--accent);letter-spacing:0.08em;">5,000 LUNC per message →</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#ffffff;">DAO Chat</div>
+      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
+      <div style="margin-top:16px;font-size:11px;color:#7eb8ff;letter-spacing:0.08em;font-weight:600;">5,000 LUNC per message →</div>
     </div>
 
-    <div onclick="showPage('vote')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;
-      padding:24px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;"
-      onmouseover="this.style.borderColor='rgba(84,147,247,0.4)';this.style.transform='translateY(-2px)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+    <div onclick="showPage('vote')" style="background:#0d1f3c;border:1px solid rgba(84,147,247,0.25);border-radius:14px;
+      padding:24px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='rgba(84,147,247,0.6)';this.style.transform='translateY(-2px)';this.style.background='#112244'"
+      onmouseout="this.style.borderColor='rgba(84,147,247,0.25)';this.style.transform='translateY(0)';this.style.background='#0d1f3c'">
       <div style="font-size:28px;margin-bottom:12px;">🗳️</div>
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">Governance Vote</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
-      <div style="margin-top:14px;font-size:10px;color:var(--accent);letter-spacing:0.08em;">Monthly draw: 20–25th →</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#ffffff;">Governance Vote</div>
+      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
+      <div style="margin-top:16px;font-size:11px;color:#7eb8ff;letter-spacing:0.08em;font-weight:600;">Monthly draw: 20–25th →</div>
     </div>
 
-    <div onclick="window.open('https://baydashaaa.github.io/lottery-classic','_blank')" style="background:var(--surface);
-      border:1px solid rgba(255,102,0,0.2);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.2s;"
-      onmouseover="this.style.borderColor='rgba(255,102,0,0.5)';this.style.transform='translateY(-2px)'"
-      onmouseout="this.style.borderColor='rgba(255,102,0,0.2)';this.style.transform='translateY(0)'">
+    <div onclick="window.open('https://baydashaaa.github.io/lottery-classic','_blank')" style="background:#1a0f00;
+      border:1px solid rgba(255,102,0,0.3);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.2s;"
+      onmouseover="this.style.borderColor='rgba(255,102,0,0.7)';this.style.transform='translateY(-2px)';this.style.background='#221200'"
+      onmouseout="this.style.borderColor='rgba(255,102,0,0.3)';this.style.transform='translateY(0)';this.style.background='#1a0f00'">
       <div style="font-size:28px;margin-bottom:12px;">🎰</div>
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">Lottery Classic</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">Buy tickets, win the pool. 80% prize pool, 5% burned forever. On-chain verifiable draws.</div>
-      <div style="margin-top:14px;font-size:10px;color:#ff6600;letter-spacing:0.08em;">25,000 LUNC per ticket →</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#ffffff;">Lottery Classic</div>
+      <div style="font-size:12px;color:#c49a6c;line-height:1.7;">Buy tickets, win the pool. 80% prize pool, 5% burned forever. On-chain verifiable draws.</div>
+      <div style="margin-top:16px;font-size:11px;color:#ff8833;letter-spacing:0.08em;font-weight:600;">25,000 LUNC per ticket →</div>
     </div>
 
   </div>
@@ -619,22 +619,22 @@
       <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
         <div style="font-size:18px;margin-bottom:4px;">🏛️</div>
         <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Governance</div>
-        <div style="font-size:10px;color:var(--muted);">Vote weight by TCO stake</div>
+        <div style="font-size:10px;color:#8aaccc;">Vote weight by TCO stake</div>
       </div>
       <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
         <div style="font-size:18px;margin-bottom:4px;">💎</div>
         <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Rewards</div>
-        <div style="font-size:10px;color:var(--muted);">Earned by Oracle participation</div>
+        <div style="font-size:10px;color:#8aaccc;">Earned by Oracle participation</div>
       </div>
       <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
         <div style="font-size:18px;margin-bottom:4px;">🔥</div>
         <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Deflationary</div>
-        <div style="font-size:10px;color:var(--muted);">% burned on every activity</div>
+        <div style="font-size:10px;color:#8aaccc;">% burned on every activity</div>
       </div>
       <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
         <div style="font-size:18px;margin-bottom:4px;">⛓️</div>
         <div style="font-size:11px;font-weight:700;margin-bottom:2px;">On-Chain</div>
-        <div style="font-size:10px;color:var(--muted);">Terra Classic · columbus-5</div>
+        <div style="font-size:10px;color:#8aaccc;">Terra Classic · columbus-5</div>
       </div>
     </div>
   </div>
@@ -681,7 +681,7 @@
     <input type="text" id="board-search" placeholder="🔍  Search questions..."
       oninput="setBoardSearch(this.value)"
       style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
-             color:var(--text);font-family:'Space Mono',monospace;font-size:13px;
+             color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;
              padding:12px 16px 12px 40px;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
     <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:0.35;pointer-events:none;"
          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -938,7 +938,7 @@
     <div style="background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:24px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
         <span style="font-size:16px;">🛡️</span>
-        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
+        <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
         <span style="font-size:9px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:10px;padding:2px 8px;letter-spacing:0.1em;">ADMIN ONLY</span>
       </div>
 
@@ -953,14 +953,14 @@
             <button onclick="adminStartVote('monthly-liquidity')"
               id="admin-start-btn"
               style="background:rgba(102,255,170,0.1);border:1px solid rgba(102,255,170,0.3);color:var(--green);
-                     font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;
+                     font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
                      padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
               ▶ START
             </button>
             <button onclick="adminStopVote('monthly-liquidity')"
               id="admin-stop-btn"
               style="background:rgba(255,60,60,0.08);border:1px solid rgba(255,60,60,0.25);color:#ff6464;
-                     font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;
+                     font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
                      padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
               ■ STOP
             </button>
@@ -971,16 +971,16 @@
           <div style="display:flex;gap:6px;flex-wrap:wrap;" id="admin-pairs-wrap">
             <input type="text" id="admin-pair-1" placeholder="LUNC/USDT" value="LUNC/USDT"
               style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
-                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+                     font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
             <input type="text" id="admin-pair-2" placeholder="LUNC/USTC" value="LUNC/USTC"
               style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
-                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+                     font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
             <input type="text" id="admin-pair-3" placeholder="LUNC/ATOM" value="LUNC/ATOM"
               style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
-                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+                     font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
             <input type="text" id="admin-pair-4" placeholder="LUNC/BTC" value="LUNC/BTC"
               style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
-                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+                     font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
           </div>
         </div>
       </div>
@@ -1004,7 +1004,7 @@
 <div class="page" id="page-treasury">
   <div style="text-align:center;margin-bottom:36px;">
     <div style="font-size:10px;letter-spacing:0.2em;color:var(--gold);margin-bottom:10px;text-transform:uppercase;">Protocol Finance</div>
-    <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,42px);margin:0 0 10px;">
+    <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(28px,5vw,42px);margin:0 0 10px;">
       Treasury <span style="color:var(--gold);">Dashboard</span>
     </h1>
     <p style="color:var(--muted);font-size:13px;">Live on-chain balances · Updated in real time</p>
@@ -1021,7 +1021,7 @@
         <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--text);">ORACLE POOL</span>
         <span style="font-size:8px;background:rgba(84,147,247,0.1);color:var(--accent);border:1px solid rgba(84,147,247,0.2);border-radius:8px;padding:1px 7px;margin-left:auto;">Q&A · CHAT</span>
       </div>
-      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;" id="t-oracle-bal">—</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;" id="t-oracle-bal">—</div>
       <div style="font-size:11px;color:var(--muted);" id="t-oracle-usd">Loading...</div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;">terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt</div>
     </div>
@@ -1034,7 +1034,7 @@
         <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--text);">LOTTERY POOL</span>
         <span style="font-size:8px;background:rgba(255,102,0,0.1);color:#ff6600;border:1px solid rgba(255,102,0,0.2);border-radius:8px;padding:1px 7px;margin-left:auto;">PRIZE</span>
       </div>
-      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;" id="t-lottery-bal">—</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;" id="t-lottery-bal">—</div>
       <div style="font-size:11px;color:var(--muted);" id="t-lottery-usd">Loading...</div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;">terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px</div>
     </div>
@@ -1047,7 +1047,7 @@
         <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--text);">BURN WALLET</span>
         <span style="font-size:8px;background:rgba(255,48,48,0.1);color:#ff6060;border:1px solid rgba(255,48,48,0.2);border-radius:8px;padding:1px 7px;margin-left:auto;">BURNED</span>
       </div>
-      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#ff6060;margin-bottom:4px;" id="t-burn-bal">—</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#ff6060;margin-bottom:4px;" id="t-burn-bal">—</div>
       <div style="font-size:11px;color:var(--muted);" id="t-burn-usd">Loading...</div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;">terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p</div>
     </div>
@@ -1072,7 +1072,7 @@
       </div>
       <div style="display:flex;align-items:flex-end;">
         <button onclick="loadTreasuryData()" style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);
-          color:var(--accent);border-radius:8px;padding:8px 16px;font-family:'Space Mono',monospace;
+          color:var(--accent);border-radius:8px;padding:8px 16px;font-family:'Exo 2',sans-serif;
           font-size:11px;cursor:pointer;transition:all 0.2s;" id="t-refresh-btn">↻ Refresh</button>
       </div>
     </div>
@@ -2178,7 +2178,7 @@ async function loadChatFromChain() {
         <div style="color:var(--muted);font-size:12px;">Could not reach blockchain nodes</div>
         <div style="color:var(--muted);font-size:10px;opacity:0.5;margin-top:4px;">Will retry in 30s</div>
         <button onclick="loadChatFromChain()" style="margin-top:14px;background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.25);
-          color:var(--accent);border-radius:8px;padding:7px 16px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;">↻ Retry now</button>
+          color:var(--accent);border-radius:8px;padding:7px 16px;font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;">↻ Retry now</button>
       </div>`;
     }
     return;
@@ -2577,10 +2577,10 @@ function updateAdminPanel() {
           <div style="display:flex;gap:6px;">
             <button onclick="adminToggleVote('${v.id}', 'active')"
               style="font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);
-                     background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Space Mono',monospace;font-weight:700;">▶</button>
+                     background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">▶</button>
             <button onclick="adminToggleVote('${v.id}', 'stopped')"
               style="font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid rgba(255,60,60,0.25);
-                     background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Space Mono',monospace;font-weight:700;">■</button>
+                     background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">■</button>
           </div>
         </div>`;
       }).join('');
@@ -2592,7 +2592,7 @@ function showAdminToast(msg, color) {
   const toast = document.createElement('div');
   toast.textContent = msg;
   toast.style.cssText = `position:fixed;top:80px;right:20px;z-index:9999;padding:10px 18px;border-radius:8px;
-    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.05em;
+    font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;
     background:${color === 'green' ? 'rgba(102,255,170,0.15)' : 'rgba(255,60,60,0.12)'};
     border:1px solid ${color === 'green' ? 'rgba(102,255,170,0.4)' : 'rgba(255,60,60,0.3)'};
     color:${color === 'green' ? 'var(--green)' : '#ff6464'};
