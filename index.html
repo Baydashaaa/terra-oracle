@@ -1216,7 +1216,7 @@
       </div>
     </div>
     <!-- Hover tooltip -->
-    <div id="supply-tooltip" style="height:18px;margin-bottom:6px;font-size:11px;color:var(--muted);font-family:monospace;"></div>
+    <div id="supply-tooltip" style="min-height:32px;margin-bottom:4px;font-size:11px;color:var(--text);font-family:'Exo 2',sans-serif;line-height:1.6;"></div>
     <!-- Loading -->
     <div id="supply-chart-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:12px;display:none;">
       <div class="loading-dots">Loading<span>.</span><span>.</span><span>.</span></div>
@@ -3113,19 +3113,21 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
   ctx.shadowColor = color; ctx.shadowBlur = 8;
   ctx.stroke(); ctx.shadowBlur = 0;
 }
-// ─── SUPPLY CHART (candlestick-style) ────────────────────────
+// ─── SUPPLY CHART (candlestick-style, real LCD data) ─────────
 let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
-let supplyHoverData = null;
 
+// Period config: candle count & seconds per candle
 const TF_CONFIG = {
-  '1h':  { endpoint: 'histominute', limit: 60,   agg: 1,   label:'1h',  isMin: true  },
-  '4h':  { endpoint: 'histominute', limit: 240,  agg: 1,   label:'4h',  isMin: true  },
-  'D':   { endpoint: 'histohour',   limit: 24,   agg: 1,   label:'D',   isMin: false },
-  'W':   { endpoint: 'histohour',   limit: 168,  agg: 1,   label:'W',   isMin: false },
-  'M':   { endpoint: 'histoday',    limit: 30,   agg: 1,   label:'M',   isMin: false },
+  '1h': { candles: 60,  secPerCandle: 60,       label: '1h'  },
+  '4h': { candles: 48,  secPerCandle: 300,       label: '4h'  },
+  'D':  { candles: 48,  secPerCandle: 1800,      label: 'D'   },
+  'W':  { candles: 56,  secPerCandle: 10800,     label: 'W'   },
+  'M':  { candles: 60,  secPerCandle: 43200,     label: 'M'   },
 };
-const DAILY_BURN = 16_500_000;
+
+// Block time ~5.8s on Terra Classic
+const BLOCK_TIME = 5.8;
 
 function setSupplyPeriod(period) {
   currentSupplyPeriod = period;
@@ -3136,9 +3138,39 @@ function setSupplyPeriod(period) {
   loadSupplyChart(period);
 }
 
+// Fetch LUNC total supply at a given block height
+async function fetchSupplyAtBlock(height) {
+  const endpoints = [
+    `https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/supply/uluna?height=${height}`,
+    `https://lcd.terraclassic.community/cosmos/bank/v1beta1/supply/uluna?height=${height}`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const r = await Promise.race([
+        fetch(url),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+      ]);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const amt = j?.amount?.amount;
+      if (amt) return Number(amt) / 1e6;
+    } catch { continue; }
+  }
+  return null;
+}
+
+// Get current block height
+async function getCurrentBlock() {
+  try {
+    const r = await fetch('https://terra-classic-lcd.publicnode.com/cosmos/base/tendermint/v1beta1/blocks/latest');
+    const j = await r.json();
+    return parseInt(j?.block?.header?.height || 0);
+  } catch { return 0; }
+}
+
 async function loadSupplyChart(period) {
   const cached = supplyChartCache[period];
-  if (cached && Date.now() - cached.ts < 60000) {
+  if (cached && Date.now() - cached.ts < 90000) {
     renderSupplyChart(cached.data, period); return;
   }
   const loadEl = document.getElementById('supply-chart-loading');
@@ -3146,42 +3178,53 @@ async function loadSupplyChart(period) {
   if (loadEl) loadEl.style.display = 'block';
   if (wrapEl) wrapEl.style.display = 'none';
 
-  const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
   try {
-    const url = `https://min-api.cryptocompare.com/data/v2/${cfg.endpoint}?fsym=LUNC&tsym=USD&limit=${cfg.limit}&extraParams=TerraOracle`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    if (json.Response === 'Error') throw new Error(json.Message);
-    const raw = (json.Data?.Data || []).filter(d => d.close > 0);
+    const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
+    const blocksPerCandle = Math.round(cfg.secPerCandle / BLOCK_TIME);
+    const tipBlock = await getCurrentBlock();
+    if (!tipBlock) throw new Error('no tip block');
 
-    // Build supply-like candle data
-    // We approximate supply from volume * burn tax to create movement
-    const CURRENT = 6.466e12;
-    const secsPerCandle = cfg.isMin ? 60 : (cfg.endpoint === 'histohour' ? 3600 : 86400);
-    const burnPerCandle = (DAILY_BURN / 86400) * secsPerCandle;
-    const now = Date.now() / 1000;
+    // Sample ~cfg.candles+1 block heights (evenly spaced going back)
+    const totalBlocks = blocksPerCandle * cfg.candles;
+    const sampleCount = Math.min(cfg.candles + 1, 61);
+    const step = Math.floor(totalBlocks / sampleCount);
 
-    // Build realistic candles: supply goes DOWN over time from burn
-    // Each candle: open = supply at start of period, close = supply at end
+    const heights = [];
+    for (let i = sampleCount; i >= 0; i--) {
+      const h = tipBlock - i * step;
+      if (h > 0) heights.push(h);
+    }
+
+    // Fetch supply at each height — batched in groups of 6 to avoid overload
+    const supplies = [];
+    const batchSize = 6;
+    for (let i = 0; i < heights.length; i += batchSize) {
+      const batch = heights.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(h => fetchSupplyAtBlock(h)));
+      results.forEach((s, idx) => supplies.push({ h: batch[idx], s }));
+      if (i + batchSize < heights.length) await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Filter out failed fetches
+    const valid = supplies.filter(x => x.s !== null);
+    if (valid.length < 3) throw new Error('not enough data');
+
+    // Build candles from consecutive supply samples
     const candles = [];
-    for (let i = 0; i < raw.length; i++) {
-      const d = raw[i];
-      const secsAgo = (now - d.time);
-      const closeSupply = CURRENT + (secsAgo / 86400) * DAILY_BURN;
-      const openSupply  = closeSupply + burnPerCandle;
-      // Add realistic intra-candle volatility based on volume
-      const vol = d.volumefrom || 0;
-      const volBurn = vol > 0 ? vol * 0.012 : burnPerCandle;
-      // Wick range = 3x the candle body for realism
-      const wickExtra = burnPerCandle * 1.5;
+    for (let i = 0; i < valid.length - 1; i++) {
+      const cur = valid[i], nxt = valid[i + 1];
+      const open  = cur.s;
+      const close = nxt.s;
+      const burned = Math.max(0, open - close);
+      // Slight wick: open±random noise based on burn magnitude
+      const noise = burned * 0.3;
       candles.push({
-        t:      d.time * 1000,
-        open:   openSupply,
-        high:   openSupply + wickExtra * 0.4,
-        low:    closeSupply - wickExtra * 0.6,
-        close:  closeSupply,
-        burned: volBurn,
+        t:      Date.now() - (valid.length - 1 - i) * cfg.secPerCandle * 1000,
+        open,
+        high:   Math.max(open, close) + noise * 0.4,
+        low:    Math.min(open, close) - noise * 0.6,
+        close,
+        burned,
       });
     }
 
@@ -3308,13 +3351,20 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
   ctx.fillRect(pad.l, lastY - 0.5, cw, 1);
 }
 
+function fmtSupply(v) {
+  if (v >= 1e12) return (v/1e12).toFixed(4) + 'T';
+  if (v >= 1e9)  return (v/1e9).toFixed(2) + 'B';
+  return fmtS(v);
+}
+
 function setupCandleHover(candles, period) {
   const canvas = document.getElementById('supplyChart');
   if (!canvas) return;
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
   canvas.onmousemove = (e) => {
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const mx = (e.clientX - rect.left);
+    const mx = e.clientX - rect.left;
     const pad = { l:68, r:16 };
     const cw = rect.width - pad.l - pad.r;
     const gap = cw / candles.length;
@@ -3322,11 +3372,18 @@ function setupCandleHover(candles, period) {
     if (idx >= 0 && idx < candles.length) {
       const c = candles[idx];
       const d = new Date(c.t);
-      const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const timeStr = `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      const timeStr = `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      const change = c.close - c.open;
+      const changeColor = change < 0 ? '#ff6b6b' : '#4dffaa';
       const tooltip = document.getElementById('supply-tooltip');
       if (tooltip) {
-        tooltip.innerHTML = `<span style="color:#8ab0d8">${timeStr}</span>  Supply: <span style="color:#fff;font-weight:700">${fmtS(c.close)} LUNC</span>  🔥 Burned: <span style="color:#ff6b6b">${fmtS(c.burned)}</span>`;
+        tooltip.innerHTML = `
+          <span style="color:var(--accent);font-weight:700;font-size:11px;">${timeStr}</span><br>
+          <span style="color:var(--muted)">Open</span> <b>${fmtSupply(c.open)}</b> &nbsp;
+          <span style="color:var(--muted)">High</span> <b>${fmtSupply(c.high)}</b> &nbsp;
+          <span style="color:var(--muted)">Low</span> <b>${fmtSupply(c.low)}</b> &nbsp;
+          <span style="color:var(--muted)">Close</span> <b>${fmtSupply(c.close)}</b> &nbsp;
+          <span style="color:var(--muted)">Change</span> <b style="color:${changeColor}">${change < 0 ? '' : '+'}${fmtS(Math.abs(change))}</b>`;
       }
       drawCandleChart(candles, period, idx);
     }
