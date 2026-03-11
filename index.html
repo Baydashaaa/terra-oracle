@@ -1210,7 +1210,19 @@ async function connectKeplr() {
     document.getElementById('verified-wallet-hidden').value = connectedAddress;
     document.getElementById('keplr-disconnected').style.display = 'none';
     document.getElementById('keplr-connected').style.display = 'block';
-    document.getElementById('tx-section').style.display = 'block';
+
+    // Admin wallet bypass — skip payment
+    if (connectedAddress === PROTOCOL_WALLET) {
+      document.getElementById('verified-tx-hidden').value = 'ADMIN_BYPASS';
+      document.getElementById('keplr-connected').style.display = 'none';
+      document.getElementById('ask-form').style.display = 'block';
+      // Show admin badge notice
+      const notice = document.getElementById('tx-section');
+      notice.style.display = 'block';
+      notice.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected — payment bypassed</div>';
+    } else {
+      document.getElementById('tx-section').style.display = 'block';
+    }
   } catch(e) {
     btn.textContent = '🔑 Connect Keplr Wallet'; btn.disabled = false;
     alert('Connection failed: ' + (e.message || e));
