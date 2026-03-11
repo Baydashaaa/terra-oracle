@@ -3172,6 +3172,151 @@ const TF_CONFIG = {
 // Average daily burn ~16.5M LUNC
 const DAILY_BURN = 16_500_000;
 
+// ─── FETCH BINANCE BURNS FROM BLOCKCHAIN ─────────────────────
+// Reads large transfers TO burn wallet (terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu)
+// Filters: amount > 50B uluna (50M LUNC) — only big batch burns qualify
+const BURN_WALLET = 'terra1sk06e3dyexuq4shw77y3dsv480xv42mq73anxu';
+const MIN_BURN_ULUNA = 50_000_000_000_000; // 50B uluna = 50M LUNC (Binance burns hundreds of billions)
+let _binanceBurnsCache = null;
+let _binanceBurnsCacheTs = 0;
+const BINANCE_BURN_CACHE_MS = 60 * 60 * 1000; // 1 hour
+
+async function fetchBinanceBurnsFromChain() {
+  // Return cache if fresh
+  if (_binanceBurnsCache && Date.now() - _binanceBurnsCacheTs < BINANCE_BURN_CACHE_MS) {
+    return _binanceBurnsCache;
+  }
+
+  // Historical fallback for older data (before 2 years ago) — on-chain pagination would be too slow
+  const HISTORICAL_BURNS = [
+    { ts: new Date('2024-04-01').getTime() / 1000, amount: 4_170_000_000 },
+    { ts: new Date('2024-05-01').getTime() / 1000, amount: 1_400_000_000 },
+    { ts: new Date('2024-06-01').getTime() / 1000, amount:   800_000_000 },
+    { ts: new Date('2024-07-01').getTime() / 1000, amount:   700_000_000 },
+    { ts: new Date('2024-08-01').getTime() / 1000, amount:   650_000_000 },
+    { ts: new Date('2024-09-01').getTime() / 1000, amount:   600_000_000 },
+    { ts: new Date('2024-10-01').getTime() / 1000, amount:   700_000_000 },
+    { ts: new Date('2024-11-01').getTime() / 1000, amount: 1_720_000_000 },
+    { ts: new Date('2024-12-01').getTime() / 1000, amount: 1_720_000_000 },
+    { ts: new Date('2025-01-01').getTime() / 1000, amount: 1_700_000_000 },
+    { ts: new Date('2025-02-01').getTime() / 1000, amount:   800_000_000 },
+  ];
+
+  // Cutoff: fetch on-chain only for last 12 months
+  const cutoffTs = Math.floor(Date.now() / 1000) - 365 * 86400;
+  const onchainBurns = [];
+
+  try {
+    const LCD_NODES = [
+      'https://terra-classic-lcd.publicnode.com',
+      'https://lcd.terraclassic.community',
+    ];
+
+    // Query LCD for incoming transfers to burn wallet
+    // We use events: transfer.recipient + transfer.amount
+    // Paginate up to 5 pages (each page = 100 txs)
+    let nextKey = null;
+    let page = 0;
+    const MAX_PAGES = 8;
+
+    while (page < MAX_PAGES) {
+      page++;
+      let url = `${LCD_NODES[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${BURN_WALLET}%27&order_by=ORDER_BY_DESC&pagination.limit=100`;
+      if (nextKey) url += `&pagination.key=${encodeURIComponent(nextKey)}`;
+
+      let res = null;
+      for (const node of LCD_NODES) {
+        try {
+          const nodeUrl = url.replace(LCD_NODES[0], node);
+          res = await Promise.race([
+            fetch(nodeUrl),
+            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 6000))
+          ]);
+          if (res?.ok) break;
+        } catch {}
+      }
+      if (!res?.ok) break;
+
+      const data = await res.json();
+      const txs = data.txs || [];
+      if (!txs.length) break;
+
+      let reachedOld = false;
+      for (const tx of txs) {
+        const blockTime = tx.body?.memo !== undefined
+          ? (data.tx_responses?.find(r => r.txhash === tx.body?.memo)?.timestamp)
+          : null;
+        // tx_responses has timestamps — find matching response
+        const txhash = tx.body ? null : tx.txhash;
+      }
+
+      // Use tx_responses which has timestamp + events
+      const responses = data.tx_responses || [];
+      for (const resp of responses) {
+        const timestamp = resp.timestamp; // ISO string
+        if (!timestamp) continue;
+        const ts = Math.floor(new Date(timestamp).getTime() / 1000);
+
+        if (ts < cutoffTs) { reachedOld = true; break; }
+
+        // Parse events to find coin transfers to burn wallet
+        const events = resp.events || [];
+        let totalBurned = 0;
+
+        for (const ev of events) {
+          if (ev.type !== 'coin_received' && ev.type !== 'transfer') continue;
+          const attrs = ev.attributes || [];
+          let receiver = null, amount = null;
+
+          for (const a of attrs) {
+            const key = a.key ? (atob(a.key).catch ? a.key : (() => { try { return atob(a.key); } catch { return a.key; } })()) : '';
+            const val = a.value ? (atob(a.value).catch ? a.value : (() => { try { return atob(a.value); } catch { return a.value; } })()) : '';
+            if (key === 'receiver' || key === 'recipient') receiver = val;
+            if (key === 'amount') amount = val;
+          }
+
+          if (receiver === BURN_WALLET && amount) {
+            // Parse amount like "1234567890000000uluna"
+            const match = amount.match(/(\d+)uluna/);
+            if (match) totalBurned += parseInt(match[1]);
+          }
+        }
+
+        if (totalBurned >= MIN_BURN_ULUNA) {
+          // Convert uluna → LUNC (÷1e6)
+          onchainBurns.push({ ts, amount: Math.round(totalBurned / 1e6) });
+        }
+      }
+
+      if (reachedOld) break;
+      nextKey = data.pagination?.next_key;
+      if (!nextKey) break;
+    }
+  } catch (e) {
+    console.warn('fetchBinanceBurnsFromChain error:', e);
+  }
+
+  // Merge: historical + on-chain (on-chain overrides same month)
+  const merged = [...HISTORICAL_BURNS];
+  for (const ob of onchainBurns) {
+    const obDate = new Date(ob.ts * 1000);
+    const obYM = `${obDate.getFullYear()}-${obDate.getMonth()}`;
+    // Remove any historical entry for same month
+    const idx = merged.findIndex(h => {
+      const hd = new Date(h.ts * 1000);
+      return `${hd.getFullYear()}-${hd.getMonth()}` === obYM;
+    });
+    if (idx >= 0) merged.splice(idx, 1);
+    merged.push(ob);
+  }
+  merged.sort((a, b) => a.ts - b.ts);
+
+  _binanceBurnsCache = merged;
+  _binanceBurnsCacheTs = Date.now();
+  console.log(`[BinanceBurns] loaded ${merged.length} events (${onchainBurns.length} on-chain, ${merged.length - onchainBurns.length} historical)`);
+  return merged;
+}
+
 function setSupplyPeriod(period) {
   currentSupplyPeriod = period;
   ['1h','4h','D','W','M'].forEach(p => {
@@ -3241,39 +3386,12 @@ async function loadSupplyChart(period) {
 
     if (raw.length < 3) throw new Error('not enough data');
 
-    // Binance monthly LUNC burns — REAL verified amounts
-    // Sources: CoinReporter, CoinGape, LUNC Metrics, stakebin
-    const BINANCE_BURNS = [
-      { date: '2024-04-01', amount: 4_170_000_000 }, // 20th batch — 4.17B
-      { date: '2024-05-01', amount: 1_400_000_000 }, // 21st batch — 1.4B
-      { date: '2024-06-01', amount:   800_000_000 }, // ~800M (lower volume)
-      { date: '2024-07-01', amount:   700_000_000 },
-      { date: '2024-08-01', amount:   650_000_000 },
-      { date: '2024-09-01', amount:   600_000_000 },
-      { date: '2024-10-01', amount:   700_000_000 },
-      { date: '2024-11-01', amount: 1_720_000_000 }, // 28th batch — 1.72B
-      { date: '2024-12-01', amount: 1_720_000_000 }, // 29th batch — 1.72B (Dec high volume)
-      { date: '2025-01-01', amount: 1_700_000_000 }, // Jan 2025
-      { date: '2025-02-01', amount:   800_000_000 },
-      { date: '2025-03-01', amount:   893_838_598 }, // VERIFIED from stakebin screenshot
-      { date: '2025-04-01', amount:   413_650_000 }, // May 2025 announcement = 413.65M
-      { date: '2025-05-01', amount:   413_650_000 }, // verified CoinReporter
-      { date: '2025-06-01', amount:   400_000_000 },
-      { date: '2025-07-01', amount:   375_565_484 }, // VERIFIED — CoinReporter July 1 2025
-      { date: '2025-08-01', amount:   350_000_000 },
-      { date: '2025-09-01', amount:   340_000_000 },
-      { date: '2025-10-01', amount:   360_000_000 },
-      { date: '2025-11-01', amount:   380_000_000 },
-      { date: '2025-12-01', amount: 5_330_000_000 }, // Dec 2025 — huge volume month, ~5.33B
-      { date: '2026-01-01', amount: 5_330_000_000 }, // VERIFIED — Jan 2026 CoinReporter: 5.33B
-      { date: '2026-02-01', amount:   800_000_000 }, // ~800M estimated
-      { date: '2026-03-01', amount:   770_000_000 }, // ~770M estimated
-    ].map(b => ({ ts: new Date(b.date).getTime() / 1000, amount: b.amount }));
+    // Fetch Binance burns: on-chain (last 12 months) + historical fallback
+    const BINANCE_BURNS = await fetchBinanceBurnsFromChain();
 
     // Helper: get Binance burn for a candle's time window
     function getBinanceBurn(candleStartTs, candleEndTs, period) {
       if (period === 'M') {
-        // Match by calendar month
         const cDate = new Date(candleStartTs * 1000);
         const cY = cDate.getFullYear(), cM = cDate.getMonth();
         return BINANCE_BURNS
@@ -3281,20 +3399,11 @@ async function loadSupplyChart(period) {
           .reduce((s, b) => s + b.amount, 0);
       }
       if (period === 'W') {
-        // Weekly: assign each burn to the NEAREST weekly candle (no double-counting)
-        // candleStartTs is start of this week, candleMidTs is midpoint
         const candleMidTs = (candleStartTs + candleEndTs) / 2;
         return BINANCE_BURNS
-          .filter(b => {
-            // This burn belongs to this candle if midpoint of this candle is closer than any other
-            const distHere = Math.abs(b.ts - candleMidTs);
-            const weekSec = 7 * 86400;
-            // Only claim burns within 3.5 days of this candle's midpoint
-            return distHere <= weekSec / 2;
-          })
+          .filter(b => Math.abs(b.ts - candleMidTs) <= 7 * 86400 / 2)
           .reduce((s, b) => s + b.amount, 0);
       }
-      // Default: exact window
       return BINANCE_BURNS
         .filter(b => b.ts >= candleStartTs && b.ts < candleEndTs)
         .reduce((s, b) => s + b.amount, 0);
@@ -3592,20 +3701,34 @@ function updateBinanceCountdown() {
   const now = new Date();
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // Next burn = 1st of next month 00:00 UTC
-  const nextBurn = new Date(Date.UTC(
-    now.getUTCMonth() === 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear(),
-    now.getUTCMonth() === 11 ? 0 : now.getUTCMonth() + 1,
-    1, 0, 0, 0
+  // Binance burns "around the 1st" — window: 29th prev month to 3rd of next month
+  // Find the nearest upcoming burn target
+  const yr  = now.getUTCFullYear();
+  const mon = now.getUTCMonth();
+
+  // Candidates: last day(s) of this month OR 1st–3rd of next month
+  const nextMonthFirst = new Date(Date.UTC(
+    mon === 11 ? yr + 1 : yr, mon === 11 ? 0 : mon + 1, 1
   ));
+  // Burn window starts 2 days before month end
+  const lastDayOfMonth = new Date(Date.UTC(yr, mon + 1, 0)).getUTCDate();
+  const burnWindowStart = new Date(Date.UTC(yr, mon, lastDayOfMonth - 1)); // 2 days before end
+  const burnWindowEnd   = new Date(Date.UTC(
+    mon === 11 ? yr + 1 : yr, mon === 11 ? 0 : mon + 1, 3, 23, 59, 59
+  )); // up to 3rd of next month
 
-  // Start of current month
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  // If we're IN the burn window → show "Burn expected soon!"
+  const inWindow = now >= burnWindowStart && now <= burnWindowEnd;
+
+  // Target for countdown = 1st of next month (center of window)
+  const nextBurn = nextMonthFirst;
+
+  // Progress bar: from 1st of current month to 1st of next month
+  const monthStart = new Date(Date.UTC(yr, mon, 1));
   const monthTotal = nextBurn - monthStart;
-  const elapsed   = now - monthStart;
-  const remaining = nextBurn - now;
-
-  const pct = Math.min(100, (elapsed / monthTotal) * 100);
+  const elapsed    = now - monthStart;
+  const remaining  = nextBurn - now;
+  const pct = Math.min(100, Math.max(0, (elapsed / monthTotal) * 100));
 
   // Countdown parts
   const totalSecs = Math.max(0, Math.floor(remaining / 1000));
@@ -3625,15 +3748,40 @@ function updateBinanceCountdown() {
 
   const burnMon = MONTHS[nextBurn.getUTCMonth()];
   const burnYr  = nextBurn.getUTCFullYear();
-  set('bnb-burn-date', `${burnMon} 1, ${burnYr} · 00:00 UTC`);
+
+  // Show "expected soon" banner if in burn window
+  const card = document.getElementById('binance-countdown-card');
+  if (inWindow && card) {
+    card.style.borderColor = 'rgba(255,80,30,0.5)';
+    card.style.background  = 'linear-gradient(135deg,rgba(255,80,30,0.12) 0%,rgba(10,18,36,0) 60%)';
+  } else if (card) {
+    card.style.borderColor = 'rgba(255,100,50,0.15)';
+    card.style.background  = 'linear-gradient(135deg,rgba(255,80,40,0.06) 0%,rgba(10,18,36,0) 60%)';
+  }
+
+  if (inWindow) {
+    set('bnb-burn-date', `🔴 BURN EXPECTED · ${burnMon} 1 ±2 days`);
+    // Flash the digits
+    const digits = document.getElementById('bnb-countdown-digits');
+    if (digits) digits.style.opacity = (Math.floor(Date.now()/600) % 2 === 0) ? '1' : '0.4';
+  } else {
+    set('bnb-burn-date', `${burnMon} 1, ${burnYr} · ±2 days window`);
+    const digits = document.getElementById('bnb-countdown-digits');
+    if (digits) digits.style.opacity = '1';
+  }
 
   const startMon = MONTHS[monthStart.getUTCMonth()];
   set('bnb-period-start', `${startMon} 1`);
-  set('bnb-period-end',   `${burnMon} 1`);
+  set('bnb-period-end',   `${burnMon} 1 ±2d`);
   set('bnb-progress-pct', pct.toFixed(1) + '%');
 
   const bar = document.getElementById('bnb-progress-bar');
-  if (bar) bar.style.width = pct.toFixed(2) + '%';
+  if (bar) {
+    bar.style.width = pct.toFixed(2) + '%';
+    bar.style.background = inWindow
+      ? 'linear-gradient(90deg,#ff2200,#ff6600)'
+      : 'linear-gradient(90deg,#ff4d1a,#ff8844)';
+  }
 
   // Estimated burn amount based on current month's trading volume proxy
   // ~375M–5.3B range; use pct elapsed × average daily rate as proxy
