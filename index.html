@@ -1379,7 +1379,7 @@ function showPage(name, e) {
   if (name === 'board') renderBoard();
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  smoothScrollTop();
 }
 
 // ─── TREASURY ─────────────────────────────────────────────────
@@ -1495,7 +1495,7 @@ function showPage_treasury(e) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-treasury').classList.add('active');
   loadTreasuryData();
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  smoothScrollTop();
 }
 
 // ─── HASHTAG LOGIC ────────────────────────────────────────────
@@ -2793,7 +2793,7 @@ function showPage_stats(e) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-stats').classList.add('active');
   setTimeout(loadAllStats, 50);
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  smoothScrollTop();
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
@@ -3056,6 +3056,22 @@ renderBoard();
 // Scroll to top on every page load/refresh
 window.scrollTo(0, 0);
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
+
+// Fast smooth scroll to top (300ms, ease-out)
+function smoothScrollTop() {
+  const start = window.scrollY;
+  if (start === 0) return;
+  const duration = 300;
+  const startTime = performance.now();
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, start * (1 - easeOut(progress)));
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
 window.addEventListener('load', () => { window.scrollTo(0, 0); });
 
 </script>
