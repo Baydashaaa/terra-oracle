@@ -2953,6 +2953,7 @@ function showPage_stats(e) {
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
 const LCD_S2 = 'https://lcd.terraclassic.community';
+const LCD_S3 = 'https://terra-classic-lcd.allthatnode.com';
 const ORACLE_POOL_ADDR = 'terra1jgp27m8fykex4e4jtt0l7ze8q528ux2lh4zh0f';
 
 let allValidators = [];
@@ -3057,24 +3058,30 @@ async function loadOraclePoolS() {
 
 async function loadValidatorsS() {
   try {
-    // Try both LCD nodes with limit=500 — enough for Terra Classic (~200 validators)
-    const endpoints = [LCD_S, LCD_S2];
-    let all = [];
-    for (const base of endpoints) {
-      try {
-        const r = await Promise.race([
-          fetch(`${base}/cosmos/staking/v1beta1/validators?pagination.limit=500`),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-        ]);
-        if (r.ok) {
-          const d = await r.json();
-          if ((d.validators || []).length > 0) { all = d.validators; break; }
-        }
-      } catch {}
-    }
-    if (!all.length) throw new Error('empty');
+    const endpoints = [LCD_S, LCD_S2, LCD_S3];
+    let best = [];
 
-    allValidators = all.sort((a, b) => Number(b.tokens) - Number(a.tokens));
+    // Try all 3 nodes in parallel, pick the one that returns the most validators
+    const results = await Promise.allSettled(
+      endpoints.map(base =>
+        Promise.race([
+          fetch(`${base}/cosmos/staking/v1beta1/validators?pagination.limit=500`)
+            .then(r => r.ok ? r.json() : Promise.reject()),
+          new Promise((_, rej) => setTimeout(() => rej(), 8000))
+        ])
+      )
+    );
+
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        const vals = r.value?.validators || [];
+        if (vals.length > best.length) best = vals;
+      }
+    }
+
+    if (!best.length) throw new Error('empty');
+
+    allValidators = best.sort((a, b) => Number(b.tokens) - Number(a.tokens));
     const active = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED').length;
     setTxt('sc-vals', active);
     renderValidatorsS();
