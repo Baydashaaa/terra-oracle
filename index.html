@@ -2941,18 +2941,52 @@ function renderValidatorsS() {
     const name = (v.description?.moniker || 'Unknown').slice(0, 30);
     const isActive = v.status === 'BOND_STATUS_BONDED';
     const isJailed = v.jailed;
+    const identity = v.description?.identity || '';
+    const avatarUrl = identity
+      ? `https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=${identity}&fields=pictures`
+      : '';
+    const avatarId = 'val-avatar-' + (offset + i);
     let badge, cls;
     if (isJailed)      { badge = '⚠ Jailed';  cls = 'badge-jailed'; }
     else if (isActive) { badge = '● Active';   cls = 'badge-active'; }
     else               { badge = '× Inactive'; cls = 'badge-inactive'; }
     return `<tr class="val-row">
       <td style="color:var(--muted);font-size:11px;">${offset+i+1}</td>
-      <td class="val-name">${name}${name.length>=30?'…':''}</td>
+      <td class="val-name">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;flex-shrink:0;background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.2);display:flex;align-items:center;justify-content:center;">
+            <img id="${avatarId}" src="" alt="" width="28" height="28"
+              style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:none;"
+              onerror="this.style.display='none';this.previousElementSibling&&(this.previousElementSibling.style.display='flex');">
+            <span style="font-size:11px;color:var(--muted);">${name.charAt(0).toUpperCase()}</span>
+          </div>
+          <span>${name}${name.length>=30?'…':''}</span>
+        </div>
+      </td>
       <td class="val-power"><span style="color:var(--text);">${fmtS(tokens)}</span><br><span style="font-size:10px;color:var(--muted);">${pct}%</span></td>
       <td class="val-comm">${commission}%</td>
       <td class="val-status"><span class="${cls}">${badge}</span></td>
     </tr>`;
   }).join('');
+  // Load Keybase avatars asynchronously
+  slice.forEach((v, i) => {
+    const identity = v.description?.identity || '';
+    if (!identity) return;
+    const imgEl = document.getElementById('val-avatar-' + (offset + i));
+    if (!imgEl) return;
+    fetch(`https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=${identity}&fields=pictures`)
+      .then(r => r.json())
+      .then(data => {
+        const url = data?.them?.[0]?.pictures?.primary?.url;
+        if (url && imgEl) {
+          imgEl.src = url;
+          imgEl.style.display = 'block';
+          const placeholder = imgEl.nextElementSibling;
+          if (placeholder) placeholder.style.display = 'none';
+        }
+      })
+      .catch(() => {});
+  });
   const pg = document.getElementById('val-pagination');
   if (pages <= 1) { pg.innerHTML = ''; return; }
   let html = '';
