@@ -3066,26 +3066,32 @@ async function loadValidatorsS() {
       endpoints.map(base =>
         Promise.race([
           fetch(`${base}/cosmos/staking/v1beta1/validators?pagination.limit=500`)
-            .then(r => r.ok ? r.json() : Promise.reject()),
-          new Promise((_, rej) => setTimeout(() => rej(), 8000))
+            .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`)),
+          new Promise((_, rej) => setTimeout(() => rej('timeout'), 8000))
         ])
       )
     );
 
-    for (const r of results) {
+    results.forEach((r, i) => {
       if (r.status === 'fulfilled') {
-        const vals = r.value?.validators || [];
-        if (vals.length > best.length) best = vals;
+        const cnt = r.value?.validators?.length || 0;
+        console.log(`[validators] ${endpoints[i]} → ${cnt} validators`);
+        if (cnt > best.length) best = r.value.validators;
+      } else {
+        console.warn(`[validators] ${endpoints[i]} → FAILED:`, r.reason);
       }
-    }
+    });
 
+    console.log(`[validators] Best result: ${best.length} validators`);
     if (!best.length) throw new Error('empty');
 
     allValidators = best.sort((a, b) => Number(b.tokens) - Number(a.tokens));
     const active = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED').length;
+    console.log(`[validators] Active: ${active}`);
     setTxt('sc-vals', active);
     renderValidatorsS();
   } catch(e) {
+    console.error('[validators] Fatal error:', e);
     const tb = document.getElementById('validators-tbody');
     if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted);">Could not load validators</td></tr>';
   }
