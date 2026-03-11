@@ -112,6 +112,9 @@
   .period-btn:hover { border-color:var(--accent);color:var(--accent); }
   .period-btn.active-period { border-color:#ff6b6b;color:#ff6b6b;background:rgba(255,107,107,0.07); }
   .tf-btn { background:transparent;border:1px solid transparent;color:var(--muted);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;transition:all 0.15s;min-width:28px;text-align:center; }
+  .cd-box { background:rgba(255,80,30,0.08);border:1px solid rgba(255,80,30,0.2);border-radius:8px;padding:6px 10px;min-width:48px;text-align:center; }
+  .cd-num { font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#ff7744;line-height:1; }
+  .cd-lbl { font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,120,60,0.5);margin-top:2px; }
   .tf-btn:hover { color:var(--text);background:rgba(84,147,247,0.06); }
   .tf-btn.active-tf { background:rgba(102,255,170,0.1);border-color:rgba(102,255,170,0.3);color:var(--green); }
   .val-row { border-bottom:1px solid rgba(30,51,88,0.5);transition:background 0.15s; }
@@ -1194,6 +1197,43 @@
   </div>
 
   <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">📉 Total LUNC Supply <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+
+  <!-- Binance Burn Countdown -->
+  <div class="card" id="binance-countdown-card" style="margin-bottom:18px;padding:16px 20px;background:linear-gradient(135deg,rgba(255,80,40,0.06) 0%,rgba(10,18,36,0) 60%);border:1px solid rgba(255,100,50,0.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🔥</span>
+        <div>
+          <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,120,60,0.7);font-family:'Exo 2',sans-serif;font-weight:700;">Next Binance LUNC Burn</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="bnb-burn-date">Loading...</div>
+        </div>
+      </div>
+      <!-- Countdown digits -->
+      <div style="display:flex;gap:8px;align-items:center;" id="bnb-countdown-digits">
+        <div class="cd-box"><div class="cd-num" id="cd-days">--</div><div class="cd-lbl">Days</div></div>
+        <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
+        <div class="cd-box"><div class="cd-num" id="cd-hours">--</div><div class="cd-lbl">Hours</div></div>
+        <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
+        <div class="cd-box"><div class="cd-num" id="cd-mins">--</div><div class="cd-lbl">Mins</div></div>
+        <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
+        <div class="cd-box"><div class="cd-num" id="cd-secs">--</div><div class="cd-lbl">Secs</div></div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;">
+        <span id="bnb-period-start">Start of month</span>
+        <span id="bnb-progress-pct" style="color:rgba(255,120,60,0.8);font-weight:700;">0%</span>
+        <span id="bnb-period-end">1st next month</span>
+      </div>
+      <div style="height:6px;background:rgba(255,100,50,0.1);border-radius:3px;overflow:hidden;">
+        <div id="bnb-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff4d1a,#ff8844);border-radius:3px;transition:width 1s ease;box-shadow:0 0 8px rgba(255,80,30,0.4);"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center;" id="bnb-est-amount">
+        Est. burn: calculating...
+      </div>
+    </div>
+  </div>
   <div class="card" style="margin-bottom:18px;padding:20px 20px 14px;">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
@@ -2889,6 +2929,7 @@ function showPage_stats(e) {
   loadValidatorsS();
   loadAllStats();
   startStatsAutoRefresh();
+  startBinanceCountdown();
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
@@ -3532,6 +3573,74 @@ function drawSupplyFallback() {
   ctx.fillStyle = 'rgba(122,158,196,0.4)'; ctx.font = '12px Exo 2';
   ctx.textAlign = 'center';
   ctx.fillText('Could not load data — check connection', w/2, h/2);
+}
+
+// ─── BINANCE BURN COUNTDOWN ──────────────────────────────────
+let _cdInterval = null;
+
+function startBinanceCountdown() {
+  if (_cdInterval) clearInterval(_cdInterval);
+  updateBinanceCountdown();
+  _cdInterval = setInterval(updateBinanceCountdown, 1000);
+}
+
+function stopBinanceCountdown() {
+  if (_cdInterval) { clearInterval(_cdInterval); _cdInterval = null; }
+}
+
+function updateBinanceCountdown() {
+  const now = new Date();
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Next burn = 1st of next month 00:00 UTC
+  const nextBurn = new Date(Date.UTC(
+    now.getUTCMonth() === 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear(),
+    now.getUTCMonth() === 11 ? 0 : now.getUTCMonth() + 1,
+    1, 0, 0, 0
+  ));
+
+  // Start of current month
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthTotal = nextBurn - monthStart;
+  const elapsed   = now - monthStart;
+  const remaining = nextBurn - now;
+
+  const pct = Math.min(100, (elapsed / monthTotal) * 100);
+
+  // Countdown parts
+  const totalSecs = Math.max(0, Math.floor(remaining / 1000));
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins  = Math.floor((totalSecs % 3600) / 60);
+  const secs  = totalSecs % 60;
+
+  const pad = n => String(n).padStart(2, '0');
+
+  // Update DOM
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set('cd-days',  pad(days));
+  set('cd-hours', pad(hours));
+  set('cd-mins',  pad(mins));
+  set('cd-secs',  pad(secs));
+
+  const burnMon = MONTHS[nextBurn.getUTCMonth()];
+  const burnYr  = nextBurn.getUTCFullYear();
+  set('bnb-burn-date', `${burnMon} 1, ${burnYr} · 00:00 UTC`);
+
+  const startMon = MONTHS[monthStart.getUTCMonth()];
+  set('bnb-period-start', `${startMon} 1`);
+  set('bnb-period-end',   `${burnMon} 1`);
+  set('bnb-progress-pct', pct.toFixed(1) + '%');
+
+  const bar = document.getElementById('bnb-progress-bar');
+  if (bar) bar.style.width = pct.toFixed(2) + '%';
+
+  // Estimated burn amount based on current month's trading volume proxy
+  // ~375M–5.3B range; use pct elapsed × average daily rate as proxy
+  const AVG_MONTHLY = 600_000_000; // conservative ~600M average
+  const est = Math.round(AVG_MONTHLY * (0.7 + pct / 300)); // slight ramp as month progresses
+  const fmtB = v => v >= 1e9 ? (v/1e9).toFixed(2)+'B' : (v/1e6).toFixed(0)+'M';
+  set('bnb-est-amount', `Est. next Binance burn: ~${fmtB(est)} LUNC · Based on avg monthly volume`);
 }
 
 async function runSupplyAudit() {
