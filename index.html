@@ -709,6 +709,81 @@
     </div>
   </div>
 
+  <!-- ADMIN PANEL (only visible to admin wallet) -->
+  <div id="admin-panel" style="display:none;margin-bottom:28px;">
+    <div style="background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <span style="font-size:16px;">🛡️</span>
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
+        <span style="font-size:9px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:10px;padding:2px 8px;letter-spacing:0.1em;">ADMIN ONLY</span>
+      </div>
+
+      <!-- MONTHLY LIQUIDITY VOTE CONTROL -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">🗓 Monthly Liquidity Vote</div>
+            <div style="font-size:11px;color:var(--muted);" id="admin-monthly-status">Status: checking...</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="adminStartVote('monthly-liquidity')"
+              id="admin-start-btn"
+              style="background:rgba(102,255,170,0.1);border:1px solid rgba(102,255,170,0.3);color:var(--green);
+                     font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;
+                     padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+              ▶ START
+            </button>
+            <button onclick="adminStopVote('monthly-liquidity')"
+              id="admin-stop-btn"
+              style="background:rgba(255,60,60,0.08);border:1px solid rgba(255,60,60,0.25);color:#ff6464;
+                     font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;
+                     padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+              ■ STOP
+            </button>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Override pairs for this vote:</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="admin-pairs-wrap">
+            <input type="text" id="admin-pair-1" placeholder="LUNC/USDT" value="LUNC/USDT"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
+                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+            <input type="text" id="admin-pair-2" placeholder="LUNC/USTC" value="LUNC/USTC"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
+                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+            <input type="text" id="admin-pair-3" placeholder="LUNC/ATOM" value="LUNC/ATOM"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
+                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+            <input type="text" id="admin-pair-4" placeholder="LUNC/BTC" value="LUNC/BTC"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
+                     font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;width:110px;outline:none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- OTHER VOTES QUICK CONTROLS -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">⚡ Other Votes</div>
+        <div id="admin-other-votes">
+          ${VOTES_DATA.filter(v => v.id !== 'monthly-liquidity').map(v => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:12px;color:var(--muted);">${v.title}</span>
+              <div style="display:flex;gap:6px;">
+                <button onclick="adminToggleVote('${v.id}', 'active')"
+                  style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);
+                         background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Space Mono',monospace;">▶</button>
+                <button onclick="adminToggleVote('${v.id}', 'stopped')"
+                  style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,60,60,0.25);
+                         background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Space Mono',monospace;">■</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div id="votes-list"></div>
 
 </div>
@@ -869,7 +944,8 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   event.target.classList.add('active');
-  if (name === 'board') renderBoard();
+  if (name === 'board') applyVoteStates();
+renderBoard();
   if (name === 'vote') { applyStoredVotes(); renderVotes(); }
   if (name === 'chat') renderChatPage();
 }
@@ -1448,6 +1524,8 @@ window.disconnectWallet = function() {
   document.getElementById('wallet-not-connected').style.display = 'block';
   document.getElementById('wallet-connected-panel').style.display = 'none';
   document.getElementById('wallet-dropdown').classList.remove('open');
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) adminPanel.style.display = 'none';
   disconnectChatKeplr();
 }
 
@@ -1671,8 +1749,18 @@ window.setWalletConnected = function(address) {
   document.getElementById('chat-page-form').style.display = 'block';
   document.getElementById('chat-page-addr').textContent = address.slice(0,10)+'...'+address.slice(-4);
   document.getElementById('vote-wallet-status').innerHTML = '<span style="font-size:11px;color:var(--green);">✓ ' + address.slice(0,8)+'...'+address.slice(-4) + '</span>';
+  // Show admin panel if admin wallet
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) {
+    adminPanel.style.display = address === PROTOCOL_WALLET ? 'block' : 'none';
+    if (address === PROTOCOL_WALLET) {
+      applyVoteStates();
+      updateAdminPanel();
+    }
+  }
   // Restore previous votes for this wallet
   applyStoredVotes();
+  applyVoteStates();
   renderVotes();
 }
 
@@ -1875,6 +1963,113 @@ function renderVotes() {
     </div>`;
   }).join('');
 }
+
+// ─── ADMIN VOTE CONTROL ───────────────────────────────────────
+const VOTE_STATE_KEY = 'admin_vote_states';
+
+function getVoteStates() {
+  try { return JSON.parse(localStorage.getItem(VOTE_STATE_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveVoteState(voteId, state) {
+  const states = getVoteStates();
+  states[voteId] = { ...states[voteId], ...state, updatedAt: Date.now() };
+  localStorage.setItem(VOTE_STATE_KEY, JSON.stringify(states));
+}
+
+function applyVoteStates() {
+  const states = getVoteStates();
+  for (const vote of VOTES_DATA) {
+    const s = states[vote.id];
+    if (!s) continue;
+    if (s.status) vote.status = s.status;
+    if (s.startedAt) vote.startedAt = s.startedAt;
+    if (s.stoppedAt) vote.stoppedAt = s.stoppedAt;
+    if (s.pairs && vote.isMonthlyLiquidity) {
+      vote.options = s.pairs.map(p => ({ label: p, votes: vote.options.find(o => o.label === p)?.votes || 0 }));
+    }
+    // Recalculate timer
+    if (s.status === 'active' && s.startedAt) {
+      const closeAt = s.startedAt + 5 * 24 * 60 * 60 * 1000;
+      const msLeft = closeAt - Date.now();
+      if (msLeft <= 0) {
+        vote.status = 'closed';
+        vote.timer = 'Voting closed';
+      } else {
+        const d = Math.floor(msLeft / 86400000);
+        const h = Math.floor((msLeft % 86400000) / 3600000);
+        const m = Math.floor((msLeft % 3600000) / 60000);
+        vote.timer = d > 0 ? `${d}d ${h}h remaining` : `${h}h ${m}m remaining`;
+      }
+    } else if (s.status === 'stopped' || s.status === 'closed') {
+      vote.timer = 'Voting closed';
+    } else if (s.status === 'upcoming') {
+      vote.timer = 'Not started yet';
+    }
+  }
+}
+
+window.adminStartVote = function(voteId) {
+  const vote = VOTES_DATA.find(v => v.id === voteId);
+  if (!vote) return;
+  const pairs = voteId === 'monthly-liquidity' ? [
+    document.getElementById('admin-pair-1')?.value || 'LUNC/USDT',
+    document.getElementById('admin-pair-2')?.value || 'LUNC/USTC',
+    document.getElementById('admin-pair-3')?.value || 'LUNC/ATOM',
+    document.getElementById('admin-pair-4')?.value || 'LUNC/BTC',
+  ].filter(Boolean) : null;
+
+  const state = { status: 'active', startedAt: Date.now(), stoppedAt: null };
+  if (pairs) state.pairs = pairs;
+  saveVoteState(voteId, state);
+  applyVoteStates();
+  updateAdminPanel();
+  applyStoredVotes();
+  renderVotes();
+  showAdminToast('▶ Vote started!', 'green');
+}
+
+window.adminStopVote = function(voteId) {
+  saveVoteState(voteId, { status: 'stopped', stoppedAt: Date.now() });
+  applyVoteStates();
+  updateAdminPanel();
+  renderVotes();
+  showAdminToast('■ Vote stopped', 'red');
+}
+
+window.adminToggleVote = function(voteId, newStatus) {
+  if (newStatus === 'active') adminStartVote(voteId);
+  else adminStopVote(voteId);
+}
+
+function updateAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  if (!panel || panel.style.display === 'none') return;
+
+  const monthly = VOTES_DATA.find(v => v.id === 'monthly-liquidity');
+  const statusEl = document.getElementById('admin-monthly-status');
+  if (statusEl && monthly) {
+    const started = monthly.startedAt ? new Date(monthly.startedAt).toLocaleDateString() : '—';
+    const icons = { active: '🟢', stopped: '🔴', upcoming: '🟡', closed: '⚫' };
+    statusEl.textContent = `Status: ${icons[monthly.status] || '⚪'} ${monthly.status.toUpperCase()} · Started: ${started} · Timer: ${monthly.timer}`;
+  }
+}
+
+function showAdminToast(msg, color) {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `position:fixed;top:80px;right:20px;z-index:9999;padding:10px 18px;border-radius:8px;
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.05em;
+    background:${color === 'green' ? 'rgba(102,255,170,0.15)' : 'rgba(255,60,60,0.12)'};
+    border:1px solid ${color === 'green' ? 'rgba(102,255,170,0.4)' : 'rgba(255,60,60,0.3)'};
+    color:${color === 'green' ? 'var(--green)' : '#ff6464'};
+    animation:dropDown 0.2s ease;`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// Show admin panel when admin wallet connects
+const _origSetWalletVote = window.setWalletConnected;
 
 // ─── VOTE PERSISTENCE ────────────────────────────────────────
 function getVoteStorageKey() {
