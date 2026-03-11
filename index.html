@@ -3575,19 +3575,22 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
   }
 
   // ── SUPPLY Y-scale (top zone) ─────────────────────────────────────────────
-  const supplyVals = candles.map(c => c.close);
+  // Use 'open' values for scale — avoids Binance burn spikes distorting the axis
+  const supplyVals = candles.map(c => c.open);
+  supplyVals.push(candles[candles.length - 1].close); // include last close
   const sMin = Math.min(...supplyVals);
   const sMax = Math.max(...supplyVals);
-  const sPad = (sMax - sMin) * 0.12 || sMax * 0.0001;
+  const sPad = (sMax - sMin) * 0.10 || sMax * 0.0001;
   const sLo  = sMin - sPad;
   const sHi  = sMax + sPad;
   const sRange = sHi - sLo || 1;
   const toSupplyY = v => supplyTop + (1 - (v - sLo) / sRange) * supplyH;
 
-  // ── BURNED Y-scale (bottom zone) per-candle burn bars ──────────────────
-  const burnVals = candles.map(c => c.burned);
-  const bMax = Math.max(...burnVals) * 1.15 || 1;
-  const toBurnH = v => (v / bMax) * (burnH - 2);
+  // ── BURNED Y-scale (bottom zone) — taxBurn ONLY, no Binance spikes ────────
+  // Binance burns are shown as separate markers, not as bar height
+  const taxBurnVals = candles.map(c => c.taxBurn).filter(v => v > 0);
+  const bMax = (taxBurnVals.length ? Math.max(...taxBurnVals) : 1) * 1.3;
+  const toBurnH = v => (Math.min(v, bMax) / bMax) * (burnH - 2);
 
   // ─── GRID: Supply (top) ───────────────────────────────────────────────────
   ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
@@ -3634,25 +3637,23 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
     const isHover = i === hoverIdx;
     const hasBinance = c.binanceBurn > 0;
 
-    // Bar = from current supply up to top of zone (visually: tall bar = large supply)
-    // Supply goes DOWN over time — each bar height proportional to current supply
-    const barTop  = toSupplyY(c.close);
+    // Bar top = current open (supply at start of candle)
+    // Bar bottom = fixed bottom of supply zone
+    // This makes bars visually show supply level — taller = more supply remaining
+    const barTop  = toSupplyY(c.open);
     const barBot  = supplyTop + supplyH;
     const barHeight = Math.max(1, barBot - barTop);
 
-    // Color: red gradient — darker if no change, brighter red if big burn
-    const burnRatio = c.burned / (sRange || 1) * 100; // how much burned relative to supply range
-    const alpha = isHover ? 1 : 0.8;
-
-    const grad = ctx.createLinearGradient(x - barW/2, barTop, x - barW/2, barBot);
+    const alpha = isHover ? 1 : 0.82;
+    const grad = ctx.createLinearGradient(x, barTop, x, barBot);
     if (hasBinance) {
-      grad.addColorStop(0, `rgba(255,140,80,${alpha})`);
-      grad.addColorStop(0.4, `rgba(220,60,60,${alpha * 0.85})`);
-      grad.addColorStop(1, `rgba(180,30,30,${alpha * 0.3})`);
+      grad.addColorStop(0, `rgba(255,140,60,${alpha})`);
+      grad.addColorStop(0.3, `rgba(220,60,60,${alpha * 0.85})`);
+      grad.addColorStop(1, `rgba(140,20,20,${alpha * 0.25})`);
     } else {
-      grad.addColorStop(0, `rgba(255,80,80,${alpha * 0.9})`);
-      grad.addColorStop(0.5, `rgba(200,40,40,${alpha * 0.7})`);
-      grad.addColorStop(1, `rgba(150,20,20,${alpha * 0.2})`);
+      grad.addColorStop(0, `rgba(255,75,75,${alpha * 0.95})`);
+      grad.addColorStop(0.5, `rgba(190,35,35,${alpha * 0.7})`);
+      grad.addColorStop(1, `rgba(120,15,15,${alpha * 0.18})`);
     }
 
     if (isHover) { ctx.shadowColor = hasBinance ? '#ff9944' : '#ff4444'; ctx.shadowBlur = 10; }
@@ -3660,9 +3661,18 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
     ctx.fillRect(x - barW / 2, barTop, barW, barHeight);
     ctx.shadowBlur = 0;
 
-    // Top cap: bright line at current supply level
-    ctx.fillStyle = hasBinance ? 'rgba(255,160,80,0.95)' : 'rgba(255,80,80,0.9)';
-    ctx.fillRect(x - barW / 2, barTop, barW, Math.max(1.5, barW * 0.12));
+    // Bright cap line at supply level (top of bar)
+    ctx.fillStyle = hasBinance ? 'rgba(255,170,80,0.98)' : `rgba(255,90,90,${isHover ? 1 : 0.92})`;
+    ctx.fillRect(x - barW / 2, barTop, barW, Math.max(1.5, barW * 0.1));
+
+    // If Binance burn: show orange "notch" at close level showing the drop
+    if (hasBinance) {
+      const closeY = toSupplyY(c.close);
+      const notchH = Math.max(2, closeY - barTop);
+      // Orange highlight showing the supply drop from Binance burn
+      ctx.fillStyle = 'rgba(255,140,50,0.35)';
+      ctx.fillRect(x - barW / 2, barTop, barW, notchH);
+    }
   });
 
   // ─── BURNED BARS (bottom zone) ───────────────────────────────────────────
@@ -3670,33 +3680,32 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
     const x = pad.l + i * gap + gap / 2;
     const isHover = i === hoverIdx;
     const hasBinance = c.binanceBurn > 0;
-    const bh = Math.max(1, toBurnH(c.burned));
-    const bt = burnTop + burnH - bh;
 
-    const grad = ctx.createLinearGradient(x, bt, x, burnTop + burnH);
-    if (hasBinance) {
-      grad.addColorStop(0, 'rgba(255,160,60,0.95)');
-      grad.addColorStop(0.4, 'rgba(40,220,120,0.85)');
-      grad.addColorStop(1, 'rgba(20,140,70,0.2)');
-    } else {
-      grad.addColorStop(0, `rgba(30,200,100,${isHover ? 1 : 0.8})`);
-      grad.addColorStop(1, `rgba(10,100,50,0.15)`);
-    }
-
-    if (isHover) { ctx.shadowColor = hasBinance ? '#ff9944' : '#1ec864'; ctx.shadowBlur = 8; }
+    // Tax burn bar — normal scale, always visible
+    const taxH = Math.max(1, toBurnH(c.taxBurn));
+    const taxBt = burnTop + burnH - taxH;
+    const grad = ctx.createLinearGradient(x, taxBt, x, burnTop + burnH);
+    grad.addColorStop(0, `rgba(30,200,100,${isHover ? 1 : 0.82})`);
+    grad.addColorStop(1, `rgba(10,80,40,0.15)`);
+    if (isHover) { ctx.shadowColor = '#1ec864'; ctx.shadowBlur = 6; }
     ctx.fillStyle = grad;
-    ctx.fillRect(x - barW / 2, bt, barW, bh);
+    ctx.fillRect(x - barW / 2, taxBt, barW, taxH);
     ctx.shadowBlur = 0;
 
-    // 🔥 Binance burn marker: orange cap on the burned bar
+    // Binance burn — separate orange bar on top of the green bar, capped at zone height
     if (hasBinance) {
-      ctx.fillStyle = 'rgba(255,160,60,0.95)';
-      ctx.fillRect(x - barW / 2, bt, barW, Math.max(2, barW * 0.15));
+      // Show as a % of zone height — max 85% so it's always visible but not overflowing
+      const binanceH = Math.min(burnH * 0.85, Math.max(burnH * 0.25, toBurnH(c.binanceBurn * 0.15)));
+      const binanceBt = burnTop + burnH - taxH - binanceH;
+      const bGrad = ctx.createLinearGradient(x, binanceBt, x, burnTop + burnH - taxH);
+      bGrad.addColorStop(0, 'rgba(255,170,60,0.95)');
+      bGrad.addColorStop(1, 'rgba(200,100,20,0.3)');
+      ctx.fillStyle = bGrad;
+      ctx.fillRect(x - barW / 2, Math.max(burnTop, binanceBt), barW, binanceH);
       // Fire emoji above
       ctx.save();
-      ctx.font = '11px serif'; ctx.textAlign = 'center';
-      ctx.globalAlpha = 0.9;
-      ctx.fillText('🔥', x, bt - 2);
+      ctx.font = '11px serif'; ctx.textAlign = 'center'; ctx.globalAlpha = 0.92;
+      ctx.fillText('🔥', x, Math.max(burnTop + 12, binanceBt - 1));
       ctx.globalAlpha = 1;
       ctx.restore();
     }
