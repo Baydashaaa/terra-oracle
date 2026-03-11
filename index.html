@@ -3923,6 +3923,49 @@ function setupCandleHover(candles, period) {
         `<div><span style="color:#aac4d8;">Date:</span> <b>${dateStr}</b></div>`;
       drawCombinedChart(candles, period, idx);
 
+      // ── Moving date label on X axis ──────────────────────────────────────
+      const C2 = resolveCanvasS('supplyChart', 300);
+      if (C2) {
+        const { ctx: ctx2, w: w2, h: h2 } = C2;
+        const pad2 = { l:72, r:16, t:12, b:28 };
+        const cw2  = w2 - pad2.l - pad2.r;
+        const gap2 = cw2 / candles.length;
+        const cx   = pad2.l + idx * gap2 + gap2 / 2;
+
+        // Full date label for current period
+        const dh = new Date(c.t);
+        const dd2 = dh.getUTCDate().toString().padStart(2,'0');
+        const mm2 = (dh.getUTCMonth()+1).toString().padStart(2,'0');
+        const yy2 = dh.getUTCFullYear();
+        const hh2 = dh.getUTCHours().toString().padStart(2,'0');
+        const min2= dh.getUTCMinutes().toString().padStart(2,'0');
+        const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        let xLabel;
+        if (period === 'M')       xLabel = `${MNAMES[dh.getUTCMonth()]} ${yy2}`;
+        else if (period === 'W')  xLabel = `${dd2} ${MNAMES[dh.getUTCMonth()]} '${String(yy2).slice(2)}`;
+        else if (period === 'D')  xLabel = `${dd2} ${MNAMES[dh.getUTCMonth()]} '${String(yy2).slice(2)}`;
+        else if (period === '4h') xLabel = `${dd2} ${MNAMES[dh.getUTCMonth()]} ${hh2}:00`;
+        else                      xLabel = `${dd2}.${mm2} ${hh2}:${min2}`;
+
+        // Pill background
+        ctx2.font = 'bold 10px Exo 2';
+        const tw = ctx2.measureText(xLabel).width;
+        const pw = tw + 14, ph = 14;
+        let px = cx - pw / 2;
+        // Clamp so pill stays within chart
+        px = Math.max(pad2.l, Math.min(w2 - pad2.r - pw, px));
+        const py = h2 - pad2.b + 2;
+
+        ctx2.fillStyle = 'rgba(84,147,247,0.85)';
+        ctx2.beginPath();
+        ctx2.roundRect(px, py, pw, ph, 3);
+        ctx2.fill();
+
+        ctx2.fillStyle = '#ffffff';
+        ctx2.textAlign = 'center';
+        ctx2.fillText(xLabel, px + pw / 2, py + ph - 3);
+      }
+
       // Also update inline tooltip area (legacy, clear it)
       const inlineTip = document.getElementById('supply-tooltip');
       if (inlineTip) inlineTip.innerHTML = '';
