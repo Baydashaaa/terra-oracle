@@ -3049,8 +3049,18 @@ async function loadOraclePoolS() {
 
 async function loadValidatorsS() {
   try {
-    const data = await lcdS('/cosmos/staking/v1beta1/validators?pagination.limit=300');
-    allValidators = (data.validators || []).sort((a,b) => Number(b.tokens) - Number(a.tokens));
+    // Fetch ALL validators with pagination (LCD default limit is often 100)
+    let all = [], nextKey = null;
+    do {
+      const qs = nextKey
+        ? `/cosmos/staking/v1beta1/validators?pagination.limit=200&pagination.key=${encodeURIComponent(nextKey)}`
+        : `/cosmos/staking/v1beta1/validators?pagination.limit=200`;
+      const data = await lcdS(qs);
+      all = all.concat(data.validators || []);
+      nextKey = data.pagination?.next_key || null;
+    } while (nextKey);
+
+    allValidators = all.sort((a, b) => Number(b.tokens) - Number(a.tokens));
     const active = allValidators.filter(v => v.status === 'BOND_STATUS_BONDED').length;
     setTxt('sc-vals', active);
     renderValidatorsS();
