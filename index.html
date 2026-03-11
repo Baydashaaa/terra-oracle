@@ -1238,21 +1238,31 @@
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
       <div>
-        <div class="stat-label">Total LUNC Supply</div>
+        <div class="stat-label" id="chart-mode-label">Total LUNC Supply</div>
         <div class="chart-main-val" id="lunc-big" style="font-size:28px;font-weight:800;letter-spacing:-0.01em;">—</div>
         <div id="supply-delta" style="font-size:13px;color:#ff6b6b;margin-top:2px;display:flex;align-items:center;gap:5px;"></div>
       </div>
-      <!-- Timeframe buttons -->
-      <div style="display:flex;gap:4px;align-items:center;">
-        <button class="tf-btn active-tf" onclick="setSupplyPeriod('1h')" id="sp-1h">1h</button>
-        <button class="tf-btn" onclick="setSupplyPeriod('4h')" id="sp-4h">4h</button>
-        <button class="tf-btn" onclick="setSupplyPeriod('D')" id="sp-D">D</button>
-        <button class="tf-btn" onclick="setSupplyPeriod('W')" id="sp-W">W</button>
-        <button class="tf-btn" onclick="setSupplyPeriod('M')" id="sp-M">M</button>
-        <button onclick="loadSupplyChart(currentSupplyPeriod)" title="Refresh"
-          style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
-          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻</button>
+      <!-- Controls -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <!-- Mode toggle -->
+        <div style="display:flex;gap:3px;background:rgba(10,20,40,0.6);border:1px solid var(--border);border-radius:7px;padding:2px;">
+          <button id="mode-supply" onclick="setChartMode('supply')"
+            style="font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;padding:3px 10px;border-radius:5px;border:none;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">SUPPLY</button>
+          <button id="mode-burned" onclick="setChartMode('burned')"
+            style="font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.06em;padding:3px 10px;border-radius:5px;border:none;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);">BURNED</button>
+        </div>
+        <!-- Timeframe buttons -->
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="tf-btn active-tf" onclick="setSupplyPeriod('1h')" id="sp-1h">1h</button>
+          <button class="tf-btn" onclick="setSupplyPeriod('4h')" id="sp-4h">4h</button>
+          <button class="tf-btn" onclick="setSupplyPeriod('D')" id="sp-D">D</button>
+          <button class="tf-btn" onclick="setSupplyPeriod('W')" id="sp-W">W</button>
+          <button class="tf-btn" onclick="setSupplyPeriod('M')" id="sp-M">M</button>
+          <button onclick="supplyChartCache={}; loadSupplyChart(currentSupplyPeriod)" title="Refresh"
+            style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+            onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻</button>
+        </div>
       </div>
     </div>
     <!-- Hover tooltip -->
@@ -3160,6 +3170,20 @@ function drawLineS(ctx, data, pad, cw, ch, min, max, color, lineW=2) {
 // ─── SUPPLY CHART (candlestick-style) ────────────────────────
 let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
+let currentChartMode = 'supply'; // 'supply' | 'burned'
+
+function setChartMode(mode) {
+  currentChartMode = mode;
+  const sBtn = document.getElementById('mode-supply');
+  const bBtn = document.getElementById('mode-burned');
+  if (sBtn) { sBtn.style.background = mode === 'supply' ? 'var(--accent)' : 'transparent'; sBtn.style.color = mode === 'supply' ? '#fff' : 'var(--muted)'; }
+  if (bBtn) { bBtn.style.background = mode === 'burned' ? '#1aaa66' : 'transparent'; bBtn.style.color = mode === 'burned' ? '#fff' : 'var(--muted)'; }
+  const lbl = document.getElementById('chart-mode-label');
+  if (lbl) lbl.textContent = mode === 'burned' ? 'Total LUNC Burned (cumulative)' : 'Total LUNC Supply';
+  const cached = supplyChartCache[currentSupplyPeriod];
+  if (cached) renderSupplyChart(cached.data, currentSupplyPeriod);
+  else loadSupplyChart(currentSupplyPeriod);
+}
 
 const TF_CONFIG = {
   '1h': { endpoint: 'histohour',   limit: 48,  secPerCandle: 3600,       label: '1h' },
@@ -3478,18 +3502,180 @@ async function loadSupplyChart(period) {
 
 function renderSupplyChart(candles, period) {
   if (!candles.length) return;
-  // Update delta
   const first = candles[0].close, last = candles[candles.length-1].close;
   const delta = last - first;
   const deltaEl = document.getElementById('supply-delta');
   if (deltaEl) {
-    const sign = delta < 0 ? '' : '+';
     const fmtDelta = v => Math.round(v).toLocaleString('en-US');
-    deltaEl.innerHTML = `<span style="font-size:14px;">${delta < 0 ? '↘' : '↗'}</span> ${delta < 0 ? '-' : '+'}${fmtDelta(Math.abs(delta))} in latest candlestick`;
-    deltaEl.style.color = delta < 0 ? '#ff6b6b' : 'var(--green)';
+    if (currentChartMode === 'burned') {
+      // Show total burned in this period
+      const totalBurned = candles.reduce((s, c) => s + c.burned, 0);
+      deltaEl.innerHTML = `<span style="font-size:14px;">🔥</span> ${fmtDelta(Math.round(totalBurned))} burned in period`;
+      deltaEl.style.color = '#4dffaa';
+    } else {
+      deltaEl.innerHTML = `<span style="font-size:14px;">${delta < 0 ? '↘' : '↗'}</span> ${delta < 0 ? '-' : '+'}${fmtDelta(Math.abs(delta))} in latest candlestick`;
+      deltaEl.style.color = delta < 0 ? '#ff6b6b' : 'var(--green)';
+    }
   }
-  drawCandleChart(candles, period);
+  if (currentChartMode === 'burned') {
+    drawBurnedChart(candles, period);
+  } else {
+    drawCandleChart(candles, period);
+  }
   setupCandleHover(candles, period);
+}
+
+// ─── BURNED MODE: cumulative line + per-candle bars ────────────
+function drawBurnedChart(candles, period, hoverIdx = -1) {
+  const C = resolveCanvasS('supplyChart', 220); if (!C) return;
+  const { ctx, w, h } = C;
+  const pad = { l:72, r:16, t:16, b:32 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+
+  // Build cumulative burned series
+  // Approximate initial total burned = 6.9T (original supply) - current supply
+  const ORIGINAL_SUPPLY = 6_900_000_000_000;
+  const firstOpen = candles[0].open;
+  const burnedAtStart = ORIGINAL_SUPPLY - firstOpen;
+  let cumBurned = burnedAtStart;
+
+  const points = candles.map(c => {
+    cumBurned += c.burned;
+    return { t: c.t, cum: cumBurned, bar: c.burned, binanceBurn: c.binanceBurn, taxBurn: c.taxBurn };
+  });
+
+  // Y scale: cumulative range
+  const cumMin = points[0].cum - burnedAtStart * 0.001; // tiny pad below start
+  const cumMax = points[points.length - 1].cum;
+  const cumRange = (cumMax - cumMin) || 1;
+  const padY = cumRange * 0.08;
+  const vMin = cumMin - padY;
+  const vMax = cumMax + padY;
+  const range = vMax - vMin || 1;
+
+  // Bar scale (secondary) — per-candle burn
+  const barMax = Math.max(...points.map(p => p.bar)) * 1.1 || 1;
+  const BAR_ZONE = ch * 0.28; // bottom 28% for bars
+
+  const toY = v => pad.t + (1 - (v - vMin) / range) * (ch - BAR_ZONE - 4);
+  const gap = cw / points.length;
+  const barW = Math.max(2, Math.min(14, gap * 0.7));
+
+  // Y-axis formatter
+  function fmtY(v) {
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + 'T';
+    if (v >= 1e9)  return (v / 1e9).toFixed(1) + 'B';
+    if (v >= 1e6)  return (v / 1e6).toFixed(0) + 'M';
+    return v.toFixed(0);
+  }
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid lines
+  const gridLines = 6;
+  ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
+  for (let i = 0; i <= gridLines; i++) {
+    const frac = i / gridLines;
+    const y = pad.t + frac * (ch - BAR_ZONE - 4);
+    const v = vMax - (vMax - vMin) * frac;
+    ctx.strokeStyle = 'rgba(42,64,96,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    ctx.fillStyle = '#3a5578';
+    ctx.fillText(fmtY(v), pad.l - 6, y + 3);
+  }
+
+  // Per-candle burn bars (bottom zone) — green bars like luncmetrics
+  const barZoneTop = pad.t + ch - BAR_ZONE;
+  points.forEach((p, i) => {
+    const x = pad.l + i * gap + gap / 2;
+    const barH = (p.bar / barMax) * (BAR_ZONE - 4);
+    const barTop = pad.t + ch - barH;
+    // Binance burn = brighter green
+    const isB = p.binanceBurn > 0;
+    const grad = ctx.createLinearGradient(x, barTop, x, pad.t + ch);
+    grad.addColorStop(0, isB ? 'rgba(40,220,120,0.9)' : 'rgba(30,180,100,0.7)');
+    grad.addColorStop(1, isB ? 'rgba(40,220,120,0.2)' : 'rgba(30,180,100,0.15)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - barW / 2, barTop, barW, barH);
+  });
+
+  // Separator line between bars and line chart
+  ctx.strokeStyle = 'rgba(42,64,96,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.l, barZoneTop); ctx.lineTo(pad.l + cw, barZoneTop); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Cumulative line — smooth green line with fill
+  ctx.save();
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    const x = pad.l + i * gap + gap / 2;
+    const y = toY(p.cum);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  // Fill under line
+  const lastX = pad.l + (points.length - 1) * gap + gap / 2;
+  const firstX = pad.l + gap / 2;
+  ctx.lineTo(lastX, barZoneTop - 4);
+  ctx.lineTo(firstX, barZoneTop - 4);
+  ctx.closePath();
+  const fillGrad = ctx.createLinearGradient(0, pad.t, 0, barZoneTop);
+  fillGrad.addColorStop(0, 'rgba(30,200,100,0.22)');
+  fillGrad.addColorStop(1, 'rgba(30,200,100,0.03)');
+  ctx.fillStyle = fillGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // Draw the line itself
+  ctx.beginPath();
+  ctx.strokeStyle = '#1ec864';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#1ec864'; ctx.shadowBlur = 6;
+  points.forEach((p, i) => {
+    const x = pad.l + i * gap + gap / 2;
+    const y = toY(p.cum);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Dots for Binance burn candles
+  points.forEach((p, i) => {
+    if (!p.binanceBurn) return;
+    const x = pad.l + i * gap + gap / 2;
+    const y = toY(p.cum);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffaa44';
+    ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Last value label on right edge
+  const lastP = points[points.length - 1];
+  const lastY = toY(lastP.cum);
+  ctx.fillStyle = '#1ec864';
+  ctx.fillRect(pad.l + cw, lastY - 9, 2, 18);
+  ctx.font = 'bold 10px Exo 2'; ctx.textAlign = 'left'; ctx.fillStyle = '#1ec864';
+  // (label is off canvas right edge, skip)
+
+  // Hover crosshair
+  if (hoverIdx >= 0 && hoverIdx < points.length) {
+    const x = pad.l + hoverIdx * gap + gap / 2;
+    ctx.strokeStyle = 'rgba(84,147,247,0.3)';
+    ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke();
+    ctx.setLineDash([]);
+    // Dot on line
+    const y = toY(points[hoverIdx].cum);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#1ec864'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // X-axis labels (reuse same logic tag)
+  drawXAxisLabels(ctx, points.map(p => ({ t: p.t })), pad, cw, gap, period);
 }
 
 function drawCandleChart(candles, period, hoverIdx = -1) {
@@ -3665,6 +3851,55 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
   ctx.fillRect(pad.l, lastY - 0.5, cw, 1);
 }
 
+// Shared X-axis drawing — used by both supply and burned charts
+function drawXAxisLabels(ctx, items, pad, cw, gap, period) {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const h = ctx.canvas.height;
+  ctx.font = '10px Exo 2'; ctx.textAlign = 'center';
+  const drawnPositions = [];
+  const minSpacing = 58;
+
+  items.forEach((c, i) => {
+    const x = pad.l + i * gap + gap / 2;
+    const d = new Date(c.t);
+    const hh = d.getHours().toString().padStart(2,'0');
+    const day = d.getDate().toString().padStart(2,'0');
+    const mon = MONTHS[d.getMonth()];
+    const prevD = i > 0 ? new Date(items[i-1].t) : null;
+    const isNewDay   = !prevD || prevD.getDate()        !== d.getDate();
+    const isNewMonth = !prevD || prevD.getMonth()       !== d.getMonth();
+    const isNewYear  = !prevD || prevD.getFullYear()    !== d.getFullYear();
+    const yr2 = String(d.getFullYear()).slice(2);
+
+    let label = null;
+    if (period === '1h' || period === '4h') {
+      if (i === 0) label = `${day} ${mon}, ${hh}:00`;
+      else if (isNewDay) label = `${day} ${mon}`;
+    } else if (period === 'D') {
+      if (i === 0 || i % 5 === 0) label = `${day} ${mon}`;
+    } else if (period === 'W') {
+      if (i === 0) label = `${mon} '${yr2}`;
+      else if (isNewYear) label = String(d.getFullYear());
+      else if (isNewMonth) label = `${mon} '${yr2}`;
+    } else if (period === 'M') {
+      if (i === 0) label = String(d.getFullYear());
+      else if (isNewYear) label = String(d.getFullYear());
+      else if (d.getMonth() % 3 === 0) label = `${mon} '${yr2}`;
+    } else {
+      if (i === 0 || isNewYear) label = String(d.getFullYear());
+      else if (isNewMonth) label = `${mon} '${yr2}`;
+    }
+
+    if (label && !drawnPositions.some(px => Math.abs(px - x) < minSpacing)) {
+      drawnPositions.push(x);
+      ctx.fillStyle = '#3a5578';
+      ctx.fillText(label, x, h - 14);
+    }
+  });
+  ctx.fillStyle = 'rgba(58,85,120,0.4)'; ctx.font = '9px Exo 2'; ctx.textAlign = 'center';
+  ctx.fillText('UTC Time Buckets', pad.l + cw / 2, h - 2);
+}
+
 function fmtSupply(v) {
   if (v >= 1e12) return (v/1e12).toFixed(4) + 'T';
   if (v >= 1e9)  return (v/1e9).toFixed(2) + 'B';
@@ -3702,13 +3937,29 @@ function setupCandleHover(candles, period) {
           <span style="color:var(--muted);font-size:10px;">Close</span> <b style="font-size:11px;">${fmt(c.close)}</b> &nbsp;
           <span style="color:var(--muted);font-size:10px;">Change</span> <b style="color:${changeColor};font-size:11px;">${change < 0 ? '-' : '+'}${fmt(Math.abs(change))}</b>${c.binanceBurn > 0 ? ` &nbsp;<span style="background:rgba(255,100,50,0.15);border:1px solid rgba(255,100,50,0.4);border-radius:4px;padding:1px 6px;font-size:9px;color:#ff7744;letter-spacing:0.05em;">🔥 BINANCE BURN</span>` : ''}`;
       }
-      drawCandleChart(candles, period, idx);
+      if (currentChartMode === 'burned') {
+        drawBurnedChart(candles, period, idx);
+      } else {
+        drawCandleChart(candles, period, idx);
+      }
+
+      // Tooltip for burned mode
+      if (currentChartMode === 'burned' && tooltip) {
+        const ORIGINAL_SUPPLY = 6_900_000_000_000;
+        let cumB = ORIGINAL_SUPPLY - candles[0].open;
+        for (let j = 0; j <= idx; j++) cumB += candles[j].burned;
+        tooltip.innerHTML = `
+          <span style="color:var(--accent);font-weight:700;font-size:11px;">${timeStr}</span><br>
+          <span style="color:var(--muted);font-size:10px;">Total Burned</span> <b style="color:#1ec864;font-size:11px;">${fmt(Math.round(cumB))}</b> &nbsp;
+          <span style="color:var(--muted);font-size:10px;">This period</span> <b style="font-size:11px;">${fmt(Math.round(c.burned))}</b>${c.binanceBurn > 0 ? ` &nbsp;<span style="background:rgba(255,100,50,0.15);border:1px solid rgba(255,100,50,0.4);border-radius:4px;padding:1px 6px;font-size:9px;color:#ff7744;letter-spacing:0.05em;">🔥 BINANCE BURN +${fmt(Math.round(c.binanceBurn))}</span>` : ''}`;
+      }
     }
   };
   canvas.onmouseleave = () => {
     const tooltip = document.getElementById('supply-tooltip');
     if (tooltip) tooltip.innerHTML = '';
-    drawCandleChart(candles, period, -1);
+    if (currentChartMode === 'burned') drawBurnedChart(candles, period, -1);
+    else drawCandleChart(candles, period, -1);
   };
 }
 
