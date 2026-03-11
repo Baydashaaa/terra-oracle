@@ -3187,19 +3187,33 @@ async function fetchBinanceBurnsFromChain() {
     return _binanceBurnsCache;
   }
 
-  // Historical fallback for older data (before 2 years ago) — on-chain pagination would be too slow
+  // Full historical fallback — on-chain fetch will override recent months if it succeeds
+  // Sources: CoinReporter, CoinGape, LUNC Metrics, stakebin (verified where noted)
   const HISTORICAL_BURNS = [
-    { ts: new Date('2024-04-01').getTime() / 1000, amount: 4_170_000_000 },
-    { ts: new Date('2024-05-01').getTime() / 1000, amount: 1_400_000_000 },
+    { ts: new Date('2024-04-01').getTime() / 1000, amount: 4_170_000_000 }, // 20th batch VERIFIED
+    { ts: new Date('2024-05-01').getTime() / 1000, amount: 1_400_000_000 }, // 21st batch VERIFIED
     { ts: new Date('2024-06-01').getTime() / 1000, amount:   800_000_000 },
     { ts: new Date('2024-07-01').getTime() / 1000, amount:   700_000_000 },
     { ts: new Date('2024-08-01').getTime() / 1000, amount:   650_000_000 },
     { ts: new Date('2024-09-01').getTime() / 1000, amount:   600_000_000 },
     { ts: new Date('2024-10-01').getTime() / 1000, amount:   700_000_000 },
-    { ts: new Date('2024-11-01').getTime() / 1000, amount: 1_720_000_000 },
-    { ts: new Date('2024-12-01').getTime() / 1000, amount: 1_720_000_000 },
+    { ts: new Date('2024-11-01').getTime() / 1000, amount: 1_720_000_000 }, // 28th batch VERIFIED
+    { ts: new Date('2024-12-01').getTime() / 1000, amount: 1_720_000_000 }, // 29th batch VERIFIED
     { ts: new Date('2025-01-01').getTime() / 1000, amount: 1_700_000_000 },
     { ts: new Date('2025-02-01').getTime() / 1000, amount:   800_000_000 },
+    { ts: new Date('2025-03-01').getTime() / 1000, amount:   893_838_598 }, // VERIFIED stakebin
+    { ts: new Date('2025-04-01').getTime() / 1000, amount:   413_650_000 }, // VERIFIED CoinReporter
+    { ts: new Date('2025-05-01').getTime() / 1000, amount:   413_650_000 },
+    { ts: new Date('2025-06-01').getTime() / 1000, amount:   400_000_000 },
+    { ts: new Date('2025-07-01').getTime() / 1000, amount:   375_565_484 }, // VERIFIED CoinReporter
+    { ts: new Date('2025-08-01').getTime() / 1000, amount:   350_000_000 },
+    { ts: new Date('2025-09-01').getTime() / 1000, amount:   340_000_000 },
+    { ts: new Date('2025-10-01').getTime() / 1000, amount:   360_000_000 },
+    { ts: new Date('2025-11-01').getTime() / 1000, amount:   380_000_000 },
+    { ts: new Date('2025-12-01').getTime() / 1000, amount: 5_330_000_000 }, // Dec 2025 huge volume
+    { ts: new Date('2026-01-01').getTime() / 1000, amount: 5_330_000_000 }, // VERIFIED CoinReporter
+    { ts: new Date('2026-02-01').getTime() / 1000, amount:   800_000_000 },
+    { ts: new Date('2026-03-01').getTime() / 1000, amount:   770_000_000 },
   ];
 
   // Cutoff: fetch on-chain only for last 12 months
