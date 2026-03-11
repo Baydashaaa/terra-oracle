@@ -2792,8 +2792,9 @@ function showPage_stats(e) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-stats').classList.add('active');
-  setTimeout(loadAllStats, 50);
   smoothScrollTop();
+  loadValidatorsS();
+  loadAllStats();
 }
 
 const LCD_S  = 'https://terra-classic-lcd.publicnode.com';
@@ -2818,9 +2819,9 @@ function setTxt(id, val) {
   if (el) { el.textContent = val; el.classList.remove('pulse'); }
 }
 
-async function tryFetchS(url) {
+async function tryFetchS(url, timeout = 5000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const r = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
@@ -2829,8 +2830,10 @@ async function tryFetchS(url) {
   } catch(e) { clearTimeout(timer); throw e; }
 }
 async function lcdS(path) {
-  try { return await tryFetchS(LCD_S + path); }
-  catch { return tryFetchS(LCD_S2 + path); }
+  return Promise.any([
+    tryFetchS(LCD_S + path, 7000),
+    tryFetchS(LCD_S2 + path, 7000)
+  ]);
 }
 
 async function fetchSupplyS() {
@@ -3045,7 +3048,9 @@ function drawOracleChartS(lunc, ustc) {
 
 async function loadAllStats() {
   setTxt('updated-time', 'Refreshing...');
-  await Promise.allSettled([loadStatsData(), loadOraclePoolS(), loadValidatorsS()]);
+  // Load validators immediately (independent), rest in parallel
+  const validatorsPromise = loadValidatorsS();
+  const [,, ] = await Promise.allSettled([loadStatsData(), loadOraclePoolS(), validatorsPromise]);
   const el = document.getElementById('updated-time');
   if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
