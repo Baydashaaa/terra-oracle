@@ -1280,7 +1280,12 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 });
 
 // ─── KEPLR ────────────────────────────────────────────────────
-const PROTOCOL_WALLET = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
+// ─── PROTOCOL WALLETS ─────────────────────────────────────────
+const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6'; // Admin / legacy
+const ORACLE_WALLET   = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Questions, Chat, Board
+const LOTTERY_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px'; // Lottery prize pool
+const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p'; // Burn destination
+const PROTOCOL_WALLET = ADMIN_WALLET; // backwards compat
 const REQUIRED_LUNC = 200000000000; // 200,000 LUNC in uLUNC
 let connectedAddress = null;
 
@@ -1302,7 +1307,7 @@ async function connectKeplr() {
     document.getElementById('keplr-connected').style.display = 'block';
 
     // Admin wallet bypass — skip payment
-    if (connectedAddress === PROTOCOL_WALLET) {
+    if (connectedAddress === ADMIN_WALLET) {
       document.getElementById('verified-tx-hidden').value = 'ADMIN_BYPASS';
       document.getElementById('keplr-connected').style.display = 'none';
       document.getElementById('ask-form').style.display = 'block';
@@ -1348,7 +1353,7 @@ async function autoPayAndUnlock() {
     if (!client) throw new Error('Cannot connect to Terra Classic RPC');
 
     const result = await client.sendTokens(
-      connectedAddress, PROTOCOL_WALLET,
+      connectedAddress, ORACLE_WALLET, // Ask → Oracle pool
       [{ denom: 'uluna', amount: '200000000000' }],
       { amount: [{ denom: 'uluna', amount: '200000' }], gas: '200000' },
       'Terra Oracle Question Payment'
@@ -1419,7 +1424,7 @@ async function verifyTX() {
       const lunc = Array.isArray(coins)
         ? coins.find(c => c.denom === 'uluna')
         : (coins.denom === 'uluna' ? coins : null);
-      if (toAddr === PROTOCOL_WALLET && lunc) {
+      if ((toAddr === ORACLE_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount = parseInt(lunc.amount);
         if (foundAmount >= REQUIRED_LUNC) { valid = true; break; }
       }
@@ -1577,7 +1582,7 @@ window.sendChatMessage = async function() {
   if (!globalWalletAddress) { alert('Connect Keplr first!'); return; }
   if (!window.keplr) { alert('Keplr not found!'); return; }
 
-  const PROTOCOL_WALLET_CHAT = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
+  const PROTOCOL_WALLET_CHAT = ORACLE_WALLET; // Chat messages → Oracle pool
 
   btn.textContent = '⏳ Waiting for Keplr...';
   btn.disabled = true;
@@ -1640,7 +1645,7 @@ window.sendChatMessage = async function() {
 
 // Load chat page messages from Firebase
 // ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
-const CHAT_WALLET = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
+const CHAT_WALLET = ORACLE_WALLET; // Load chat TX from Oracle wallet
 const CHAT_MIN_ULUNA = 5000000000; // 5,000 LUNC
 const FCD_NODES = ['https://fcd.terra-classic.io', 'https://fcd.terraclassic.community'];
 
@@ -1844,8 +1849,8 @@ window.setWalletConnected = function(address) {
   // Show admin panel if admin wallet
   const adminPanel = document.getElementById('admin-panel');
   if (adminPanel) {
-    adminPanel.style.display = address === PROTOCOL_WALLET ? 'block' : 'none';
-    if (address === PROTOCOL_WALLET) {
+    adminPanel.style.display = address === ADMIN_WALLET ? 'block' : 'none';
+    if (address === ADMIN_WALLET) {
       applyVoteStates();
       updateAdminPanel();
     }
