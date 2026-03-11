@@ -3118,11 +3118,11 @@ let currentSupplyPeriod = '1h';
 let supplyChartCache = {};
 
 const TF_CONFIG = {
-  '1h': { endpoint: 'histohour',   limit: 48,  secPerCandle: 3600,  label: '1h' },  // 48h of 1h candles
-  '4h': { endpoint: 'histohour',   limit: 96,  secPerCandle: 3600,  label: '4h', groupBy: 4 }, // 16 days × 4h candles
-  'D':  { endpoint: 'histoday',    limit: 30,  secPerCandle: 86400, label: 'D'  },
-  'W':  { endpoint: 'histoday',    limit: 90,  secPerCandle: 86400, label: 'W',  groupBy: 7 },
-  'M':  { endpoint: 'histoday',    limit: 365, secPerCandle: 86400, label: 'M',  groupBy: 30 },
+  '1h': { endpoint: 'histohour',   limit: 48,  secPerCandle: 3600,       label: '1h' },
+  '4h': { endpoint: 'histohour',   limit: 120, secPerCandle: 3600,       label: '4h', groupBy: 4 },
+  'D':  { endpoint: 'histoday',    limit: 30,  secPerCandle: 86400,      label: 'D'  },
+  'W':  { endpoint: 'histoday',    limit: 364, secPerCandle: 86400,      label: 'W',  groupBy: 7 }, // ~52 weeks
+  'M':  { endpoint: 'histoday',    limit: 730, secPerCandle: 86400,      label: 'M',  groupBy: 30 },
 };
 
 // Average daily burn ~16.5M LUNC
@@ -3348,17 +3348,28 @@ function drawCandleChart(candles, period, hoverIdx = -1) {
     const isNewDay = !prevD || prevD.getDate() !== d.getDate();
 
     let label = null;
-    // For 1h (48h view): label every new day as "09 Mar" + first candle as "09 Mar, 16:00"
+    const isNewMonth = !prevD || prevD.getMonth() !== d.getMonth();
+    const isNewYear  = !prevD || prevD.getFullYear() !== d.getFullYear();
+    const yr2 = String(d.getFullYear()).slice(2);
+
     if (period === '1h') {
+      // 48h: label at day change
       if (i === 0) label = `${day} ${mon}, ${hh}:00`;
       else if (isNewDay) label = `${day} ${mon}`;
     } else if (period === '4h') {
       if (i === 0) label = `${day} ${mon}, ${hh}:00`;
       else if (isNewDay) label = `${day} ${mon}`;
     } else if (period === 'D') {
+      // 30 days: label every ~5 days
       if (i === 0 || i % 5 === 0) label = `${day} ${mon}`;
+    } else if (period === 'W') {
+      // 52 weeks: label each new month as "Apr '25", new year as "2026"
+      if (i === 0) label = `${mon} '${yr2}`;
+      else if (isNewYear) label = String(d.getFullYear());
+      else if (isNewMonth) label = `${mon} '${yr2}`;
     } else {
-      if (i === 0 || i % Math.floor(candles.length/5) === 0) label = `${day} ${mon}`;
+      if (i === 0 || isNewYear) label = String(d.getFullYear());
+      else if (isNewMonth) label = `${mon} '${yr2}`;
     }
 
     if (label && !drawnPositions.some(px => Math.abs(px - x) < minSpacing)) {
