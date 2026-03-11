@@ -188,6 +188,33 @@
   .chat-send-info { font-size: 11px; color: var(--muted); }
   .chat-send-info strong { color: var(--accent); }
 
+  #board-search:focus { border-color: var(--accent); }
+  #board-search::placeholder { color: var(--muted); opacity: 0.5; }
+
+  /* HASHTAGS */
+  .q-tags { display:flex;flex-wrap:wrap;gap:5px;margin-top:8px; }
+  .q-tag { font-size:10px;color:var(--accent);background:rgba(84,147,247,0.07);
+    border:1px solid rgba(84,147,247,0.15);border-radius:12px;padding:2px 9px;
+    cursor:pointer;transition:all 0.15s;letter-spacing:0.03em;font-family:'Space Mono',monospace; }
+  .q-tag:hover { background:rgba(84,147,247,0.15);border-color:rgba(84,147,247,0.4); }
+  .q-tag.active-tag { background:rgba(84,147,247,0.2);border-color:var(--accent);color:#fff; }
+  .tag-input-wrap { display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+    background:rgba(84,147,247,0.04);border:1px solid var(--border);border-radius:8px;
+    padding:8px 10px;min-height:42px;cursor:text;transition:border-color 0.2s; }
+  .tag-input-wrap:focus-within { border-color:var(--accent); }
+  .tag-pill { display:flex;align-items:center;gap:4px;font-size:10px;color:var(--accent);
+    background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:2px 8px; }
+  .tag-pill button { background:none;border:none;color:var(--muted);cursor:pointer;
+    font-size:11px;padding:0;line-height:1;margin-left:2px; }
+  .tag-pill button:hover { color:#ff6060; }
+  .tag-input { border:none;background:transparent;color:var(--text);font-family:'Space Mono',monospace;
+    font-size:11px;outline:none;min-width:80px;flex:1; }
+  .tag-input::placeholder { color:var(--muted);opacity:0.5; }
+  .tag-suggestions { display:flex;flex-wrap:wrap;gap:5px;margin-top:6px; }
+  .tag-suggestion { font-size:10px;color:var(--muted);background:var(--surface2);
+    border:1px solid var(--border);border-radius:10px;padding:2px 8px;cursor:pointer;transition:all 0.15s; }
+  .tag-suggestion:hover { color:var(--accent);border-color:rgba(84,147,247,0.3); }
+
   /* VOTE PAGE */
   .vote-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
   .vote-tabs { display: flex; gap: 6px; }
@@ -426,6 +453,21 @@
     </div>
   </div>
 
+  <div style="position:relative;margin-bottom:14px;">
+    <input type="text" id="board-search" placeholder="🔍  Search questions..."
+      oninput="setBoardSearch(this.value)"
+      style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+             color:var(--text);font-family:'Space Mono',monospace;font-size:13px;
+             padding:12px 16px 12px 40px;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
+    <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:0.35;pointer-events:none;"
+         width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <button id="search-clear" onclick="clearSearch()"
+      style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);
+             background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;">✕</button>
+  </div>
+
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
@@ -543,6 +585,26 @@
             </svg>
             <span style="font-size:10px;color:var(--muted);min-width:28px;text-align:right;" id="ask-count">2000</span>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>Hashtags <span style="font-size:9px;color:var(--muted);text-transform:none">(optional · max 5 · press Enter or comma to add)</span></label>
+          <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-raw-input').focus()">
+            <span id="tag-pills"></span>
+            <input type="text" class="tag-input" id="tag-raw-input" placeholder="#ustc #sdk053 #validators..."
+              maxlength="24" autocomplete="off">
+          </div>
+          <div class="tag-suggestions" id="tag-suggestions">
+            <span style="font-size:10px;color:var(--muted);margin-right:2px;">Popular:</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('ustc')">#ustc</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('sdk053')">#sdk053</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('validators')">#validators</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('lunc')">#lunc</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('governance')">#governance</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('mm20')">#mm20</span>
+            <span class="tag-suggestion" onclick="addTagSuggestion('defi')">#defi</span>
+          </div>
+          <input type="hidden" name="tags" id="tags-hidden">
         </div>
 
         <div class="form-group">
@@ -726,6 +788,7 @@ const DEMO_QUESTIONS = [
     title: '🌱 Seeker',
     category: '🗳️ Governance',
     text: 'What is the plan for USTC re-peg after the SDK 0.53 upgrade? Has any formal proposal been submitted to the governance forum yet?',
+    tags: ['ustc','sdk053','governance'],
     time: '34 min ago',
     votes: 12,
     answers: [
@@ -743,6 +806,7 @@ const DEMO_QUESTIONS = [
     title: null,
     category: '⚙️ Validator Issue',
     text: 'Is there a minimum self-delegation requirement for validators after MM 2.0 activates? Some validators seem to be running with very low self-stake.',
+    tags: ['validators','mm20','staking'],
     time: '2 hrs ago',
     votes: 7,
     answers: [],
@@ -770,6 +834,7 @@ function saveQuestions(qs) {
 let questions = loadQuestions();
 let boardFilter = 'all';
 let boardSort = 'new';
+let boardSearch = '';
 
 // ─── WALLET SESSION RESTORE ───────────────────────────────────
 async function restoreWalletSession() {
@@ -809,7 +874,71 @@ function showPage(name) {
   if (name === 'chat') renderChatPage();
 }
 
+// ─── HASHTAG LOGIC ────────────────────────────────────────────
+let currentTags = [];
+
+function renderTagPills() {
+  const pillsEl = document.getElementById('tag-pills');
+  if (!pillsEl) return;
+  pillsEl.innerHTML = currentTags.map(t =>
+    `<span class="tag-pill">#${t}<button onclick="removeTag('${t}')">✕</button></span>`
+  ).join('');
+  document.getElementById('tags-hidden').value = currentTags.join(',');
+}
+
+function addTag(raw) {
+  if (currentTags.length >= 5) return;
+  const tag = raw.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 20);
+  if (!tag || currentTags.includes(tag)) return;
+  currentTags.push(tag);
+  renderTagPills();
+}
+
+function addTagSuggestion(tag) {
+  addTag(tag);
+  document.getElementById('tag-raw-input').focus();
+}
+
+function removeTag(tag) {
+  currentTags = currentTags.filter(t => t !== tag);
+  renderTagPills();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('tag-raw-input');
+  if (!input) return;
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault();
+      addTag(this.value);
+      this.value = '';
+    } else if (e.key === 'Backspace' && this.value === '' && currentTags.length) {
+      currentTags.pop();
+      renderTagPills();
+    }
+  });
+  input.addEventListener('input', function() {
+    if (this.value.endsWith(',') || this.value.endsWith(' ')) {
+      addTag(this.value);
+      this.value = '';
+    }
+  });
+});
+
 // ─── FILTER & SORT ──────────────────────────────────────────
+function setBoardSearch(val) {
+  boardSearch = val.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = boardSearch ? 'block' : 'none';
+  renderBoard();
+}
+
+function clearSearch() {
+  boardSearch = '';
+  document.getElementById('board-search').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderBoard();
+}
+
 function setBoardFilter(cat) {
   boardFilter = cat;
   document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
@@ -832,6 +961,19 @@ function renderBoard() {
 
   let filtered = boardFilter === 'all' ? [...questions] : questions.filter(q => q.category === boardFilter || q.category.includes(boardFilter.replace(/[🗳️⚙️📈🌍⚡]\s*/,'')));
 
+  // Apply search
+  if (boardSearch) {
+    const searchTag = boardSearch.startsWith('#') ? boardSearch.slice(1) : null;
+    filtered = filtered.filter(q =>
+      q.text.toLowerCase().includes(boardSearch) ||
+      q.category.toLowerCase().includes(boardSearch) ||
+      q.id.toLowerCase().includes(boardSearch) ||
+      (searchTag && q.tags && q.tags.some(t => t.toLowerCase() === searchTag.toLowerCase())) ||
+      (q.tags && q.tags.some(t => ('#'+t).includes(boardSearch) || t.includes(boardSearch))) ||
+      q.answers.some(a => a.text.toLowerCase().includes(boardSearch))
+    );
+  }
+
   if (boardSort === 'hot') filtered.sort((a,b) => (b.votes + b.answers.length*2) - (a.votes + a.answers.length*2));
   else if (boardSort === 'unanswered') filtered = filtered.filter(q => q.answers.length === 0);
   else filtered.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
@@ -839,7 +981,9 @@ function renderBoard() {
   count.textContent = filtered.length + ' open question' + (filtered.length !== 1 ? 's' : '');
 
   if (filtered.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions here yet.<br>Be the first to ask!</div></div>`;
+    list.innerHTML = boardSearch
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No questions match "<strong>${boardSearch}</strong>".<br><span style="font-size:11px;opacity:0.6;">Try different keywords</span></div></div>`
+      : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions here yet.<br>Be the first to ask!</div></div>`;
     return;
   }
 
@@ -857,7 +1001,8 @@ function renderBoard() {
         <span class="q-timer">⏱ ${q.time}</span>
         <span class="q-ref">${q.id}</span>
       </div>
-      <div class="q-text">${q.text}</div>
+      ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" onclick="setBoardSearch('#${t}')">#${t}</span>`).join('')}</div>` : ''}
+      <div class="q-text">${boardSearch ? q.text.replace(new RegExp('(' + boardSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>') : q.text}</div>
       <div class="q-footer">
         <div class="q-votes">
           <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})">👍 ${q.votes}</button>
@@ -1004,6 +1149,9 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 
   // Save question to localStorage immediately
   const alias = wallet ? ('Anonymous#' + Math.floor(1000 + Math.random() * 9000)) : 'Anonymous';
+  const tagsRaw = document.getElementById('tags-hidden').value;
+  const tags = tagsRaw ? tagsRaw.split(',').filter(Boolean) : [];
+
   const newQ = {
     id: ref,
     alias,
@@ -1011,6 +1159,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     title: '🌱 Seeker',
     category,
     text,
+    tags,
     time: 'just now',
     createdAt: Date.now(),
     votes: 0,
