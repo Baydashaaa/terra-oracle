@@ -1177,12 +1177,11 @@ window.sendChatMessage = async function() {
 
     if (result.code !== 0) throw new Error('TX failed: ' + result.rawLog);
 
-    // Save to localStorage with TX hash as proof
-    const stored = JSON.parse(localStorage.getItem('dao_chat') || '[]');
+    // Optimistic local render while chain confirms
     const short = sender.slice(0,8)+'...'+sender.slice(-4);
+    const stored = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]');
     stored.push({ text, author: short, fullAddr: sender, txHash: result.transactionHash, isVerified: true, timestamp: Date.now() });
-    if (stored.length > 100) stored.splice(0, stored.length - 100);
-    localStorage.setItem('dao_chat', JSON.stringify(stored));
+    localStorage.setItem('dao_chat_pending', JSON.stringify(stored));
 
     document.getElementById('chat-page-input').value = '';
     document.getElementById('chat-page-count').textContent = '256';
@@ -1190,9 +1189,10 @@ window.sendChatMessage = async function() {
     document.getElementById('chat-ring').style.stroke = 'var(--accent)';
     btn.textContent = 'Send Message →'; btn.disabled = false;
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
-    statusEl.textContent = '✅ Sent! TX: ' + result.transactionHash.slice(0,16) + '...';
-    renderChatPage();
-    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terra.money/classic/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
+    // Reload from chain after 8 seconds for confirmation
+    setTimeout(() => { loadChatFromChain(); }, 8000);
+    setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
 
   } catch(e) {
     btn.textContent = 'Send Message →'; btn.disabled = false;
@@ -1203,26 +1203,121 @@ window.sendChatMessage = async function() {
 
 
 // Load chat page messages from Firebase
-function renderChatPage() {
+// ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
+const CHAT_WALLET = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
+const CHAT_MIN_ULUNA = 5000000000; // 5,000 LUNC
+const FCD_NODES = ['https://fcd.terra-classic.io', 'https://fcd.terraclassic.community'];
+
+function renderChatMessages(msgs) {
   const container = document.getElementById('chat-page-messages');
-  const msgs = JSON.parse(localStorage.getItem('dao_chat') || '[]').slice(-50);
-  if (msgs.length === 0) {
-    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">No messages yet — be the first to speak!</div>';
+  if (!msgs || msgs.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:40px 20px;">No messages yet — be the first to speak!<br><span style="font-size:10px;opacity:0.6;margin-top:6px;display:block;">Send 5,000 LUNC with your message as memo</span></div>';
     return;
   }
   container.innerHTML = msgs.map(m => `
-    <div class="chat-page-msg ${m.isVerified ? 'verified-msg' : ''}">
+    <div class="chat-page-msg verified-msg">
       <div class="chat-page-msg-header">
-        <span class="chat-page-msg-author">${m.author}</span>
-        ${m.isVerified ? '<span style="font-size:8px;background:rgba(102,255,170,0.15);color:var(--green);padding:1px 6px;border-radius:4px;letter-spacing:0.08em;">✓ VERIFIED</span>' : ''}
-        <span class="chat-page-msg-time">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+        <span class="chat-page-msg-author" style="font-family:monospace;">${m.author}</span>
+        <span style="font-size:8px;background:rgba(102,255,170,0.15);color:var(--green);padding:1px 6px;border-radius:4px;letter-spacing:0.08em;">✓ ON-CHAIN</span>
+        ${m.amount ? `<span style="font-size:8px;color:var(--gold);background:rgba(245,197,24,0.1);padding:1px 6px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
+        <span class="chat-page-msg-time">
+          <a href="https://finder.terra.money/classic/tx/${m.txHash}" target="_blank" style="color:var(--muted);text-decoration:none;font-size:9px;" title="View on Explorer">🔗 ${m.time}</a>
+        </span>
       </div>
       <div class="chat-page-msg-text">${m.text}</div>
     </div>
   `).join('');
   container.scrollTop = container.scrollHeight;
 }
+
+async function loadChatFromChain() {
+  const container = document.getElementById('chat-page-messages');
+  container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:40px;">⏳ Loading messages from blockchain...</div>';
+
+  let txList = null;
+  for (const node of FCD_NODES) {
+    try {
+      const res = await fetch(`${node}/v1/txs?account=${CHAT_WALLET}&limit=50`);
+      if (res.ok) { txList = await res.json(); break; }
+    } catch(e) { continue; }
+  }
+
+  if (!txList || !txList.txs) {
+    // Fallback: try LCD
+    try {
+      const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs?events=transfer.recipient='${CHAT_WALLET}'&pagination.limit=50&order_by=2`);
+      if (res.ok) {
+        const data = await res.json();
+        txList = { txs: (data.txs || []).map((tx, i) => ({
+          txhash: data.tx_responses?.[i]?.txhash,
+          tx: { value: { memo: tx.body?.memo, msg: tx.body?.messages?.map(m => ({ type: m['@type'], value: { from_address: m.from_address, to_address: m.to_address, amount: m.amount } })) } },
+          timestamp: data.tx_responses?.[i]?.timestamp
+        })) };
+      }
+    } catch(e) {}
+  }
+
+  if (!txList || !txList.txs || txList.txs.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:40px;">No messages yet — be the first!</div>';
+    return;
+  }
+
+  const msgs = [];
+  for (const tx of txList.txs) {
+    try {
+      const memo = tx.tx?.value?.memo || tx.tx?.body?.memo || '';
+      if (!memo || memo.trim() === '') continue;
+
+      const txMsgs = tx.tx?.value?.msg || tx.tx?.body?.messages || [];
+      let sender = null, luncAmount = 0;
+
+      for (const msg of txMsgs) {
+        const type = msg.type || msg['@type'] || '';
+        const val = msg.value || msg;
+        if (type.includes('MsgSend')) {
+          const to = val.to_address || '';
+          if (to === CHAT_WALLET) {
+            sender = val.from_address || null;
+            const coins = val.amount || [];
+            const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
+            luncAmount = lunc ? parseInt(lunc.amount) : 0;
+          }
+        }
+      }
+
+      // Only show messages with minimum payment
+      if (!sender || luncAmount < CHAT_MIN_ULUNA) continue;
+
+      const short = sender.slice(0, 10) + '...' + sender.slice(-4);
+      const luncFormatted = (luncAmount / 1000000).toLocaleString(undefined, {maximumFractionDigits: 0});
+      const ts = tx.timestamp ? new Date(tx.timestamp) : null;
+      const timeStr = ts ? ts.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
+      msgs.push({
+        author: short,
+        fullAddr: sender,
+        text: memo.slice(0, 256),
+        amount: luncFormatted,
+        txHash: tx.txhash || tx.id || '',
+        time: timeStr,
+        ts: ts ? ts.getTime() : 0
+      });
+    } catch(e) { continue; }
+  }
+
+  // Sort oldest → newest
+  msgs.sort((a, b) => a.ts - b.ts);
+  renderChatMessages(msgs);
+}
+
+// Also merge any pending local messages not yet in FCD
+function renderChatPage() {
+  loadChatFromChain();
+}
 renderChatPage();
+
+// Refresh every 30 seconds
+setInterval(loadChatFromChain, 30000);
 
 // Update chat page when wallet connects
 const _origSetWallet = window.setWalletConnected;
