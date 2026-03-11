@@ -426,6 +426,21 @@
     </div>
   </div>
 
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
+      <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('🗳️ Governance')">🗳️ Gov</button>
+      <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('⚙️ Technical')">⚙️ Tech</button>
+      <button class="vote-tab" id="filter-val" onclick="setBoardFilter('⚙️ Validator Issue')">⚡ Validators</button>
+      <button class="vote-tab" id="filter-market" onclick="setBoardFilter('📈 Market')">📈 Market</button>
+      <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('🌍 Community')">🌍 Community</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px;">
+      <button class="vote-tab active" id="sort-new" onclick="setBoardSort('new')">🕐 New</button>
+      <button class="vote-tab" id="sort-hot" onclick="setBoardSort('hot')">🔥 Hot</button>
+      <button class="vote-tab" id="sort-unanswered" onclick="setBoardSort('unanswered')">❓ Unanswered</button>
+    </div>
+  </div>
   <div id="questions-list"></div>
 
 </div>
@@ -483,8 +498,8 @@
         <div class="form-group">
           <label>TX Hash</label>
           <div style="display:flex;gap:8px;">
-            <input type="text" id="tx-input" placeholder="Paste your 200,000 LUNC transaction hash..." style="flex:1;">
-            <button class="btn btn-primary" onclick="verifyTX()" id="verify-btn" style="white-space:nowrap;padding:12px 16px;">Verify</button>
+            <input type="text" id="tx-input" style="display:none;" placeholder="Paste your 200,000 LUNC transaction hash..." style="flex:1;">
+            <button class="btn btn-primary" onclick="autoPayAndUnlock()" id="verify-btn" style="white-space:nowrap;padding:12px 16px;">Pay 200,000 LUNC & Unlock →</button>
           </div>
         </div>
         <div id="tx-status" style="display:none;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;"></div>
@@ -520,8 +535,13 @@
         <div class="form-group">
           <label>Your Question</label>
           <textarea name="message" id="ask-message" placeholder="Ask anything about Terra Classic — governance, technical, community, market..." required maxlength="2000"></textarea>
-          <div style="display:flex;justify-content:flex-end;margin-top:6px;">
-            <span style="font-size:10px;color:var(--muted)" id="ask-count">0 / 2000</span>
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;">
+            <svg width="28" height="28" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex-shrink:0;">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+              <circle id="ask-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
+                stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
+            </svg>
+            <span style="font-size:10px;color:var(--muted);min-width:28px;text-align:right;" id="ask-count">2000</span>
           </div>
         </div>
 
@@ -732,27 +752,35 @@ const DEMO_QUESTIONS = [
   },
 ];
 
-let questions = [...DEMO_QUESTIONS];
+// ─── QUESTIONS STORAGE ───────────────────────────────────────
+function loadQuestions() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('oracle_questions') || 'null');
+    if (stored && stored.length > 0) return stored;
+  } catch(e) {}
+  // First time: seed with demo questions
+  saveQuestions(DEMO_QUESTIONS);
+  return [...DEMO_QUESTIONS];
+}
 
-// ─── NAVIGATION ───────────────────────────────────────────────
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'board') // Auto-restore wallet session on page load
+function saveQuestions(qs) {
+  localStorage.setItem('oracle_questions', JSON.stringify(qs));
+}
+
+let questions = loadQuestions();
+let boardFilter = 'all';
+let boardSort = 'new';
+
+// ─── WALLET SESSION RESTORE ───────────────────────────────────
 async function restoreWalletSession() {
   const saved = loadWalletSession();
   if (!saved) return;
-
-  // Wait for Keplr extension to inject into window (up to 3s)
   let attempts = 0;
   while (!window.keplr && attempts < 30) {
     await new Promise(r => setTimeout(r, 100));
     attempts++;
   }
   if (!window.keplr) return;
-
   try {
     await window.keplr.enable('columbus-5');
     const signer = window.keplr.getOfflineSigner('columbus-5');
@@ -764,29 +792,60 @@ async function restoreWalletSession() {
     }
   } catch(e) { clearWalletSession(); }
 }
-
-// Run after DOM fully loaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', restoreWalletSession);
 } else {
   restoreWalletSession();
 }
 
-renderBoard();
+// ─── NAVIGATION ───────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'board') renderBoard();
+  if (name === 'vote') { applyStoredVotes(); renderVotes(); }
+  if (name === 'chat') renderChatPage();
+}
+
+// ─── FILTER & SORT ──────────────────────────────────────────
+function setBoardFilter(cat) {
+  boardFilter = cat;
+  document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
+  const map = {'all':'filter-all','🗳️ Governance':'filter-gov','⚙️ Technical':'filter-tech','⚙️ Validator Issue':'filter-val','📈 Market':'filter-market','🌍 Community':'filter-comm'};
+  if (map[cat]) document.getElementById(map[cat])?.classList.add('active');
+  renderBoard();
+}
+
+function setBoardSort(s) {
+  boardSort = s;
+  document.querySelectorAll('[id^="sort-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-' + s)?.classList.add('active');
+  renderBoard();
 }
 
 // ─── RENDER BOARD ────────────────────────────────────────────
 function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
-  count.textContent = questions.length + ' open question' + (questions.length !== 1 ? 's' : '');
 
-  if (questions.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions yet.<br>Be the first to ask the community.</div></div>`;
+  let filtered = boardFilter === 'all' ? [...questions] : questions.filter(q => q.category === boardFilter || q.category.includes(boardFilter.replace(/[🗳️⚙️📈🌍⚡]\s*/,'')));
+
+  if (boardSort === 'hot') filtered.sort((a,b) => (b.votes + b.answers.length*2) - (a.votes + a.answers.length*2));
+  else if (boardSort === 'unanswered') filtered = filtered.filter(q => q.answers.length === 0);
+  else filtered.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  count.textContent = filtered.length + ' open question' + (filtered.length !== 1 ? 's' : '');
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions here yet.<br>Be the first to ask!</div></div>`;
     return;
   }
 
-  list.innerHTML = questions.map((q, qi) => `
+  list.innerHTML = filtered.map((q, qi) => {
+    const realQi = questions.indexOf(q);
+    return `
     <div class="q-card" id="qcard-${qi}">
       <div class="q-meta">
         ${q.isAdmin
@@ -801,18 +860,18 @@ function renderBoard() {
       <div class="q-text">${q.text}</div>
       <div class="q-footer">
         <div class="q-votes">
-          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${qi})">👍 ${q.votes}</button>
+          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})">👍 ${q.votes}</button>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-sm btn-answer" onclick="toggleAnswers(${qi})">
+          <button class="btn btn-sm btn-answer" onclick="toggleAnswers(${realQi})">
             💬 ${q.answers.length} answer${q.answers.length !== 1 ? 's' : ''}
           </button>
-          <button class="btn btn-sm btn-answer" onclick="toggleAnswerForm(${qi})">+ Answer</button>
+          <button class="btn btn-sm btn-answer" onclick="toggleAnswerForm(${realQi})">+ Answer</button>
         </div>
       </div>
 
       <!-- ANSWERS -->
-      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${qi}">
+      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}">
         ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet — be the first!</div>` : ''}
         ${q.answers.map((a, ai) => `
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
@@ -825,33 +884,33 @@ function renderBoard() {
             </div>
             <div class="answer-text">${a.text}</div>
             <div class="answer-votes">
-              <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${qi},${ai})">👍 ${a.votes}</button>
+              <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${realQi},${ai})">👍 ${a.votes}</button>
             </div>
           </div>
         `).join('')}
 
         <!-- ANSWER FORM -->
-        <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${qi}">
+        <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${realQi}">
           <div class="answer-form-title">Submit anonymous answer</div>
           <div class="form-group">
             <label>Your Answer</label>
-            <textarea id="atext-${qi}" placeholder="Share your knowledge anonymously..." rows="4"></textarea>
+            <textarea id="atext-${realQi}" placeholder="Share your knowledge anonymously..." rows="4"></textarea>
           </div>
           <div class="form-group">
             <label>Admin Key <span style="font-size:9px;color:var(--muted);text-transform:none">(optional — leave blank to answer anonymously)</span></label>
-            <div class="admin-key-wrap" id="akwrap-${qi}">
-              <input type="password" id="akey-${qi}" placeholder="Enter key to post as Admin..." oninput="checkAdminKey(${qi})">
-              <span class="admin-key-hint" id="akeyhint-${qi}">optional</span>
+            <div class="admin-key-wrap" id="akwrap-${realQi}">
+              <input type="password" id="akey-${realQi}" placeholder="Enter key to post as Admin..." oninput="checkAdminKey(${realQi})">
+              <span class="admin-key-hint" id="akeyhint-${realQi}">optional</span>
             </div>
           </div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
-            <button class="btn btn-primary btn-sm" onclick="submitAnswer(${qi})">Post Answer</button>
-            <span style="font-size:10px;color:var(--muted)" id="apreview-${qi}">Will post as: Anonymous#????</span>
+            <button class="btn btn-primary btn-sm" onclick="submitAnswer(${realQi})">Post Answer</button>
+            <span style="font-size:10px;color:var(--muted)" id="apreview-${realQi}">Will post as: Anonymous#????</span>
           </div>
         </div>
       </div>
     </div>
-  `).join('');
+  `; }).join('');
 }
 
 // ─── ADMIN KEY CHECK ─────────────────────────────────────────
@@ -898,6 +957,7 @@ function submitAnswer(qi) {
   });
   questions[qi].formOpen = false;
   questions[qi].open = true;
+  saveQuestions(questions);
   renderBoard();
 }
 
@@ -906,6 +966,7 @@ function voteQuestion(qi) {
   if (questions[qi].voted) return;
   questions[qi].votes++;
   questions[qi].voted = true;
+  saveQuestions(questions);
   renderBoard();
 }
 
@@ -913,12 +974,19 @@ function voteAnswer(qi, ai) {
   if (questions[qi].answers[ai].voted) return;
   questions[qi].answers[ai].votes++;
   questions[qi].answers[ai].voted = true;
+  saveQuestions(questions);
   renderBoard();
 }
 
 // ─── ASK FORM ────────────────────────────────────────────────
 document.getElementById('ask-message').addEventListener('input', function() {
-  document.getElementById('ask-count').textContent = this.value.length + ' / 2000';
+  const max = 2000, len = this.value.length, remaining = max - len;
+  const pct = len / max;
+  const ring = document.getElementById('ask-ring');
+  document.getElementById('ask-count').textContent = remaining;
+  ring.style.strokeDashoffset = 87.96 - pct * 87.96;
+  ring.style.stroke = remaining <= 100 ? '#ff4444' : remaining <= 300 ? '#f5c518' : 'var(--accent)';
+  document.getElementById('ask-count').style.color = remaining <= 100 ? '#ff4444' : remaining <= 300 ? '#f5c518' : 'var(--muted)';
 });
 
 document.getElementById('ask-form').addEventListener('submit', async function(e) {
@@ -927,52 +995,75 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   btn.disabled = true;
   btn.innerHTML = 'Transmitting<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
 
+  const formData = new FormData(this);
+  const category = formData.get('category') || '📝 Other';
+  const text = formData.get('message') || '';
+  const txHash = document.getElementById('verified-tx-hidden').value;
+  const wallet = document.getElementById('verified-wallet-hidden').value;
+  const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
+
+  // Save question to localStorage immediately
+  const alias = wallet ? ('Anonymous#' + Math.floor(1000 + Math.random() * 9000)) : 'Anonymous';
+  const newQ = {
+    id: ref,
+    alias,
+    isAdmin: false,
+    title: '🌱 Seeker',
+    category,
+    text,
+    time: 'just now',
+    createdAt: Date.now(),
+    votes: 0,
+    answers: [],
+    voted: false,
+    open: false,
+    formOpen: false,
+    txHash,
+    wallet
+  };
+  questions.unshift(newQ);
+  saveQuestions(questions);
+
+  // Also submit to Formspree for admin notification
   try {
-    const res = await fetch(this.action, {
-      method: 'POST', body: new FormData(this), headers: { 'Accept': 'application/json' }
+    await fetch(this.action, {
+      method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
     });
-    if (res.ok) {
-      document.getElementById('ask-form-section').style.display = 'none';
-      const success = document.getElementById('ask-success');
-      success.classList.add('visible');
-      const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
-      document.getElementById('ask-ref').textContent = 'REF: ' + ref;
-    } else { throw new Error(); }
-  } catch {
-    btn.disabled = false;
-    btn.innerHTML = 'Transmit Question →';
-    alert('Transmission failed. Please try again.');
-  }
+  } catch(e) {}
+
+  document.getElementById('ask-form-section').style.display = 'none';
+  const success = document.getElementById('ask-success');
+  success.classList.add('visible');
+  document.getElementById('ask-ref').textContent = 'REF: ' + ref;
+
+  btn.disabled = false;
+  btn.innerHTML = 'Transmit Question →';
 });
 
 // ─── KEPLR ────────────────────────────────────────────────────
 const PROTOCOL_WALLET = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
-const REQUIRED_LUNC = 200000000000; // 200,000 LUNC in uLUNC (6 decimals)
+const REQUIRED_LUNC = 200000000000; // 200,000 LUNC in uLUNC
 let connectedAddress = null;
 
 async function connectKeplr() {
   const btn = document.getElementById('keplr-connect-btn');
   if (!window.keplr) {
-    if (confirm('Keplr wallet not found. Open Keplr website to install?')) {
-      window.open('https://www.keplr.app/', '_blank');
-    }
+    if (confirm('Keplr wallet not found. Install Keplr?')) window.open('https://www.keplr.app/', '_blank');
     return;
   }
   try {
-    btn.textContent = 'Connecting...';
-    btn.disabled = true;
+    btn.textContent = 'Connecting...'; btn.disabled = true;
     await window.keplr.enable('columbus-5');
     const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
     const accounts = await offlineSigner.getAccounts();
     connectedAddress = accounts[0].address;
-    document.getElementById('connected-addr').textContent = connectedAddress.slice(0,12) + '...' + connectedAddress.slice(-6);
+    document.getElementById('connected-addr').textContent = connectedAddress.slice(0,10)+'...'+connectedAddress.slice(-4);
     document.getElementById('verified-wallet-hidden').value = connectedAddress;
     document.getElementById('keplr-disconnected').style.display = 'none';
     document.getElementById('keplr-connected').style.display = 'block';
     document.getElementById('tx-section').style.display = 'block';
   } catch(e) {
-    btn.textContent = '🔑 Connect Keplr Wallet';
-    btn.disabled = false;
+    btn.textContent = '🔑 Connect Keplr Wallet'; btn.disabled = false;
     alert('Connection failed: ' + (e.message || e));
   }
 }
@@ -986,6 +1077,44 @@ function disconnectKeplr() {
   document.getElementById('tx-status').style.display = 'none';
   document.getElementById('keplr-connect-btn').textContent = '🔑 Connect Keplr Wallet';
   document.getElementById('keplr-connect-btn').disabled = false;
+}
+
+// Auto-pay via Keplr when "Pay & Unlock" is clicked
+async function autoPayAndUnlock() {
+  if (!connectedAddress) { alert('Connect wallet first!'); return; }
+  const btn = document.getElementById('verify-btn');
+  const statusEl = document.getElementById('tx-status');
+  btn.textContent = '⏳ Opening Keplr...'; btn.disabled = true;
+
+  try {
+    const { SigningStargateClient } = await import('https://esm.sh/@cosmjs/stargate@0.32.4');
+    const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
+    const RPC = ['https://rpc.terra-classic.io','https://terra-classic-rpc.publicnode.com'];
+    let client = null;
+    for (const rpc of RPC) {
+      try { client = await SigningStargateClient.connectWithSigner(rpc, offlineSigner); break; } catch(e) {}
+    }
+    if (!client) throw new Error('Cannot connect to Terra Classic RPC');
+
+    const result = await client.sendTokens(
+      connectedAddress, PROTOCOL_WALLET,
+      [{ denom: 'uluna', amount: '200000000000' }],
+      { amount: [{ denom: 'uluna', amount: '200000' }], gas: '200000' },
+      'Terra Oracle Question Payment'
+    );
+    if (result.code !== 0) throw new Error('TX failed: ' + result.rawLog);
+
+    document.getElementById('verified-tx-hidden').value = result.transactionHash;
+    showTxStatus('success', '✅ Payment confirmed! 200,000 LUNC sent. Form unlocked.');
+    setTimeout(() => {
+      document.getElementById('tx-section').style.display = 'none';
+      document.getElementById('keplr-connected').style.display = 'none';
+      document.getElementById('ask-form').style.display = 'block';
+    }, 1200);
+  } catch(e) {
+    btn.textContent = 'Pay 200,000 LUNC & Unlock'; btn.disabled = false;
+    showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
+  }
 }
 
 async function verifyTX() {
