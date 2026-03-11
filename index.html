@@ -2793,10 +2793,35 @@ let statsAutoRefreshInterval = null;
 let statsCountdownInterval = null;
 let statsNextRefresh = 0;
 
+let statsBlockInterval = null;
+let lastBlockNum = 0;
+
+async function refreshLiveBlock() {
+  const pg = document.getElementById('page-stats');
+  if (!pg || !pg.classList.contains('active')) return;
+  try {
+    const blockH = await fetchBlockS();
+    const num = Number(blockH);
+    const el = document.getElementById('live-block');
+    if (!el) return;
+    if (num !== lastBlockNum) {
+      // Flash green on new block
+      el.style.transition = 'color 0.2s';
+      el.style.color = '#ffffff';
+      el.textContent = '⬡ Block #' + num.toLocaleString();
+      setTimeout(() => { el.style.color = 'var(--green)'; }, 200);
+      lastBlockNum = num;
+    }
+  } catch(e) {}
+}
+
 function startStatsAutoRefresh() {
   stopStatsAutoRefresh();
   statsNextRefresh = Date.now() + 30000;
   startStatsAutoRefresh._valTick = 0;
+
+  // Block counter every 6 seconds
+  statsBlockInterval = setInterval(refreshLiveBlock, 6000);
 
   // Countdown ticker every second
   statsCountdownInterval = setInterval(() => {
@@ -2824,6 +2849,7 @@ function startStatsAutoRefresh() {
 function stopStatsAutoRefresh() {
   if (statsAutoRefreshInterval) { clearInterval(statsAutoRefreshInterval); statsAutoRefreshInterval = null; }
   if (statsCountdownInterval)   { clearInterval(statsCountdownInterval);   statsCountdownInterval = null; }
+  if (statsBlockInterval)       { clearInterval(statsBlockInterval);       statsBlockInterval = null; }
 }
 
 function showPage_stats(e) {
