@@ -1210,9 +1210,9 @@ if (document.readyState === 'loading') {
 function showPage(name, e) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
   if (e && e.target) e.target.classList.add('active');
-  else if (event && event.target) event.target.classList.add('active');
   if (name === 'board') renderBoard();
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
@@ -1364,6 +1364,7 @@ function removeTag(tag) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  showPage('home');
   const input = document.getElementById('tag-raw-input');
   if (!input) return;
   input.addEventListener('keydown', function(e) {
