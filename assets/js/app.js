@@ -194,7 +194,7 @@ async function loadRecentTxs() {
   const el = document.getElementById('t-recent-txs');
   if (!el) return;
   try {
-    const res = await fetch(`https://terra-classic-lcd.publicnode.com/v1/txs?account=${TREASURY_WALLETS.oracle.addr}&limit=5`);
+    const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${TREASURY_WALLETS.oracle.addr}%27&pagination.limit=5&order_by=2`);
     if (!res.ok) throw new Error();
     const data = await res.json();
     if (!data.txs || data.txs.length === 0) { el.textContent = 'No transactions yet'; return; }
@@ -653,7 +653,7 @@ async function verifyTX() {
   let txData = null;
   for (const node of FCD_NODES) {
     try {
-      const res = await fetch(`${node}/v1/tx/${txHash}`);
+      const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs/${txHash}`);
       if (res.ok) { txData = await res.json(); break; }
     } catch(e) { continue; }
   }
@@ -1005,7 +1005,7 @@ async function loadChatFromChain() {
   let txList = null;
   for (const node of FCD_NODES) {
     try {
-      const res = await fetch(`${node}/v1/txs?account=${CHAT_WALLET}&limit=50`);
+      const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${CHAT_WALLET}%27&pagination.limit=50&order_by=2`);
       if (res.ok) { txList = await res.json(); break; }
     } catch(e) { continue; }
   }
