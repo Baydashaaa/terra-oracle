@@ -754,6 +754,7 @@ window.sendChatMessage = async function() {
 
 // ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
 const CHAT_WALLET = 'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr';
+const CHAT_HISTORY_WALLET = ORACLE_WALLET;
 const CHAT_MIN_ULUNA = 5000000000;
 // FIX 4: два разных FCD узла для настоящего fallback
 const FCD_NODES = [
@@ -823,7 +824,7 @@ async function loadChatFromChain() {
   }
   let txList = null;
   try {
-    const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${CHAT_WALLET}%27&pagination.limit=50&order_by=2`);
+    const res = await fetch(`https://rest.cosmos.directory/terraclassic/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${CHAT_HISTORY_WALLET}%27&pagination.limit=50&order_by=2`);
     if (res.ok) { txList = await res.json(); }
   } catch(e) {}
   if (!txList || !txList.txs) {
