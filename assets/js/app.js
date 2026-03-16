@@ -1113,7 +1113,7 @@ async function loadStatsData() {
 
 async function loadOraclePoolS() {
   try {
-    const res = await fetch('https://lcd.terra-classic.hexxagon.io/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR); const data = await res.json();
+    const res = await fetch('https://rest.cosmos.directory/terraclassic/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR); const data = await res.json();
     const bals = data.balances || [];
     const lunc = bals.find(b => b.denom === 'uluna');
     const ustc = bals.find(b => b.denom === 'uusd');
