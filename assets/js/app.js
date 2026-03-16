@@ -1,4 +1,5 @@
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
+function loadAllStats() { loadStatsData(); loadOraclePoolS(); loadValidatorsS(); }
 function smoothScrollTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 // ─── ADMIN KEY ───────────────────────────────────────────────
