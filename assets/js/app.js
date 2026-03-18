@@ -1124,39 +1124,16 @@ async function loadStatsData() {
 }
 
 async function loadOraclePoolS() {
-  // Use BigInt to avoid JS precision loss on large uluna amounts
   const toNum = amt => amt ? Number(BigInt(amt)) / 1e6 : 0;
   try {
-    // FCD endpoint - has CORS headers for browser requests
+    // Read from GitHub-hosted JSON (updated by GitHub Actions every 30min - no CORS issues)
     const res = await fetch(
-      'https://terra-classic-fcd.publicnode.com/v1/bank/' + ORACLE_POOL_ADDR,
-      { headers: { 'Accept': 'application/json' } }
+      'https://raw.githubusercontent.com/Baydashaaa/lunc-anonymous-signal/main/assets/data/oracle-pool.json?t=' + Date.now()
     );
     if (res.ok) {
       const data = await res.json();
-      const bals = data.balances || [];
-      const lunc = bals.find(b => b.denom === 'uluna');
-      const ustc  = bals.find(b => b.denom === 'uusd');
-      const luncVal = toNum(lunc?.amount);
-      const ustcVal = toNum(ustc?.amount);
-      setTxt('oracle-lunc', fmtFull(luncVal));
-      setTxt('oracle-ustc', fmtFull(ustcVal));
-      drawOracleChartS(luncVal, ustcVal);
-      return;
-    }
-  } catch {}
-  // Fallback: autostake LCD (CORS-friendly)
-  try {
-    const res = await fetch(
-      'https://terraclassic-mainnet-lcd.autostake.com:443/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const bals = data.balances || [];
-      const lunc = bals.find(b => b.denom === 'uluna');
-      const ustc  = bals.find(b => b.denom === 'uusd');
-      const luncVal = toNum(lunc?.amount);
-      const ustcVal = toNum(ustc?.amount);
+      const luncVal = data.lunc || 0;
+      const ustcVal = data.ustc || 0;
       setTxt('oracle-lunc', fmtFull(luncVal));
       setTxt('oracle-ustc', fmtFull(ustcVal));
       drawOracleChartS(luncVal, ustcVal);
