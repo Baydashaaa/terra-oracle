@@ -1728,18 +1728,14 @@ async function loadSupplyChart(period) {
     // 1. Get current real supply from LCD
     let currentSupply = 6.466e12;
     try {
-      for (const base of ['https://lcd.terra-classic.hexxagon.io','https://api-lunc-lcd.binodes.com']) {
-        try {
-          const lcdRes = await Promise.race([
-            fetch(base + '/cosmos/bank/v1beta1/supply/by_denom?denom=uluna'),
-            new Promise((_, r) => setTimeout(r, 5000))
-          ]);
-          if (lcdRes?.ok) {
-            const lj = await lcdRes.json();
-            const amt = lj?.amount?.amount;
-            if (amt) { currentSupply = Number(amt) / 1e6; break; }
-          }
-        } catch {}
+      const lcdRes = await Promise.race([
+        fetch('https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/supply/uluna'),
+        new Promise((_, r) => setTimeout(r, 4000))
+      ]);
+      if (lcdRes?.ok) {
+        const lj = await lcdRes.json();
+        const amt = lj?.amount?.amount;
+        if (amt) currentSupply = Number(amt) / 1e6;
       }
     } catch {}
 
@@ -1776,6 +1772,15 @@ async function loadSupplyChart(period) {
     }
 
     if (raw.length < 3) throw new Error('not enough data');
+
+    // Actual seconds per candle
+    const actualCandleSec = {
+      '1h': 3600,
+      '4h': 4 * 3600,
+      'D':  86400,
+      'W':  7 * 86400,
+      'M':  30.44 * 86400,
+    }[period] || 86400;
 
     // 3. Build candles using real supply change from CryptoCompare OHLC
     // Supply change per candle = real burn (tax + Binance) based on actual supply difference
