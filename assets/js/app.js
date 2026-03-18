@@ -2240,12 +2240,12 @@ function updateBinanceCountdown() {
   }
 
   if (inWindow) {
-    set('bnb-burn-date', `🔥 BURN EXPECTED · ${burnMon} 1 T-2 days`);
+    set('bnb-burn-date', `🔥 BURN EXPECTED · ${burnMon} 1 (±2 days)`);
     // Flash the digits
     const digits = document.getElementById('bnb-countdown-digits');
     if (digits) digits.style.opacity = (Math.floor(Date.now()/600) % 2 === 0) ? '1' : '0.4';
   } else {
-    set('bnb-burn-date', `${burnMon} 1, ${burnYr} · T-2 days window`);
+    set('bnb-burn-date', `${burnMon} 1, ${burnYr} (±2 days)`);
     const digits = document.getElementById('bnb-countdown-digits');
     if (digits) digits.style.opacity = '1';
   }
