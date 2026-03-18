@@ -1773,35 +1773,6 @@ async function loadSupplyChart(period) {
 
     if (raw.length < 3) throw new Error('not enough data');
 
-    // Fetch Binance burns: on-chain (last 12 months) + historical fallback
-    const BINANCE_BURNS = await fetchBinanceBurnsFromChain();
-
-    // Actual seconds per candle - CORRECT for grouped periods
-    const actualCandleSec = {
-      '1h': 3600,
-      '4h': 4 * 3600,      // 4h grouped from hourly
-      'D':  86400,
-      'W':  7 * 86400,      // week grouped from daily
-      'M':  30.44 * 86400,  // calendar month
-    }[period] || 86400;
-
-    // Helper: get Binance burn for a candle's time window
-    function getBinanceBurn(candleStartTs, period) {
-      const candleEndTs = candleStartTs + actualCandleSec;
-      if (period === 'M') {
-        // Match by calendar month
-        const cDate = new Date(candleStartTs * 1000);
-        const cY = cDate.getUTCFullYear(), cM = cDate.getUTCMonth();
-        return BINANCE_BURNS
-          .filter(b => { const d = new Date(b.ts * 1000); return d.getUTCFullYear() === cY && d.getUTCMonth() === cM; })
-          .reduce((s, b) => s + b.amount, 0);
-      }
-      // For all other periods: strict window [start, end)
-      return BINANCE_BURNS
-        .filter(b => b.ts >= candleStartTs && b.ts < candleEndTs)
-        .reduce((s, b) => s + b.amount, 0);
-    }
-
     // 3. Build candles using real supply change from CryptoCompare OHLC
     // Supply change per candle = real burn (tax + Binance) based on actual supply difference
     // Anchor last candle to real LCD supply, reconstruct backwards
