@@ -2622,24 +2622,23 @@ function _renderOracleChart(lunc, ustc) {
   const ustcEnd = ustcStart + (Math.PI * 2 * ustcPct) - gap;
   const luncMid = luncStart + (luncEnd - luncStart) / 2;
   const ustcMid = ustcStart + (ustcEnd - ustcStart) / 2;
-  const EXPLODE = size * 0.05;
+  const EXPLODE = size * 0.04;
 
   function drawSegment(start, end, mid, explode, c1, c2, glow) {
     const ox = Math.cos(mid) * EXPLODE * explode;
     const oy = Math.sin(mid) * EXPLODE * explode;
-    ctx.save();
-    ctx.translate(ox, oy);
+    // Move the origin point of the segment outward (not translate)
     ctx.shadowColor = glow;
-    ctx.shadowBlur = 18 + explode * 16;
+    ctx.shadowBlur = 18 + explode * 10;
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
+    ctx.moveTo(cx + ox, cy + oy);
+    ctx.arc(cx + ox, cy + oy, r, start, end);
     ctx.closePath();
-    const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, r);
+    const grad = ctx.createRadialGradient(cx + ox, cy + oy, inner, cx + ox, cy + oy, r);
     grad.addColorStop(0, c1); grad.addColorStop(1, c2);
     ctx.fillStyle = grad;
     ctx.fill();
-    ctx.restore();
+    ctx.shadowBlur = 0;
   }
 
   drawSegment(luncStart, luncEnd, luncMid, _oracleExplode.lunc,
@@ -2667,16 +2666,23 @@ function _renderOracleChart(lunc, ustc) {
   function drawLabel(midAngle, pct, color, explode) {
     const ox = Math.cos(midAngle) * EXPLODE * explode;
     const oy = Math.sin(midAngle) * EXPLODE * explode;
-    const labelR = r * 1.3 + EXPLODE * explode;
+    const scx = cx + ox, scy = cy + oy;
+    // Line from segment edge outward
+    const x1 = scx + Math.cos(midAngle) * r * 1.06;
+    const y1 = scy + Math.sin(midAngle) * r * 1.06;
+    const x2 = scx + Math.cos(midAngle) * r * 1.20;
+    const y2 = scy + Math.sin(midAngle) * r * 1.20;
+    // Label position - fixed relative to original center to avoid clipping
+    const labelR = r * 1.32;
+    const tx = cx + Math.cos(midAngle) * (labelR + EXPLODE * explode);
+    const ty = cy + Math.sin(midAngle) * (labelR + EXPLODE * explode);
+    ctx.shadowBlur = 0;
     ctx.beginPath();
-    ctx.moveTo(cx + ox + Math.cos(midAngle) * r * 1.05, cy + oy + Math.sin(midAngle) * r * 1.05);
-    ctx.lineTo(cx + ox + Math.cos(midAngle) * r * 1.22, cy + oy + Math.sin(midAngle) * r * 1.22);
+    ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
     ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = color;
     ctx.textAlign = Math.cos(midAngle) >= 0 ? 'left' : 'right';
-    ctx.fillText(pct.toFixed(1) + '%',
-      cx + ox + Math.cos(midAngle) * labelR,
-      cy + oy + Math.sin(midAngle) * labelR);
+    ctx.fillText(pct.toFixed(1) + '%', tx, ty);
   }
 
   drawLabel(luncMid, luncPct * 100, '#66ffaa', _oracleExplode.lunc);
