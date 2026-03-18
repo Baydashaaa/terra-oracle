@@ -2533,39 +2533,43 @@ let _oracleAnimFrame = null;
 let _oracleExplode = { lunc: 0, ustc: 0 };
 let _oracleLastData = { lunc: 0, ustc: 0 };
 
-function drawOracleChartS(lunc, ustc) {
-  _oracleLastData = { lunc, ustc };
+function _oracleInitCanvas() {
   const canvas = document.getElementById('oracleChart');
-  if (!canvas) return;
+  if (!canvas || canvas._oracleHoverBound) return;
+  canvas._oracleHoverBound = true;
+  canvas.style.cursor = 'pointer';
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const size = canvas._sizeW || 280;
+    const cx = (size + 40) / 2, cy = (size + 40) / 2;
+    const dx = mx - cx, dy = my - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const r = size * 0.38, inner = size * 0.22;
+    if (dist < inner || dist > r * 1.15) {
+      _oracleHover = null;
+    } else {
+      let angle = Math.atan2(dy, dx);
+      const total = _oracleLastData.lunc + _oracleLastData.ustc;
+      if (total <= 0) return;
+      const luncPct = _oracleLastData.lunc / total;
+      const gap = 0.03;
+      const luncStart = -Math.PI / 2 + gap / 2;
+      const luncEnd = luncStart + (Math.PI * 2 * luncPct) - gap;
+      if (angle < luncStart) angle += Math.PI * 2;
+      _oracleHover = (angle >= luncStart && angle <= luncEnd) ? 'lunc' : 'ustc';
+    }
+    // Trigger animation loop if not running
+    if (!_oracleAnimFrame) _oracleStartLoop();
+  });
+  canvas.addEventListener('mouseleave', () => {
+    _oracleHover = null;
+    if (!_oracleAnimFrame) _oracleStartLoop();
+  });
+}
 
-  if (!canvas._oracleHoverBound) {
-    canvas._oracleHoverBound = true;
-    canvas.style.cursor = 'pointer';
-    canvas.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const size = parseFloat(canvas.style.width);
-      const cx = size / 2, cy = size / 2;
-      const dx = mx - cx, dy = my - cy;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const r = size * 0.38, inner = size * 0.22;
-      if (dist < inner || dist > r * 1.15) {
-        _oracleHover = null;
-      } else {
-        let angle = Math.atan2(dy, dx);
-        const total = _oracleLastData.lunc + _oracleLastData.ustc;
-        const luncPct = _oracleLastData.lunc / total;
-        const gap = 0.03;
-        const luncStart = -Math.PI / 2 + gap / 2;
-        const luncEnd = luncStart + (Math.PI * 2 * luncPct) - gap;
-        if (angle < luncStart) angle += Math.PI * 2;
-        _oracleHover = (angle >= luncStart && angle <= luncEnd) ? 'lunc' : 'ustc';
-      }
-    });
-    canvas.addEventListener('mouseleave', () => { _oracleHover = null; });
-  }
-
+function _oracleStartLoop() {
   if (_oracleAnimFrame) cancelAnimationFrame(_oracleAnimFrame);
   function animate() {
     const tl = _oracleHover === 'lunc' ? 1 : 0;
@@ -2573,11 +2577,21 @@ function drawOracleChartS(lunc, ustc) {
     const speed = 0.14;
     _oracleExplode.lunc += (tl - _oracleExplode.lunc) * speed;
     _oracleExplode.ustc += (tu - _oracleExplode.ustc) * speed;
-    _renderOracleChart(lunc, ustc);
+    _renderOracleChart(_oracleLastData.lunc, _oracleLastData.ustc);
     const diff = Math.abs(_oracleExplode.lunc - tl) + Math.abs(_oracleExplode.ustc - tu);
-    if (diff > 0.002) _oracleAnimFrame = requestAnimationFrame(animate);
+    if (diff > 0.002) {
+      _oracleAnimFrame = requestAnimationFrame(animate);
+    } else {
+      _oracleAnimFrame = null;
+    }
   }
   animate();
+}
+
+function drawOracleChartS(lunc, ustc) {
+  _oracleLastData = { lunc, ustc };
+  _oracleInitCanvas();
+  _renderOracleChart(lunc, ustc);
 }
 
 function _renderOracleChart(lunc, ustc) {
