@@ -1125,23 +1125,38 @@ async function loadStatsData() {
 
 async function loadOraclePoolS() {
   try {
-    const res = await fetch(
-      'https://raw.githubusercontent.com/Baydashaaa/lunc-anonymous-signal/main/assets/data/oracle-pool.json?t=' + Date.now()
-    );
-    if (!res.ok) return;
-    const data = await res.json();
+    const [poolRes, priceRes] = await Promise.allSettled([
+      fetch('https://raw.githubusercontent.com/Baydashaaa/lunc-anonymous-signal/main/assets/data/oracle-pool.json?t=' + Date.now()),
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna-classic,terraclassicusd&vs_currencies=usd')
+    ]);
+    if (poolRes.status !== 'fulfilled' || !poolRes.value.ok) return;
+    const data = await poolRes.value.json();
     const luncVal = data.lunc || 0;
     const ustcVal = data.ustc || 0;
+
+    // Get USD prices with fallback
+    let luncPrice = 0.000042, ustcPrice = 0.005;
+    if (priceRes.status === 'fulfilled' && priceRes.value.ok) {
+      const prices = await priceRes.value.json();
+      luncPrice = prices['terra-luna-classic']?.usd || luncPrice;
+      ustcPrice = prices['terraclassicusd']?.usd || ustcPrice;
+    }
+
+    const luncUSD = luncVal * luncPrice;
+    const ustcUSD = ustcVal * ustcPrice;
+
     if (luncVal > 0) {
       setTxt('oracle-lunc', fmtFull(luncVal));
       setTxt('oracle-lunc-pie', fmtFull(luncVal) + ' LUNC');
+      setTxt('oracle-lunc-usd', '≈ $' + fmtFull(Math.round(luncUSD)));
     }
     if (ustcVal > 0) {
       setTxt('oracle-ustc', fmtFull(ustcVal));
       setTxt('oracle-ustc-pie', fmtFull(ustcVal) + ' USTC');
-      setTxt('oracle-total-pie', fmtFull(luncVal + ustcVal) + ' total');
+      setTxt('oracle-ustc-usd', '≈ $' + fmtFull(Math.round(ustcUSD)));
+      setTxt('oracle-total-pie', '≈ $' + fmtFull(Math.round(luncUSD + ustcUSD)));
     }
-    drawOracleChartS(luncVal, ustcVal);
+    drawOracleChartS(luncUSD, ustcUSD);
   } catch {}
 }
 
