@@ -123,6 +123,10 @@ function showPage(name, e) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
   if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
+  // Save current page to URL hash so refresh restores it
+  if (history.replaceState) {
+    history.replaceState(null, '', '#' + name);
+  }
   smoothScrollTop();
 }
 
@@ -273,7 +277,11 @@ function removeTag(tag) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  showPage('home');
+  // Restore page from URL hash on refresh
+  const hash = window.location.hash.replace('#', '');
+  const validPages = ['home','board','ask','chat','vote','about','treasury','stats'];
+  const startPage = validPages.includes(hash) ? hash : 'home';
+  showPage(startPage);
   const input = document.getElementById('tag-raw-input');
   if (!input) return;
   input.addEventListener('keydown', function(e) {
