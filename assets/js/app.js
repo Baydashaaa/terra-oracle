@@ -1728,14 +1728,23 @@ async function loadSupplyChart(period) {
     // 1. Get current real supply from LCD
     let currentSupply = 6.466e12;
     try {
-      const lcdRes = await Promise.race([
-        fetch('https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/supply/uluna'),
-        new Promise((_, r) => setTimeout(r, 4000))
-      ]);
-      if (lcdRes?.ok) {
-        const lj = await lcdRes.json();
-        const amt = lj?.amount?.amount;
-        if (amt) currentSupply = Number(amt) / 1e6;
+      // Try multiple LCD endpoints with fallback
+      const lcdEndpoints = [
+        'https://lcd.terra-classic.hexxagon.io',
+        'https://api-lunc-lcd.binodes.com',
+      ];
+      for (const base of lcdEndpoints) {
+        try {
+          const lcdRes = await Promise.race([
+            fetch(base + '/cosmos/bank/v1beta1/supply/by_denom?denom=uluna'),
+            new Promise((_, r) => setTimeout(r, 5000))
+          ]);
+          if (lcdRes?.ok) {
+            const lj = await lcdRes.json();
+            const amt = lj?.amount?.amount;
+            if (amt) { currentSupply = Number(amt) / 1e6; break; }
+          }
+        } catch {}
       }
     } catch {}
 
