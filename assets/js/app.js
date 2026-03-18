@@ -17,7 +17,7 @@ function smoothScrollTop() {
   requestAnimationFrame(step);
 }
 window.addEventListener('load', () => { window.scrollTo(0, 0); });
-function loadAllStats() { loadStatsData(); loadOraclePoolS(); loadValidatorsS(); }
+function loadAllStats() { loadStatsData(); loadOraclePoolS(); loadValidatorsS(); loadBurnHistory(); }
 function smoothScrollTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 // ─── ADMIN KEY ───────────────────────────────────────────────
@@ -1274,6 +1274,155 @@ function drawPoolHistoryChart() {
   ctx.fillText('● LUNC', pad.l, pad.t - 2);
   ctx.fillStyle = '#5493f7';
   ctx.fillText('● USTC', pad.l + 52, pad.t - 2);
+}
+
+
+// ============================================================
+// BURN HISTORY CHART
+// ============================================================
+const BURN_HISTORY_URL = 'https://raw.githubusercontent.com/Baydashaaa/lunc-anonymous-signal/main/assets/data/burn_history.json';
+
+let _burnHistoryData = null;
+let _burnPeriod = '30d';
+
+async function loadBurnHistory() {
+  const canvas = document.getElementById('burnHistoryChart');
+  const msg = document.getElementById('burnHistoryMsg');
+  const tabs = document.querySelectorAll('.burn-tab');
+  if (!canvas) return;
+
+  try {
+    if (!_burnHistoryData) {
+      const res = await fetch(BURN_HISTORY_URL + '?t=' + Date.now());
+      if (!res.ok) throw new Error('not found');
+      _burnHistoryData = await res.json();
+    }
+    drawBurnHistoryChart(_burnHistoryData);
+  } catch(e) {
+    if (msg) { msg.style.display = 'block'; msg.textContent = 'Burn history not available yet — bootstrap in progress'; }
+    canvas.style.display = 'none';
+  }
+}
+
+function setBurnPeriod(p) {
+  _burnPeriod = p;
+  document.querySelectorAll('.burn-tab').forEach(t => {
+    const isActive = t.dataset.period === p;
+    t.classList.toggle('active-tf', isActive);
+    t.classList.toggle('active', isActive);
+  });
+  if (_burnHistoryData) drawBurnHistoryChart(_burnHistoryData);
+}
+
+function drawBurnHistoryChart(data) {
+  const canvas = document.getElementById('burnHistoryChart');
+  const msg = document.getElementById('burnHistoryMsg');
+  if (!canvas) return;
+
+  // выбираем источник данных по периоду
+  let points = [];
+  const now = Date.now();
+
+  if (_burnPeriod === '7d' || _burnPeriod === '30d') {
+    // hourly данные
+    let hourly = data.hourly || [];
+    const cutoffH = new Date(now - (_burnPeriod === '7d' ? 7 : 30) * 86400000)
+      .toISOString().slice(0, 13);
+    hourly = hourly.filter(h => h.ts >= cutoffH);
+    points = hourly.map(h => ({ label: h.ts.slice(5, 13), value: h.burn / 1e6 }));
+  } else {
+    // daily данные
+    let daily = data.daily || [];
+    if (_burnPeriod === '3m') {
+      const cutoff = new Date(now - 90 * 86400000).toISOString().slice(0, 10);
+      daily = daily.filter(d => d.date >= cutoff);
+    } else if (_burnPeriod === '6m') {
+      const cutoff = new Date(now - 180 * 86400000).toISOString().slice(0, 10);
+      daily = daily.filter(d => d.date >= cutoff);
+    }
+    // иначе all — всё что есть
+    points = daily.map(d => ({ label: d.date.slice(5), value: d.burn / 1e6 }));
+  }
+
+  if (points.length < 2) {
+    if (msg) { msg.style.display = 'block'; msg.textContent = 'Not enough data yet — check back soon'; }
+    canvas.style.display = 'none';
+    return;
+  }
+  if (msg) msg.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.clientWidth - 40 || 600;
+  const h = 160;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { l: 58, r: 16, t: 14, b: 28 };
+  const cw = w - pad.l - pad.r;
+  const ch = h - pad.t - pad.b;
+  const n = points.length;
+  const vals = points.map(p => p.value);
+  const vMin = 0;
+  const vMax = Math.max(...vals) * 1.1 || 1;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(30,51,88,0.6)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+  }
+
+  // Filled area под линией
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+  grad.addColorStop(0, 'rgba(255,80,80,0.25)');
+  grad.addColorStop(1, 'rgba(255,80,80,0.02)');
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    const x = pad.l + (i / (n - 1)) * cw;
+    const y = pad.t + (1 - (p.value - vMin) / (vMax - vMin)) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.l + cw, pad.t + ch);
+  ctx.lineTo(pad.l, pad.t + ch);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Линия
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    const x = pad.l + (i / (n - 1)) * cw;
+    const y = pad.t + (1 - (p.value - vMin) / (vMax - vMin)) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#ff5050'; ctx.lineWidth = 2;
+  ctx.shadowColor = '#ff5050'; ctx.shadowBlur = 8;
+  ctx.stroke(); ctx.shadowBlur = 0;
+
+  // Y axis
+  ctx.fillStyle = 'rgba(122,158,196,0.7)'; ctx.font = '9px Exo 2'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = vMin + (vMax - vMin) * (1 - i / 4);
+    const y = pad.t + (ch / 4) * i;
+    ctx.fillText(fmtS(v) + 'M', pad.l - 4, y + 3);
+  }
+
+  // X axis labels
+  ctx.fillStyle = 'rgba(122,158,196,0.5)'; ctx.textAlign = 'center'; ctx.font = '9px Exo 2';
+  const step = Math.max(1, Math.floor(n / 6));
+  for (let i = 0; i < n; i += step) {
+    const x = pad.l + (i / (n - 1)) * cw;
+    ctx.fillText(points[i].label, x, h - 6);
+  }
+
+  // Legend
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ff5050'; ctx.font = 'bold 9px Exo 2';
+  ctx.fillText('🔥 LUNC Burned (M)', pad.l, pad.t - 2);
 }
 
 
