@@ -1124,29 +1124,45 @@ async function loadStatsData() {
 }
 
 async function loadOraclePoolS() {
-  const ENDPOINTS = [
-    'https://lcd.terra-classic.hexxagon.io',
-    'https://terra-classic-lcd.publicnode.com',
-    'https://api-lunc-lcd.binodes.com',
-  ];
-  // Use BigInt to avoid JS precision loss on large amounts
+  // Use BigInt to avoid JS precision loss on large uluna amounts
   const toNum = amt => amt ? Number(BigInt(amt)) / 1e6 : 0;
-  for (const base of ENDPOINTS) {
-    try {
-      const res = await fetch(base + '/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR);
-      if (!res.ok) continue;
+  try {
+    // FCD endpoint - has CORS headers for browser requests
+    const res = await fetch(
+      'https://terra-classic-fcd.publicnode.com/v1/bank/' + ORACLE_POOL_ADDR,
+      { headers: { 'Accept': 'application/json' } }
+    );
+    if (res.ok) {
       const data = await res.json();
       const bals = data.balances || [];
       const lunc = bals.find(b => b.denom === 'uluna');
-      const ustc = bals.find(b => b.denom === 'uusd');
+      const ustc  = bals.find(b => b.denom === 'uusd');
       const luncVal = toNum(lunc?.amount);
       const ustcVal = toNum(ustc?.amount);
       setTxt('oracle-lunc', fmtFull(luncVal));
       setTxt('oracle-ustc', fmtFull(ustcVal));
       drawOracleChartS(luncVal, ustcVal);
       return;
-    } catch { continue; }
-  }
+    }
+  } catch {}
+  // Fallback: autostake LCD (CORS-friendly)
+  try {
+    const res = await fetch(
+      'https://terraclassic-mainnet-lcd.autostake.com:443/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const bals = data.balances || [];
+      const lunc = bals.find(b => b.denom === 'uluna');
+      const ustc  = bals.find(b => b.denom === 'uusd');
+      const luncVal = toNum(lunc?.amount);
+      const ustcVal = toNum(ustc?.amount);
+      setTxt('oracle-lunc', fmtFull(luncVal));
+      setTxt('oracle-ustc', fmtFull(ustcVal));
+      drawOracleChartS(luncVal, ustcVal);
+      return;
+    }
+  } catch {}
   setTxt('oracle-lunc', '—'); setTxt('oracle-ustc', '—');
 }
 
