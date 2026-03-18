@@ -2,8 +2,8 @@ name: Update Oracle Pool Data
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # every 30 minutes
-  workflow_dispatch:           # manual trigger
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   update:
@@ -12,72 +12,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch and update with history
+      - name: Fetch and update
         run: |
           ADDR="terra1jgp27m8fykex4e4jtt0l7ze8q528ux2lh4zh0f"
-          ENDPOINTS=(
-            "https://lcd.terra-classic.hexxagon.io"
-            "https://terra-classic-lcd.publicnode.com"
-            "https://api-lunc-lcd.binodes.com"
-          )
           DATA=""
-          for BASE in "${ENDPOINTS[@]}"; do
+          for BASE in "https://lcd.terra-classic.hexxagon.io" "https://terra-classic-lcd.publicnode.com" "https://api-lunc-lcd.binodes.com"; do
             DATA=$(curl -sf --max-time 10 "$BASE/cosmos/bank/v1beta1/balances/$ADDR" || true)
-            if [ -n "$DATA" ]; then
-              echo "Success with $BASE"
-              break
-            fi
+            if [ -n "$DATA" ]; then echo "OK: $BASE"; break; fi
           done
-
-          if [ -z "$DATA" ]; then
-            echo "All endpoints failed"
-            exit 1
-          fi
-
+          if [ -z "$DATA" ]; then echo "All endpoints failed"; exit 1; fi
           mkdir -p assets/data
-
-          python3 - "$DATA" << 'PYEOF'
-import sys, json, os
-from datetime import datetime, timezone
-
-d = json.loads(sys.argv[1])
-bals = d.get('balances', [])
-lunc = next((b for b in bals if b['denom'] == 'uluna'), None)
-ustc = next((b for b in bals if b['denom'] == 'uusd'), None)
-lunc_val = int(lunc['amount']) / 1e6 if lunc else 0
-ustc_val = int(ustc['amount']) / 1e6 if ustc else 0
-now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
-path = 'assets/data/oracle-pool.json'
-existing = {}
-if os.path.exists(path):
-    try:
-        existing = json.loads(open(path).read())
-    except:
-        existing = {}
-
-history = existing.get('history', [])
-
-# One entry per day — overwrite today if exists
-history = [h for h in history if h.get('date') != today]
-history.append({'date': today, 'lunc': lunc_val, 'ustc': ustc_val})
-history = sorted(history, key=lambda x: x['date'])
-if len(history) > 400:
-    history = history[-400:]
-
-output = {
-    'lunc': lunc_val,
-    'ustc': ustc_val,
-    'updated': now,
-    'history': history
-}
-
-with open(path, 'w') as f:
-    json.dump(output, f, separators=(',', ':'))
-
-print(f"Done: lunc={lunc_val:.0f} ustc={ustc_val:.0f} history={len(history)} days")
-PYEOF
+          echo "$DATA" > /tmp/balance.json
+          python3 update_pool.py
 
       - name: Commit and push
         run: |
