@@ -1086,7 +1086,7 @@ function showPage_stats(e) {
 const LCD_S  = 'https://lcd.terra-classic.hexxagon.io';
 const LCD_S2 = 'https://terra-classic-lcd.publicnode.com';
 // FIX 3: ORACLE_POOL_ADDR исправлен — теперь совпадает с ORACLE_WALLET
-const ORACLE_POOL_ADDR = 'terra1jgp27m8fykex4e4jtt0l7ze8q528ux2lh4zh0f';
+const ORACLE_POOL_ADDR = 'terra1jgp27m8fykex4e4jtt0l7ze8q528ux2lh4zh0f'; // oracle module
 
 let allValidators = [], valFilter = 'active', valPage = 1;
 const VAL_PER_PAGE = 20;
@@ -1124,15 +1124,26 @@ async function loadStatsData() {
 }
 
 async function loadOraclePoolS() {
-  try {
-    const res = await fetch('https://rest.cosmos.directory/terraclassic/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR); const data = await res.json();
-    const bals = data.balances || [];
-    const lunc = bals.find(b => b.denom === 'uluna');
-    const ustc = bals.find(b => b.denom === 'uusd');
-    setTxt('oracle-lunc', fmtFull(lunc ? Number(lunc.amount)/1e6 : 0));
-    setTxt('oracle-ustc', fmtFull(ustc ? Number(ustc.amount)/1e6 : 0));
-    drawOracleChartS(lunc ? Number(lunc.amount)/1e6 : 0, ustc ? Number(ustc.amount)/1e6 : 0);
-  } catch { setTxt('oracle-lunc', '—'); setTxt('oracle-ustc', '—'); }
+  const ENDPOINTS = [
+    'https://terra-classic-lcd.publicnode.com',
+    'https://lcd.terra-classic.hexxagon.io',
+    'https://terraclassic-lcd.kingnodes.com',
+  ];
+  for (const base of ENDPOINTS) {
+    try {
+      const res = await fetch(base + '/cosmos/bank/v1beta1/balances/' + ORACLE_POOL_ADDR);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const bals = data.balances || [];
+      const lunc = bals.find(b => b.denom === 'uluna');
+      const ustc = bals.find(b => b.denom === 'uusd');
+      setTxt('oracle-lunc', fmtFull(lunc ? Number(lunc.amount)/1e6 : 0));
+      setTxt('oracle-ustc', fmtFull(ustc ? Number(ustc.amount)/1e6 : 0));
+      drawOracleChartS(lunc ? Number(lunc.amount)/1e6 : 0, ustc ? Number(ustc.amount)/1e6 : 0);
+      return;
+    } catch { continue; }
+  }
+  setTxt('oracle-lunc', '—'); setTxt('oracle-ustc', '—');
 }
 
 async function loadValidatorsS() {
