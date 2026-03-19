@@ -1941,6 +1941,7 @@ async function loadSupplyChart(period) {
   if (wrapEl) wrapEl.style.display = 'none';
 
   const cfg = TF_CONFIG[period] || TF_CONFIG['D'];
+
   try {
     // 1. Get current real supply from LCD
     let currentSupply = 6.466e12;
@@ -1956,7 +1957,36 @@ async function loadSupplyChart(period) {
       }
     } catch {}
 
-    // 2. Fetch volume data from CryptoCompare for realistic burn variation
+    // 2. Make sure burn_history.json is loaded
+    if (!_burnHistoryData) {
+      try {
+        const r = await fetch(BURN_HISTORY_URL + '?t=' + Date.now());
+        if (r.ok) _burnHistoryData = await r.json();
+      } catch {}
+    }
+
+    // 3. Build burn lookup from real data
+    // For 1h/4h — use hourly array; for D/W/M — use daily array
+    const useHourly = (period === '1h' || period === '4h');
+    const burnSource = useHourly
+      ? (_burnHistoryData?.hourly || [])
+      : (_burnHistoryData?.daily  || []);
+
+    // Build map: timestamp (start of hour or day in UTC) → burn amount
+    const burnMap = {};
+    burnSource.forEach(d => {
+      if (d.date) {
+        // daily: "YYYY-MM-DD"
+        const [y, m, dd] = d.date.split('-').map(Number);
+        const ts = Math.floor(Date.UTC(y, m - 1, dd) / 1000);
+        burnMap[ts] = d.burn || 0;
+      } else if (d.time) {
+        // hourly: unix timestamp
+        burnMap[d.time] = d.burn || 0;
+      }
+    });
+
+    // 4. Fetch CryptoCompare for timestamps (we only use time axis, not volume)
     const url = `https://min-api.cryptocompare.com/data/v2/${cfg.endpoint}?fsym=LUNC&tsym=USD&limit=${cfg.limit}&extraParams=TerraOracle`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1964,14 +1994,13 @@ async function loadSupplyChart(period) {
     if (json.Response === 'Error') throw new Error(json.Message);
     let raw = (json.Data?.Data || []).filter(d => d.volumefrom > 0);
 
-    // Group candles
+    // Group candles for 4h/W/M
     if (period === 'M') {
-      // Group by calendar month - Binance burns always on 1st of month
       const monthMap = {};
       raw.forEach(d => {
         const dt = new Date(d.time * 1000);
-        const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
-        if (!monthMap[key]) monthMap[key] = { time: new Date(dt.getFullYear(), dt.getMonth(), 1).getTime()/1000, volumefrom: 0 };
+        const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}`;
+        if (!monthMap[key]) monthMap[key] = { time: Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), 1)/1000, volumefrom: 0 };
         monthMap[key].volumefrom += d.volumefrom || 0;
       });
       raw = Object.values(monthMap).sort((a, b) => a.time - b.time);
@@ -1990,75 +2019,61 @@ async function loadSupplyChart(period) {
 
     if (raw.length < 3) throw new Error('not enough data');
 
-    // Actual seconds per candle
-    const actualCandleSec = {
-      '1h': 3600,
-      '4h': 4 * 3600,
-      'D':  86400,
-      'W':  7 * 86400,
-      'M':  30.44 * 86400,
-    }[period] || 86400;
+    const actualCandleSec = { '1h': 3600, '4h': 14400, 'D': 86400, 'W': 604800, 'M': 2592000 }[period] || 86400;
+    const FALLBACK_DAILY = 16_500_000;
 
-    // 3. Build candles using real supply change from CryptoCompare OHLC
-    // Supply change per candle = real burn (tax + Binance) based on actual supply difference
-    // Anchor last candle to real LCD supply, reconstruct backwards
-
-    const BINANCE_BURNS = await fetchBinanceBurnsFromChain();
-
-    // Helper: get Binance burn for a candle window
-    function getBinanceBurn(candleStartTs, period) {
-      const candleEndTs = candleStartTs + actualCandleSec;
-      if (period === 'M') {
-        const cDate = new Date(candleStartTs * 1000);
-        const cY = cDate.getUTCFullYear(), cM = cDate.getUTCMonth();
-        return BINANCE_BURNS
-          .filter(b => { const d = new Date(b.ts * 1000); return d.getUTCFullYear() === cY && d.getUTCMonth() === cM; })
-          .reduce((s, b) => s + b.amount, 0);
+    // 5. For each candle: get real burn from burnMap, fallback to daily average
+    function getRealBurn(candleTs, period) {
+      if (useHourly) {
+        // sum hours within candle window
+        let total = 0;
+        const slots = period === '4h' ? 4 : 1;
+        for (let h = 0; h < slots; h++) {
+          const slotTs = candleTs + h * 3600;
+          // find closest hourly entry (within ±30min)
+          const match = Object.keys(burnMap).map(Number).find(t => Math.abs(t - slotTs) < 1800);
+          total += match ? burnMap[match] : (FALLBACK_DAILY / 24);
+        }
+        return total;
       }
-      return BINANCE_BURNS
-        .filter(b => b.ts >= candleStartTs && b.ts < candleEndTs)
-        .reduce((s, b) => s + b.amount, 0);
+      // daily/weekly/monthly: sum days in candle
+      const days = Math.round(actualCandleSec / 86400);
+      let total = 0;
+      for (let d = 0; d < days; d++) {
+        const dayTs = candleTs + d * 86400;
+        // find matching day
+        const dt = new Date(dayTs * 1000);
+        const key = Math.floor(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()) / 1000);
+        total += burnMap[key] || FALLBACK_DAILY;
+      }
+      return total;
     }
 
-    // Real daily burn rate from actual supply change (not modeled)
-    // Use: currentSupply is real LCD value
-    // For each candle, tax burn = candle_duration_ratio * daily_actual_burn
-    // Daily actual burn ≈ 16.5M LUNC (from on-chain data)
-    // But we use volume to distribute variation realistically
-    const REAL_DAILY_BURN = 16_500_000;
-    const burnPerSec = REAL_DAILY_BURN / 86400;
-    const avgBurnPerCandle = burnPerSec * actualCandleSec;
+    // 6. Outlier cap for burn display (Binance spikes)
+    const burnVals = raw.map(d => getRealBurn(d.time, period)).filter(v => v > 0).sort((a,b) => a - b);
+    const p95 = burnVals[Math.floor(burnVals.length * 0.95)] || FALLBACK_DAILY * 2;
+    const burnCap = p95 * 2;
 
-    const vols = raw.map(d => d.volumefrom || 0);
-    const avgVol = vols.reduce((s,v)=>s+v,0) / raw.length || 1;
+    // 7. Reconstruct supply backwards from current real LCD value
+    const totalBurn = raw.reduce((s, d) => s + getRealBurn(d.time, period), 0);
+    let runningSupply = currentSupply + totalBurn;
 
-    // Reconstruct supply backwards from current real value
-    // First pass: calculate binance burns per candle
-    const binanceBurns = raw.map(d => getBinanceBurn(d.time, period));
-    const totalBinance = binanceBurns.reduce((s,b)=>s+b,0);
-
-    // Total tax burn for period = total supply drop - total binance
-    const totalSecs = raw[raw.length-1].time - raw[0].time + actualCandleSec;
-    const totalTaxBurn = burnPerSec * totalSecs;
-
-    // Distribute tax burn proportional to volume
-    const totalVol = vols.reduce((s,v)=>s+v,0) || raw.length;
-    let runningSupply = currentSupply + totalTaxBurn + totalBinance;
-
-    const candles = raw.map((d, i) => {
+    const candles = raw.map((d) => {
       const open = runningSupply;
-      // Tax burn proportional to volume share
-      const volShare = vols[i] / (totalVol / raw.length);
-      const taxBurn = avgBurnPerCandle * Math.max(0.1, Math.min(4.0, volShare));
-      const binanceBurn = binanceBurns[i];
-      const burned = taxBurn + binanceBurn;
-      const close = open - burned;
+      const realBurn = getRealBurn(d.time, period);
+      const close = open - realBurn;
       runningSupply = close;
+      // taxBurn = capped for display; binanceBurn = overflow above cap
+      const taxBurn = Math.min(realBurn, burnCap);
+      const binanceBurn = Math.max(0, realBurn - burnCap);
       return {
         t: d.time * 1000,
-        open, close, burned, taxBurn, binanceBurn,
+        open, close,
+        burned: realBurn,
+        taxBurn,
+        binanceBurn,
         high: open, low: close,
-        closeNoB: open - taxBurn,
+        closeNoB: close,
       };
     });
 
