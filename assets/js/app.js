@@ -2203,15 +2203,9 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
   const bGridLines = 3;
   for (let i = 0; i <= bGridLines; i++) {
     const y = burnTop + (burnH / bGridLines) * (bGridLines - i);
-    const v = bMax * (i / bGridLines);
     ctx.strokeStyle = 'rgba(30,100,60,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([2,3]);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
     ctx.setLineDash([]);
-    if (i > 0) {
-      ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
-      ctx.fillStyle = 'rgba(30,200,100,0.5)';
-      ctx.fillText(fmtY(v), pad.l - 4, y + 3);
-    }
   }
 
   // - DIVIDER LINE -
@@ -2676,7 +2670,7 @@ function updateBinanceCountdown() {
 
   const startMon = MONTHS[monthStart.getUTCMonth()];
   set('bnb-period-start', `${startMon} 1`);
-  set('bnb-period-end',   `${burnMon} 1 T-2d`);
+  set('bnb-period-end',   `${burnMon} 1`);
   set('bnb-progress-pct', pct.toFixed(1) + '%');
 
   const bar = document.getElementById('bnb-progress-bar');
