@@ -167,8 +167,8 @@ daily_list = sorted(
     key=lambda x: x['date']
 )
 
-# мержим hourly — только последние 30 дней
-cutoff_30d = (datetime.now(timezone.utc) - timedelta(days=30)).strftime('%Y-%m-%dT%H')
+# мержим hourly — только последние 90 дней
+cutoff_30d = (datetime.now(timezone.utc) - timedelta(days=90)).strftime('%Y-%m-%dT%H')
 hourly_map = {h['ts']: h['burn'] for h in burn_data.get('hourly', []) if h['ts'] >= cutoff_30d}
 for hour_key, burn in hourly_acc.items():
     if hour_key >= cutoff_30d:
