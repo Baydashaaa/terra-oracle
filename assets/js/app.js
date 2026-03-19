@@ -1577,6 +1577,8 @@ const BINANCE_BURN_CACHE_MS = 60 * 60 * 1000;
 
 async function fetchBinanceBurnsFromChain() {
   if (_binanceBurnsCache && Date.now() - _binanceBurnsCacheTs < BINANCE_BURN_CACHE_MS) return _binanceBurnsCache;
+
+  // Hardcoded historical data (fallback for dates before on-chain detection started)
   const HISTORICAL_BURNS = [
     { ts: new Date('2022-10-03').getTime()/1000, amount: 5_570_000_000 },
     { ts: new Date('2022-10-10').getTime()/1000, amount: 2_300_000_000 },
@@ -1618,11 +1620,52 @@ async function fetchBinanceBurnsFromChain() {
     { ts: new Date('2025-10-01').getTime()/1000, amount:   356_538_666 },
     { ts: new Date('2025-11-01').getTime()/1000, amount:   652_627_275 },
     { ts: new Date('2025-12-01').getTime()/1000, amount:   562_133_714 },
-    // ── 2026 ────────────────────────────────────────────────────────────────
-    { ts: new Date('2026-01-01').getTime()/1000, amount:   534_000_000 }, // Batch 41 est. ~534M (avg monthly volume)
-    { ts: new Date('2026-02-01').getTime()/1000, amount:   480_000_000 }, // Batch 42 est. ~480M
-    { ts: new Date('2026-03-01').getTime()/1000, amount:   460_000_000 }, // Batch 43 est. ~460M
+    { ts: new Date('2026-01-01').getTime()/1000, amount:   534_000_000 },
+    { ts: new Date('2026-02-01').getTime()/1000, amount:   480_000_000 },
+    { ts: new Date('2026-03-01').getTime()/1000, amount:   460_000_000 },
   ];
+
+  // Try to load on-chain detected burns from burn_history.json
+  try {
+    if (_burnHistoryData?.binance_burns?.length) {
+      // Build map from on-chain data: date "YYYY-MM-01" → amount
+      const onChainMap = {};
+      for (const b of _burnHistoryData.binance_burns) {
+        onChainMap[b.date] = b.amount;
+      }
+
+      // Merge: on-chain overrides hardcode for matching months
+      const hardcodeMap = {};
+      for (const b of HISTORICAL_BURNS) {
+        const d = new Date(b.ts * 1000);
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-01`;
+        hardcodeMap[key] = b;
+      }
+
+      // Override hardcode with on-chain where available
+      for (const [date, amount] of Object.entries(onChainMap)) {
+        if (hardcodeMap[date]) {
+          hardcodeMap[date].amount = amount; // real on-chain value wins
+        } else {
+          // New month not in hardcode — add it
+          const [y, m] = date.split('-').map(Number);
+          hardcodeMap[date] = {
+            ts: Math.floor(Date.UTC(y, m - 1, 1) / 1000),
+            amount
+          };
+        }
+      }
+
+      const merged = Object.values(hardcodeMap).sort((a, b) => a.ts - b.ts);
+      _binanceBurnsCache = merged;
+      _binanceBurnsCacheTs = Date.now();
+      return merged;
+    }
+  } catch(e) {
+    console.warn('Binance burns merge error:', e);
+  }
+
+  // Fallback: hardcode only
   _binanceBurnsCache = HISTORICAL_BURNS;
   _binanceBurnsCacheTs = Date.now();
   return HISTORICAL_BURNS;
