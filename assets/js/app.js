@@ -1297,7 +1297,7 @@ async function loadBurnHistory() {
       if (!res.ok) throw new Error('not found');
       _burnHistoryData = await res.json();
     }
-    drawBurnHistoryChart(_burnHistoryData);
+    drawBurnHistoryChart(_burnPeriod);
   } catch(e) {
     if (msg) { msg.style.display = 'block'; msg.textContent = 'Burn history not available yet — bootstrap in progress'; }
     canvas.style.display = 'none';
@@ -1311,7 +1311,7 @@ function setBurnPeriod(p) {
     t.classList.toggle('active-tf', isActive);
     t.classList.toggle('active', isActive);
   });
-  if (_burnHistoryData) drawBurnHistoryChart(_burnHistoryData);
+  if (_burnHistoryData) drawBurnHistoryChart(p);
 }
 
 let _burnChart = null;        // lightweight-charts instance
@@ -1343,17 +1343,17 @@ function drawBurnHistoryChart(period) {
   }
 
   // ── outlier cap (Binance spike etc.) ──────────────────────────────────────
-  const values = raw.map(d => d.burned).sort((a, b) => a - b);
+  const values = raw.map(d => d.burn).sort((a, b) => a - b);
   const p99idx = Math.floor(values.length * 0.99);
   const cap    = values[p99idx] * 1.5;   // generous cap, still kills the spike
-  const outliers = raw.filter(d => d.burned > cap);
+  const outliers = raw.filter(d => d.burn > cap);
 
   // ── build lightweight-charts data ─────────────────────────────────────────
   // time must be "YYYY-MM-DD" string (Day format)
   const chartData = raw.map(d => ({
     time:  d.date,                          // "YYYY-MM-DD"
-    value: Math.min(d.burned, cap),         // cap outliers visually
-    color: d.burned > cap
+    value: Math.min(d.burn, cap),         // cap outliers visually
+    color: d.burn > cap
       ? '#ff4444'                           // outlier bar: bright red
       : undefined,                          // normal bar: uses series color
   }));
@@ -1475,7 +1475,7 @@ function drawBurnHistoryChart(period) {
   _burnChart.timeScale().fitContent();
 
   // ── summary stats ─────────────────────────────────────────────────────────
-  const totalBurned = raw.reduce((s, d) => s + d.burned, 0);
+  const totalBurned = raw.reduce((s, d) => s + d.burn, 0);
   const el = document.getElementById('burn-history-total');
   if (el) el.textContent = `🔥 Total burned (${period}): ${fmtLUNC(totalBurned)} LUNC`;
 }
