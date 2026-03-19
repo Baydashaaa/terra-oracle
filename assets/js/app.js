@@ -1332,7 +1332,7 @@ function drawBurnHistoryChart(period) {
 
   // burnHistoryData is loaded earlier by loadBurnHistory()
   // shape: [{ date: "2022-08-01", burned: 1234567890 }, ...]
-  const raw = (window.burnHistoryData || []).filter(d => {
+  const raw = (_burnHistoryData?.daily || window.burnHistoryData || []).filter(d => {
     const ts = Math.floor(new Date(d.date).getTime() / 1000);
     return ts >= since;
   });
