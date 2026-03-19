@@ -1185,7 +1185,6 @@ function drawPoolHistoryChart() {
 
   let history = window._poolHistory || [];
 
-  // Filter by period
   const now = new Date();
   if (_poolHistoryPeriod === '7d') {
     const cutoff = new Date(now - 7 * 86400000).toISOString().slice(0,10);
@@ -1204,76 +1203,127 @@ function drawPoolHistoryChart() {
   canvas.style.display = 'block';
 
   const dpr = window.devicePixelRatio || 1;
-  const w = canvas.parentElement.clientWidth - 40 || 600;
-  const h = 120;
+  const w = canvas.parentElement.clientWidth || 600;
+  const h = 140;
   canvas.width = w * dpr; canvas.height = h * dpr;
   canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, w, h);
 
-  const pad = { l: 60, r: 16, t: 10, b: 28 };
+  const pad = { l: 62, r: 62, t: 14, b: 28 };
   const cw = w - pad.l - pad.r;
   const ch = h - pad.t - pad.b;
+  const n = history.length;
 
   const luncData = history.map(h => h.lunc);
   const ustcData = history.map(h => h.ustc);
-  const lMin = Math.min(...luncData) * 0.998;
-  const lMax = Math.max(...luncData) * 1.002;
-  const uMin = Math.min(...ustcData) * 0.998;
-  const uMax = Math.max(...ustcData) * 1.002;
-  const n = history.length;
 
-  // Grid lines
-  ctx.strokeStyle = 'rgba(30,51,88,0.6)'; ctx.lineWidth = 1;
+  // Dual Y-axis ranges
+  const lMin = Math.min(...luncData) * 0.997;
+  const lMax = Math.max(...luncData) * 1.003;
+  const uMin = Math.min(...ustcData) * 0.997;
+  const uMax = Math.max(...ustcData) * 1.003;
+
+  const toX = i => pad.l + (i / (n - 1)) * cw;
+  const toLY = v => pad.t + (1 - (v - lMin) / (lMax - lMin + 0.001)) * ch;
+  const toUY = v => pad.t + (1 - (v - uMin) / (uMax - uMin + 0.001)) * ch;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(30,51,88,0.5)'; ctx.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
     const y = pad.t + (ch / 3) * i;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
   }
 
-  // LUNC line (green)
+  // LUNC fill
   ctx.beginPath();
-  luncData.forEach((v, i) => {
-    const x = pad.l + (i / (n-1)) * cw;
-    const y = pad.t + (1 - (v - lMin) / (lMax - lMin + 0.001)) * ch;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
+  luncData.forEach((v, i) => { i === 0 ? ctx.moveTo(toX(i), toLY(v)) : ctx.lineTo(toX(i), toLY(v)); });
+  ctx.lineTo(toX(n-1), pad.t + ch);
+  ctx.lineTo(toX(0), pad.t + ch);
+  ctx.closePath();
+  const lGrad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+  lGrad.addColorStop(0, 'rgba(102,255,170,0.18)');
+  lGrad.addColorStop(1, 'rgba(102,255,170,0)');
+  ctx.fillStyle = lGrad; ctx.fill();
+
+  // LUNC line
+  ctx.beginPath();
+  luncData.forEach((v, i) => { i === 0 ? ctx.moveTo(toX(i), toLY(v)) : ctx.lineTo(toX(i), toLY(v)); });
   ctx.strokeStyle = '#66ffaa'; ctx.lineWidth = 2;
-  ctx.shadowColor = '#66ffaa'; ctx.shadowBlur = 6;
+  ctx.shadowColor = '#66ffaa'; ctx.shadowBlur = 5;
   ctx.stroke(); ctx.shadowBlur = 0;
 
-  // USTC line (blue, dashed)
+  // USTC fill
   ctx.beginPath();
-  ustcData.forEach((v, i) => {
-    const x = pad.l + (i / (n-1)) * cw;
-    const y = pad.t + (1 - (v - uMin) / (uMax - uMin + 0.001)) * ch;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
+  ustcData.forEach((v, i) => { i === 0 ? ctx.moveTo(toX(i), toUY(v)) : ctx.lineTo(toX(i), toUY(v)); });
+  ctx.lineTo(toX(n-1), pad.t + ch);
+  ctx.lineTo(toX(0), pad.t + ch);
+  ctx.closePath();
+  const uGrad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+  uGrad.addColorStop(0, 'rgba(84,147,247,0.15)');
+  uGrad.addColorStop(1, 'rgba(84,147,247,0)');
+  ctx.fillStyle = uGrad; ctx.fill();
+
+  // USTC line
+  ctx.beginPath();
+  ustcData.forEach((v, i) => { i === 0 ? ctx.moveTo(toX(i), toUY(v)) : ctx.lineTo(toX(i), toUY(v)); });
   ctx.strokeStyle = '#5493f7'; ctx.lineWidth = 2;
   ctx.setLineDash([4, 3]);
-  ctx.shadowColor = '#5493f7'; ctx.shadowBlur = 6;
+  ctx.shadowColor = '#5493f7'; ctx.shadowBlur = 5;
   ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur = 0;
 
-  // Y axis labels (LUNC)
+  // Y axis left — LUNC
   ctx.fillStyle = '#66ffaa'; ctx.font = '9px Exo 2'; ctx.textAlign = 'right';
   ctx.fillText(fmtS(lMax), pad.l - 4, pad.t + 8);
   ctx.fillText(fmtS(lMin), pad.l - 4, pad.t + ch);
 
+  // Y axis right — USTC
+  ctx.fillStyle = '#5493f7'; ctx.textAlign = 'left';
+  ctx.fillText(fmtS(uMax), pad.l + cw + 4, pad.t + 8);
+  ctx.fillText(fmtS(uMin), pad.l + cw + 4, pad.t + ch);
+
   // X axis labels
   ctx.fillStyle = 'rgba(122,158,196,0.5)'; ctx.textAlign = 'center'; ctx.font = '9px Exo 2';
-  const step = Math.max(1, Math.floor(n / 4));
+  const step = Math.max(1, Math.floor(n / 5));
   for (let i = 0; i < n; i += step) {
-    const x = pad.l + (i / (n-1)) * cw;
-    const label = history[i].date.slice(5); // MM-DD
-    ctx.fillText(label, x, h - 6);
+    ctx.fillText(history[i].date.slice(5), toX(i), h - 6);
   }
 
-  // Legend
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#66ffaa'; ctx.font = 'bold 9px Exo 2';
-  ctx.fillText('● LUNC', pad.l, pad.t - 2);
-  ctx.fillStyle = '#5493f7';
-  ctx.fillText('● USTC', pad.l + 52, pad.t - 2);
+  // ── Tooltip on hover ──
+  canvas._phHistory = history;
+  canvas._phToX = toX;
+  canvas._phToLY = toLY;
+  canvas._phToUY = toUY;
+  canvas._phPad = pad;
+  canvas._phN = n;
+  canvas._phW = w;
+  canvas._phCW = cw;
+
+  if (!canvas._phBound) {
+    canvas._phBound = true;
+    canvas.addEventListener('mousemove', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const history = canvas._phHistory;
+      const pad = canvas._phPad;
+      const cw = canvas._phCW;
+      const n = canvas._phN;
+      if (!history || !n) return;
+      const idx = Math.round(Math.max(0, Math.min(n-1, (mx - pad.l) / cw * (n-1))));
+      const d = history[idx];
+      if (!d) return;
+      const tip = document.getElementById('pool-tooltip');
+      if (tip) {
+        tip.innerHTML = `<span style="color:var(--muted)">${d.date}</span> &nbsp;
+          <span style="color:#66ffaa">LUNC: ${d.lunc.toLocaleString('en-US', {maximumFractionDigits:0})}</span> &nbsp;
+          <span style="color:#5493f7">USTC: ${d.ustc.toLocaleString('en-US', {maximumFractionDigits:0})}</span>`;
+      }
+    });
+    canvas.addEventListener('mouseleave', function() {
+      const tip = document.getElementById('pool-tooltip');
+      if (tip) tip.innerHTML = '';
+    });
+  }
 }
 
 
