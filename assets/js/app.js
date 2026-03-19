@@ -1326,14 +1326,16 @@ function drawBurnHistoryChart(period) {
 
   // ── filter data by period ─────────────────────────────────────────────────
   const now = Math.floor(Date.now() / 1000);
-  const cutoffs = { '7D': 7, '30D': 30, '3M': 90, '6M': 180, 'ALL': 99999 };
+  // support both lower and upper case period keys
+  const cutoffs = { '7d': 7, '30d': 30, '3m': 90, '6m': 180, 'all': 99999,
+                    '7D': 7, '30D': 30, '3M': 90, '6M': 180, 'ALL': 99999 };
   const days = cutoffs[period] || 99999;
   const since = now - days * 86400;
 
-  // burnHistoryData is loaded earlier by loadBurnHistory()
-  // shape: [{ date: "2022-08-01", burned: 1234567890 }, ...]
   const raw = (_burnHistoryData?.daily || window.burnHistoryData || []).filter(d => {
-    const ts = Math.floor(new Date(d.date).getTime() / 1000);
+    // parse "YYYY-MM-DD" safely without timezone issues
+    const [y, m, dd] = d.date.split('-').map(Number);
+    const ts = Math.floor(Date.UTC(y, m - 1, dd) / 1000);
     return ts >= since;
   });
 
@@ -1345,17 +1347,15 @@ function drawBurnHistoryChart(period) {
   // ── outlier cap (Binance spike etc.) ──────────────────────────────────────
   const values = raw.map(d => d.burn).sort((a, b) => a - b);
   const p99idx = Math.floor(values.length * 0.99);
-  const cap    = values[p99idx] * 1.5;   // generous cap, still kills the spike
+  const cap    = values[p99idx] * 1.5;
   const outliers = raw.filter(d => d.burn > cap);
 
   // ── build lightweight-charts data ─────────────────────────────────────────
-  // time must be "YYYY-MM-DD" string (Day format)
+  // lightweight-charts Day format expects "YYYY-MM-DD" string directly
   const chartData = raw.map(d => ({
-    time:  d.date,                          // "YYYY-MM-DD"
-    value: Math.min(d.burn, cap),         // cap outliers visually
-    color: d.burn > cap
-      ? '#ff4444'                           // outlier bar: bright red
-      : undefined,                          // normal bar: uses series color
+    time:  d.date,                       // "YYYY-MM-DD" — correct Day format
+    value: Math.min(d.burn, cap),
+    color: d.burn > cap ? '#ff4444' : undefined,
   }));
 
   // ── destroy & recreate chart on period change ─────────────────────────────
@@ -1389,9 +1389,10 @@ function drawBurnHistoryChart(period) {
       timeVisible:      true,
       secondsVisible:   false,
       tickMarkFormatter: (time) => {
-        // time is epoch seconds here
-        const d = new Date(time * 1000);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        // time is "YYYY-MM-DD" string in Day mode
+        const [y, m, d] = String(time).split('-').map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       },
     },
     crosshair: {
@@ -1450,14 +1451,16 @@ function drawBurnHistoryChart(period) {
     const val = param.seriesData.get(_burnSeries);
     if (!val) { tooltip.style.display = 'none'; return; }
 
-    const d = new Date(param.time * 1000);
-    const label = d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
-    const real  = raw.find(r => r.date === param.time) || { burned: val.value };
-    const isOut = real.burned > cap;
+    const timeStr = String(param.time); // "YYYY-MM-DD"
+    const [y, m, dd] = timeStr.split('-').map(Number);
+    const label = new Date(Date.UTC(y, m - 1, dd))
+      .toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+    const real = raw.find(r => r.date === timeStr) || { burn: val.value };
+    const isOut = real.burn > cap;
 
     tooltip.innerHTML = `
       <span style="color:#ff6b2b">🔥 ${label}</span><br>
-      <b style="color:#fff">${fmtLUNC(real.burned)} LUNC</b>
+      <b style="color:#fff">${fmtLUNC(real.burn)} LUNC</b>
       ${isOut ? '<br><span style="color:#ff4444;font-size:11px">⚡ outlier — bar capped</span>' : ''}
     `;
     tooltip.style.display = 'block';
