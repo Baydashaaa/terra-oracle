@@ -2029,26 +2029,44 @@ async function loadSupplyChart(period) {
     const actualCandleSec = { '1h': 3600, '4h': 14400, 'D': 86400, 'W': 604800, 'M': 2592000 }[period] || 86400;
     const FALLBACK_DAILY = 16_500_000;
 
-    // 5. For each candle: get real burn from burnMap, fallback to daily average
-    function getRealBurn(candleTs, period) {
+    // 5. Get Binance burns from historical hardcoded data (exact dates only)
+    const BINANCE_BURNS = await fetchBinanceBurnsFromChain();
+
+    function getBinanceBurnForCandle(candleTs) {
+      const candleEnd = candleTs + actualCandleSec;
+      return BINANCE_BURNS
+        .filter(b => b.ts >= candleTs && b.ts < candleEnd)
+        .reduce((s, b) => s + b.amount, 0);
+    }
+
+    // For monthly candles match by calendar month
+    function getBinanceBurnMonth(candleTs) {
+      const d = new Date(candleTs * 1000);
+      const y = d.getUTCFullYear(), m = d.getUTCMonth();
+      return BINANCE_BURNS
+        .filter(b => {
+          const bd = new Date(b.ts * 1000);
+          return bd.getUTCFullYear() === y && bd.getUTCMonth() === m;
+        })
+        .reduce((s, b) => s + b.amount, 0);
+    }
+
+    // 6. Get tax burn from burnMap (real on-chain data)
+    function getTaxBurn(candleTs) {
       if (useHourly) {
-        // sum hours within candle window
         let total = 0;
         const slots = period === '4h' ? 4 : 1;
         for (let h = 0; h < slots; h++) {
           const slotTs = candleTs + h * 3600;
-          // find closest hourly entry (within ±30min)
           const match = Object.keys(burnMap).map(Number).find(t => Math.abs(t - slotTs) < 1800);
           total += match ? burnMap[match] : (FALLBACK_DAILY / 24);
         }
         return total;
       }
-      // daily/weekly/monthly: sum days in candle
       const days = Math.round(actualCandleSec / 86400);
       let total = 0;
-      for (let d = 0; d < days; d++) {
-        const dayTs = candleTs + d * 86400;
-        // find matching day
+      for (let i = 0; i < days; i++) {
+        const dayTs = candleTs + i * 86400;
         const dt = new Date(dayTs * 1000);
         const key = Math.floor(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()) / 1000);
         total += burnMap[key] || FALLBACK_DAILY;
@@ -2056,31 +2074,38 @@ async function loadSupplyChart(period) {
       return total;
     }
 
-    // 6. Outlier cap for burn display (Binance spikes)
-    const burnVals = raw.map(d => getRealBurn(d.time, period)).filter(v => v > 0).sort((a,b) => a - b);
-    const p95 = burnVals[Math.floor(burnVals.length * 0.95)] || FALLBACK_DAILY * 2;
-    const burnCap = p95 * 2;
-
     // 7. Reconstruct supply backwards from current real LCD value
-    const totalBurn = raw.reduce((s, d) => s + getRealBurn(d.time, period), 0);
-    let runningSupply = currentSupply + totalBurn;
+    const totalBurn = raw.reduce((d) => {
+      const tax = getTaxBurn(d.time);
+      const bin = period === 'M' ? getBinanceBurnMonth(d.time) : getBinanceBurnForCandle(d.time);
+      return tax + bin;
+    }, 0);
+
+    // recalculate properly
+    const totalBurnReal = raw.reduce((s, d) => {
+      const tax = getTaxBurn(d.time);
+      const bin = period === 'M' ? getBinanceBurnMonth(d.time) : getBinanceBurnForCandle(d.time);
+      return s + tax + bin;
+    }, 0);
+    let runningSupply = currentSupply + totalBurnReal;
 
     const candles = raw.map((d) => {
       const open = runningSupply;
-      const realBurn = getRealBurn(d.time, period);
-      const close = open - realBurn;
+      const taxBurn = getTaxBurn(d.time);
+      const binanceBurn = period === 'M'
+        ? getBinanceBurnMonth(d.time)
+        : getBinanceBurnForCandle(d.time);
+      const burned = taxBurn + binanceBurn;
+      const close = open - burned;
       runningSupply = close;
-      // taxBurn = capped for display; binanceBurn = overflow above cap
-      const taxBurn = Math.min(realBurn, burnCap);
-      const binanceBurn = Math.max(0, realBurn - burnCap);
       return {
         t: d.time * 1000,
         open, close,
-        burned: realBurn,
+        burned,
         taxBurn,
         binanceBurn,
         high: open, low: close,
-        closeNoB: close,
+        closeNoB: open - taxBurn,
       };
     });
 
