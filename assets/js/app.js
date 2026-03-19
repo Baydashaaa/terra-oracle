@@ -2145,7 +2145,7 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
   const { ctx, w, h } = C;
   ctx.clearRect(0, 0, w, h);
 
-  const pad = { l:82, r:16, t:12, b:28 };
+  const pad = { l:110, r:16, t:12, b:28 };
   const cw = w - pad.l - pad.r;
   const ch = h - pad.t - pad.b;
 
@@ -2196,7 +2196,7 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
     ctx.strokeStyle = 'rgba(42,64,96,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
     ctx.fillStyle = '#3a5578';
-    ctx.fillText(fmtY(v), pad.l - 5, y + 3);
+    ctx.fillText(fmtY(v), pad.l - 4, y + 3);
   }
 
   // - GRID: Burned (bottom) -
@@ -2208,8 +2208,9 @@ function drawCombinedChart(candles, period, hoverIdx = -1) {
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
     ctx.setLineDash([]);
     if (i > 0) {
+      ctx.font = '10px Exo 2'; ctx.textAlign = 'right';
       ctx.fillStyle = 'rgba(30,200,100,0.5)';
-      ctx.fillText(fmtY(v), pad.l - 5, y + 3);
+      ctx.fillText(fmtY(v), pad.l - 4, y + 3);
     }
   }
 
