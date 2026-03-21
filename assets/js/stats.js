@@ -345,10 +345,10 @@ async function loadBurnHistory() {
   if (!canvas) return;
 
   try {
-    if (!_burnHistoryData) {
+    if (!window._burnHistoryData) {
       const res = await fetch(BURN_HISTORY_URL + '?t=' + Date.now());
       if (!res.ok) throw new Error('not found');
-      _burnHistoryData = await res.json();
+      window._burnHistoryData = await res.json();
     }
     drawBurnHistoryChart(_burnPeriod);
   } catch(e) {
@@ -364,7 +364,7 @@ function setBurnPeriod(p) {
     t.classList.toggle('active-tf', isActive);
     t.classList.toggle('active', isActive);
   });
-  if (_burnHistoryData) drawBurnHistoryChart(p);
+  if (window._burnHistoryData) drawBurnHistoryChart(p);
 }
 
 let _burnChart = null;        // lightweight-charts instance
@@ -385,7 +385,7 @@ function drawBurnHistoryChart(period) {
   const days = cutoffs[period] || 99999;
   const since = now - days * 86400;
 
-  const raw = (_burnHistoryData?.daily || window.burnHistoryData || []).filter(d => {
+  const raw = (window._burnHistoryData?.daily || []).filter(d => {
     // parse "YYYY-MM-DD" safely without timezone issues
     const [y, m, dd] = d.date.split('-').map(Number);
     const ts = Math.floor(Date.UTC(y, m - 1, dd) / 1000);
@@ -680,10 +680,10 @@ async function fetchBinanceBurnsFromChain() {
 
   // Try to load on-chain detected burns from burn_history.json
   try {
-    if (_burnHistoryData?.binance_burns?.length) {
+    if (window._burnHistoryData?.binance_burns?.length) {
       // Build map from on-chain data: date "YYYY-MM-01" → amount
       const onChainMap = {};
-      for (const b of _burnHistoryData.binance_burns) {
+      for (const b of window._burnHistoryData.binance_burns) {
         onChainMap[b.date] = b.amount;
       }
 
