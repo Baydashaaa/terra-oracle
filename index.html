@@ -963,20 +963,34 @@
       <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#ff6b6b;" id="stat-top-answers">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Top Answers</div>
     </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#4ade80;" id="stat-messages">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Messages</div>
+    </div>
+  </div>
+
+  <!-- MESSAGE MILESTONES -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">💬 Chat Activity → Weekly Lottery Entries</div>
+    <div id="message-milestone-section">
+      <!-- filled by JS -->
+    </div>
   </div>
 
   <!-- TITLE PROGRESS -->
   <div class="card" style="margin-bottom:20px;">
-    <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">Title Progress</div>
+    <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Title Progress</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:16px;">Based on questions asked + upvotes received · Unlocks question fee discounts</div>
     <div style="display:flex;flex-direction:column;gap:10px;" id="title-progress-list">
       <!-- filled by JS -->
     </div>
   </div>
 
   <!-- HISTORY TABS -->
-  <div style="display:flex;gap:8px;margin-bottom:16px;">
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
     <button class="vote-tab active" id="history-tab-answers" onclick="switchHistoryTab('answers')">💬 My Answers</button>
     <button class="vote-tab" id="history-tab-questions" onclick="switchHistoryTab('questions')">🔮 My Questions</button>
+    <button class="vote-tab" id="history-tab-messages" onclick="switchHistoryTab('messages')">📨 My Messages</button>
   </div>
   <div id="profile-history-list">
     <!-- filled by JS -->
