@@ -130,7 +130,7 @@ function showPage(name, e) {
 
 // ─── TREASURY ─────────────────────────────────────────────────
 const TREASURY_WALLETS = {
-  oracle:  { addr: 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', balId: 't-oracle-bal',  usdId: 't-oracle-usd'  },
+  treasury: { addr: 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', balId: 't-oracle-bal',  usdId: 't-oracle-usd'  },
   lottery: { addr: 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', balId: 't-lottery-bal', usdId: 't-lottery-usd' },
   burn:    { addr: 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p', balId: 't-burn-bal',    usdId: 't-burn-usd'   },
 };
@@ -503,7 +503,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 
 // ─── PROTOCOL WALLETS ─────────────────────────────────────────
 const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
-const ORACLE_WALLET   = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const ORACLE_WALLET   = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
 const LOTTERY_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
