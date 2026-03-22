@@ -25,31 +25,105 @@
 })();
 
 // ─── TITLE SYSTEM ────────────────────────────────────────────
+// Reputation based on: questions asked + upvotes received on answers
+// Discount applies to question fee — pool always gets full 100K LUNC
 const TITLES = [
-  { name: '🌱 Seeker',       threshold: 1,  color: '#66ffaa', bar: '#1ec864' },
-  { name: '🔵 Validator',    threshold: 5,  color: '#7eb8ff', bar: '#5493f7' },
-  { name: '⚡ Oracle',       threshold: 20, color: '#ffd700', bar: '#f5c518' },
-  { name: '🔥 Terra Legend', threshold: 50, color: '#ff8844', bar: '#ff6600' },
+  {
+    name: '🌱 Seeker',
+    questionsNeeded: 1,  upvotesNeeded: 0,
+    color: '#66ffaa', bar: '#1ec864',
+    discount: 0,    questionPrice: 200000,
+    discountLabel: 'No discount',
+  },
+  {
+    name: '🔵 Validator',
+    questionsNeeded: 5,  upvotesNeeded: 10,
+    color: '#7eb8ff', bar: '#5493f7',
+    discount: 5,    questionPrice: 190000,
+    discountLabel: '5% off — 190,000 LUNC',
+  },
+  {
+    name: '⚡ Oracle',
+    questionsNeeded: 15, upvotesNeeded: 50,
+    color: '#ffd700', bar: '#f5c518',
+    discount: 12.5, questionPrice: 175000,
+    discountLabel: '12.5% off — 175,000 LUNC',
+  },
+  {
+    name: '🔥 Terra Legend',
+    questionsNeeded: 30, upvotesNeeded: 150,
+    color: '#ff8844', bar: '#ff6600',
+    discount: 25,   questionPrice: 150000,
+    discountLabel: '25% off — 150,000 LUNC',
+  },
 ];
+
+// MESSAGE MILESTONES — every 10th message = 1 free Weekly lottery entry
+const MSG_MILESTONES = [10, 25, 50, 100];
+
+function getMsgMilestoneEntries(msgCount) {
+  let entries = 0;
+  if (msgCount >= 10)  entries += 1;
+  if (msgCount >= 25)  entries += 1;
+  if (msgCount >= 50)  entries += 2;
+  if (msgCount >= 100) entries += 3;
+  return entries;
+}
+
+function getNextMsgMilestone(msgCount) {
+  for (const m of MSG_MILESTONES) {
+    if (msgCount < m) return m;
+  }
+  return null;
+}
+
+// Count upvotes received on answers
+function getTotalUpvotesReceived(walletAddress) {
+  if (!walletAddress) return 0;
+  let total = 0;
+  for (const q of questions) {
+    for (const a of q.answers) {
+      if ((a.fullAddr === walletAddress || a.walletAddr === walletAddress) && a.votes > 0) {
+        total += a.votes;
+      }
+    }
+  }
+  return total;
+}
 
 function getTopAnswerCount(walletAddress) {
   if (!walletAddress) return 0;
   let count = 0;
   for (const q of questions) {
     for (const a of q.answers) {
-      if (a.fullAddr === walletAddress && a.votes >= 3) count++;
+      if ((a.fullAddr === walletAddress || a.walletAddr === walletAddress) && a.votes >= 3) count++;
     }
   }
   return count;
 }
 
 function getUserTitle(walletAddress) {
-  const count = getTopAnswerCount(walletAddress);
+  if (!walletAddress) return null;
+  const qCount = questions.filter(q => q.wallet === walletAddress || q.fullAddr === walletAddress).length;
+  const upvotes = getTotalUpvotesReceived(walletAddress);
   let current = null;
   for (const t of TITLES) {
-    if (count >= t.threshold) current = t;
+    if (qCount >= t.questionsNeeded && upvotes >= t.upvotesNeeded) current = t;
   }
   return current;
+}
+
+// Load/save message count from localStorage
+function getMessageCount(address) {
+  if (!address) return 0;
+  return parseInt(localStorage.getItem('msg_count_' + address) || '0');
+}
+
+function incrementMessageCount(address) {
+  if (!address) return;
+  const count = getMessageCount(address) + 1;
+  localStorage.setItem('msg_count_' + address, count);
+  return count;
 }
 
 // ─── PROFILE DATA ─────────────────────────────────────────────
@@ -94,6 +168,7 @@ function renderProfilePage() {
   const profile = loadProfile(address) || {};
   const title = getUserTitle(address);
   const topCount = getTopAnswerCount(address);
+  const msgCount = getMessageCount(address);
 
   // Wallet short
   document.getElementById('profile-wallet-short').textContent = address.slice(0,12) + '...' + address.slice(-6);
@@ -101,13 +176,13 @@ function renderProfilePage() {
   // Display name
   document.getElementById('profile-display-name').textContent = profile.nickname || ('Anonymous#' + address.slice(-4).toUpperCase());
 
-  // Title badge
+  // Title badge — show name + discount
   const titleEl = document.getElementById('profile-title-badge');
   if (title) {
-    titleEl.textContent = title.name;
+    titleEl.innerHTML = `${title.name} <span style="font-size:10px;opacity:0.7;margin-left:6px;">${title.discountLabel}</span>`;
     titleEl.style.color = title.color;
   } else {
-    titleEl.textContent = 'No title yet — get your first upvoted answer!';
+    titleEl.textContent = 'No title yet — ask your first question!';
     titleEl.style.color = 'var(--muted)';
   }
 
@@ -143,28 +218,82 @@ function renderProfilePage() {
   document.getElementById('stat-answers').textContent = myAnswers.length;
   document.getElementById('stat-upvotes').textContent = totalUpvotes;
   document.getElementById('stat-top-answers').textContent = topCount;
+  document.getElementById('stat-messages').textContent = msgCount;
 
-  // Title progress
-  renderTitleProgress(topCount);
+  // Message milestone progress
+  renderMessageProgress(msgCount);
+
+  // Title progress — now based on questions + upvotes
+  renderTitleProgress(myQuestions.length, totalUpvotes);
 
   // History
   renderHistoryTab('answers', myAnswers, myQuestions);
 }
 
-function renderTitleProgress(topCount) {
+// ─── MESSAGE MILESTONE PROGRESS ──────────────────────────────
+function renderMessageProgress(msgCount) {
+  const el = document.getElementById('message-milestone-section');
+  if (!el) return;
+
+  const nextMilestone = getNextMsgMilestone(msgCount);
+  const totalEntries = getMsgMilestoneEntries(msgCount);
+  const pct = nextMilestone ? Math.round((msgCount / nextMilestone) * 100) : 100;
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:11px;color:var(--muted);">💬 Chat messages → free Weekly lottery entries</span>
+      <span style="font-size:11px;color:var(--green);font-weight:700;">${totalEntries} ${totalEntries === 1 ? 'entry' : 'entries'} earned</span>
+    </div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden;">
+      <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#1ec864,#4ade80);width:${pct}%;transition:width 0.6s ease;"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${MSG_MILESTONES.map(m => {
+        const reached = msgCount >= m;
+        const entries = m === 10 ? '+1' : m === 25 ? '+1' : m === 50 ? '+2' : '+3';
+        return `<div style="font-size:10px;padding:3px 10px;border-radius:20px;
+          background:${reached ? 'rgba(30,200,100,0.12)' : 'rgba(255,255,255,0.04)'};
+          border:1px solid ${reached ? 'rgba(30,200,100,0.35)' : 'var(--border)'};
+          color:${reached ? '#4ade80' : 'var(--muted)'};">
+          ${reached ? '✓ ' : ''}${m} msgs ${entries}
+        </div>`;
+      }).join('')}
+      ${!nextMilestone ? '' : `<div style="font-size:10px;color:var(--muted);padding:3px 0;">${msgCount}/${nextMilestone} to next bonus</div>`}
+    </div>
+  `;
+}
+
+function renderTitleProgress(qCount, upvotes) {
   const el = document.getElementById('title-progress-list');
   el.innerHTML = TITLES.map(t => {
-    const pct = Math.min(100, Math.round((topCount / t.threshold) * 100));
-    const achieved = topCount >= t.threshold;
-    return `<div class="title-row">
-      <div style="width:110px;font-size:12px;font-weight:700;color:${achieved ? t.color : 'var(--muted)'};">${t.name}</div>
-      <div class="title-progress-bar">
-        <div class="title-progress-fill" style="width:${pct}%;background:${achieved ? t.bar : 'rgba(255,255,255,0.15)'}"></div>
-      </div>
-      <div style="font-size:10px;color:${achieved ? t.color : 'var(--muted)'};min-width:60px;text-align:right;">
-        ${achieved ? '✅ Earned' : `${topCount}/${t.threshold}`}
-      </div>
-    </div>`;
+    const qPct  = Math.min(100, Math.round((qCount  / Math.max(t.questionsNeeded, 1)) * 100));
+    const uPct  = Math.min(100, Math.round((upvotes / Math.max(t.upvotesNeeded,  1)) * 100));
+    const achieved = qCount >= t.questionsNeeded && upvotes >= t.upvotesNeeded;
+    const overallPct = t.upvotesNeeded === 0 ? qPct : Math.round((qPct + uPct) / 2);
+    return `
+      <div class="title-row">
+        <div style="width:120px;font-size:12px;font-weight:700;color:${achieved ? t.color : 'var(--muted)'};">${t.name}</div>
+        <div style="flex:1;">
+          <div class="title-progress-bar" style="margin-bottom:3px;">
+            <div class="title-progress-fill" style="width:${overallPct}%;background:${achieved ? t.bar : 'rgba(255,255,255,0.15)'}"></div>
+          </div>
+          ${t.upvotesNeeded > 0 ? `
+            <div style="display:flex;gap:10px;">
+              <span style="font-size:9px;color:${qCount >= t.questionsNeeded ? t.color : 'var(--muted)'};">
+                ${qCount >= t.questionsNeeded ? '✓' : ''} ${Math.min(qCount, t.questionsNeeded)}/${t.questionsNeeded} questions
+              </span>
+              <span style="font-size:9px;color:${upvotes >= t.upvotesNeeded ? t.color : 'var(--muted)'};">
+                ${upvotes >= t.upvotesNeeded ? '✓' : ''} ${Math.min(upvotes, t.upvotesNeeded)}/${t.upvotesNeeded} upvotes
+              </span>
+            </div>` : `
+            <div style="font-size:9px;color:${qCount >= t.questionsNeeded ? t.color : 'var(--muted)'};">
+              ${qCount >= t.questionsNeeded ? '✓' : ''} ${Math.min(qCount, t.questionsNeeded)}/${t.questionsNeeded} questions
+            </div>`}
+        </div>
+        <div style="font-size:10px;color:${achieved ? t.color : 'var(--muted)'};min-width:80px;text-align:right;">
+          ${achieved ? '✅ ' + t.discountLabel : t.discountLabel}
+        </div>
+      </div>`;
   }).join('');
 }
 
@@ -174,6 +303,9 @@ function switchHistoryTab(tab) {
   currentHistoryTab = tab;
   document.getElementById('history-tab-answers').classList.toggle('active', tab === 'answers');
   document.getElementById('history-tab-questions').classList.toggle('active', tab === 'questions');
+  const msgTabEl = document.getElementById('history-tab-messages');
+  if (msgTabEl) msgTabEl.classList.toggle('active', tab === 'messages');
+
   const address = globalWalletAddress;
   const myQuestions = questions.filter(q => q.wallet === address || q.fullAddr === address);
   const myAnswers = [];
@@ -189,6 +321,31 @@ function switchHistoryTab(tab) {
 
 function renderHistoryTab(tab, myAnswers, myQuestions) {
   const el = document.getElementById('profile-history-list');
+  if (tab === 'messages') {
+    const msgCount = getMessageCount(globalWalletAddress);
+    const entries  = getMsgMilestoneEntries(msgCount);
+    el.innerHTML = `
+      <div class="history-item">
+        <div class="history-item-meta">
+          <span style="color:var(--green);">💬 DAO Chat Activity</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">${msgCount}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">${entries}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.6;">
+          Every <strong style="color:var(--text)">10th message</strong> in DAO Chat earns 1 free entry into the Weekly Lottery.
+          Messages cost <strong style="color:var(--text)">5,000 LUNC</strong> each and go to the Protocol Treasury.
+        </div>
+      </div>`;
+    return;
+  }
   if (tab === 'answers') {
     if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No answers yet — go to the Board and share your knowledge!</div>'; return; }
     el.innerHTML = myAnswers.map(a => `
