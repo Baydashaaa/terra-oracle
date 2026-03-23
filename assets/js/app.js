@@ -679,6 +679,32 @@ window.connectWallet = async function(type) {
       document.getElementById('wallet-btn-label').textContent = 'Connect';
       alert('Connection failed: ' + (e.message || e));
     }
+  } else if (type === 'galaxy') {
+    const galaxy = window.galaxyStation || window.station;
+    if (!galaxy) {
+      if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
+      return;
+    }
+    try {
+      document.getElementById('wallet-btn-label').textContent = 'Connecting...';
+      const conn = await galaxy.connect();
+      const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
+      if (address) {
+        setWalletConnected(address);
+      } else {
+        throw new Error('No address returned');
+      }
+    } catch(e) {
+      document.getElementById('wallet-btn-label').textContent = 'Connect';
+      alert('Galaxy Station connection failed: ' + (e.message || e));
+    }
+  } else if (type === 'luncdash') {
+    const addr = prompt('Enter your Terra Classic wallet address (terra1...):');
+    if (addr && addr.startsWith('terra1') && addr.length > 20) {
+      setWalletConnected(addr.trim());
+    } else if (addr !== null) {
+      alert('Invalid Terra Classic address.');
+    }
   } else if (type === 'keplr-mobile') {
     alert('Keplr Mobile (WalletConnect) coming soon! Use Keplr Extension for now.');
   }
