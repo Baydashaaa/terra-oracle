@@ -679,7 +679,7 @@ window.connectWallet = async function(type) {
       document.getElementById('wallet-btn-label').textContent = 'Connect';
       alert('Connection failed: ' + (e.message || e));
     }
-  } else if (type === 'galaxy') {
+  } else if (type === 'galaxy' || type === 'galaxy-mobile') {
     const galaxy = window.galaxyStation || window.station;
     if (!galaxy) {
       if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
