@@ -172,9 +172,7 @@
  <button class="treasury-btn" onclick="showPage_treasury(event)">
  💰 Treasury
  </button>
- <button class="treasury-btn" onclick="showPage_stats(event)" style="color:#66ffaa;border-color:rgba(102,255,170,0.3);background:rgba(102,255,170,0.05);">
- 📊 Stats
- </button>
+
  <a class="lottery-btn" href="https://baydashaaa.github.io/oracle-draw" target="_blank">
  <svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink:0">
  <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
@@ -220,7 +218,7 @@
  <button class="nav-tab" onclick="mobileNavGo('about')">ℹ️ About</button>
  <button class="nav-tab" onclick="mobileNavGo('bag')" style="color:#f4d03f;">🎒 My Bag</button>
  <button class="nav-tab" onclick="mobileNavGoFn('showPage_treasury')">💰 Treasury</button>
- <button class="nav-tab" onclick="mobileNavGoFn('showPage_stats')">📊 Stats</button>
+
  <div style="width:100%;max-width:320px;margin-top:8px;display:flex;flex-direction:column;gap:8px;">
   <div class="wallet-btn-wrap" id="wallet-wrap-mobile" style="width:100%;">
    <button class="wallet-btn" style="width:100%;justify-content:center;" onclick="toggleWalletDropdown();toggleMobileNav()">
@@ -826,202 +824,6 @@
  <a href="https://github.com/Baydashaaa/lunc-anonymous-signal" target="_blank" style="color:var(--accent);text-decoration:none;letter-spacing:0.05em;">View on GitHub →</a>
  </div>
 </div>
-<div class="page" id="page-stats">
- <div class="page-header">
- <div class="tag">TERRA CLASSIC · ON-CHAIN ANALYTICS</div>
- <h1>LUNC <span>Stats</span></h1>
- <p class="subtitle">Live blockchain data · <span id="live-block" style="color:var(--green);">Loading block...</span></p>
- </div>
- <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">📈 Key Metrics <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
- <div class="stat-grid">
- <div class="stat-card"><div class="stat-label">LUNC Supply</div><div class="stat-value" id="sc-lunc">—</div><div class="stat-note pulse" id="sc-lunc-note">Loading...</div></div>
- <div class="stat-card"><div class="stat-label">USTC Supply</div><div class="stat-value" id="sc-ustc">—</div><div class="stat-note pulse" id="sc-ustc-note">Loading...</div></div>
- <div class="stat-card"><div class="stat-label">LUNC Staked</div><div class="stat-value" id="sc-staked">—</div><div class="stat-note green pulse" id="sc-staked-note">Loading...</div></div>
- <div class="stat-card"><div class="stat-label">Staking Ratio</div><div class="stat-value" id="sc-ratio">—</div><div class="stat-note blue">of total supply</div></div>
- <div class="stat-card"><div class="stat-label">Block Time</div><div class="stat-value" id="sc-blocktime">—</div><div class="stat-note muted">seconds avg</div></div>
- <div class="stat-card"><div class="stat-label">Active Validators</div><div class="stat-value" id="sc-vals">—</div><div class="stat-note muted">bonded set</div></div>
- </div>
- <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">📉 Total LUNC Supply <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
- <div class="card" id="binance-countdown-card" style="margin-bottom:18px;padding:16px 20px;background:linear-gradient(135deg,rgba(255,80,40,0.06) 0%,rgba(10,18,36,0) 60%);border:1px solid rgba(255,100,50,0.15);">
- <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
- <div style="display:flex;align-items:center;gap:10px;">
- <span style="font-size:22px;">🔥</span>
- <div>
- <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,120,60,0.7);font-family:'Exo 2',sans-serif;font-weight:700;">Next Binance LUNC Burn</div>
- <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="bnb-burn-date">Loading...</div>
- </div>
- </div>
- <div style="display:flex;gap:8px;align-items:center;" id="bnb-countdown-digits">
- <div class="cd-box"><div class="cd-num" id="cd-days">--</div><div class="cd-lbl">Days</div></div>
- <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
- <div class="cd-box"><div class="cd-num" id="cd-hours">--</div><div class="cd-lbl">Hours</div></div>
- <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
- <div class="cd-box"><div class="cd-num" id="cd-mins">--</div><div class="cd-lbl">Mins</div></div>
- <div style="color:rgba(255,100,50,0.5);font-size:20px;font-weight:700;margin-top:-8px;">:</div>
- <div class="cd-box"><div class="cd-num" id="cd-secs">--</div><div class="cd-lbl">Secs</div></div>
- </div>
- </div>
- <div style="margin-top:14px;">
- <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;">
- <span id="bnb-period-start">Start of month</span>
- <span id="bnb-progress-pct" style="color:rgba(255,120,60,0.8);font-weight:700;">0%</span>
- <span id="bnb-period-end">1st next month</span>
- </div>
- <div style="height:6px;background:rgba(255,100,50,0.1);border-radius:3px;overflow:hidden;">
- <div id="bnb-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff4d1a,#ff8844);border-radius:3px;transition:width 1s ease;box-shadow:0 0 8px rgba(255,80,30,0.4);"></div>
- </div>
- <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center;" id="bnb-est-amount">
- Est. burn: calculating...
- </div>
- </div>
- </div>
- <div class="card" style="margin-bottom:18px;padding:20px 20px 14px;">
- <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
- <div>
- <div class="stat-label" id="chart-mode-label">Total LUNC Supply</div>
- <div class="chart-main-val" id="lunc-big" style="font-size:28px;font-weight:800;letter-spacing:-0.01em;">—</div>
- <div id="supply-delta" style="font-size:13px;color:#ff6b6b;margin-top:2px;display:flex;align-items:center;gap:5px;"></div>
- </div>
- <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
- <div style="display:flex;gap:3px;background:rgba(10,20,40,0.6);border:1px solid var(--border);border-radius:7px;padding:2px;">
- <span style="display:flex;align-items:center;gap:4px;color:#ff6b6b;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;"><span style="display:inline-block;width:9px;height:9px;background:#ff4d4d;border-radius:2px;"></span>SUPPLY</span>
- <span style="color:rgba(84,147,247,0.3);font-size:12px;">|</span>
- <span style="display:flex;align-items:center;gap:4px;color:#1ec864;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;"><span style="display:inline-block;width:9px;height:9px;background:#1ec864;border-radius:2px;"></span>BURNED</span>
- <span style="color:rgba(84,147,247,0.3);font-size:12px;">|</span>
- <span style="display:flex;align-items:center;gap:3px;color:#ffaa44;font-size:10px;font-family:'Exo 2',sans-serif;font-weight:700;letter-spacing:0.05em;">🔥 BINANCE</span>
- </div>
- <div style="display:flex;gap:4px;align-items:center;">
- <button class="tf-btn active-tf" onclick="setSupplyPeriod('1h')" id="sp-1h">1h</button>
- <button class="tf-btn" onclick="setSupplyPeriod('4h')" id="sp-4h">4h</button>
- <button class="tf-btn" onclick="setSupplyPeriod('D')" id="sp-D">D</button>
- <button class="tf-btn" onclick="setSupplyPeriod('W')" id="sp-W">W</button>
- <button class="tf-btn" onclick="setSupplyPeriod('M')" id="sp-M">M</button>
- <button onclick="supplyChartCache={}; loadSupplyChart(currentSupplyPeriod)" title="Refresh"
- style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
- onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
- onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻</button>
- </div>
- </div>
- </div>
- <div id="supply-tooltip" style="min-height:32px;margin-bottom:4px;font-size:11px;color:var(--text);font-family:'Exo 2',sans-serif;line-height:1.6;"></div>
- <div id="supply-chart-loading" style="text-align:center;padding:40px;color:var(--muted);font-size:12px;display:none;">
- <div class="loading-dots">Loading<span>.</span><span>.</span><span>.</span></div>
- </div>
- <div style="position:relative;" id="burn-chart-wrap">
- <canvas id="supplyChart" height="300" style="cursor:crosshair;"></canvas>
- </div>
- <div style="font-size:10px;color:rgba(122,158,196,0.35);margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
- <button onclick="runSupplyAudit()" style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);color:rgba(84,147,247,0.7);font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;font-family:'Exo 2',sans-serif;letter-spacing:0.05em;">🔍 Verify Data</button>
- <span>Source: CryptoCompare · Terra Classic LCD</span>
- </div>
- <div id="supply-audit" style="display:none;margin-top:10px;background:rgba(10,20,40,0.8);border:1px solid rgba(84,147,247,0.2);border-radius:8px;padding:12px;font-size:11px;font-family:monospace;line-height:1.8;"></div>
- </div>
- <div class="card" style="margin-bottom:18px;">
- <div class="chart-header">
- <div>
- <div class="stat-label">Staked Supply (LUNC + Ratio)</div>
- <div style="display:flex;gap:20px;align-items:center;margin-top:6px;">
- <span style="font-size:12px;color:var(--green);">● Bonded LUNC</span>
- <span style="font-size:12px;color:var(--accent);">● Staking %</span>
- </div>
- </div>
- <div style="text-align:right;">
- <div class="stat-label">Current</div>
- <div style="font-family:'Rajdhani',sans-serif;font-size:20px;color:#fff;" id="staked-cur">—</div>
- <div style="font-size:12px;color:var(--accent);" id="staked-ratio-cur">—%</div>
- </div>
- </div>
- <div class="chart-wrap"><canvas id="stakedChart" height="160"></canvas></div>
- </div>
- <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">🏛 Protocol Treasury <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
- <div class="card" style="margin-bottom:18px;">
-  <!-- Hidden elements to keep setTxt working -->
-  <span id="oracle-lunc" style="display:none;">—</span>
-  <span id="oracle-ustc" style="display:none;">—</span>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-   <div style="display:flex;align-items:center;gap:8px;">
-    <span style="font-size:16px;">🔮</span>
-    <span style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:var(--text);">PROTOCOL TREASURY</span>
-   </div>
-   <div style="display:flex;gap:4px;" id="pool-history-tabs">
-    <button class="tf-btn active-tf" onclick="setPoolHistoryPeriod('7d')" id="ph-7d">7D</button>
-    <button class="tf-btn" onclick="setPoolHistoryPeriod('1m')" id="ph-1m">1M</button>
-    <button class="tf-btn" onclick="setPoolHistoryPeriod('all')" id="ph-all">All</button>
-   </div>
-  </div>
-  <div style="display:flex;align-items:center;justify-content:center;gap:32px;padding:0 0 20px 0;flex-wrap:wrap;">
-   <canvas id="oracleChart" style="display:block;"></canvas>
-   <div style="display:flex;flex-direction:column;gap:14px;min-width:180px;">
-    <div style="display:flex;align-items:center;gap:10px;">
-     <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#66ffaa;flex-shrink:0;box-shadow:0 0 8px rgba(102,255,170,0.5);"></span>
-     <div>
-      <div style="font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;">LUNC</div>
-      <div style="font-size:14px;font-weight:700;color:#66ffaa;" id="oracle-lunc-pie">—</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:1px;" id="oracle-lunc-usd">—</div>
-     </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-     <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#5493f7;flex-shrink:0;box-shadow:0 0 8px rgba(84,147,247,0.5);"></span>
-     <div>
-      <div style="font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;">USTC</div>
-      <div style="font-size:14px;font-weight:700;color:#5493f7;" id="oracle-ustc-pie">—</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:1px;" id="oracle-ustc-usd">—</div>
-     </div>
-    </div>
-    <div style="margin-top:4px;padding-top:12px;border-top:1px solid var(--border);">
-     <div style="font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Total (USD)</div>
-     <div style="font-size:15px;font-weight:700;color:var(--gold);" id="oracle-total-pie">—</div>
-    </div>
-   </div>
-  </div>
-  <div style="border-top:1px solid var(--border);padding-top:16px;">
-   <div id="pool-history-msg" style="text-align:center;font-size:11px;color:var(--muted);padding:20px 0;display:none;">Not enough data yet — check back in a few days</div>
-   <div id="pool-tooltip" style="min-height:20px;font-size:11px;color:var(--muted);font-family:'Exo 2',sans-serif;margin-bottom:6px;text-align:center;"></div>
-   <div style="position:relative;">
-    <canvas id="poolHistoryChart" height="120" style="width:100%;cursor:crosshair;"></canvas>
-   </div>
-  </div>
- </div>
-
-  <div class="section-title" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;">⚡ Validators <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
- <div class="card">
- <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
- <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:#fff;" id="val-title">Validators</div>
- <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
- <input id="val-search" type="text" placeholder="🔍 Search validator…" oninput="valPage=1;renderValidatorsS()"
- style="background:rgba(84,147,247,0.07);border:1px solid rgba(84,147,247,0.2);border-radius:6px;
- padding:5px 10px;font-family:'Exo 2',sans-serif;font-size:12px;color:#c8ddf0;
- outline:none;width:190px;transition:border-color .2s;"
- onfocus="this.style.borderColor='rgba(84,147,247,0.55)'"
- onblur="this.style.borderColor='rgba(84,147,247,0.2)'" />
- <div class="val-tabs">
- <button class="vfilter-btn active-vf" onclick="filterValidators('active')" id="vf-active">Active</button>
- <button class="vfilter-btn" onclick="filterValidators('inactive')" id="vf-inactive">Inactive</button>
- <button class="vfilter-btn" onclick="filterValidators('all')" id="vf-all">All</button>
- </div>
- </div>
- </div>
- <div style="overflow-x:auto;">
- <table style="width:100%;border-collapse:collapse;font-size:12px;">
- <thead><tr style="color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:0.08em;border-bottom:1px solid var(--border);">
- <th style="padding:8px 8px;text-align:left;width:32px;">#</th>
- <th style="padding:8px 8px;text-align:left;">Validator</th>
- <th style="padding:8px 8px;text-align:right;">Voting Power</th>
- <th style="padding:8px 8px;text-align:right;">Commission</th>
- <th style="padding:8px 8px;text-align:right;">Status</th>
- </tr></thead>
- <tbody id="validators-tbody">
- <tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted);" class="pulse">Loading validators...</td></tr>
- </tbody>
- </table>
- </div>
- <div class="pagination" id="val-pagination"></div>
- </div>
- <div class="footer-bar">
- <div class="footer-updated">Data source: Terra Classic LCD · <span id="updated-time">—</span></div>
- <button class="refresh-btn" onclick="loadAllStats()">↻ Refresh All</button>
- </div>
-</div>
 <!-- ─── PROFILE PAGE ─────────────────────────────────── -->
 <!-- Вставить перед <div class="site-footer"> -->
 <div class="page" id="page-profile">
@@ -1269,7 +1071,6 @@
 
   <!-- Логика -->
   <script src="assets/js/app.js"></script>
-  <script src="assets/js/stats.js"></script>
   <script src="assets/js/profile.js"></script>
   <script src="assets/js/charts.js"></script>
 <script>
@@ -1292,8 +1093,6 @@ function mobileNavGoFn(fn) {
   setTimeout(function() {
     if (fn === 'showPage_treasury' && typeof showPage_treasury === 'function') {
       showPage_treasury({target: document.createElement('button')});
-    } else if (fn === 'showPage_stats' && typeof showPage_stats === 'function') {
-      showPage_stats({target: document.createElement('button')});
     }
   }, 50);
 }
