@@ -16,7 +16,6 @@ function smoothScrollTop() {
   requestAnimationFrame(step);
 }
 window.addEventListener('load', () => { window.scrollTo(0, 0); });
-function loadAllStats() { loadStatsData(); loadOraclePoolS(); loadValidatorsS(); loadBurnHistory(); }
 
 // ─── ADMIN KEY ───────────────────────────────────────────────
 const ADMIN_KEY = 'TerraOracle#9X4K-2025';
@@ -121,7 +120,6 @@ function showPage(name, e) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
-  if (typeof stopStatsAutoRefresh === 'function') stopStatsAutoRefresh();
   // Save current page to URL hash so refresh restores it
   if (history.replaceState) {
     history.replaceState(null, '', '#' + name);
@@ -282,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const validPages = ['home','board','ask','chat','vote','about','treasury','stats'];
   const startPage = validPages.includes(hash) ? hash : 'home';
   if (startPage === 'treasury') showPage_treasury();
-  else if (startPage === 'stats') showPage_stats();
   else showPage(startPage);
   const input = document.getElementById('tag-raw-input');
   if (!input) return;
