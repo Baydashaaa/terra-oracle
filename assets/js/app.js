@@ -1106,7 +1106,7 @@ function castVote(voteId, optionIdx) {
 
 // ── MY BAG (Terra Oracle) ─────────────────────────────────────────────────────
 function renderOracleBag() {
-  const wallet = connectedAddress || globalWalletAddress;
+  const wallet = globalWalletAddress || connectedAddress;
   const notConn = document.getElementById('bag-not-connected-oracle');
   const conn    = document.getElementById('bag-connected-oracle');
   if (!notConn || !conn) return;
