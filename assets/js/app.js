@@ -292,7 +292,7 @@ function renderBoard() {
           <div class="form-group">
             <label>Admin Key <span style="font-size:9px;color:var(--muted);text-transform:none">(optional — leave blank to answer anonymously)</span></label>
             <div class="admin-key-wrap" id="akwrap-${realQi}">
-              <input type="password" id="akey-${realQi}" placeholder="Enter key to post as Admin..." oninput="checkAdminKey(${realQi})">
+              <input type="text" id="akey-${realQi}" placeholder="Enter key to post as Admin..." oninput="checkAdminKey(${realQi})" style="-webkit-text-security:disc;text-security:disc;">
               <span class="admin-key-hint" id="akeyhint-${realQi}">optional</span>
             </div>
           </div>
