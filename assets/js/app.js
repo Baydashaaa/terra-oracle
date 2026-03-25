@@ -731,6 +731,8 @@ function setWalletConnected(address) {
     document.getElementById('mode-keplr').textContent = '🔑 ' + addrShort;
     setMode('keplr');
   }
+  // Обновляем My Bag при подключении кошелька
+  renderOracleBag();
 }
 
 window.disconnectWallet = function() {
@@ -1193,9 +1195,7 @@ function renderOracleBag() {
 
 // ── BAG: открыть дропдаун кошелька со страницы My Bag ────────
 window.openBagWalletPicker = function() {
-  // Сначала скроллим наверх (там находится навбар с дропдауном)
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  // Открываем дропдаун после того как скролл завершится
   setTimeout(() => {
     const dropdown = document.getElementById('wallet-dropdown');
     if (dropdown) dropdown.classList.add('open');
