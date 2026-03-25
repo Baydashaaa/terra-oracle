@@ -461,20 +461,17 @@
  <div class="card">
  <div id="ask-form-section">
  <div class="note">
- 🔒 Your identity is never stored. Connect Keplr to verify your 200,000 LUNC payment — wallet address will NOT be linked to your question.
+ 🔒 Your identity is never stored. Connect your wallet to verify your 200,000 LUNC payment — wallet address will NOT be linked to your question.
  </div>
  <div id="keplr-section">
  <div id="keplr-disconnected">
  <div style="text-align:center;padding:4px 0 20px;">
  <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Step 1 — Connect Wallet</div>
- <button class="btn btn-primary btn-full" id="keplr-connect-btn" onclick="connectKeplr()">
- 🔑 Connect Keplr Wallet
+ <button class="btn btn-primary btn-full" id="keplr-connect-btn" onclick="openBagWalletPicker()">
+ 🔑 Connect Wallet
  </button>
  <div style="margin-top:14px;padding:12px;background:rgba(84,147,247,0.04);border:1px solid rgba(84,147,247,0.1);border-radius:8px;">
- <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Don't have Keplr yet?</div>
- <a href="https://www.keplr.app/download" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#5493f7;text-decoration:none;letter-spacing:0.08em;">
- 📥 Download Keplr Wallet →
- </a>
+ <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Supported: Keplr · Galaxy Station · Luncdash</div>
  </div>
  </div>
  </div>
@@ -590,7 +587,7 @@
  <div class="chat-page-input-wrap">
  <div id="chat-page-connect-prompt" style="text-align:center;padding:8px 0 16px;">
  <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Connect wallet to send messages · 5,000 LUNC per message</div>
- <button class="btn btn-primary" onclick="connectWallet('keplr-ext')" style="width:100%;">🔑 Connect Keplr to Chat</button>
+ <button class="btn btn-primary" onclick="openBagWalletPicker()" style="width:100%;">🔑 Connect Wallet to Chat</button>
  </div>
  <div id="chat-page-form" style="display:none;">
  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -620,7 +617,7 @@
  <div class="page-header">
  <div class="tag">Governance</div>
  <h1>Community <span>Vote</span></h1>
- <p class="subtitle">Connect Keplr · Vote on proposals · Shape Terra Classic's future</p>
+ <p class="subtitle">Connect wallet · Vote on proposals · Shape Terra Classic's future</p>
  </div>
  <div class="vote-header">
  <div class="vote-tabs">
