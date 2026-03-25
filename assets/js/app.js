@@ -731,8 +731,6 @@ function setWalletConnected(address) {
     document.getElementById('mode-keplr').textContent = '🔑 ' + addrShort;
     setMode('keplr');
   }
-}
-
   // Обновляем My Bag при подключении кошелька
   renderOracleBag();
 }
