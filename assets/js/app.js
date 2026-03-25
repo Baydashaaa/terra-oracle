@@ -1191,6 +1191,17 @@ function renderOracleBag() {
   }
 }
 
+// ── BAG: открыть дропдаун кошелька со страницы My Bag ────────
+window.openBagWalletPicker = function() {
+  // Сначала скроллим наверх (там находится навбар с дропдауном)
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Открываем дропдаун после того как скролл завершится
+  setTimeout(() => {
+    const dropdown = document.getElementById('wallet-dropdown');
+    if (dropdown) dropdown.classList.add('open');
+  }, 350);
+}
+
 function filterOracleBagNFTs(filter) {
   const nfts = window._oBagNFTs || [];
   const el = id => document.getElementById(id);
