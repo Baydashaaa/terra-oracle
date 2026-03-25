@@ -715,6 +715,7 @@ window.connectWallet = async function(type) {
 
 function setWalletConnected(address) {
   globalWalletAddress = address;
+  connectedAddress = address; // синхронизируем с ASK страницей
   saveWalletSession(address);
   const short = address.slice(0,8) + '...' + address.slice(-4);
   document.getElementById('wallet-btn-label').textContent = short;
@@ -723,6 +724,29 @@ function setWalletConnected(address) {
   document.getElementById('wallet-not-connected').style.display = 'none';
   document.getElementById('wallet-connected-panel').style.display = 'block';
   document.getElementById('wallet-dropdown').classList.remove('open');
+
+  // Синхронизируем ASK страницу
+  const connAddrEl = document.getElementById('connected-addr');
+  if (connAddrEl) connAddrEl.textContent = address.slice(0,10)+'...'+address.slice(-4);
+  const verifiedWallet = document.getElementById('verified-wallet-hidden');
+  if (verifiedWallet) verifiedWallet.value = address;
+  const keplrDisc = document.getElementById('keplr-disconnected');
+  const keplrConn = document.getElementById('keplr-connected');
+  if (keplrDisc) keplrDisc.style.display = 'none';
+  if (keplrConn) keplrConn.style.display = 'block';
+  // Показываем tx-section если не admin
+  if (address !== ADMIN_WALLET) {
+    const txSection = document.getElementById('tx-section');
+    if (txSection) txSection.style.display = 'block';
+  } else {
+    const verifiedTx = document.getElementById('verified-tx-hidden');
+    if (verifiedTx) verifiedTx.value = 'ADMIN_BYPASS';
+    const txSection = document.getElementById('tx-section');
+    if (txSection) { txSection.style.display = 'block'; txSection.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected — payment bypassed</div>'; }
+    const askForm = document.getElementById('ask-form');
+    if (askForm) askForm.style.display = 'block';
+  }
+
   if (window.keplrChatAddress !== undefined) {
     keplrChatAddress = address;
     const addrShort = address.slice(0,8) + '...' + address.slice(-4);
@@ -754,6 +778,17 @@ window.disconnectWallet = function() {
   document.getElementById('wallet-dropdown').classList.remove('open');
   const adminPanel = document.getElementById('admin-panel');
   if (adminPanel) adminPanel.style.display = 'none';
+
+  // Сбрасываем ASK страницу
+  const keplrDisc = document.getElementById('keplr-disconnected');
+  const keplrConn = document.getElementById('keplr-connected');
+  const txSection = document.getElementById('tx-section');
+  const askForm   = document.getElementById('ask-form');
+  if (keplrDisc) keplrDisc.style.display = 'block';
+  if (keplrConn) keplrConn.style.display = 'none';
+  if (txSection) txSection.style.display = 'none';
+  if (askForm)   askForm.style.display   = 'none';
+
   try { disconnectChatKeplr(); } catch(e) {}
   renderOracleBag();
 }
