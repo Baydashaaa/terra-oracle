@@ -745,7 +745,7 @@ window.openBagWalletPicker = function() {
 
 window.disconnectWallet = function() {
   globalWalletAddress = null;
-  connectedAddress = null;  // сброс адреса Ask-страницы
+  connectedAddress = null;
   clearWalletSession();
   document.getElementById('wallet-btn-label').textContent = 'Connect';
   document.getElementById('wallet-main-btn').classList.remove('connected');
@@ -754,7 +754,7 @@ window.disconnectWallet = function() {
   document.getElementById('wallet-dropdown').classList.remove('open');
   const adminPanel = document.getElementById('admin-panel');
   if (adminPanel) adminPanel.style.display = 'none';
-  disconnectChatKeplr();
+  try { disconnectChatKeplr(); } catch(e) {}
   renderOracleBag();
 }
 
