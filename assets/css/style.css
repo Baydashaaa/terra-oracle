@@ -386,3 +386,181 @@ canvas {
     letter-spacing: 0.06em;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ZK NETWORK SYSTEM — новые стили
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── NAV scanner line ── */
+@keyframes navScan {
+  0%   { left: -140px; }
+  100% { left: 100%; }
+}
+
+/* ── ZK Module cards ── */
+.zk-module {
+  background: #0a1628;
+  border: 1px solid rgba(123,92,255,0.18);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.35s, box-shadow 0.35s, transform 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.zk-module:hover {
+  border-color: rgba(123,92,255,0.55);
+  box-shadow:
+    0 0 28px rgba(123,92,255,0.2),
+    0 0 60px rgba(0,212,255,0.07),
+    inset 0 0 30px rgba(123,92,255,0.04);
+  transform: translateY(-3px);
+}
+
+/* Module top status bar */
+.zk-module-bar {
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--mod-c1, #7B5CFF),
+    var(--mod-c2, #00D4FF),
+    var(--mod-c1, #7B5CFF));
+  background-size: 200% 100%;
+  animation: moduleBar 3.5s linear infinite;
+}
+.zk-module-bar-fast {
+  animation-duration: 1.8s !important;
+}
+@keyframes moduleBar {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.zk-module-inner {
+  padding: 20px 22px 22px;
+}
+
+/* MODULE label (top tag) */
+.zk-module-tag {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(123,92,255,0.6);
+  margin-bottom: 12px;
+}
+
+/* Moving dots inside module */
+.zk-module-dots {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  display: flex;
+  gap: 4px;
+}
+.zk-module-dots::before,
+.zk-module-dots::after,
+.zk-module:hover .zk-module-inner::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(123,92,255,0.35);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+.zk-module-dots::after {
+  animation-delay: 0.4s;
+  background: rgba(0,212,255,0.3);
+}
+@keyframes dotPulse {
+  0%,100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+
+/* Scanline on hover */
+.zk-module::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: rgba(0,212,255,0.08);
+  top: -100%;
+  transition: none;
+  pointer-events: none;
+  animation: scanline 4s linear infinite;
+  opacity: 0;
+}
+.zk-module:hover::after {
+  opacity: 1;
+}
+@keyframes scanline {
+  0%   { top: -2px; }
+  100% { top: 105%; }
+}
+
+/* ── ORACLE DRAW STAR CARD ── */
+.zk-module-star {
+  background: linear-gradient(135deg, #070d1a, #0a0f20, #060c1b);
+  border-color: rgba(0,212,255,0.25) !important;
+  box-shadow:
+    0 0 20px rgba(0,212,255,0.06),
+    0 0 40px rgba(123,92,255,0.06),
+    inset 0 0 40px rgba(0,212,255,0.03);
+}
+.zk-module-star:hover {
+  border-color: rgba(0,212,255,0.6) !important;
+  box-shadow:
+    0 0 40px rgba(0,212,255,0.18),
+    0 0 80px rgba(168,85,247,0.12),
+    inset 0 0 40px rgba(0,212,255,0.06) !important;
+}
+
+/* Animated shimmer sweep on star card */
+.zk-star-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(0,212,255,0.04) 50%,
+    rgba(168,85,247,0.04) 55%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: starShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes starShimmer {
+  0%   { background-position: -100% center; opacity: 0.5; }
+  50%  { background-position: 100% center;  opacity: 1; }
+  100% { background-position: 300% center;  opacity: 0.5; }
+}
+
+/* ── Energy capsule buttons ── */
+.btn-primary,
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+  transform: skewX(-20deg);
+  transition: none;
+}
+.btn-primary:hover::after {
+  animation: btnSweep 0.6s ease forwards;
+}
+@keyframes btnSweep {
+  0%   { left: -100%; }
+  100% { left: 160%; }
+}
+
+/* ── Parallax layers ── */
+#cursor-energy {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
