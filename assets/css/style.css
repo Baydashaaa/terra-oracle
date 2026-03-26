@@ -661,10 +661,7 @@ canvas {
   animation: heroFadeUp 1.2s cubic-bezier(0.22,1,0.36,1) 0.2s forwards;
 }
 
-/* Hero center block — смещён чуть выше */
-.hero-center {
-  margin-top: -48px;
-}
+
 
 /* ── H1 "Terra Oracle" — gradient flow + glow pulse ── */
 .hero-h1 {
@@ -672,7 +669,7 @@ canvas {
   font-weight: 800;
   font-size: clamp(38px, 4.5vw, 58px);
   line-height: 1.0;
-  margin: 0 0 2px;
+  margin: -22px 0 2px;
   white-space: nowrap;
   opacity: 0;
   animation:
