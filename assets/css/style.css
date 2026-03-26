@@ -669,7 +669,7 @@ canvas {
   font-weight: 800;
   font-size: clamp(38px, 4.5vw, 58px);
   line-height: 1.0;
-  margin: -22px 0 2px;
+  margin: 0 0 2px;
   white-space: nowrap;
   opacity: 0;
   animation:
