@@ -620,6 +620,7 @@
  </div>
 
  </div>
+</div>
 
 <div class="page" id="page-board">
  <div class="board-header">
@@ -1524,13 +1525,20 @@ function drawNavLines() {
 }
 
 // Mark active nav node
-const _origShowPage = window.showPage;
-window.showPage = function(name, e) {
-  _origShowPage(name, e);
-  document.querySelectorAll('.nav-node').forEach(n => {
-    n.classList.toggle('active', n.dataset.page === name);
-  });
-};
+function _wrapShowPage() {
+  if (typeof window.showPage !== 'function') return;
+  const _orig = window.showPage;
+  window.showPage = function(name, e) {
+    _orig(name, e);
+    document.querySelectorAll('.nav-node').forEach(function(n) {
+      n.classList.toggle('active', n.dataset.page === name);
+    });
+  };
+}
+// Try immediately, fallback to DOMContentLoaded and load
+_wrapShowPage();
+document.addEventListener('DOMContentLoaded', _wrapShowPage);
+window.addEventListener('load', _wrapShowPage);
 
 window.addEventListener('load', () => { setTimeout(drawNavLines, 100); });
 window.addEventListener('resize', drawNavLines);
