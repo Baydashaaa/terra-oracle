@@ -668,43 +668,42 @@ canvas {
   line-height: 1.0;
   margin: 0 0 2px;
   white-space: nowrap;
-  /* Gradient text */
+  opacity: 0;
+  animation:
+    heroFadeUp    1.4s cubic-bezier(0.22,1,0.36,1) 0.5s forwards,
+    heroGlowPulse 5s  ease-in-out 2s infinite;
+}
+@keyframes heroGlowPulse {
+  0%,100% { filter: drop-shadow(0 0 4px  rgba(123,92,255,0.2)); }
+  50%     { filter: drop-shadow(0 0 16px rgba(123,92,255,0.45))
+                    drop-shadow(0 0 28px rgba(0,212,255,0.15)); }
+}
+
+/* "Terra" — белый, всегда */
+.hero-h1-terra {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+/* "Oracle" — gradient flow */
+.hero-h1-oracle {
   background: linear-gradient(
     90deg,
-    #ffffff 0%,
-    #c8b8ff 25%,
-    #ffffff 50%,
-    #00D4FF 75%,
-    #ffffff 100%
+    #c8b8ff 0%,
+    #ffffff 20%,
+    #00D4FF 50%,
+    #ffffff 80%,
+    #c8b8ff 100%
   );
   background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  /* Animations: flow in + gradient sweep */
-  opacity: 0;
-  animation:
-    heroFadeUp   1.4s cubic-bezier(0.22,1,0.36,1) 0.5s forwards,
-    heroGradFlow 8s  linear 1.9s infinite;
+  animation: heroGradFlow 8s linear 1.9s infinite;
 }
-
 @keyframes heroGradFlow {
   0%   { background-position: 0%   center; }
   100% { background-position: 300% center; }
-}
-
-/* Glow pulse layer under h1 — pseudo trick via filter */
-.hero-h1 {
-  filter: drop-shadow(0 0 0px rgba(123,92,255,0));
-  animation:
-    heroFadeUp    1.4s cubic-bezier(0.22,1,0.36,1) 0.5s forwards,
-    heroGradFlow  8s  linear 1.9s infinite,
-    heroGlowPulse 5s  ease-in-out 2s infinite;
-}
-@keyframes heroGlowPulse {
-  0%,100% { filter: drop-shadow(0 0 4px  rgba(123,92,255,0.25)); }
-  50%     { filter: drop-shadow(0 0 18px rgba(123,92,255,0.55))
-                    drop-shadow(0 0 32px rgba(0,212,255,0.2)); }
 }
 
 /* ── H1-sub "Classic" — delayed gradient + stronger glow ── */
