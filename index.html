@@ -85,6 +85,13 @@
   to   { opacity:1;   transform:translateY(-50%) scale(1.08); }
 }
 
+/* ── ENERGY FIELD ANIMATION ──────────────────────────────── */
+@keyframes energyBreathe {
+  0%   { opacity:0.6; transform:scale(1); }
+  50%  { opacity:1;   transform:scale(1.03); }
+  100% { opacity:0.7; transform:scale(0.98); }
+}
+
 /* ── NAV SYSTEM (connected nodes) ───────────────────────── */
 .nav-system {
   display: flex;
@@ -160,33 +167,33 @@
 
 /* Wallet button glass */
 .wallet-btn.glass-btn {
-  border: 1px solid rgba(120,80,255,0.4) !important;
-  box-shadow: 0 0 10px rgba(120,80,255,0.2), inset 0 0 10px rgba(120,80,255,0.08) !important;
+  border: 1px solid rgba(123,92,255,0.4) !important;
+  box-shadow: 0 0 10px rgba(123,92,255,0.2), inset 0 0 10px rgba(123,92,255,0.08) !important;
 }
 .wallet-btn.glass-btn:hover,
 .wallet-btn.glass-btn.connected {
-  border-color: rgba(120,80,255,0.7) !important;
-  box-shadow: 0 0 16px rgba(120,80,255,0.4), inset 0 0 14px rgba(120,80,255,0.15) !important;
+  border-color: rgba(123,92,255,0.7) !important;
+  box-shadow: 0 0 16px rgba(123,92,255,0.4), inset 0 0 14px rgba(123,92,255,0.15) !important;
 }
 
 /* Treasury button glass - gold */
 .treasury-btn.glass-gold {
-  border: 1px solid rgba(245,197,24,0.4) !important;
-  box-shadow: 0 0 10px rgba(245,197,24,0.2), inset 0 0 10px rgba(245,197,24,0.06) !important;
+  border: 1px solid rgba(232,200,64,0.4) !important;
+  box-shadow: 0 0 10px rgba(232,200,64,0.15), inset 0 0 10px rgba(232,200,64,0.06) !important;
 }
 .treasury-btn.glass-gold:hover {
-  border-color: rgba(245,197,24,0.7) !important;
-  box-shadow: 0 0 16px rgba(245,197,24,0.35), inset 0 0 14px rgba(245,197,24,0.12) !important;
+  border-color: rgba(232,200,64,0.7) !important;
+  box-shadow: 0 0 16px rgba(232,200,64,0.3), inset 0 0 14px rgba(232,200,64,0.12) !important;
 }
 
-/* Oracle Draw button glass - orange */
+/* Oracle Draw button glass - purple/electric */
 .lottery-btn.glass-orange {
-  border: 1px solid rgba(255,100,30,0.45) !important;
-  box-shadow: 0 0 10px rgba(255,100,30,0.25), inset 0 0 10px rgba(255,100,30,0.08) !important;
+  border: 1px solid rgba(123,92,255,0.5) !important;
+  box-shadow: 0 0 12px rgba(123,92,255,0.3), inset 0 0 10px rgba(0,212,255,0.05) !important;
 }
 .lottery-btn.glass-orange:hover {
-  border-color: rgba(255,100,30,0.75) !important;
-  box-shadow: 0 0 18px rgba(255,100,30,0.4), inset 0 0 14px rgba(255,100,30,0.15) !important;
+  border-color: rgba(0,212,255,0.5) !important;
+  box-shadow: 0 0 20px rgba(123,92,255,0.45), 0 0 40px rgba(0,212,255,0.15), inset 0 0 14px rgba(0,212,255,0.08) !important;
 }
 </style>
 
@@ -198,6 +205,19 @@
 <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
+
+<!-- Energy field: breathing gradient -->
+<div id="energy-field" style="position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(90,59,255,0.06) 0%, transparent 70%),
+             radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0,212,255,0.04) 0%, transparent 60%);
+  animation:energyBreathe 8s ease-in-out infinite alternate;">
+</div>
+
+<!-- Noise overlay -->
+<div id="noise-overlay" style="position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;
+  background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/><feColorMatrix type=%22saturate%22 values=%220%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');
+  background-size: 200px 200px;">
+</div>
 <nav>
  <div class="nav-logo" onclick="showPage('home')" style="cursor:pointer;position:relative;" title="Go to Home">
  <!-- Radial glow behind logo -->
