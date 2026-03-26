@@ -661,6 +661,11 @@ canvas {
   animation: heroFadeUp 1.2s cubic-bezier(0.22,1,0.36,1) 0.2s forwards;
 }
 
+/* Hero center block — смещён чуть выше */
+.hero-center {
+  margin-top: -48px;
+}
+
 /* ── H1 "Terra Oracle" — gradient flow + glow pulse ── */
 .hero-h1 {
   font-family: 'Rajdhani', sans-serif;
