@@ -388,115 +388,131 @@
   </a>
  </div>
 </div>
-<div class="page active" id="page-home" style="position:relative;">
- <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;">
- <img src="logo.png" style="width:800px;height:800px;opacity:0.25;user-select:none;object-fit:contain;animation:centerPulse 6s ease-in-out infinite;">
- </div>
- <div style="text-align:center;padding:48px 20px 56px;position:relative;z-index:1;">
- <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(84,147,247,0.1),transparent 70%);pointer-events:none;"></div>
- <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold);margin-bottom:16px;text-transform:uppercase;">Terra Classic Ecosystem</div>
- <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(36px,7vw,64px);line-height:1.1;margin:0 0 16px;color:#ffffff;">
- Terra Oracle<br><span style="color:#7eb8ff;">Classic</span>
- </h1>
- <div style="font-size:14px;color:#b0c4e8;max-width:480px;margin:0 auto 16px;line-height:1.8;font-weight:400;">
- A decentralized Q&amp;A, governance and draw protocol<br>built on Terra Classic — powered by LUNC.
- </div>
- <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(245,197,24,0.1);
- border:1px solid rgba(245,197,24,0.35);border-radius:20px;padding:7px 18px;font-size:12px;color:#ffd700;font-weight:600;">
- 🪙 Future token: <strong style="letter-spacing:0.1em;">TCO</strong> · Terra Classic Oracle
- </div>
- </div>
- <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:40px;position:relative;z-index:1;">
+<div class="page active" id="page-home" style="position:relative;max-width:100%;padding:0;">
 
-  <!-- MODULE: Oracle Board -->
-  <div onclick="showPage('board')" class="zk-module">
+ <!-- Фоновый логотип -->
+ <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;">
+  <img src="logo.png" style="width:700px;height:700px;opacity:0.18;user-select:none;object-fit:contain;animation:centerPulse 6s ease-in-out infinite;">
+ </div>
+
+ <!-- ══ HERO LAYOUT: cards + center ══ -->
+ <div style="position:relative;z-index:1;min-height:580px;display:grid;
+   grid-template-columns:1fr minmax(260px,340px) 1fr;
+   grid-template-rows:auto auto;
+   gap:20px;padding:40px 32px 32px;align-items:center;max-width:1200px;margin:0 auto;">
+
+  <!-- TOP-LEFT: Oracle Board -->
+  <div onclick="showPage('board')" class="zk-module" style="grid-column:1;grid-row:1;max-width:340px;justify-self:end;">
     <div class="zk-module-bar"></div>
     <div class="zk-module-inner">
       <div class="zk-module-tag">&#9672; ACTIVE MODULE</div>
-      <div style="font-size:26px;margin-bottom:10px;">&#128302;</div>
-      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#fff;">Oracle Board</div>
-      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
-      <div style="margin-top:16px;font-size:11px;color:#7B5CFF;letter-spacing:0.08em;font-weight:600;">200,000 LUNC per question &rarr;</div>
+      <div style="font-size:32px;margin-bottom:12px;">🔮</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#fff;">Oracle Board</div>
+      <div style="font-size:13px;color:#8aaccc;line-height:1.75;">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
+      <div style="margin-top:18px;font-size:12px;color:#7B5CFF;letter-spacing:0.08em;font-weight:600;">200,000 LUNC per question →</div>
       <div class="zk-module-dots"></div>
     </div>
   </div>
 
-  <!-- MODULE: DAO Chat -->
-  <div onclick="showPage('chat')" class="zk-module" style="--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
+  <!-- CENTER: Hero text -->
+  <div style="grid-column:2;grid-row:1/3;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:20px 0;">
+    <div style="font-size:9px;letter-spacing:0.28em;color:var(--gold);text-transform:uppercase;margin-bottom:14px;font-family:'Exo 2',sans-serif;">Terra Classic Ecosystem</div>
+    <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(40px,5vw,62px);line-height:1.0;margin:0 0 10px;color:#ffffff;white-space:nowrap;">
+      Terra Oracle
+    </h1>
+    <div style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(40px,5vw,62px);line-height:1.0;color:#7B5CFF;margin-bottom:16px;text-shadow:0 0 30px rgba(123,92,255,0.4);">Classic</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.04em;margin-bottom:18px;font-family:'Exo 2',sans-serif;font-style:italic;">The intelligence layer of Terra Classic</div>
+    <div style="font-size:11px;color:rgba(180,200,230,0.45);letter-spacing:0.06em;margin-bottom:22px;font-family:'Exo 2',sans-serif;line-height:1.8;">
+      Q&amp;A · Governance · Verifiable Draws<br>
+      <span style="color:rgba(180,200,230,0.3);">powered by LUNC</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(245,197,24,0.08);
+      border:1px solid rgba(245,197,24,0.3);border-radius:20px;padding:6px 16px;font-size:11px;color:#ffd700;font-weight:600;">
+      🪙 Future token: <strong style="letter-spacing:0.1em;">TCO</strong> · Terra Classic Oracle
+    </div>
+  </div>
+
+  <!-- TOP-RIGHT: DAO Chat -->
+  <div onclick="showPage('chat')" class="zk-module" style="grid-column:3;grid-row:1;max-width:340px;justify-self:start;--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
     <div class="zk-module-bar"></div>
     <div class="zk-module-inner">
       <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">&#9678; ACTIVE MODULE</div>
-      <div style="font-size:26px;margin-bottom:10px;">&#128172;</div>
-      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#fff;">DAO Chat</div>
-      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
-      <div style="margin-top:16px;font-size:11px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;">5,000 LUNC per message &rarr;</div>
+      <div style="font-size:32px;margin-bottom:12px;">💬</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#fff;">DAO Chat</div>
+      <div style="font-size:13px;color:#8aaccc;line-height:1.75;">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
+      <div style="margin-top:18px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;">5,000 LUNC per message →</div>
       <div class="zk-module-dots"></div>
     </div>
   </div>
 
-  <!-- MODULE: Governance Vote -->
-  <div onclick="showPage('vote')" class="zk-module" style="--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
+  <!-- BOTTOM-LEFT: Governance Vote -->
+  <div onclick="showPage('vote')" class="zk-module" style="grid-column:1;grid-row:2;max-width:340px;justify-self:end;--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
     <div class="zk-module-bar"></div>
     <div class="zk-module-inner">
       <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">&#9670; ACTIVE MODULE</div>
-      <div style="font-size:26px;margin-bottom:10px;">&#128505;&#65039;</div>
-      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#fff;">Governance Vote</div>
-      <div style="font-size:12px;color:#8aaccc;line-height:1.7;">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
-      <div style="margin-top:16px;font-size:11px;color:#A855F7;letter-spacing:0.08em;font-weight:600;">Monthly draw: 20&ndash;25th &rarr;</div>
+      <div style="font-size:32px;margin-bottom:12px;">🗳️</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#fff;">Governance Vote</div>
+      <div style="font-size:13px;color:#8aaccc;line-height:1.75;">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
+      <div style="margin-top:18px;font-size:12px;color:#A855F7;letter-spacing:0.08em;font-weight:600;">Monthly draw: 20–25th →</div>
       <div class="zk-module-dots"></div>
     </div>
   </div>
 
-  <!-- MODULE: Oracle Draw STAR -->
-  <div onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')" class="zk-module zk-module-star">
+  <!-- BOTTOM-RIGHT: Oracle Draw STAR -->
+  <div onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')" class="zk-module zk-module-star" style="grid-column:3;grid-row:2;max-width:340px;justify-self:start;">
     <div class="zk-star-shimmer"></div>
     <div class="zk-module-bar zk-module-bar-fast"></div>
     <div class="zk-module-inner" style="position:relative;z-index:2;">
       <div class="zk-module-tag" style="color:rgba(0,212,255,0.8);">&#9733; FEATURED MODULE</div>
-      <div style="font-size:26px;margin-bottom:10px;">&#127920;</div>
-      <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#fff;">Oracle Draw</div>
-      <div style="font-size:12px;color:#b4c8e8;line-height:1.7;">Two draws &mdash; Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
-      <div style="margin-top:16px;font-size:11px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);">Enter the draw &rarr;</div>
+      <div style="font-size:32px;margin-bottom:12px;">🎰</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#fff;">Oracle Draw</div>
+      <div style="font-size:13px;color:#b4c8e8;line-height:1.75;">Two draws — Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
+      <div style="margin-top:18px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);">Enter the draw →</div>
       <div class="zk-module-dots"></div>
     </div>
   </div>
 
  </div>
-  </div>
+
+ <!-- Protocol sections below -->
+ <div style="max-width:720px;margin:0 auto;padding:24px 24px 80px;position:relative;z-index:1;">
+
+ <!-- TCO Token block -->
  <div style="background:var(--surface);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:28px;margin-bottom:40px;
- background:linear-gradient(135deg,rgba(245,197,24,0.04),rgba(84,147,247,0.04));">
- <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
- <span style="font-size:24px;">🪙</span>
- <div>
- <div style="font-weight:700;font-size:15px;">TCO Token <span style="font-size:10px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:8px;padding:2px 8px;margin-left:6px;">COMING SOON</span></div>
- <div style="font-size:11px;color:var(--muted);margin-top:2px;">Terra Classic Oracle — native governance & reward token</div>
+  background:linear-gradient(135deg,rgba(245,197,24,0.04),rgba(84,147,247,0.04));">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+   <span style="font-size:24px;">🪙</span>
+   <div>
+    <div style="font-weight:700;font-size:15px;">TCO Token <span style="font-size:10px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:8px;padding:2px 8px;margin-left:6px;">COMING SOON</span></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px;">Terra Classic Oracle — native governance &amp; reward token</div>
+   </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+   <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
+    <div style="font-size:18px;margin-bottom:4px;">🏛️</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Governance</div>
+    <div style="font-size:10px;color:#8aaccc;">Vote weight by TCO stake</div>
+   </div>
+   <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
+    <div style="font-size:18px;margin-bottom:4px;">💎</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Rewards</div>
+    <div style="font-size:10px;color:#8aaccc;">Earned by Oracle participation</div>
+   </div>
+   <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
+    <div style="font-size:18px;margin-bottom:4px;">🔥</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Deflationary</div>
+    <div style="font-size:10px;color:#8aaccc;">% burned on every activity</div>
+   </div>
+   <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
+    <div style="font-size:18px;margin-bottom:4px;">⛓️</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:2px;">On-Chain</div>
+    <div style="font-size:10px;color:#8aaccc;">Terra Classic · columbus-5</div>
+   </div>
+  </div>
  </div>
- </div>
- <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
- <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
- <div style="font-size:18px;margin-bottom:4px;">🏛️</div>
- <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Governance</div>
- <div style="font-size:10px;color:#8aaccc;">Vote weight by TCO stake</div>
- </div>
- <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
- <div style="font-size:18px;margin-bottom:4px;">💎</div>
- <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Rewards</div>
- <div style="font-size:10px;color:#8aaccc;">Earned by Oracle participation</div>
- </div>
- <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
- <div style="font-size:18px;margin-bottom:4px;">🔥</div>
- <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Deflationary</div>
- <div style="font-size:10px;color:#8aaccc;">% burned on every activity</div>
- </div>
- <div style="text-align:center;padding:14px;background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.1);border-radius:10px;">
- <div style="font-size:18px;margin-bottom:4px;">⛓️</div>
- <div style="font-size:11px;font-weight:700;margin-bottom:2px;">On-Chain</div>
- <div style="font-size:10px;color:#8aaccc;">Terra Classic · columbus-5</div>
- </div>
- </div>
- </div>
- <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;">
- <div style="font-size:11px;letter-spacing:0.15em;color:var(--muted);margin-bottom:24px;text-transform:uppercase;">Protocol Flow</div>
+
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
+ <div style="font-size:11px;letter-spacing:0.15em;color:var(--muted);margin-bottom:20px;text-transform:uppercase;">Protocol Flow</div>
 
  <!-- STREAM 1: Oracle Questions -->
  <div style="margin-bottom:20px;">
@@ -585,6 +601,8 @@
   </div>
  </div>
 
+ </div>
+</div>
  </div>
 </div>
 <div class="page" id="page-board">
