@@ -863,3 +863,83 @@ canvas {
   filter: brightness(1.4);
   text-shadow: 0 0 12px currentColor;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CARD PERIMETER PULSE — импульс по периметру карточек
+   ═══════════════════════════════════════════════════════════ */
+
+.zk-module {
+  position: relative;
+}
+
+/* Псевдоэлемент — бегущий импульс по границе */
+.zk-module::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 14px;
+  padding: 1px;
+  background: linear-gradient(
+    var(--pulse-angle, 0deg),
+    transparent 0%,
+    transparent 35%,
+    rgba(123,92,255,0.9) 45%,
+    rgba(0,212,255,1) 50%,
+    rgba(123,92,255,0.9) 55%,
+    transparent 65%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
+  animation: perimeterPulse var(--pulse-dur, 4s) linear infinite;
+  animation-delay: var(--pulse-delay, 0s);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes perimeterPulse {
+  0%   { --pulse-angle: 0deg;   opacity: 0; }
+  5%   { opacity: 0.7; }
+  45%  { opacity: 0.5; }
+  90%  { opacity: 0.6; }
+  95%  { opacity: 0; }
+  100% { --pulse-angle: 360deg; opacity: 0; }
+}
+
+/* Разные задержки для каждой карточки — эффект "обходит по кругу" */
+.zk-module:nth-child(1) { --pulse-delay: 0s;    --pulse-dur: 3.8s; }
+.zk-module:nth-child(2) { --pulse-delay: 0.95s; --pulse-dur: 3.8s; }
+.zk-module:nth-child(3) { --pulse-delay: 1.9s;  --pulse-dur: 3.8s; }
+.zk-module:nth-child(4) { --pulse-delay: 2.85s; --pulse-dur: 3.8s; }
+
+/* Oracle Draw star — cyan импульс */
+.zk-module-star::before {
+  background: linear-gradient(
+    var(--pulse-angle, 0deg),
+    transparent 0%,
+    transparent 35%,
+    rgba(0,212,255,0.9) 45%,
+    rgba(168,85,247,1) 50%,
+    rgba(0,212,255,0.9) 55%,
+    transparent 65%,
+    transparent 100%
+  );
+  opacity: 0.8;
+}
+
+/* Hover: импульс ярче и быстрее */
+.zk-module:hover::before {
+  opacity: 1;
+  animation-duration: 1.8s !important;
+}
+
+/* @property для анимации CSS custom property (угол) */
+@property --pulse-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
