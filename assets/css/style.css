@@ -564,3 +564,63 @@ canvas {
   mix-blend-mode: screen;
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   HERO GRID LAYOUT — 2×2 cards + center
+   ═══════════════════════════════════════════════════════════ */
+
+/* Override page max-width only for home */
+#page-home {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+/* Cards in hero grid — fixed width so they stay proportional */
+#page-home .zk-module {
+  width: 100%;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 900px) {
+  #page-home > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+  #page-home .zk-module {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
+  }
+  #page-home div[style*="grid-column:2"] {
+    grid-column: 1 !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  #page-home > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr minmax(220px,280px) 1fr !important;
+    padding: 32px 16px 24px !important;
+  }
+}
+
+/* ── TCO + Protocol Flow — compact, no full-width stretch ── */
+#page-home > div[style*="max-width:720px"] {
+  box-sizing: border-box;
+}
+
+/* TCO grid responsive */
+#page-home .tco-grid,
+#page-home div[style*="repeat(4,1fr)"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 640px) {
+  #page-home div[style*="repeat(4,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Protocol flow pills — don't let them overflow */
+#page-home div[style*="flex-wrap:wrap"] {
+  max-width: 100%;
+}
