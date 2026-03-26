@@ -1755,6 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pulses = [];
   let t = 0;
   let W, H, cards = [], center = {};
+  let centerReady = false; /* прямоугольник рисуется только после safeGetCenter */
 
   function getCardCenters() {
     const stage = document.getElementById('hero-stage');
@@ -1768,17 +1769,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cards.length === 0) return;
     const idx = Math.floor(Math.random() * cards.length);
     const c = cards[idx];
-    /* Пульс идёт: карточка → центр → обратно (50% шанс) */
-    const toCenter = Math.random() > 0.3;
+    /* Пульс летит от карточки к центру stage */
     pulses.push({
-      ax: toCenter ? c.x : center.x,
-      ay: toCenter ? c.y : center.y,
-      bx: toCenter ? center.x : c.x,
-      by: toCenter ? center.y : c.y,
+      ax: c.x, ay: c.y,
+      bx: W / 2, by: H / 2,
       p: 0,
-      speed: 0.006 + Math.random() * 0.006,
+      speed: 0.005 + Math.random() * 0.005,
       color: c.color,
-      size: 2.5 + Math.random() * 1.5,
+      size: 2.2 + Math.random() * 1.2,
     });
   }
 
@@ -1795,88 +1793,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (cards.length === 0) { requestAnimationFrame(draw); return; } /* ждём карточки */
 
-    /* ── Линии от каждой карточки к центру ── */
+    /* ── Линии от карточек к центру stage — уходят в глубину ── */
+    const stgCX = W / 2;
+    const stgCY = H / 2;
     cards.forEach((c, i) => {
-      /* Пульсирующий alpha */
       const phase = (t + i * 1.4) % (Math.PI * 2);
-      const baseAlpha = 0.06 + 0.04 * Math.sin(phase);
+      const alpha = 0.08 + 0.05 * Math.sin(phase);
 
-      /* Градиент вдоль линии */
-      const grad = ctx.createLinearGradient(c.x, c.y, center.x, center.y);
+      /* Линия: карточка → центр stage, градиент гаснет к центру */
+      const grad = ctx.createLinearGradient(c.x, c.y, stgCX, stgCY);
       grad.addColorStop(0,   hexAlpha(c.color, 0));
-      grad.addColorStop(0.3, hexAlpha(c.color, baseAlpha * 2));
-      grad.addColorStop(0.7, hexAlpha(c.color, baseAlpha * 2.5));
-      grad.addColorStop(1,   hexAlpha(c.color, baseAlpha * 1.5));
+      grad.addColorStop(0.2, hexAlpha(c.color, alpha * 2));
+      grad.addColorStop(0.6, hexAlpha(c.color, alpha * 1.5));
+      grad.addColorStop(1,   hexAlpha(c.color, 0));
 
       ctx.beginPath();
       ctx.moveTo(c.x, c.y);
-      ctx.lineTo(center.x, center.y);
+      ctx.lineTo(stgCX, stgCY);
       ctx.strokeStyle = grad;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 0.8;
       ctx.stroke();
 
-      /* Узлы на карточке */
+      /* Узел на карточке */
       ctx.beginPath();
-      ctx.arc(c.x, c.y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = hexAlpha(c.color, 0.35 + 0.2 * Math.sin(phase));
-      ctx.fill();
-
-      /* Ореол узла */
-      const ng = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, 18);
-      ng.addColorStop(0, hexAlpha(c.color, 0.12 + 0.08 * Math.sin(phase)));
-      ng.addColorStop(1, hexAlpha(c.color, 0));
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, 18, 0, Math.PI * 2);
-      ctx.fillStyle = ng;
+      ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = hexAlpha(c.color, 0.3 + 0.18 * Math.sin(phase));
       ctx.fill();
     });
 
-    /* ── Рамка вокруг слова "Classic" — без ореола ── */
-    const cp = (t * 0.6) % (Math.PI * 2);
-    /* Узкий: +2px по горизонтали, +7px по вертикали */
-    const cw = (center.w || 180) / 2 + 2;
-    const ch = (center.h || 55) / 2 + 7;
-    const rx = 8;
+    /* ── Рамка вокруг "Classic" — только когда координаты готовы ── */
+    if (centerReady) {
+      const cp = (t * 0.6) % (Math.PI * 2);
+      const cw = (center.w || 180) / 2 + 2;
+      const ch = (center.h || 55) / 2 + 7;
+      const rx = 8;
 
-    /* Основной контур */
-    ctx.save();
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(center.x - cw, center.y - ch, cw * 2, ch * 2, rx);
-    } else {
-      ctx.rect(center.x - cw, center.y - ch, cw * 2, ch * 2);
-    }
-    ctx.strokeStyle = `rgba(123,92,255,${0.28 + 0.14 * Math.sin(cp)})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.restore();
-
-    /* Второй контур — cyan, на 4px больше */
-    ctx.save();
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(center.x - cw - 4, center.y - ch - 4, cw * 2 + 8, ch * 2 + 8, rx + 3);
-    } else {
-      ctx.rect(center.x - cw - 4, center.y - ch - 4, cw * 2 + 8, ch * 2 + 8);
-    }
-    ctx.strokeStyle = `rgba(0,212,255,${0.12 + 0.08 * Math.sin(cp + 1)})`;
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
-    ctx.restore();
-
-    /* 4 угловых точки */
-    const corners = [
-      [center.x - cw, center.y - ch],
-      [center.x + cw, center.y - ch],
-      [center.x - cw, center.y + ch],
-      [center.x + cw, center.y + ch],
-    ];
-    corners.forEach(([cx2, cy2]) => {
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(cx2, cy2, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(123,92,255,${0.55 + 0.3 * Math.sin(cp)})`;
-      ctx.fill();
-    });
+      if (ctx.roundRect) {
+        ctx.roundRect(center.x - cw, center.y - ch, cw * 2, ch * 2, rx);
+      } else {
+        ctx.rect(center.x - cw, center.y - ch, cw * 2, ch * 2);
+      }
+      ctx.strokeStyle = `rgba(123,92,255,${0.28 + 0.14 * Math.sin(cp)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(center.x - cw - 4, center.y - ch - 4, cw * 2 + 8, ch * 2 + 8, rx + 3);
+      } else {
+        ctx.rect(center.x - cw - 4, center.y - ch - 4, cw * 2 + 8, ch * 2 + 8);
+      }
+      ctx.strokeStyle = `rgba(0,212,255,${0.12 + 0.08 * Math.sin(cp + 1)})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+      ctx.restore();
+
+      const corners = [
+        [center.x - cw, center.y - ch],
+        [center.x + cw, center.y - ch],
+        [center.x - cw, center.y + ch],
+        [center.x + cw, center.y + ch],
+      ];
+      corners.forEach(([cx2, cy2]) => {
+        ctx.beginPath();
+        ctx.arc(cx2, cy2, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(123,92,255,${0.55 + 0.3 * Math.sin(cp)})`;
+        ctx.fill();
+      });
+    }
 
     /* ── Пульсы ── */
     if (Math.random() < 0.025) spawnPulse();
@@ -1948,6 +1936,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el
       });
     });
+    centerReady = true; /* теперь можно рисовать прямоугольник */
   }
 
   /* Запускаем draw() сразу — линии к карточкам видны немедленно.
