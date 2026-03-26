@@ -22,7 +22,8 @@
   0%,100% { filter:drop-shadow(0 0 0px rgba(123,92,255,0)); }
   50%      { filter:drop-shadow(0 0 12px rgba(123,92,255,0.5)) drop-shadow(0 0 24px rgba(0,212,255,0.2)); }
 }
-.nav-logo { animation:logoPulse 4s ease-in-out infinite; }
+.nav-logo { animation: none; }
+.nav-logo img { animation: logoPulse 4s ease-in-out infinite; }
 
 /* ── Nav line flowing light ── */
 @keyframes navLineFlow {
@@ -826,4 +827,37 @@ canvas {
 @keyframes heroFadeUp {
   0%   { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Карточки: текст ярче при hover ── */
+
+/* Плавный переход на всём внутри карточки */
+.zk-module-tag,
+.zk-module-title,
+.zk-module-desc,
+.zk-module-cta {
+  transition: color 0.35s ease, text-shadow 0.35s ease, opacity 0.35s ease;
+}
+
+/* Tag — чуть заметнее */
+.zk-module:hover .zk-module-tag {
+  opacity: 1;
+  letter-spacing: 0.26em;
+}
+
+/* Заголовок — чистый белый + мягкий ореол */
+.zk-module:hover .zk-module-title {
+  color: #ffffff !important;
+  text-shadow: 0 0 16px rgba(255,255,255,0.18);
+}
+
+/* Описание — светлее */
+.zk-module:hover .zk-module-desc {
+  color: #b0c8e4 !important;
+}
+
+/* CTA стрелка — ярче + свечение в цвете */
+.zk-module:hover .zk-module-cta {
+  filter: brightness(1.4);
+  text-shadow: 0 0 12px currentColor;
 }
