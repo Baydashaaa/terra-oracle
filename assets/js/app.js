@@ -386,11 +386,12 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 
 // ─── PROTOCOL WALLETS ─────────────────────────────────────────
 const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
-const ORACLE_WALLET   = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
-const LOTTERY_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';
+const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
+const WEEKLY_WALLET   = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw pool
+const DAILY_WALLET    = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';  // Daily Draw pool
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
-const PROTOCOL_WALLET = ADMIN_WALLET;
-const REQUIRED_LUNC   = 200000000000; // 200,000 LUNC in uLUNC
+const TREASURY_WALLET = ADMIN_WALLET;
+const REQUIRED_LUNC   = 100000000000; // 100,000 LUNC minimum (weekly pool portion)
 let connectedAddress  = null;
 
 async function connectKeplr() {
@@ -446,6 +447,7 @@ async function autoPayAndUnlock() {
   if (!connectedAddress) { alert('Connect wallet first!'); return; }
   const btn = document.getElementById('verify-btn');
   btn.textContent = '⏳ Opening Keplr...'; btn.disabled = true;
+
   try {
     const { SigningStargateClient } = await import('https://esm.sh/@cosmjs/stargate@0.32.3?target=es2020&bundle');
     const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
@@ -455,24 +457,60 @@ async function autoPayAndUnlock() {
       try { client = await SigningStargateClient.connectWithSigner(rpc, offlineSigner); break; } catch(e) {}
     }
     if (!client) throw new Error('Cannot connect to Terra Classic RPC');
-    const result = await client.sendTokens(
+
+    // ── Get user title discount ──────────────────────────────────
+    const userTitle = typeof getUserTitle === 'function' ? getUserTitle(connectedAddress) : null;
+    const discount  = userTitle ? userTitle.discount : 0; // e.g. 0, 5, 12.5, 25
+
+    // ── Calculate amounts ────────────────────────────────────────
+    // WEEKLY_WALLET always gets fixed 100,000 LUNC
+    const toWeekly   = 100000 * 1e6; // 100,000 LUNC in uluna
+    // TREASURY_WALLET gets 100,000 LUNC minus discount
+    const treasuryBase = 100000 * 1e6;
+    const toTreasury = Math.floor(treasuryBase * (1 - discount / 100));
+    const totalLunc  = (toWeekly + toTreasury) / 1e6;
+
+    const discountLabel = discount > 0
+      ? ' (−' + discount + '% title discount)'
+      : '';
+    btn.textContent = '⏳ TX 1/2 — Weekly Pool...';
+
+    // ── TX 1: 100,000 LUNC → WEEKLY_WALLET ──────────────────────
+    const FEE = { amount: [{ denom: 'uluna', amount: '5665000' }], gas: '200000' };
+    const tx1 = await client.sendTokens(
       connectedAddress,
-      ORACLE_WALLET,
-      [{ denom: 'uluna', amount: '200000000000' }],
-      // FIX: fee исправлена — 28.325 uluna/gas × 200000 = 5,665,000 uluna (~5.7 LUNC)
-      { amount: [{ denom: 'uluna', amount: '5665000' }], gas: '200000' },
-      'Terra Oracle Question Payment'
+      WEEKLY_WALLET,
+      [{ denom: 'uluna', amount: String(toWeekly) }],
+      FEE,
+      'Terra Oracle — Weekly Pool'
     );
-    if (result.code !== 0) throw new Error('TX failed: ' + result.rawLog);
-    document.getElementById('verified-tx-hidden').value = result.transactionHash;
-    showTxStatus('success', '✅ Payment confirmed! 200,000 LUNC sent. Form unlocked.');
+    if (tx1.code !== 0) throw new Error('TX1 failed: ' + tx1.rawLog);
+
+    btn.textContent = '⏳ TX 2/2 — Treasury...';
+
+    // ── TX 2: discounted amount → TREASURY_WALLET ────────────────
+    const tx2 = await client.sendTokens(
+      connectedAddress,
+      TREASURY_WALLET,
+      [{ denom: 'uluna', amount: String(toTreasury) }],
+      FEE,
+      'Terra Oracle — Question Fee' + discountLabel
+    );
+    if (tx2.code !== 0) throw new Error('TX2 failed: ' + tx2.rawLog);
+
+    // Store first tx hash for verification
+    document.getElementById('verified-tx-hidden').value = tx1.transactionHash;
+    showTxStatus('success',
+      '✅ Payment confirmed! ' + totalLunc.toLocaleString() + ' LUNC sent' + discountLabel + '. Form unlocked.'
+    );
     setTimeout(() => {
       document.getElementById('tx-section').style.display = 'none';
       document.getElementById('keplr-connected').style.display = 'none';
       document.getElementById('ask-form').style.display = 'block';
     }, 1200);
+
   } catch(e) {
-    btn.textContent = 'Pay 200,000 LUNC & Unlock'; btn.disabled = false;
+    btn.textContent = 'Pay & Unlock'; btn.disabled = false;
     showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
   }
 }
@@ -500,13 +538,13 @@ async function verifyTX() {
       const toAddr = val.to_address || val.toAddress;
       const coins = val.amount || [];
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
-      if ((toAddr === ORACLE_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
-        foundAmount = parseInt(lunc.amount);
-        if (foundAmount >= REQUIRED_LUNC) { valid = true; break; }
+      if ((toAddr === WEEKLY_WALLET || toAddr === TREASURY_WALLET) && lunc) {
+        foundAmount += parseInt(lunc.amount);
       }
     }
   }
-  if (!valid) { showTxStatus('error', `❌ Invalid payment. Expected 200,000 LUNC. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
+  valid = foundAmount >= 100000 * 1e6; // at least 100k LUNC to WEEKLY_WALLET or TREASURY_WALLET
+  if (!valid) { showTxStatus('error', `❌ Invalid payment. Expected at least 100,000 LUNC. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
   document.getElementById('verified-tx-hidden').value = txHash;
   showTxStatus('success', '✅ Payment verified! 200,000 LUNC confirmed. Form unlocked.');
   setTimeout(() => {
@@ -728,7 +766,7 @@ window.sendChatMessage = async function() {
     if (!client) throw new Error('Could not connect to Terra Classic RPC');
     const result = await client.sendTokens(
       sender,
-      ORACLE_WALLET,
+      TREASURY_WALLET,
       [{ denom: 'uluna', amount: '5000000000' }],
       // FIX: fee исправлена — 28.325 uluna/gas × 200000 = 5,665,000 uluna (~5.7 LUNC)
       { amount: [{ denom: 'uluna', amount: '5665000' }], gas: '200000' },
@@ -774,7 +812,7 @@ window.sendChatMessage = async function() {
 
 // ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
 const CHAT_WALLET = 'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr';
-const CHAT_HISTORY_WALLET = ORACLE_WALLET;
+const CHAT_HISTORY_WALLET = TREASURY_WALLET; // chat fees go to treasury
 const CHAT_MIN_ULUNA = 5000000000;
 // FIX 4: два разных FCD узла для настоящего fallback
 const FCD_NODES = [
