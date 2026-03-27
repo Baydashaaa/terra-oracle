@@ -777,7 +777,7 @@
  </div>
  <div class="chat-page-wrap">
  <div class="note" style="margin-bottom:20px;">
- Earn a free<strong style="color:var(--gold)">Weekly Draw entry</strong> every <strong style="color:var(--accent)">10 messages</strong>. Up to <strong style="color:var(--accent)">2 entries per day</strong>. Fees are directed to the Protocol Treasury.
+ Earn a free <strong style="color:var(--gold)">Weekly Draw entry</strong> every <strong style="color:var(--accent)">10 messages</strong>. Up to <strong style="color:var(--accent)">2 entries per day</strong>. Fees are directed to the Protocol Treasury.
  </div>
  <div class="chat-page-messages" id="chat-page-messages">
  <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">Loading messages...</div>
@@ -1629,57 +1629,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return n;
   };
 
-  /* Called by app.js to get how many entries milestone earned.
-     Sends 1 uluna on-chain to WEEKLY_WALLET with memo "chat_entry".
-     Oracle Draw reads this tx and awards 1 free entry.             */
-  window.getMsgMilestoneEntries = async function(msgCount) {
+  /* Called by app.js after every 10th chat message.
+     No on-chain tx needed — GitHub Action reads chat history
+     directly and updates free-entries.json automatically.
+     We just track locally for UI display.                         */
+  window.getMsgMilestoneEntries = function(msgCount) {
     if (msgCount % PER_MSGS !== 0) return '';
     const today = entriesToday();
     if (today >= MAX_DAY) {
       console.info('[TerraOracle] Daily entry limit reached (' + MAX_DAY + '/day)');
       return 'limit reached (max ' + MAX_DAY + '/day)';
     }
-
-    /* Send on-chain tx: 1 uluna → WEEKLY_WALLET memo "chat_entry" */
-    const WEEKLY_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
-    try {
-      if (!window.keplr) throw new Error('Keplr not found');
-      const { SigningStargateClient } = await import('https://esm.sh/@cosmjs/stargate@0.32.3?target=es2020&bundle');
-      const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
-      const accounts = await offlineSigner.getAccounts();
-      const sender = accounts[0].address;
-      const RPC_NODES = ['https://terra-classic-rpc.publicnode.com', 'https://rpc.terraclassic.community'];
-      let client = null;
-      for (const rpc of RPC_NODES) {
-        try { client = await SigningStargateClient.connectWithSigner(rpc, offlineSigner); break; } catch(e) {}
-      }
-      if (!client) throw new Error('Could not connect to RPC');
-      const result = await client.sendTokens(
-        sender,
-        WEEKLY_WALLET,
-        [{ denom: 'uluna', amount: '1' }],  /* 1 uluna — symbolic, just for memo */
-        { amount: [{ denom: 'uluna', amount: '5665000' }], gas: '200000' },
-        'chat_entry'
-      );
-      if (result.code !== 0) throw new Error('TX failed');
-
-      /* Record locally */
-      const newToday = today + 1;
-      localStorage.setItem(KEY_TODAY, String(newToday));
-      localStorage.setItem(KEY_DATE, todayStr());
-      const entries = JSON.parse(localStorage.getItem('tco_free_entries') || '[]');
-      entries.push({ date: todayStr(), txhash: result.transactionHash, reason: 'chat_' + msgCount });
-      localStorage.setItem('tco_free_entries', JSON.stringify(entries));
-      console.info('[TerraOracle] Free entry sent on-chain:', result.transactionHash);
-      return String(newToday);
-    } catch(e) {
-      console.warn('[TerraOracle] Could not send entry tx:', e.message);
-      /* Still record locally as fallback */
-      const newToday = today + 1;
-      localStorage.setItem(KEY_TODAY, String(newToday));
-      localStorage.setItem(KEY_DATE, todayStr());
-      return String(newToday);
-    }
+    const newToday = today + 1;
+    localStorage.setItem(KEY_TODAY, String(newToday));
+    localStorage.setItem(KEY_DATE, todayStr());
+    /* Record locally for profile display */
+    const entries = JSON.parse(localStorage.getItem('tco_free_entries') || '[]');
+    entries.push({ date: todayStr(), msgCount, earnedAt: new Date().toISOString() });
+    localStorage.setItem('tco_free_entries', JSON.stringify(entries));
+    console.info('[TerraOracle] Entry recorded locally. GitHub Action will sync to Oracle Draw within 1h.');
+    return String(newToday);
   };
 })();
 </script>
