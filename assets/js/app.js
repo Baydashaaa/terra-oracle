@@ -522,7 +522,8 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
         const chkData = await chk.json();
         if (chkData?.tx_response?.txhash) {
           if ((chkData.tx_response.code ?? 0) !== 0) throw new Error('TX failed on-chain: ' + chkData.tx_response.raw_log);
-        return txHash;
+          return txHash;
+        }
       }
     } catch(e) { if (e.message?.includes('TX failed')) throw e; }
   }
