@@ -466,81 +466,84 @@ async function sendLuncAmino(fromAddr, toAddr, amountUluna, memo, chainId) {
 
   const { signed, signature } = await aminoSigner.signAmino(fromAddr, signDoc);
 
+  // Use EXACTLY what Keplr signed
+  const sFrom   = signed.msgs[0].value.from_address;
+  const sTo     = signed.msgs[0].value.to_address;
+  const sAmt    = signed.msgs[0].value.amount[0].amount;
+  const sMemo   = signed.memo;
+  const sFeeAmt = signed.fee.amount[0].amount;
+  const sGas    = parseInt(signed.fee.gas);
+  const sSeq    = parseInt(signed.sequence);
+
   // Encode protobuf TxRaw
-  function encodeVarint(n) { const b=[]; while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return new Uint8Array(b); }
+  function encodeVarint(n) { n=Number(n); const b=[]; while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return new Uint8Array(b); }
   function encodeField(f,w,d){const t=encodeVarint((f<<3)|w);if(w===2){const l=encodeVarint(d.length);const o=new Uint8Array(t.length+l.length+d.length);o.set(t);o.set(l,t.length);o.set(d,t.length+l.length);return o;}return t;}
   function concat(...a){const tot=a.reduce((s,x)=>s+x.length,0);const o=new Uint8Array(tot);let off=0;for(const x of a){o.set(x,off);off+=x.length;}return o;}
   const enc = new TextEncoder();
-  const signedFeeAmt = signed.fee?.amount?.[0]?.amount || String(totalFee);
-  const signedGas    = parseInt(signed.fee?.gas || '200000');
 
-  const denomB = enc.encode('uluna');
-  const amtB   = enc.encode(String(amountUluna));
-  const coinP  = concat(encodeField(1,2,denomB), encodeField(2,2,amtB));
-  const msgSP  = concat(encodeField(1,2,enc.encode(fromAddr)), encodeField(2,2,enc.encode(toAddr)), encodeField(3,2,coinP));
+  // MsgSend — use signed values
+  const coinP  = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(sAmt)));
+  const msgSP  = concat(encodeField(1,2,enc.encode(sFrom)), encodeField(2,2,enc.encode(sTo)), encodeField(3,2,coinP));
   const anyMsg = concat(encodeField(1,2,enc.encode('/cosmos.bank.v1beta1.MsgSend')), encodeField(2,2,msgSP));
 
-  const feeDenomB = enc.encode('uluna');
-  const feeAmtB   = enc.encode(signedFeeAmt);
-  const feeCoinP  = concat(encodeField(1,2,feeDenomB), encodeField(2,2,feeAmtB));
-  const gasB      = encodeVarint(signedGas);
-  const gasTag    = encodeVarint((2<<3)|0);
-  const feeP      = concat(encodeField(1,2,feeCoinP), gasTag, gasB);
+  // Fee — use signed values
+  const feeCoinP = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(sFeeAmt)));
+  const feeP     = concat(encodeField(1,2,feeCoinP), encodeVarint((2<<3)|0), encodeVarint(sGas));
 
+  // PubKey
   const pubkeyB   = Uint8Array.from(atob(signature.pub_key.value), c=>c.charCodeAt(0));
-  const pubkeyP   = encodeField(1,2,pubkeyB);
-  const pubkeyAny = concat(encodeField(1,2,enc.encode('/cosmos.crypto.secp256k1.PubKey')), encodeField(2,2,pubkeyP));
-  const singleP   = concat(encodeVarint((1<<3)|0), encodeVarint(127));
-  const modeInfoP = encodeField(1,2,singleP);
-  const seqB      = encodeVarint(parseInt(signed.sequence || sequence));
-  const seqTag    = encodeVarint((3<<3)|0);
-  const signerP   = concat(encodeField(1,2,pubkeyAny), encodeField(2,2,modeInfoP), seqTag, seqB);
+  const pubkeyAny = concat(
+    encodeField(1,2,enc.encode('/cosmos.crypto.secp256k1.PubKey')),
+    encodeField(2,2,encodeField(1,2,pubkeyB))
+  );
+
+  // ModeInfo Single{mode: SIGN_MODE_LEGACY_AMINO_JSON=127}
+  const singleProto = concat(encodeVarint((1<<3)|0), encodeVarint(127));
+  const modeInfoP   = encodeField(1,2,singleProto);
+
+  // SignerInfo
+  const signerP = concat(
+    encodeField(1,2,pubkeyAny),
+    encodeField(2,2,modeInfoP),
+    encodeVarint((3<<3)|0), encodeVarint(sSeq)
+  );
+
+  // AuthInfo
   const authInfoP = concat(encodeField(1,2,signerP), encodeField(2,2,feeP));
-  const txBodyP   = concat(encodeField(1,2,anyMsg), encodeField(2,2,enc.encode(memo)));
-  const sigB      = Uint8Array.from(atob(signature.signature), c=>c.charCodeAt(0));
-  // Broadcast using amino /txs endpoint — no protobuf needed, avoids signature mismatch
-  const aminoBroadcast = {
-    tx: {
-      msg: signed.msgs,
-      fee: signed.fee,
-      memo: signed.memo,
-      signatures: [{ signature: signature.signature, pub_key: signature.pub_key }],
-    },
-    mode: 'sync',
-  };
 
-  let data = null;
-  for (const node of ['https://terra-classic-fcd.publicnode.com', 'https://fcd.terra-classic.hexxagon.io']) {
-    try {
-      const res = await fetch(`${node}/txs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(aminoBroadcast),
-      });
-      data = await res.json();
-      if (data) break;
-    } catch(e) { console.warn('node failed:', node); }
-  }
-  if (!data) throw new Error('All broadcast nodes failed');
+  // TxBody — use signed memo
+  const txBodyP = concat(encodeField(1,2,anyMsg), encodeField(2,2,enc.encode(sMemo)));
 
-  const txHash = data?.txhash || data?.tx_response?.txhash;
-  const code   = data?.code ?? data?.tx_response?.code ?? 0;
-  if (code !== 0) throw new Error('TX failed: ' + (data?.raw_log || data?.tx_response?.raw_log || JSON.stringify(data)));
+  // Signature
+  const sigB = Uint8Array.from(atob(signature.signature), c=>c.charCodeAt(0));
 
-  // Poll for confirmation — max 5 × 4s
-  for (let i = 0; i < 5; i++) {
-    await new Promise(r => setTimeout(r, 4000));
+  // TxRaw
+  const txRawP   = concat(encodeField(1,2,txBodyP), encodeField(2,2,authInfoP), encodeField(3,2,sigB));
+  const txBase64 = btoa(String.fromCharCode(...txRawP));
+
+  const res  = await fetch(`${LCD}/cosmos/tx/v1beta1/txs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tx_bytes: txBase64, mode: 'BROADCAST_MODE_SYNC' }),
+  });
+  const data = await res.json();
+  const txHash = data?.tx_response?.txhash || data?.txhash;
+  const code   = data?.tx_response?.code ?? data?.code ?? 0;
+
+  // Poll for confirmation
+  for (let i = 0; i < 10; i++) {
+    await new Promise(r => setTimeout(r, 3000));
     try {
       const chk = await fetch(`${LCD}/cosmos/tx/v1beta1/txs/${txHash}`);
-      if (chk.ok) {
-        const chkData = await chk.json();
-        if (chkData?.tx_response?.txhash) {
-          if ((chkData.tx_response.code ?? 0) !== 0) throw new Error('TX failed on-chain: ' + chkData.tx_response.raw_log);
-          return txHash;
-        }
+      const chkData = await chk.json();
+      if (chkData?.tx_response?.txhash) {
+        if ((chkData.tx_response.code ?? 0) !== 0) throw new Error('TX failed: ' + chkData.tx_response.raw_log);
+        return txHash;
       }
     } catch(e) { if (e.message?.includes('TX failed')) throw e; }
   }
+
+  if (code !== 0) throw new Error('TX failed: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
   return txHash;
 }
 
