@@ -87,7 +87,6 @@ async function fetchChatStats(address) {
   const allNodes = [
     { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
     { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
-    { base: 'https://fcd.terraclassic.community',          type: 'fcd' },
     { base: 'https://terra-classic-lcd.publicnode.com',    type: 'lcd' },
     { base: 'https://lcd.terraclassic.community',          type: 'lcd' },
   ];
@@ -159,7 +158,7 @@ async function fetchChatStats(address) {
             if (memo.trim().length > 0 &&
                 amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
                 amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
-              const day = new Date(_txMeta?.timestamp || 0).toISOString().slice(0, 10);
+              const day = new Date(_entry.ts * 1000).toISOString().slice(0, 10);
               days[day] = (days[day] || 0) + 1;
             }
 
