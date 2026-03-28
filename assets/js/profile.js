@@ -77,122 +77,91 @@ const QA_ULUNA      = 200000 * 1e6;
 const TOLERANCE     = 0.01;
 
 async function fetchChatStats(address) {
-  // returns { msgCount, entriesEarned, todayMsgs, todayEntries, days: {'YYYY-MM-DD': n} }
-  if (!address) return { msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {} };
+  if (!address) return { msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {}, qaCount: 0 };
 
   const cutoff = Math.floor(Date.now() / 1000) - 7 * 86400;
   const days   = {};
   let   qaCount = 0;
-  let   success = false;
 
-  // ── Try LCD nodes first ──────────────────────────────────────
-  for (const base of PROFILE_LCD_NODES) {
+  // FCD is primary — reliably indexes all tx types on columbus-5
+  const allNodes = [
+    { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
+    { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
+    { base: 'https://terra-classic-lcd.publicnode.com',    type: 'lcd' },
+    { base: 'https://lcd.terraclassic.community',          type: 'lcd' },
+  ];
+
+  for (const { base, type } of allNodes) {
     try {
-      let offset = 0, done = false;
+      let offset = 0, done = false, found = false;
       while (!done) {
-        const url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!res.ok) break;
-        const data = await res.json();
-        const txs = data.txs || [];
+        let url, txs;
+        if (type === 'fcd') {
+          url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
+          if (!res.ok) break;
+          const data = await res.json();
+          txs = data.txs || [];
+        } else {
+          url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
+          if (!res.ok) break;
+          const data = await res.json();
+          txs = data.txs || [];
+        }
+
         if (!txs.length) break;
 
         for (const tx of txs) {
           const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
           if (ts < cutoff) { done = true; break; }
 
-          // Support both proto (body.messages) and amino (value.msg) formats
-          const memo = tx.tx?.body?.memo || tx.tx?.value?.memo || '';
-          const msgs = tx.tx?.body?.messages || tx.tx?.value?.msg || [];
+          // Parse both amino and proto formats
+          const memo  = tx.tx?.body?.memo || tx.tx?.value?.memo || '';
+          const msgs  = tx.tx?.body?.messages || tx.tx?.value?.msg || [];
+
           for (const msg of msgs) {
-            // proto: @type contains MsgSend; amino: type = 'bank/MsgSend'
-            const msgType = msg['@type'] || msg.type || '';
+            const msgType  = msg['@type'] || msg.type || '';
             if (!msgType.includes('MsgSend')) continue;
-            // proto fields: from_address/to_address/amount
-            // amino fields: value.from_address/value.to_address/value.amount
-            const val     = msg.value || msg;
-            const toAddr  = val.to_address || '';
+            const val      = msg.value || msg;
+            const toAddr   = val.to_address   || '';
             const fromAddr = val.from_address || '';
-            if (toAddr !== TREASURY_WALLET) continue;
-            if (fromAddr !== address) continue;
+            if (toAddr   !== TREASURY_WALLET) continue;
+            if (fromAddr !== address)         continue;
+
             const coins = val.amount || [];
             const lunc  = coins.find(c => c.denom === 'uluna');
             if (!lunc) continue;
             const amt = Number(lunc.amount);
 
-            // Chat: 5000 LUNC ±1% + non-empty memo
+            // Chat: ~5,000 LUNC + non-empty memo
             if (memo.trim().length > 0 &&
                 amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
                 amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
               const day = new Date(tx.timestamp).toISOString().slice(0, 10);
               days[day] = (days[day] || 0) + 1;
+              found = true;
             }
 
-            // Q&A: 200,000 LUNC ±1%
+            // Q&A: ~200,000 LUNC
             if (amt >= QA_ULUNA * (1 - TOLERANCE) &&
                 amt <= QA_ULUNA * (1 + TOLERANCE)) {
               qaCount++;
+              found = true;
             }
           }
         }
         if (txs.length < 50) break;
         offset += 50;
       }
-      success = true;
-      break; // success — no need to try next node
+      // If we got through without error, stop trying nodes
+      break;
     } catch(e) {
-      continue; // try next node
+      console.warn('fetchChatStats node failed:', e.message);
+      continue;
     }
   }
 
-  // ── FCD fallback if LCD failed ───────────────────────────────
-  if (!success) {
-    for (const base of PROFILE_FCD_NODES) {
-      try {
-        let offset = 0, done = false;
-        while (!done) {
-          const url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}`;
-          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-          if (!res.ok) break;
-          const data = await res.json();
-          const txs = data.txs || [];
-          if (!txs.length) break;
-
-          for (const tx of txs) {
-            const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
-            if (ts < cutoff) { done = true; break; }
-            const memo = tx.tx?.value?.memo || '';
-            const msgs = tx.tx?.value?.msg || [];
-            for (const msg of msgs) {
-              if (msg.type !== 'bank/MsgSend') continue;
-              const val = msg.value || {};
-              if (val.to_address !== TREASURY_WALLET) continue;
-              if (val.from_address !== address) continue;
-              const coins = val.amount || [];
-              const lunc  = coins.find(c => c.denom === 'uluna');
-              if (!lunc) continue;
-              const amt = Number(lunc.amount);
-              if (memo.trim().length > 0 &&
-                  amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
-                  amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
-                const day = new Date(tx.timestamp).toISOString().slice(0, 10);
-                days[day] = (days[day] || 0) + 1;
-              }
-              if (amt >= QA_ULUNA * (1 - TOLERANCE) &&
-                  amt <= QA_ULUNA * (1 + TOLERANCE)) {
-                qaCount++;
-              }
-            }
-          }
-          if (txs.length < 50) break;
-          offset += 50;
-        }
-        break;
-      } catch(e) { continue; }
-    }
-  }
-
-  // Calculate totals
   const msgCount = Object.values(days).reduce((s, n) => s + n, 0);
 
   let entriesEarned = qaCount * 2;
@@ -200,8 +169,8 @@ async function fetchChatStats(address) {
     entriesEarned += Math.min(Math.floor(cnt / 10), 2);
   }
 
-  const todayKey    = new Date().toISOString().slice(0, 10);
-  const todayMsgs   = days[todayKey] || 0;
+  const todayKey     = new Date().toISOString().slice(0, 10);
+  const todayMsgs    = days[todayKey] || 0;
   const todayEntries = Math.min(Math.floor(todayMsgs / 10), 2);
 
   return { msgCount, entriesEarned, todayMsgs, todayEntries, days, qaCount };
