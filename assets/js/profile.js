@@ -98,7 +98,7 @@ async function fetchChatStats(address) {
       while (!done) {
         let url, txs;
         if (type === 'fcd') {
-          url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}`;
+          url = `${base}/v1/txs?account=${address}&limit=100&offset=${offset}`;
           const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
           if (!res.ok) break;
           const data = await res.json();
