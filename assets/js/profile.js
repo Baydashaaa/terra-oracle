@@ -58,23 +58,91 @@ const TITLES = [
   },
 ];
 
-// MESSAGE MILESTONES — every 10th message = 1 free Weekly lottery entry
-const MSG_MILESTONES = [10, 25, 50, 100];
+// ── On-chain chat stats fetch ────────────────────────────────────────────────
+// Reads Treasury wallet txs for the connected wallet over last 7 days.
+// Chat tx: 5,000 LUNC ±1% + non-empty memo → groups by UTC calendar day
+// Free entries: every 10 msgs/day = 1 entry, max 2/day
+// Also counts Q&A questions: each = +2 free entries
+const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const LCD_NODES = [
+  'https://terra-classic-lcd.publicnode.com',
+  'https://lcd.terraclassic.community',
+];
+const CHAT_ULUNA    = 5000 * 1e6;
+const QA_ULUNA      = 200000 * 1e6;
+const TOLERANCE     = 0.01;
 
-function getMsgMilestoneEntries(msgCount) {
-  let entries = 0;
-  if (msgCount >= 10)  entries += 1;
-  if (msgCount >= 25)  entries += 1;
-  if (msgCount >= 50)  entries += 2;
-  if (msgCount >= 100) entries += 3;
-  return entries;
-}
+async function fetchChatStats(address) {
+  // returns { msgCount, entriesEarned, todayMsgs, todayEntries, days: {'YYYY-MM-DD': n} }
+  if (!address) return { msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {} };
 
-function getNextMsgMilestone(msgCount) {
-  for (const m of MSG_MILESTONES) {
-    if (msgCount < m) return m;
+  const cutoff = Math.floor(Date.now() / 1000) - 7 * 86400;
+  const days   = {};   // { 'YYYY-MM-DD': count }
+  let   qaCount = 0;
+
+  for (const base of LCD_NODES) {
+    try {
+      let offset = 0, done = false;
+      while (!done) {
+        const url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&events=transfer.recipient=%27${TREASURY_WALLET}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) break;
+        const data = await res.json();
+        const txs = data.txs || [];
+        if (!txs.length) break;
+
+        for (const tx of txs) {
+          const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
+          if (ts < cutoff) { done = true; break; }
+
+          const memo = tx.tx?.body?.memo || '';
+          const msgs = tx.tx?.body?.messages || [];
+          for (const msg of msgs) {
+            if (!msg['@type']?.includes('MsgSend')) continue;
+            if (msg.to_address !== TREASURY_WALLET) continue;
+            if (msg.from_address !== address) continue;
+            const coins = msg.amount || [];
+            const lunc  = coins.find(c => c.denom === 'uluna');
+            if (!lunc) continue;
+            const amt = Number(lunc.amount);
+
+            // Chat: 5000 LUNC ±1% + non-empty memo
+            if (memo.trim().length > 0 &&
+                amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
+                amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
+              const day = new Date(tx.timestamp).toISOString().slice(0, 10);
+              days[day] = (days[day] || 0) + 1;
+            }
+
+            // Q&A: 200,000 LUNC ±1%
+            if (amt >= QA_ULUNA * (1 - TOLERANCE) &&
+                amt <= QA_ULUNA * (1 + TOLERANCE)) {
+              qaCount++;
+            }
+          }
+        }
+        if (txs.length < 50) break;
+        offset += 50;
+      }
+      break; // success — no need to try next node
+    } catch(e) {
+      continue; // try next node
+    }
   }
-  return null;
+
+  // Calculate totals
+  const msgCount = Object.values(days).reduce((s, n) => s + n, 0);
+
+  let entriesEarned = qaCount * 2;
+  for (const cnt of Object.values(days)) {
+    entriesEarned += Math.min(Math.floor(cnt / 10), 2);
+  }
+
+  const todayKey    = new Date().toISOString().slice(0, 10);
+  const todayMsgs   = days[todayKey] || 0;
+  const todayEntries = Math.min(Math.floor(todayMsgs / 10), 2);
+
+  return { msgCount, entriesEarned, todayMsgs, todayEntries, days, qaCount };
 }
 
 // Count upvotes received on answers
@@ -113,18 +181,10 @@ function getUserTitle(walletAddress) {
   return current;
 }
 
-// Load/save message count from localStorage
-function getMessageCount(address) {
-  if (!address) return 0;
-  return parseInt(localStorage.getItem('msg_count_' + address) || '0');
-}
-
-function incrementMessageCount(address) {
-  if (!address) return;
-  const count = getMessageCount(address) + 1;
-  localStorage.setItem('msg_count_' + address, count);
-  return count;
-}
+// getMessageCount — kept as no-op shim so app.js sendChatMessage doesn't break
+// Real stats come from fetchChatStats (on-chain)
+function getMessageCount(address) { return 0; }
+function incrementMessageCount(address) { return 0; }
 
 // ─── PROFILE DATA ─────────────────────────────────────────────
 function getProfileKey(address) { return 'profile_' + address; }
@@ -168,8 +228,6 @@ function renderProfilePage() {
   const profile = loadProfile(address) || {};
   const title = getUserTitle(address);
   const topCount = getTopAnswerCount(address);
-  const msgCount = getMessageCount(address);
-
   // Wallet short
   document.getElementById('profile-wallet-short').textContent = address.slice(0,12) + '...' + address.slice(-6);
 
@@ -218,10 +276,13 @@ function renderProfilePage() {
   document.getElementById('stat-answers').textContent = myAnswers.length;
   document.getElementById('stat-upvotes').textContent = totalUpvotes;
   document.getElementById('stat-top-answers').textContent = topCount;
-  document.getElementById('stat-messages').textContent = msgCount;
+  document.getElementById('stat-messages').textContent = '…';
 
-  // Message milestone progress
-  renderMessageProgress(msgCount);
+  // Message milestone progress — async on-chain fetch
+  fetchChatStats(address).then(stats => {
+    document.getElementById('stat-messages').textContent = stats.msgCount;
+    renderMessageProgress(stats);
+  });
 
   // Title progress — now based on questions + upvotes
   renderTitleProgress(myQuestions.length, totalUpvotes);
@@ -230,35 +291,42 @@ function renderProfilePage() {
   renderHistoryTab('answers', myAnswers, myQuestions);
 }
 
-// ─── MESSAGE MILESTONE PROGRESS ──────────────────────────────
-function renderMessageProgress(msgCount) {
+// ─── MESSAGE MILESTONE PROGRESS (on-chain stats) ─────────────
+function renderMessageProgress(stats) {
   const el = document.getElementById('message-milestone-section');
   if (!el) return;
 
-  const nextMilestone = getNextMsgMilestone(msgCount);
-  const totalEntries = getMsgMilestoneEntries(msgCount);
-  const pct = nextMilestone ? Math.round((msgCount / nextMilestone) * 100) : 100;
+  const { msgCount, entriesEarned, todayMsgs, todayEntries } = stats;
+
+  // Progress to next entry today: X/10 msgs
+  const todayProgress = todayMsgs % 10;
+  const pct = Math.round((todayProgress / 10) * 100);
+
+  // Max daily entries info
+  const maxedToday = todayEntries >= 2;
 
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
       <span style="font-size:11px;color:var(--muted);">💬 Chat messages → free Weekly lottery entries</span>
-      <span style="font-size:11px;color:var(--green);font-weight:700;">${totalEntries} ${totalEntries === 1 ? 'entry' : 'entries'} earned</span>
+      <span style="font-size:11px;color:var(--green);font-weight:700;">${entriesEarned} ${entriesEarned === 1 ? 'entry' : 'entries'} earned this week</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden;">
-      <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#1ec864,#4ade80);width:${pct}%;transition:width 0.6s ease;"></div>
+      <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#1ec864,#4ade80);width:${maxedToday ? 100 : pct}%;transition:width 0.6s ease;"></div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      ${MSG_MILESTONES.map(m => {
-        const reached = msgCount >= m;
-        const entries = m === 10 ? '+1' : m === 25 ? '+1' : m === 50 ? '+2' : '+3';
-        return `<div style="font-size:10px;padding:3px 10px;border-radius:20px;
-          background:${reached ? 'rgba(30,200,100,0.12)' : 'rgba(255,255,255,0.04)'};
-          border:1px solid ${reached ? 'rgba(30,200,100,0.35)' : 'var(--border)'};
-          color:${reached ? '#4ade80' : 'var(--muted)'};">
-          ${reached ? '✓ ' : ''}${m} msgs ${entries}
-        </div>`;
-      }).join('')}
-      ${!nextMilestone ? '' : `<div style="font-size:10px;color:var(--muted);padding:3px 0;">${msgCount}/${nextMilestone} to next bonus</div>`}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <div style="font-size:10px;padding:3px 10px;border-radius:20px;
+        background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);">
+        Every 10 msgs/day = +1 entry · max 2/day
+      </div>
+      ${maxedToday
+        ? `<div style="font-size:10px;padding:3px 10px;border-radius:20px;
+            background:rgba(30,200,100,0.12);border:1px solid rgba(30,200,100,0.35);color:#4ade80;">
+            ✓ Max entries today (${todayEntries}/2)
+           </div>`
+        : `<div style="font-size:10px;color:var(--muted);padding:3px 0;">
+            Today: ${todayProgress}/10 to next entry
+           </div>`
+      }
     </div>
   `;
 }
@@ -322,28 +390,57 @@ function switchHistoryTab(tab) {
 function renderHistoryTab(tab, myAnswers, myQuestions) {
   const el = document.getElementById('profile-history-list');
   if (tab === 'messages') {
-    const msgCount = getMessageCount(globalWalletAddress);
-    const entries  = getMsgMilestoneEntries(msgCount);
     el.innerHTML = `
       <div class="history-item">
         <div class="history-item-meta">
           <span style="color:var(--green);">💬 DAO Chat Activity</span>
+          <span style="font-size:10px;color:var(--muted);">Last 7 days · on-chain</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;" id="chat-stats-grid">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">${msgCount}</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">…</div>
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">${entries}</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">…</div>
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
           </div>
         </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;" id="chat-stats-days"></div>
         <div style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.6;">
-          Every <strong style="color:var(--text)">10th message</strong> in DAO Chat earns 1 free entry into the Weekly Lottery.
+          Every <strong style="color:var(--text)">10 messages per day</strong> = 1 free Weekly Draw entry · max 2/day.
           Messages cost <strong style="color:var(--text)">5,000 LUNC</strong> each and go to the Protocol Treasury.
         </div>
       </div>`;
+    // Async fill
+    fetchChatStats(globalWalletAddress).then(stats => {
+      const grid = document.getElementById('chat-stats-grid');
+      if (!grid) return;
+      grid.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">${stats.msgCount}</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">${stats.entriesEarned}</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
+        </div>`;
+      // Per-day breakdown
+      const daysEl = document.getElementById('chat-stats-days');
+      if (daysEl && Object.keys(stats.days).length) {
+        const sorted = Object.entries(stats.days).sort((a,b) => b[0].localeCompare(a[0]));
+        daysEl.innerHTML = sorted.map(([day, cnt]) => {
+          const entries = Math.min(Math.floor(cnt / 10), 2);
+          const label   = new Date(day).toLocaleDateString([], {month:'short',day:'numeric'});
+          return `<div style="font-size:10px;padding:3px 10px;border-radius:20px;
+            background:${entries > 0 ? 'rgba(30,200,100,0.1)' : 'rgba(255,255,255,0.04)'};
+            border:1px solid ${entries > 0 ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
+            color:${entries > 0 ? '#4ade80' : 'var(--muted)'};">
+            ${label}: ${cnt} msgs${entries > 0 ? ' · +'+entries+' entr'+(entries>1?'ies':'y') : ''}
+          </div>`;
+        }).join('');
+      }
+    });
     return;
   }
   if (tab === 'answers') {
