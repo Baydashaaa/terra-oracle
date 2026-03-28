@@ -64,9 +64,13 @@ const TITLES = [
 // Free entries: every 10 msgs/day = 1 entry, max 2/day
 // Also counts Q&A questions: each = +2 free entries
 const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
-const LCD_NODES = [
+const PROFILE_LCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terraclassic.community',
+];
+const PROFILE_FCD_NODES = [
+  'https://terra-classic-fcd.publicnode.com',
+  'https://fcd.terra-classic.hexxagon.io',
 ];
 const CHAT_ULUNA    = 5000 * 1e6;
 const QA_ULUNA      = 200000 * 1e6;
@@ -77,14 +81,16 @@ async function fetchChatStats(address) {
   if (!address) return { msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {} };
 
   const cutoff = Math.floor(Date.now() / 1000) - 7 * 86400;
-  const days   = {};   // { 'YYYY-MM-DD': count }
+  const days   = {};
   let   qaCount = 0;
+  let   success = false;
 
-  for (const base of LCD_NODES) {
+  // ── Try LCD nodes first ──────────────────────────────────────
+  for (const base of PROFILE_LCD_NODES) {
     try {
       let offset = 0, done = false;
       while (!done) {
-        const url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&events=transfer.recipient=%27${TREASURY_WALLET}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
+        const url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) break;
         const data = await res.json();
@@ -95,13 +101,21 @@ async function fetchChatStats(address) {
           const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
           if (ts < cutoff) { done = true; break; }
 
-          const memo = tx.tx?.body?.memo || '';
-          const msgs = tx.tx?.body?.messages || [];
+          // Support both proto (body.messages) and amino (value.msg) formats
+          const memo = tx.tx?.body?.memo || tx.tx?.value?.memo || '';
+          const msgs = tx.tx?.body?.messages || tx.tx?.value?.msg || [];
           for (const msg of msgs) {
-            if (!msg['@type']?.includes('MsgSend')) continue;
-            if (msg.to_address !== TREASURY_WALLET) continue;
-            if (msg.from_address !== address) continue;
-            const coins = msg.amount || [];
+            // proto: @type contains MsgSend; amino: type = 'bank/MsgSend'
+            const msgType = msg['@type'] || msg.type || '';
+            if (!msgType.includes('MsgSend')) continue;
+            // proto fields: from_address/to_address/amount
+            // amino fields: value.from_address/value.to_address/value.amount
+            const val     = msg.value || msg;
+            const toAddr  = val.to_address || '';
+            const fromAddr = val.from_address || '';
+            if (toAddr !== TREASURY_WALLET) continue;
+            if (fromAddr !== address) continue;
+            const coins = val.amount || [];
             const lunc  = coins.find(c => c.denom === 'uluna');
             if (!lunc) continue;
             const amt = Number(lunc.amount);
@@ -124,9 +138,57 @@ async function fetchChatStats(address) {
         if (txs.length < 50) break;
         offset += 50;
       }
+      success = true;
       break; // success — no need to try next node
     } catch(e) {
       continue; // try next node
+    }
+  }
+
+  // ── FCD fallback if LCD failed ───────────────────────────────
+  if (!success) {
+    for (const base of PROFILE_FCD_NODES) {
+      try {
+        let offset = 0, done = false;
+        while (!done) {
+          const url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) break;
+          const data = await res.json();
+          const txs = data.txs || [];
+          if (!txs.length) break;
+
+          for (const tx of txs) {
+            const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
+            if (ts < cutoff) { done = true; break; }
+            const memo = tx.tx?.value?.memo || '';
+            const msgs = tx.tx?.value?.msg || [];
+            for (const msg of msgs) {
+              if (msg.type !== 'bank/MsgSend') continue;
+              const val = msg.value || {};
+              if (val.to_address !== TREASURY_WALLET) continue;
+              if (val.from_address !== address) continue;
+              const coins = val.amount || [];
+              const lunc  = coins.find(c => c.denom === 'uluna');
+              if (!lunc) continue;
+              const amt = Number(lunc.amount);
+              if (memo.trim().length > 0 &&
+                  amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
+                  amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
+                const day = new Date(tx.timestamp).toISOString().slice(0, 10);
+                days[day] = (days[day] || 0) + 1;
+              }
+              if (amt >= QA_ULUNA * (1 - TOLERANCE) &&
+                  amt <= QA_ULUNA * (1 + TOLERANCE)) {
+                qaCount++;
+              }
+            }
+          }
+          if (txs.length < 50) break;
+          offset += 50;
+        }
+        break;
+      } catch(e) { continue; }
     }
   }
 
