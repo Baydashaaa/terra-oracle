@@ -85,8 +85,8 @@ async function fetchChatStats(address) {
 
   // FCD is primary — reliably indexes all tx types on columbus-5
   const allNodes = [
-    { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
     { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
+    { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
     { base: 'https://terra-classic-lcd.publicnode.com',    type: 'lcd' },
     { base: 'https://lcd.terraclassic.community',          type: 'lcd' },
   ];
@@ -97,7 +97,7 @@ async function fetchChatStats(address) {
       while (!done) {
         let url, txs;
         if (type === 'fcd') {
-          url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}`;
+          url = `${base}/v1/txs?account=${address}&limit=50&offset=${offset}&chainId=columbus-5`;
           const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
           if (!res.ok) break;
           const data = await res.json();
