@@ -108,20 +108,23 @@ async function fetchChatStats(address) {
           const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
           if (!res.ok) break;
           const data = await res.json();
-          txs = data.tx_responses || data.txs || [];
+          txs = []; // unused — see below
         }
 
-        if (!txs.length) break;
+        // LCD v1beta1: txs[] = bodies, tx_responses[] = metadata — parallel arrays
+        const _txBodies    = data.txs || [];
+        const _txResponses = data.tx_responses || [];
+        const _txCount = Math.max(_txBodies.length, _txResponses.length);
+        if (!_txCount) break;
 
-        for (const tx of txs) {
-          const ts = Math.floor(new Date(tx.timestamp).getTime() / 1000);
+        for (let _idx = 0; _idx < _txCount; _idx++) {
+          const _txBody = _txBodies[_idx];
+          const _txMeta = _txResponses[_idx];
+          const ts = Math.floor(new Date(_txMeta?.timestamp || 0).getTime() / 1000);
           if (ts < cutoff) { done = true; break; }
 
-          // Parse both amino and proto formats
-          // tx_responses: body.memo/messages; txs: tx.body or amino tx.value
-          const txBody = tx.body || tx.tx?.body || tx.tx?.value;
-          const memo   = txBody?.memo || '';
-          const msgs   = txBody?.messages || txBody?.msg || [];
+          const memo = _txBody?.body?.memo || '';
+          const msgs = _txBody?.body?.messages || [];
 
           for (const msg of msgs) {
             const msgType  = msg['@type'] || msg.type || '';
@@ -141,20 +144,18 @@ async function fetchChatStats(address) {
             if (memo.trim().length > 0 &&
                 amt >= CHAT_ULUNA * (1 - TOLERANCE) &&
                 amt <= CHAT_ULUNA * (1 + TOLERANCE)) {
-              const day = new Date(tx.timestamp).toISOString().slice(0, 10);
+              const day = new Date(_txMeta?.timestamp || 0).toISOString().slice(0, 10);
               days[day] = (days[day] || 0) + 1;
-              found = true;
             }
 
             // Q&A: ~200,000 LUNC
             if (amt >= QA_ULUNA * (1 - TOLERANCE) &&
                 amt <= QA_ULUNA * (1 + TOLERANCE)) {
               qaCount++;
-              found = true;
             }
           }
         }
-        if (txs.length < 50) break;
+        if (_txCount < 50) break;
         offset += 50;
       }
       // If we got through without error, stop trying nodes
