@@ -72,7 +72,10 @@ async function loadQuestionsFromWorker() {
     const data = await res.json();
     questions = (data.questions || []).map(q => ({
       answers: [], votes: 0, voted: false, open: false, formOpen: false,
-      tags: [], ...q,
+      tags: [],
+      // Generate time from createdAt if not present
+      time: q.time || (q.createdAt ? new Date(q.createdAt * 1000).toLocaleDateString([], {month:'short',day:'numeric'}) : 'unknown'),
+      ...q,
     }));
     // Restore local voted state
     const votedQ  = JSON.parse(localStorage.getItem('voted_questions') || '{}');
