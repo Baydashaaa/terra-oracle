@@ -226,7 +226,7 @@ function clearSearch() {
 function setBoardFilter(cat) {
   boardFilter = cat;
   document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
-  const map = {'all':'filter-all','🗳️ Governance':'filter-gov','⚙️ Technical':'filter-tech','⚙️ Validator Issue':'filter-val','📈 Market':'filter-market','🌍 Community':'filter-comm'};
+  const map = {'all':'filter-all','Governance':'filter-gov','Technical':'filter-tech','Validator Issue':'filter-val','Market':'filter-market','Community':'filter-comm','Security / Vulnerability':'filter-gov','Protocol Bug':'filter-tech','Proposal / Idea':'filter-gov','Fraud / Manipulation':'filter-gov','Other':'filter-all'};
   if (map[cat]) document.getElementById(map[cat])?.classList.add('active');
   renderBoard();
 }
