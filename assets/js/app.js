@@ -83,10 +83,10 @@ async function loadQuestionsFromWorker() {
     for (const q of questions) {
       // Check if wallet already voted this question (on-chain in voters array)
       if (votedQ[q.id]) q.voted = true;
-      if (globalWalletAddress && q.voters && q.voters.includes(globalWalletAddress)) q.voted = true;
+      if ((globalWalletAddress || connectedAddress) && q.voters && q.voters.includes(globalWalletAddress || connectedAddress)) q.voted = true;
       for (const a of q.answers) {
         if (votedA[a.id]) a.voted = true;
-        if (globalWalletAddress && a.voters && a.voters.includes(globalWalletAddress)) a.voted = true;
+        if ((globalWalletAddress || connectedAddress) && a.voters && a.voters.includes(globalWalletAddress || connectedAddress)) a.voted = true;
       }
       // Restore poll vote
       if (q.poll && q.pollVoters && globalWalletAddress && q.pollVoters.includes(globalWalletAddress)) {
@@ -432,7 +432,8 @@ async function submitAnswer(qi) {
 async function voteQuestion(qi) {
   const q = questions[qi];
   if (q.voted) return;
-  if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  const _wallet = globalWalletAddress || connectedAddress;
+  if (!_wallet) { alert('Connect wallet to vote'); return; }
 
   // Optimistic update
   q.votes++; q.voted = true;
@@ -446,7 +447,7 @@ async function voteQuestion(qi) {
     const res = await fetch(`${WORKER_URL}/question-vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, wallet: globalWalletAddress }),
+      body: JSON.stringify({ questionId: q.id, wallet: _wallet }),
     });
     if (!res.ok) {
       const err = await res.json();
