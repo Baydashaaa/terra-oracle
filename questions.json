@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-03-29T09:00:00.000Z",
+  "_updated": "2026-03-29T20:45:24.601Z",
   "questions": [
     {
       "id": "LUNC-NBIRAHX",
@@ -12,13 +12,20 @@
       "title": "Seeker",
       "txHash": "0A29EB4CEAE7B7178B60476F2D2C403E8F3E10C872F110A1C991BB3A0A076E20",
       "paymentAmount": 200000,
-      "tags": ["lunc", "validators", "earn"],
+      "tags": [
+        "lunc",
+        "validators",
+        "earn"
+      ],
       "createdAt": 1774774238,
       "expiresAt": 1775379038,
-      "votes": 0,
+      "votes": 1,
       "answers": [],
       "status": "open",
-      "chosenAnswerId": null
+      "chosenAnswerId": null,
+      "voters": [
+        "terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6"
+      ]
     }
   ]
 }
