@@ -88,14 +88,22 @@ async function tLoadRecentTxs() {
       const hash = txMeta?.txhash || '';
       const msgs = txBody?.body?.messages || [];
       let amount = '';
+      let rawUluna = 0;
       for (const msg of msgs) {
         const coins = msg.amount || [];
         const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
-        if (lunc) { amount = tFmt(parseInt(lunc.amount)); break; }
+        if (lunc) { rawUluna = parseInt(lunc.amount); amount = tFmt(rawUluna); break; }
       }
+      // Label by amount instead of raw memo
+      const CHAT_AMT = 5000 * 1e6;
+      const QA_AMT   = 100000 * 1e6;
+      const TOL = 0.02;
+      let label = memo || 'Transfer';
+      if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL)) label = '💬 Chat';
+      else if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL)) label = '❓ Q&A — Treasury';
       rows.push(`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${memo||'Transfer'}</div>
+          <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
           <div style="font-size:10px;color:var(--muted);">${ts}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
