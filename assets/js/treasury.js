@@ -71,34 +71,42 @@ async function tLoadRecentTxs() {
     const r = await fetch(url);
     if (!r.ok) throw new Error();
     const data = await r.json();
-    if (!data.txs||!data.txs.length) {
+    // LCD v1beta1: txs[] = bodies, tx_responses[] = metadata (hash, timestamp)
+    const txBodies    = data.txs || [];
+    const txResponses = data.tx_responses || [];
+    const count = Math.max(txBodies.length, txResponses.length);
+    if (!count) {
       el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">No transactions yet</div>';
       return;
     }
-    el.innerHTML = data.txs.map(tx => {
-      const ts   = tx.timestamp ? new Date(tx.timestamp).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-      const memo = tx.tx?.body?.memo || tx.tx?.value?.memo || '';
-      const hash = tx.txhash || '';
-      const msgs = tx.tx?.body?.messages || tx.tx?.value?.msg || [];
+    const rows = [];
+    for (let i = 0; i < count; i++) {
+      const txBody = txBodies[i];
+      const txMeta = txResponses[i];
+      const ts   = txMeta?.timestamp ? new Date(txMeta.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + new Date(txMeta.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+      const memo = txBody?.body?.memo || '';
+      const hash = txMeta?.txhash || '';
+      const msgs = txBody?.body?.messages || [];
       let amount = '';
       for (const msg of msgs) {
-        const coins = msg.amount||[];
-        const lunc = Array.isArray(coins)?coins.find(c=>c.denom==='uluna'):null;
+        const coins = msg.amount || [];
+        const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
         if (lunc) { amount = tFmt(parseInt(lunc.amount)); break; }
       }
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
+      rows.push(`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
         <div style="min-width:0;flex:1;">
           <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${memo||'Transfer'}</div>
           <div style="font-size:10px;color:var(--muted);">${ts}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-          ${amount?`<span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:'Rajdhani',sans-serif;">+${amount}</span>`:''}
+          ${amount?'<span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:Rajdhani,sans-serif;">+'+amount+'</span>':''}
           <a href="https://finder.terraclassic.community/columbus-5/tx/${hash}" target="_blank"
             style="font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
             🔗 ${hash.slice(0,8)}...</a>
         </div>
-      </div>`;
-    }).join('');
+      </div>`);
+    }
+    el.innerHTML = rows.join('');
   } catch(e) {
     el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Could not load transactions</div>';
   }
