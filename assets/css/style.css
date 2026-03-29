@@ -921,10 +921,25 @@ canvas {
    MOBILE UX OPTIMIZATION — объединённый блок, без дублей
    ═══════════════════════════════════════════════════════════ */
 
-/* Sticky bar — скрыт по умолчанию */
-.sticky-bottom-bar { display: none; }
-.mobile-hero { display: none; }
-.mobile-home-sections { display: none; }
+/* ── Все мобильные элементы скрыты на десктопе ── */
+.sticky-bottom-bar,
+.mobile-hero,
+.mobile-home-sections,
+.mobile-tco-block,
+.mobile-flow-block,
+.mobile-secondary-cards,
+.mobile-section-label { display: none !important; }
+
+/* На мобиле — включаем нужные */
+@media (max-width: 900px) {
+  .mobile-hero { display: flex !important; }
+  .mobile-home-sections { display: block !important; }
+  .mobile-section-label { display: flex !important; }
+  .mobile-tco-block { display: block !important; }
+  .mobile-flow-block { display: block !important; }
+  .mobile-secondary-cards { display: grid !important; }
+  .sticky-bottom-bar { display: flex !important; }
+}
 
 @media (max-width: 900px) {
 
