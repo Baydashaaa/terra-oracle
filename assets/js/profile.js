@@ -276,8 +276,6 @@ function openProfile() {
   smoothScrollTop();
 }
 
-const WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
-
 // ── Fetch question stats from worker ─────────────────────────
 async function fetchQuestionStats(address) {
   try {
