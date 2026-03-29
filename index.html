@@ -405,17 +405,10 @@
   </div>
 
   <!-- Primary CTA -->
-  <button class="mobile-hero-cta-primary" onclick="showPage('board')">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-    Enter Protocol
+  <button class="mobile-hero-cta-primary" onclick="showPage('about')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+    About Protocol
   </button>
-
-  <!-- Secondary CTAs -->
-  <div class="mobile-hero-cta-secondary">
-    <button class="mobile-hero-cta-btn" onclick="showPage('ask')">❓ Ask</button>
-    <button class="mobile-hero-cta-btn" onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')">🎰 Draw</button>
-    <button class="mobile-hero-cta-btn" onclick="showPage('vote')">🗳️ Vote</button>
-  </div>
 </div>
 
 <!-- ══ MOBILE HOME SECTIONS ══ -->
@@ -438,46 +431,62 @@
     </div>
   </div>
 
-  <!-- SECONDARY: Ask + Vote -->
+  <!-- SECONDARY: 3 карточки в столбец -->
   <div class="mobile-secondary-cards">
-    <div onclick="showPage('board')" class="zk-module">
+    <div onclick="showPage('board')" class="zk-module mobile-card-row">
       <div class="zk-module-bar"></div>
       <div class="zk-module-inner">
-        <div class="zk-module-tag">◈ Active</div>
-        <div style="font-size:24px;margin-bottom:8px;">🔮</div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#fff;" class="zk-module-title">Oracle Board</div>
-        <div style="font-size:11px;color:#8aaccc;line-height:1.55;" class="zk-module-desc">Ask questions about governance, validators &amp; market.</div>
-        <div style="margin-top:10px;font-size:10px;color:#7B5CFF;letter-spacing:0.06em;font-weight:600;" class="zk-module-cta">200K LUNC →</div>
+        <div class="mobile-card-row-inner">
+          <div class="mobile-card-icon">🔮</div>
+          <div class="mobile-card-text">
+            <div class="zk-module-tag">◈ Active</div>
+            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Oracle Board</div>
+            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Ask questions about governance, validators &amp; market.</div>
+          </div>
+          <div class="mobile-card-cta" style="color:#7B5CFF;">200K →</div>
+        </div>
       </div>
     </div>
-    <div onclick="showPage('vote')" class="zk-module" style="--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
+    <div onclick="showPage('vote')" class="zk-module mobile-card-row" style="--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
       <div class="zk-module-bar"></div>
       <div class="zk-module-inner">
-        <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">◆ Active</div>
-        <div style="font-size:24px;margin-bottom:8px;">🗳️</div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#fff;" class="zk-module-title">Vote</div>
-        <div style="font-size:11px;color:#8aaccc;line-height:1.55;" class="zk-module-desc">Vote on weekly and monthly proposals.</div>
-        <div style="margin-top:10px;font-size:10px;color:#A855F7;letter-spacing:0.06em;font-weight:600;" class="zk-module-cta">20–25th draw →</div>
+        <div class="mobile-card-row-inner">
+          <div class="mobile-card-icon">🗳️</div>
+          <div class="mobile-card-text">
+            <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">◆ Active</div>
+            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Governance Vote</div>
+            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Vote on weekly and monthly proposals.</div>
+          </div>
+          <div class="mobile-card-cta" style="color:#A855F7;">Vote →</div>
+        </div>
       </div>
     </div>
-    <div onclick="showPage('chat')" class="zk-module" style="--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
+    <div onclick="showPage('chat')" class="zk-module mobile-card-row" style="--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
       <div class="zk-module-bar"></div>
       <div class="zk-module-inner">
-        <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">◎ Active</div>
-        <div style="font-size:24px;margin-bottom:8px;">💬</div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#fff;" class="zk-module-title">DAO Chat</div>
-        <div style="font-size:11px;color:#8aaccc;line-height:1.55;" class="zk-module-desc">On-chain messages, forever on Terra Classic.</div>
-        <div style="margin-top:10px;font-size:10px;color:#00D4FF;letter-spacing:0.06em;font-weight:600;" class="zk-module-cta">5K LUNC →</div>
+        <div class="mobile-card-row-inner">
+          <div class="mobile-card-icon">💬</div>
+          <div class="mobile-card-text">
+            <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">◎ Active</div>
+            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">DAO Chat</div>
+            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">On-chain messages, forever on Terra Classic.</div>
+          </div>
+          <div class="mobile-card-cta" style="color:#00D4FF;">5K →</div>
+        </div>
       </div>
     </div>
-    <div onclick="showPage('ask')" class="zk-module" style="--mod-c1:#00FFB0;--mod-c2:#7B5CFF;">
+    <div onclick="showPage('ask')" class="zk-module mobile-card-row" style="--mod-c1:#00FFB0;--mod-c2:#7B5CFF;">
       <div class="zk-module-bar"></div>
       <div class="zk-module-inner">
-        <div class="zk-module-tag" style="color:rgba(0,255,176,0.65);">◈ Active</div>
-        <div style="font-size:24px;margin-bottom:8px;">❓</div>
-        <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#fff;" class="zk-module-title">Ask</div>
-        <div style="font-size:11px;color:#8aaccc;line-height:1.55;" class="zk-module-desc">Anonymous questions to the community.</div>
-        <div style="margin-top:10px;font-size:10px;color:#00FFB0;letter-spacing:0.06em;font-weight:600;" class="zk-module-cta">Ask now →</div>
+        <div class="mobile-card-row-inner">
+          <div class="mobile-card-icon">❓</div>
+          <div class="mobile-card-text">
+            <div class="zk-module-tag" style="color:rgba(0,255,176,0.65);">◈ Active</div>
+            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Ask</div>
+            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Anonymous questions to the community.</div>
+          </div>
+          <div class="mobile-card-cta" style="color:#00FFB0;">Ask →</div>
+        </div>
       </div>
     </div>
   </div>
@@ -573,25 +582,7 @@
 
 </div><!-- /.mobile-home-sections -->
 
-<!-- ══ STICKY BOTTOM BAR ══ -->
-<div class="sticky-bottom-bar" id="sticky-bottom-bar">
-  <button class="sticky-bar-btn" onclick="showPage('ask')">
-    <span class="sbb-icon">❓</span>
-    Ask
-  </button>
-  <button class="sticky-bar-btn draw-btn" onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')">
-    <span class="sbb-icon">🎰</span>
-    Draw
-  </button>
-  <button class="sticky-bar-btn" onclick="showPage('vote')">
-    <span class="sbb-icon">🗳️</span>
-    Vote
-  </button>
-  <button class="sticky-bar-btn" onclick="showPage('board')">
-    <span class="sbb-icon">🔮</span>
-    Board
-  </button>
-</div>
+<!-- sticky bottom bar удалён -->
 
  <!-- ══ HERO WRAPPER — фиксированная высота, всё абсолютное внутри ══ -->
  <div id="hero-stage" style="position:relative;width:100%;min-height:620px;overflow:visible;isolation:isolate;">
