@@ -74,7 +74,7 @@ async function loadQuestionsFromWorker() {
       answers: [], votes: 0, voted: false, open: false, formOpen: false,
       tags: [],
       // Generate time from createdAt if not present
-      time: q.time || (q.createdAt ? new Date(q.createdAt * 1000).toLocaleDateString('en-US', {month:'short',day:'numeric'}) : 'unknown'),
+      time: q.time || (q.createdAt ? (() => { const d = new Date(q.createdAt * 1000); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); })() : 'unknown'),
       ...q,
     }));
     // Restore voted state — from worker data (wallet-based) + localStorage fallback
@@ -332,8 +332,7 @@ function renderBoard() {
         ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `<span class="q-alias">${q.alias}</span>`}
         ${q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : ''}
         <span class="q-category">${q.category}</span>
-        <span class="q-timer">🗓 ${q.time}</span>
-        <span class="q-ref">${q.id}</span>
+        <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
       </div>
       ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" onclick="setBoardSearch('#${t}')">#${t}</span>`).join('')}</div>` : ''}
       <div class="q-text">${boardSearch ? q.text.replace(new RegExp('(' + boardSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>') : q.text}</div>
