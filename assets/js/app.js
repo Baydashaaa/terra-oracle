@@ -149,7 +149,8 @@ function showPage(name, e) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
-  // No hash saved — always start from home on reload
+  // Clear URL hash when navigating away from treasury
+  if (history.replaceState) history.replaceState(null, '', window.location.pathname);
   smoothScrollTop();
 }
 
