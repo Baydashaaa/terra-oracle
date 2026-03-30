@@ -225,9 +225,10 @@
 .rep-nav-wrap { position:relative; }
 .rep-nav-btn.active { color:var(--accent) !important; border-color:rgba(84,147,247,0.4) !important; background:rgba(84,147,247,0.08) !important; }
 .rep-dropdown {
-  display:none; position:absolute; top:calc(100% + 6px); left:0;
+  display:none; position:absolute; top:calc(100% + 10px); left:50%;
+  transform:translateX(-50%);
   background:rgba(3,7,15,0.97); border:1px solid var(--border);
-  border-radius:10px; padding:6px; min-width:190px;
+  border-radius:10px; padding:6px; min-width:200px;
   box-shadow:0 8px 28px rgba(0,0,0,0.5);
   backdrop-filter:blur(12px);
   z-index:400; animation:dropDown 0.15s ease;
@@ -1604,6 +1605,11 @@
 <!-- ═══ END MY BAG PAGE ═══ -->
 
 <!-- ═══ GLOBAL FOOTER ═══ -->
+<!-- REPUTATION PAGE -->
+<div class="page" id="page-reputation" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;">
+  <!-- filled by reputation.js -->
+</div>
+
 <footer style="position:relative;z-index:2;border-top:1px solid rgba(255,255,255,0.06);background:rgba(4,10,20,0.85);backdrop-filter:blur(12px);padding:32px 24px 24px;margin-top:auto;flex-shrink:0;">
   <div style="max-width:960px;margin:0 auto;">
     <!-- Top row -->
@@ -1660,11 +1666,6 @@
   </div>
 </footer>
 <!-- ═══ END FOOTER ═══ -->
-
-<!-- REPUTATION PAGE -->
-<div class="page" id="page-reputation" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;flex-grow:1;">
-  <!-- filled by reputation.js -->
-</div>
 
   <!-- Логика -->
   <script src="assets/js/treasury.js"></script>
