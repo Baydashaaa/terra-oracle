@@ -2,26 +2,6 @@
 // Pages: leaderboard | how it works
 // Triggered by showRepPage(tab)
 
-// ── Nav dropdown toggle ───────────────────────────────────────
-function toggleRepNav(e) {
-  e && e.stopPropagation();
-  const dd  = document.getElementById('rep-dropdown');
-  const btn = document.getElementById('rep-nav-btn');
-  if (!dd) return;
-  const isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open');
-  if (btn) btn.classList.toggle('active', !isOpen);
-}
-function closeRepNav() {
-  const dd  = document.getElementById('rep-dropdown');
-  const btn = document.getElementById('rep-nav-btn');
-  if (dd)  dd.classList.remove('open');
-  if (btn) btn.classList.remove('active');
-}
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#rep-nav-wrap')) closeRepNav();
-});
-
 // ── Show reputation page ──────────────────────────────────────
 let _repCurrentTab = 'leaderboard';
 
