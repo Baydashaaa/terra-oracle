@@ -96,6 +96,8 @@ async function loadQuestionsFromWorker() {
       }
     }
     _questionsLoaded = true;
+    // Build score map for rank badges
+    if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
     renderBoard();
   } catch(e) {
     console.warn('Failed to load questions from worker:', e.message);
@@ -342,7 +344,7 @@ function renderBoard() {
     <div class="q-card" id="qcard-${qi}">
       <div class="q-meta">
         ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `<span class="q-alias">${q.alias}</span>`}
-        ${q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : ''}
+        ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : '')}
         <span class="q-category">${q.category}</span>
         <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
       </div>
@@ -364,7 +366,7 @@ function renderBoard() {
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
             <div class="answer-meta">
               ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `<span class="q-alias">${a.alias}</span>`}
-              ${a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : ''}
+              ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : '')}
             </div>
             <div class="answer-text">${a.text}</div>
             <div class="answer-votes">
@@ -1139,6 +1141,7 @@ function renderChatMessages(msgs) {
     <div class="chat-page-msg verified-msg" id="msg-${m.txHash}">
       <div class="chat-page-msg-header">
         <span class="chat-page-msg-author" style="font-family:monospace;">${m.author}</span>
+        ${m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function' ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : ''}
         <span style="font-size:8px;background:rgba(102,255,170,0.15);color:var(--green);padding:1px 6px;border-radius:4px;">✓ ON-CHAIN</span>
         ${m.amount ? `<span style="font-size:8px;color:var(--gold);background:rgba(245,197,24,0.1);padding:1px 6px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
         <span class="chat-page-msg-time"><a href="https://finder.terra.money/classic/tx/${m.txHash}" target="_blank" style="color:var(--muted);text-decoration:none;font-size:9px;">🔗 ${m.time}</a></span>
