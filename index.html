@@ -205,7 +205,7 @@
 
   <!-- Charts -->
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}</style>
+<style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}</style>
 <style>
 @media (max-width: 768px), (hover: none) {
   /* Disable heavy GPU effects on mobile */
@@ -222,49 +222,26 @@
   footer { background: rgba(4,10,20,0.98) !important; }
 }
 /* ── Reputation nav dropdown ── */
-.rep-nav-wrap { position:static; }
-.rep-nav-btn { position:relative; }
+.rep-nav-wrap { position:relative; }
 .rep-nav-btn.active { color:var(--accent) !important; border-color:rgba(84,147,247,0.4) !important; background:rgba(84,147,247,0.08) !important; }
-/* Megamenu — attaches to bottom of navbar, full-width feel */
-.rep-mega {
-  display:none;
-  position:fixed;
-  top:80px; /* nav height */
-  left:0; right:0;
-  background:rgba(3,7,15,0.97);
-  border-bottom:1px solid var(--border);
-  backdrop-filter:blur(16px);
-  z-index:299;
-  padding:0 32px;
-  animation:megaSlide 0.18s ease;
+.rep-dropdown {
+  display:none; position:absolute; top:calc(100% + 6px); left:0;
+  background:rgba(3,7,15,0.97); border:1px solid var(--border);
+  border-radius:10px; padding:6px; min-width:190px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.5);
+  backdrop-filter:blur(12px);
+  z-index:400; animation:dropDown 0.15s ease;
 }
-.rep-mega.open { display:block; }
-@keyframes megaSlide {
-  from { opacity:0; transform:translateY(-8px); }
-  to   { opacity:1; transform:translateY(0); }
+.rep-dropdown.open { display:block; }
+.rep-dropdown button {
+  display:flex; align-items:center; gap:10px; width:100%;
+  background:none; border:none; color:var(--text);
+  font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600;
+  padding:10px 12px; border-radius:7px; cursor:pointer;
+  transition:all 0.15s; text-align:left; letter-spacing:0.04em;
 }
-.rep-mega-inner {
-  max-width:900px; margin:0 auto;
-  display:flex; gap:12px; padding:16px 0;
-}
-.rep-mega-item {
-  display:flex; align-items:center; gap:10px;
-  padding:12px 20px; border-radius:10px;
-  cursor:pointer; transition:all 0.2s;
-  border:1px solid transparent;
-  flex:1; text-align:left;
-  background:none; font-family:'Exo 2',sans-serif;
-  color:var(--text);
-}
-.rep-mega-item:hover {
-  background:rgba(84,147,247,0.07);
-  border-color:rgba(84,147,247,0.2);
-  color:var(--accent);
-}
-.rep-mega-item-icon { font-size:20px; }
-.rep-mega-item-text { display:flex; flex-direction:column; gap:2px; }
-.rep-mega-item-title { font-size:12px; font-weight:700; letter-spacing:0.06em; }
-.rep-mega-item-desc { font-size:10px; color:var(--muted); }
+.rep-dropdown button:hover { background:rgba(84,147,247,0.08); color:var(--accent); }
+.rep-dropdown .rep-dd-desc { font-size:9px; color:var(--muted); display:block; font-weight:400; }
 </style>
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
@@ -317,11 +294,21 @@
  </div>
  <div class="nav-tabs">
  <div class="nav-system" id="nav-system">
- <!-- Reputation megamenu trigger — FIRST -->
+ <!-- Reputation dropdown — FIRST -->
  <div class="rep-nav-wrap" id="rep-nav-wrap">
    <button class="nav-tab nav-node rep-nav-btn" id="rep-nav-btn" onclick="toggleRepNav(event)">
      Reputation
    </button>
+   <div class="rep-dropdown" id="rep-dropdown">
+     <button onclick="showRepPage('leaderboard');closeRepNav()">
+       🏆 Leaderboard
+       <span class="rep-dd-desc">Top contributors by REP</span>
+     </button>
+     <button onclick="showRepPage('how');closeRepNav()">
+       📖 How it Works
+       <span class="rep-dd-desc">Ranks, scoring &amp; rewards</span>
+     </button>
+   </div>
  </div>
  <button class="nav-tab nav-node" onclick="showPage('board')" data-page="board">Board</button>
  <button class="nav-tab nav-node" onclick="showPage('ask')" data-page="ask">Ask</button>
@@ -429,25 +416,6 @@
  </button>
 </nav>
 
-<!-- Reputation megamenu — slides from navbar -->
-<div class="rep-mega" id="rep-mega">
-  <div class="rep-mega-inner">
-    <button class="rep-mega-item" onclick="showRepPage('leaderboard');closeRepNav()">
-      <span class="rep-mega-item-icon">🏆</span>
-      <span class="rep-mega-item-text">
-        <span class="rep-mega-item-title">Leaderboard</span>
-        <span class="rep-mega-item-desc">Top contributors by REP score</span>
-      </span>
-    </button>
-    <button class="rep-mega-item" onclick="showRepPage('how');closeRepNav()">
-      <span class="rep-mega-item-icon">📖</span>
-      <span class="rep-mega-item-text">
-        <span class="rep-mega-item-title">How it Works</span>
-        <span class="rep-mega-item-desc">Ranks, scoring &amp; rewards explained</span>
-      </span>
-    </button>
-  </div>
-</div>
 
 <!-- Mobile navigation drawer -->
 <div class="nav-mobile-drawer" id="nav-mobile-drawer">
