@@ -133,8 +133,9 @@ function getNextRank(score) {
 function getRankBadgeHTML(score) {
   if (score === undefined || score === null) return '';
   const rank = getRank(score);
-  if (!rank || rank.name === 'INITIATE') return ''; // don't show lowest rank
-  return `<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;color:${rank.color};text-shadow:0 0 6px ${rank.glow};background:rgba(0,0,0,0.25);padding:1px 6px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
+  if (!rank) return '';
+  const isInitiate = rank.name === 'INITIATE';
+  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
 }
 
 // Build a score map from allQuestions: wallet → {questions, answers, upvotes}
