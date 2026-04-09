@@ -25,23 +25,25 @@ function renderRepPage(tab) {
   const pg = document.getElementById('page-reputation');
   if (!pg) return;
 
+  const isConnected = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
+
   pg.innerHTML = `
     <div style="text-align:center;margin-bottom:36px;">
       <div style="display:inline-block;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
         color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
         background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
       <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;">
-        ${tab === 'leaderboard' ? '🏆 Leaderboard' : '📖 How it Works'}
+        ${tab === 'leaderboard' ? '🏆 Leaderboard' : tab === 'stats' ? '📊 Your Stats' : '📖 How it Works'}
       </h1>
       <p style="font-size:12px;color:var(--muted);">
-        ${tab === 'leaderboard'
-          ? 'Top contributors ranked by Oracle Reputation score'
-          : 'Earn REP through activity · Unlock ranks, discounts & rewards'}
+        ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
+        : tab === 'stats'      ? 'Your activity breakdown · weekly rewards · estimated payout'
+        :                        'Earn REP through activity · Unlock ranks, discounts & rewards'}
       </p>
     </div>
 
     <!-- Tab switcher -->
-    <div style="display:flex;gap:8px;margin-bottom:28px;justify-content:center;">
+    <div style="display:flex;gap:8px;margin-bottom:28px;justify-content:center;flex-wrap:wrap;">
       <button onclick="showRepPage('leaderboard')" style="
         background:${tab==='leaderboard' ? 'rgba(84,147,247,0.12)' : 'transparent'};
         border:1px solid ${tab==='leaderboard' ? 'rgba(84,147,247,0.4)' : 'var(--border)'};
@@ -49,6 +51,14 @@ function renderRepPage(tab) {
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
         🏆 Leaderboard
+      </button>
+      <button onclick="showRepPage('stats')" style="
+        background:${tab==='stats' ? 'rgba(84,147,247,0.12)' : 'transparent'};
+        border:1px solid ${tab==='stats' ? 'rgba(84,147,247,0.4)' : 'var(--border)'};
+        color:${tab==='stats' ? 'var(--accent)' : 'var(--muted)'};
+        font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
+        padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
+        📊 Your Stats
       </button>
       <button onclick="showRepPage('how')" style="
         background:${tab==='how' ? 'rgba(84,147,247,0.12)' : 'transparent'};
@@ -61,11 +71,14 @@ function renderRepPage(tab) {
     </div>
 
     <div id="rep-tab-content">
-      ${tab === 'leaderboard' ? renderLeaderboardHTML() : renderHowItWorksHTML()}
+      ${tab === 'leaderboard' ? renderLeaderboardHTML()
+      : tab === 'stats'      ? renderStatsHTML(isConnected)
+      :                        renderHowItWorksHTML()}
     </div>
   `;
 
   if (tab === 'leaderboard') loadLeaderboard();
+  if (tab === 'stats' && isConnected) loadStatsData();
 }
 
 // ── LEADERBOARD ───────────────────────────────────────────────
@@ -201,6 +214,251 @@ async function loadLeaderboard() {
   } catch(e) {
     const el2 = document.getElementById('leaderboard-list');
     if (el2) el2.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">Could not load leaderboard</div>';
+  }
+}
+
+// ── YOUR STATS ────────────────────────────────────────────────
+function renderStatsHTML(isConnected) {
+  if (!isConnected) {
+    return `
+      <div style="text-align:center;padding:60px 20px;background:var(--surface);
+        border:1px solid var(--border);border-radius:14px;">
+        <div style="font-size:40px;margin-bottom:12px;">🔒</div>
+        <div style="font-size:14px;color:var(--text);margin-bottom:6px;">Connect your wallet</div>
+        <div style="font-size:12px;color:var(--muted);">Connect to see your reputation analytics</div>
+      </div>`;
+  }
+
+  return `
+    <!-- Activity breakdown -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+        Your Activity
+      </div>
+      <div id="stats-activity-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+        ${['questions','answers','upvotes','chat'].map(k => `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;
+            display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
+                ${{questions:'❓ Questions',answers:'💬 Answers',upvotes:'👍 Upvotes received',chat:'🗨️ Chat messages'}[k]}
+              </div>
+              <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
+            </div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;
+              color:${{questions:'var(--accent)',answers:'#66ffaa',upvotes:'#ffd700',chat:'#c084fc'}[k]};"
+              id="stats-rep-${k}">…</div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
+        border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--muted);">Total Reputation</span>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--accent);"
+          id="stats-total-rep">…</span>
+      </div>
+    </div>
+
+    <!-- Rank + position -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+        Your Rank
+      </div>
+      <div id="stats-rank-block" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="font-size:12px;color:var(--muted);">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Weekly Rewards Pool -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+        Weekly Rewards Pool
+      </div>
+      <div id="stats-pool-block">
+        <div style="font-size:12px;color:var(--muted);">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Estimated Reward -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
+      <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+        Your Estimated Reward
+      </div>
+      <div id="stats-reward-block">
+        <div style="font-size:12px;color:var(--muted);">Loading…</div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadStatsData() {
+  const wallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
+  if (!wallet) return;
+
+  try {
+    const [qStats, chatStats] = await Promise.all([
+      typeof fetchQuestionStats === 'function' ? fetchQuestionStats(wallet) : Promise.resolve({ myQuestions: [], myAnswers: [], totalUpvotes: 0 }),
+      typeof fetchChatStats     === 'function' ? fetchChatStats(wallet)     : Promise.resolve({ msgCount: 0 }),
+    ]);
+
+    const { myQuestions = [], myAnswers = [], totalUpvotes = 0 } = qStats;
+    const msgCount = chatStats?.msgCount || 0;
+
+    // REP per source
+    const repQuestions = myQuestions.length * 40;
+    const repAnswers   = myAnswers.length * 15;
+    const repUpvotes   = totalUpvotes * 10;
+    const repChat      = Math.min(msgCount, 20) * 2 + Math.max(0, msgCount - 20) * 0.4;
+    const totalRep     = Math.round(repQuestions + repAnswers + repUpvotes + repChat);
+
+    // Update activity grid
+    const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    set('stats-count-questions', myQuestions.length);
+    set('stats-count-answers',   myAnswers.length);
+    set('stats-count-upvotes',   totalUpvotes);
+    set('stats-count-chat',      msgCount);
+    set('stats-rep-questions',   '+' + repQuestions.toLocaleString() + ' REP');
+    set('stats-rep-answers',     '+' + repAnswers.toLocaleString()   + ' REP');
+    set('stats-rep-upvotes',     '+' + repUpvotes.toLocaleString()   + ' REP');
+    set('stats-rep-chat',        '+' + Math.round(repChat) + ' REP');
+    set('stats-total-rep',       totalRep.toLocaleString() + ' REP');
+
+    // Rank block
+    const rank     = typeof getRank     === 'function' ? getRank(totalRep)     : null;
+    const nextRank = typeof getNextRank === 'function' ? getNextRank(totalRep) : null;
+    const rankEl   = document.getElementById('stats-rank-block');
+    if (rankEl && rank) {
+      const pct = nextRank
+        ? Math.round(((totalRep - rank.minScore) / (nextRank.minScore - rank.minScore)) * 100)
+        : 100;
+      rankEl.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-size:20px;font-weight:800;color:${rank.color};
+            text-shadow:0 0 12px ${rank.glow};margin-bottom:8px;">
+            ${rank.icon} ${rank.name}
+          </div>
+          ${nextRank ? `
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
+              Progress to <span style="color:${nextRank.color};">${nextRank.icon} ${nextRank.name}</span>
+              · need <strong style="color:var(--text);">${(nextRank.minScore - totalRep).toLocaleString()}</strong> more REP
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${rank.bar},${nextRank.bar});
+                border-radius:6px;box-shadow:0 0 8px ${rank.glow};transition:width 0.8s ease;"></div>
+            </div>` : `
+            <div style="font-size:11px;color:${rank.color};font-weight:700;">✦ MAX RANK — ASCENDED</div>`}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Reward multiplier</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;
+            color:${rank.color};text-shadow:0 0 10px ${rank.glow};">×${rank.multiplier}</div>
+        </div>`;
+    }
+
+    // Leaderboard position + pool calculation
+    const WORKER_URL = typeof window.WORKER_URL !== 'undefined'
+      ? window.WORKER_URL
+      : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+
+    const res = await fetch(`${WORKER_URL}/questions`);
+    const data = await res.json();
+    const allQuestions = data.questions || [];
+
+    // Build scores for all wallets
+    const scores = {};
+    for (const q of allQuestions) {
+      if (!q.wallet) continue;
+      if (!scores[q.wallet]) scores[q.wallet] = 0;
+      scores[q.wallet] += q.wallet === wallet ? 0 : 0; // others
+    }
+    if (typeof buildScoreMap === 'function') {
+      const map = buildScoreMap(allQuestions);
+      Object.assign(scores, map);
+    }
+
+    const allScores  = Object.values(scores).sort((a, b) => b - a);
+    const myPosition = allScores.indexOf(totalRep) + 1 || allScores.findIndex(s => s <= totalRep) + 1;
+    const top20pct   = Math.ceil(allScores.length * 0.2);
+    const inTop20    = myPosition > 0 && myPosition <= top20pct;
+    const totalTopRep = allScores.slice(0, top20pct).reduce((s, v) => s + v, 0);
+
+    // Fetch treasury balance for pool estimate
+    let poolLunc = 0;
+    try {
+      const tRes = await fetch('https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/balances/terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt');
+      const tData = await tRes.json();
+      const uluna = parseInt(tData.balances?.find(b => b.denom === 'uluna')?.amount || '0');
+      poolLunc = Math.round((uluna / 1_000_000) * 0.20); // 20% of treasury
+    } catch(e) {}
+
+    // Pool block
+    const poolEl = document.getElementById('stats-pool-block');
+    if (poolEl) {
+      poolEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">WEEKLY POOL</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:#66ffaa;">
+              ${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '—'}
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">~20% of Treasury</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">ELIGIBLE</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;
+              color:${inTop20 ? '#66ffaa' : 'var(--muted)'};">
+              ${inTop20 ? '✅ Top 20%' : '❌ Not yet'}
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">
+              ${myPosition > 0 ? 'Rank #' + myPosition + ' of ' + allScores.length : 'No rank yet'}
+            </div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">CONTRIBUTORS</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--accent);">
+              ${allScores.length}
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">Top ${top20pct} share rewards</div>
+          </div>
+        </div>`;
+    }
+
+    // Estimated reward block
+    const rewardEl = document.getElementById('stats-reward-block');
+    if (rewardEl) {
+      let estimatedLunc = 0;
+      if (inTop20 && totalTopRep > 0 && poolLunc > 0 && rank) {
+        const share = (totalRep * rank.multiplier) / totalTopRep;
+        estimatedLunc = Math.round(poolLunc * share);
+      }
+
+      rewardEl.innerHTML = inTop20 ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:800;color:#ffd700;
+              text-shadow:0 0 16px rgba(255,215,0,0.4);">
+              ~${estimatedLunc > 0 ? estimatedLunc.toLocaleString() : '—'} LUNC
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+              Based on your ${totalRep.toLocaleString()} REP × ${rank?.multiplier || 1}× multiplier
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);max-width:260px;line-height:1.6;">
+            Distributed weekly to top 20% contributors proportional to their REP score × rank multiplier.
+          </div>
+        </div>` : `
+        <div style="text-align:center;padding:20px;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+            You need to be in the <strong style="color:var(--text);">top 20%</strong> to earn weekly rewards
+          </div>
+          <div style="font-size:12px;color:var(--muted);">
+            Current position: <strong style="color:var(--text);">#${myPosition || '—'}</strong> · 
+            Need top <strong style="color:var(--text);">${top20pct}</strong> to qualify
+          </div>
+        </div>`;
+    }
+
+  } catch(err) {
+    console.warn('loadStatsData error:', err);
   }
 }
 
