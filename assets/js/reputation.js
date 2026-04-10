@@ -16,7 +16,9 @@ function showRepPage(tab) {
   if (!pg) return;
   pg.classList.add('active');
   try { sessionStorage.setItem('currentPage', 'reputation:' + tab); } catch(e) {}
-  if (typeof smoothScrollTop === 'function') smoothScrollTop();
+
+  // Instant scroll — avoid requestAnimationFrame blocking touch events
+  window.scrollTo(0, 0);
 
   renderRepPage(tab);
 }
