@@ -208,12 +208,7 @@
 <style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}</style>
 <style>
 @media (max-width: 768px), (hover: none) {
-  /* Mobile wallet button in navbar — hidden on desktop */
-  .mobile-nav-right { display: none !important; }
-  @media (max-width: 768px) {
-    .mobile-nav-right { display: flex !important; }
-    #nav-wallet-btn { display: flex !important; }
-  }
+
 
   /* Disable heavy GPU effects on mobile */
   .orb-1, .orb-2 { display: none !important; }
@@ -382,21 +377,20 @@
  </a>
  </div>
 
- <!-- Wallet + Hamburger buttons in navbar (mobile) -->
- <div style="display:flex;align-items:center;gap:8px;" class="mobile-nav-right">
-  <button id="nav-wallet-btn" onclick="openMobileWalletModal()" style="display:none;align-items:center;gap:6px;background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.35);border-radius:20px;padding:7px 14px;color:#7eb8ff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/></svg>
-   <span id="nav-wallet-btn-label">Connect</span>
-  </button>
-  <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
-   <span></span><span></span><span></span>
-  </button>
- </div>
+ <!-- Hamburger button (mobile only) -->
+ <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+  <span></span><span></span><span></span>
+ </button>
 </nav>
 
 
 <!-- Mobile navigation drawer -->
 <div class="nav-mobile-drawer" id="nav-mobile-drawer">
+ <!-- Wallet connect button at top of drawer -->
+ <button onclick="openMobileWalletModal();toggleMobileNav()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.35);border-radius:12px;padding:12px;color:#7eb8ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/></svg>
+  <span id="wallet-btn-label-mobile">Connect Wallet</span>
+ </button>
  <button class="nav-tab" onclick="mobileNavGo('board')">📋 Board</button>
  <button class="nav-tab" onclick="mobileNavGo('ask')">❓ Ask</button>
  <button class="nav-tab" onclick="mobileNavGo('chat')">💬 Chat</button>
