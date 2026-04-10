@@ -435,14 +435,13 @@ function openProfile() {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-profile').classList.add('active');
   try { sessionStorage.setItem('currentPage', 'profile'); } catch(e) {}
-  renderProfilePage();
   smoothScrollTop();
-  // Load fresh profile from worker in background
+  // Load from Worker first, then render
   const addr = globalWalletAddress;
   if (addr) {
-    loadProfileFromWorker(addr).then(data => {
-      if (data) renderProfilePage(); // re-render with server data
-    });
+    loadProfileFromWorker(addr).then(() => renderProfilePage());
+  } else {
+    renderProfilePage();
   }
 }
 
