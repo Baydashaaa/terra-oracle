@@ -210,6 +210,9 @@
 @media (max-width: 768px), (hover: none) {
 
 
+  @media (max-width: 768px) {
+    #mobile-nav-controls { display: flex !important; }
+  }
   /* Disable heavy GPU effects on mobile */
   .orb-1, .orb-2 { display: none !important; }
   #bg-canvas { display: none !important; }
@@ -377,28 +380,28 @@
  </a>
  </div>
 
- <!-- Hamburger button (mobile only) -->
- <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
-  <span></span><span></span><span></span>
- </button>
+ <!-- Mobile: wallet + hamburger -->
+ <div id="mobile-nav-controls" style="display:none;align-items:center;gap:8px;">
+  <button id="mobile-wallet-nav-btn" onclick="handleMobileNavWalletBtn()" style="align-items:center;gap:6px;background:rgba(84,147,247,0.15);border:1px solid rgba(84,147,247,0.4);border-radius:20px;padding:6px 13px;color:#7eb8ff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/></svg>
+   <span id="mobile-wallet-nav-label">Connect</span>
+  </button>
+  <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+   <span></span><span></span><span></span>
+  </button>
+ </div>
 </nav>
 
 
 <!-- Mobile navigation drawer -->
 <div class="nav-mobile-drawer" id="nav-mobile-drawer">
  <!-- Wallet connect button at top of drawer -->
- <div id="mobile-wallet-state">
-  <!-- Not connected -->
-  <button id="mobile-connect-btn" onclick="openMobileWalletModal();toggleMobileNav()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.35);border-radius:12px;padding:12px;color:#7eb8ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/></svg>
-   <span>Connect Wallet</span>
-  </button>
-  <!-- Connected -->
-  <div id="mobile-connected-info" style="display:none;margin-bottom:8px;background:rgba(0,200,150,0.08);border:1px solid rgba(0,200,150,0.25);border-radius:12px;padding:12px;">
-   <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Connected wallet</div>
-   <div id="mobile-wallet-addr" style="font-size:12px;color:#66ffaa;font-weight:600;margin-bottom:10px;word-break:break-all;"></div>
-   <button onclick="disconnectWallet();toggleMobileNav()" style="width:100%;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);border-radius:8px;padding:8px;color:#ff8080;font-size:12px;cursor:pointer;">✕ Disconnect</button>
-  </div>
+ <!-- Connected wallet info in drawer (hidden when not connected) -->
+ <div id="mobile-connected-info" style="display:none;margin-bottom:8px;background:rgba(0,200,150,0.06);border:1px solid rgba(0,200,150,0.2);border-radius:12px;padding:12px;">
+  <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px;">Connected</div>
+  <div id="mobile-wallet-addr" style="font-size:11px;color:#66ffaa;font-weight:600;margin-bottom:10px;word-break:break-all;"></div>
+  <button onclick="openProfile();toggleMobileNav()" style="width:100%;background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.3);border-radius:8px;padding:8px;color:#7eb8ff;font-size:12px;cursor:pointer;margin-bottom:6px;">👤 My Profile</button>
+  <button onclick="disconnectWallet();toggleMobileNav()" style="width:100%;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.25);border-radius:8px;padding:8px;color:#ff8080;font-size:12px;cursor:pointer;">✕ Disconnect</button>
  </div>
  <button class="nav-tab" onclick="mobileNavGo('board')">📋 Board</button>
  <button class="nav-tab" onclick="mobileNavGo('ask')">❓ Ask</button>
@@ -1716,16 +1719,28 @@ document.addEventListener('click', function(e) {
 // Sync mobile wallet label with desktop
 // Update mobile wallet UI when connected/disconnected
 function updateMobileWalletUI(address) {
-  const connectBtn = document.getElementById('mobile-connect-btn');
   const connectedInfo = document.getElementById('mobile-connected-info');
   const addrEl = document.getElementById('mobile-wallet-addr');
+  const navBtn = document.getElementById('mobile-wallet-nav-btn');
+  const navLabel = document.getElementById('mobile-wallet-nav-label');
   if (address) {
-    if (connectBtn) connectBtn.style.display = 'none';
+    const short = address.slice(0,6)+'...'+address.slice(-4);
     if (connectedInfo) connectedInfo.style.display = 'block';
     if (addrEl) addrEl.textContent = address.slice(0,10)+'...'+address.slice(-6);
+    if (navLabel) navLabel.textContent = short;
+    if (navBtn) {
+      navBtn.style.background = 'rgba(0,200,150,0.12)';
+      navBtn.style.borderColor = 'rgba(0,200,150,0.35)';
+      navBtn.style.color = '#66ffaa';
+    }
   } else {
-    if (connectBtn) connectBtn.style.display = 'flex';
     if (connectedInfo) connectedInfo.style.display = 'none';
+    if (navLabel) navLabel.textContent = 'Connect';
+    if (navBtn) {
+      navBtn.style.background = 'rgba(84,147,247,0.15)';
+      navBtn.style.borderColor = 'rgba(84,147,247,0.4)';
+      navBtn.style.color = '#7eb8ff';
+    }
   }
 }
 
@@ -2138,6 +2153,15 @@ function toggleAccordion(id) {
 function openMobileWalletModal() {
   const modal = document.getElementById('mobile-wallet-modal');
   if (modal) { modal.style.display='flex'; }
+}
+
+function handleMobileNavWalletBtn() {
+  // If connected — open drawer to show profile/disconnect
+  if (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) {
+    toggleMobileNav();
+  } else {
+    openMobileWalletModal();
+  }
 }
 function closeMobileWalletModal() {
   const modal = document.getElementById('mobile-wallet-modal');
