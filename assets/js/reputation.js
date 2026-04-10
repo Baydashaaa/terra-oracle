@@ -17,10 +17,14 @@ function showRepPage(tab) {
   pg.classList.add('active');
   try { sessionStorage.setItem('currentPage', 'reputation:' + tab); } catch(e) {}
 
-  // Instant scroll — avoid requestAnimationFrame blocking touch events
   window.scrollTo(0, 0);
-
   renderRepPage(tab);
+
+  // Force reflow so mobile browser recalculates scrollable area
+  requestAnimationFrame(() => {
+    document.body.style.overflow = '';
+    window.scrollTo(0, 0);
+  });
 }
 
 function renderRepPage(tab) {
@@ -557,31 +561,21 @@ function renderHowItWorksHTML() {
         As your REP grows, you ascend through 7 ranks. Each rank unlocks a fee discount on questions
         and a reward multiplier applied to your weekly earnings.
       </p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
         ${ranks.map(r => `
-          <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;
-            background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
-            <div style="font-size:13px;font-weight:800;color:${r.color};
-              text-shadow:0 0 10px ${r.glow};min-width:130px;letter-spacing:0.06em;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+            background:var(--surface2);border:1px solid var(--border);border-radius:10px;min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:${r.color};
+              text-shadow:0 0 8px ${r.glow};flex:1;min-width:0;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               ${r.icon} ${r.name}
             </div>
-            <div style="flex:1;">
-              <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
-                <div style="height:100%;width:100%;background:${r.bar};
-                  box-shadow:0 0 6px ${r.glow};border-radius:2px;opacity:0.65;"></div>
-              </div>
+            <div style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;">
+              ${r.minScore === 0 ? 'Start' : r.minScore.toLocaleString() + ' REP'}
             </div>
-            <div style="font-size:11px;color:var(--muted);min-width:80px;text-align:right;">
-              ${r.minScore === 0 ? 'Starting rank' : r.minScore.toLocaleString() + ' REP'}
-            </div>
-            <div style="font-size:10px;color:${r.color};min-width:55px;text-align:right;
-              opacity:${r.multiplier > 1 ? 1 : 0.35};font-weight:700;">
+            <div style="font-size:10px;color:${r.color};font-weight:700;flex-shrink:0;opacity:${r.multiplier > 1 ? 1 : 0.4};">
               x${r.multiplier}
             </div>
-            <div style="font-size:10px;color:var(--muted);min-width:110px;text-align:right;
-              opacity:${r.discount > 0 ? 0.85 : 0.35};">
-              ${r.discountLabel}
-            </div>
+            ${r.discount > 0 ? `<div style="font-size:10px;color:var(--green);flex-shrink:0;">−${r.discount}%</div>` : ''}
           </div>`).join('')}
       </div>
     </div>
