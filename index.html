@@ -208,8 +208,8 @@
 <style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}</style>
 <style>
 @media (max-width: 768px), (hover: none) {
-  /* Mobile wallet button in navbar */
-  .mobile-nav-right { display: none; }
+  /* Mobile wallet button in navbar — hidden on desktop */
+  .mobile-nav-right { display: none !important; }
   @media (max-width: 768px) {
     .mobile-nav-right { display: flex !important; }
     #nav-wallet-btn { display: flex !important; }
