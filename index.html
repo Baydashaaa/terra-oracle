@@ -411,9 +411,9 @@
    <span id="rep-menu-arrow" style="font-size:10px;transition:transform 0.2s;">▼</span>
   </button>
   <div id="mobile-rep-menu" style="display:none;padding-left:8px;">
-   <button class="nav-tab" onclick="showRepPage('leaderboard');closeMobileMenu()" style="font-size:11px;">🏆 Leaderboard</button>
-   <button class="nav-tab" onclick="showRepPage('how');closeMobileMenu()" style="font-size:11px;">📖 How it works</button>
-   <button class="nav-tab" onclick="showRepPage('stats');closeMobileMenu()" style="font-size:11px;">📊 Your Stats</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('leaderboard'),50)" style="font-size:11px;">🏆 Leaderboard</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('how'),50)" style="font-size:11px;">📖 How it works</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('stats'),50)" style="font-size:11px;">📊 Your Stats</button>
   </div>
  </div>
 
