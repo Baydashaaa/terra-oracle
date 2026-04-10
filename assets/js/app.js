@@ -120,38 +120,22 @@ let boardSearch = '';
 async function restoreWalletSession() {
   const saved = loadWalletSession();
   if (!saved) return;
-
   let attempts = 0;
-  while (!window.keplr && !window.galaxyStation && attempts < 30) {
+  while (!window.keplr && attempts < 30) {
     await new Promise(r => setTimeout(r, 100));
     attempts++;
   }
-
-  // Try Keplr
-  if (window.keplr) {
-    try {
-      await window.keplr.enable('columbus-5');
-      const signer = window.keplr.getOfflineSigner('columbus-5');
-      const accounts = await signer.getAccounts();
-      if (accounts[0].address === saved) { setWalletConnected(saved); return; }
-    } catch(e) {}
-  }
-
-  // Try Galaxy Station
-  if (window.galaxyStation?.keplr) {
-    try {
-      await window.galaxyStation.keplr.enable('columbus-5');
-      const key = await window.galaxyStation.keplr.getKey('columbus-5');
-      if (key?.bech32Address === saved) { setWalletConnected(saved); return; }
-    } catch(e) {}
-  }
-
-  // Manual address — restore directly
-  if (saved.startsWith('terra1') && saved.length >= 40) {
-    setWalletConnected(saved); return;
-  }
-
-  clearWalletSession();
+  if (!window.keplr) return;
+  try {
+    await window.keplr.enable('columbus-5');
+    const signer = window.keplr.getOfflineSigner('columbus-5');
+    const accounts = await signer.getAccounts();
+    if (accounts[0].address === saved) {
+      setWalletConnected(saved);
+    } else {
+      clearWalletSession();
+    }
+  } catch(e) { clearWalletSession(); }
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', restoreWalletSession);
@@ -359,7 +343,7 @@ function renderBoard() {
     return `
     <div class="q-card" id="qcard-${qi}">
       <div class="q-meta">
-        ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `<span class="q-alias">${q.alias}</span>`}
+        ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${(typeof getProfileAvatar === 'function' && q.wallet && getProfileAvatar(q.wallet)) ? `<img src="${getProfileAvatar(q.wallet)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${(typeof getDisplayName === 'function' && q.wallet) ? getDisplayName(q.wallet) : q.alias}</span>`}
         ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : '')}
         <span class="q-category">${q.category}</span>
         <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
@@ -381,7 +365,7 @@ function renderBoard() {
         ${q.answers.map((a, ai) => `
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
             <div class="answer-meta">
-              ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `<span class="q-alias">${a.alias}</span>`}
+              ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${(typeof getProfileAvatar === 'function' && a.wallet && getProfileAvatar(a.wallet)) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${(typeof getDisplayName === 'function' && a.wallet) ? getDisplayName(a.wallet) : a.alias}</span>`}
               ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : '')}
             </div>
             <div class="answer-text">${a.text}</div>
@@ -897,34 +881,6 @@ document.addEventListener('click', function(e) {
   }
 });
 
-
-function showMobileWalletInstructions(walletType) {
-  const instructions = {
-    keplr: {
-      name: 'Keplr Mobile',
-      steps: '1. Open Keplr app\n2. Go to Browser tab\n3. Navigate to this site\n4. Connect from there\n\nOR: Copy your terra1... address and paste below',
-      url: 'https://www.keplr.app/',
-    },
-    galaxy: {
-      name: 'Galaxy Station Mobile',
-      steps: '1. Open Galaxy Station app\n2. Use the built-in browser\n3. Navigate to this site\n4. Connect from there\n\nOR: Copy your terra1... address and paste below',
-      url: 'https://station.hexxagon.io/',
-    },
-    luncdash: {
-      name: 'LUNC Dash',
-      steps: '1. Open LUNC Dash app\n2. Copy your terra1... address\n3. Paste it below',
-      url: 'https://luncdash.com/',
-    },
-  };
-  const info = instructions[walletType] || instructions.keplr;
-  const addr = prompt(info.name + '\n\n' + info.steps + '\n\nYour terra1... address:');
-  if (addr && addr.trim().startsWith('terra1') && addr.trim().length >= 40) {
-    setWalletConnected(addr.trim());
-  } else if (addr !== null && addr.trim().length > 0) {
-    alert('Invalid address. Must start with terra1');
-  }
-}
-
 window.connectWallet = async function(type) {
   if (type === 'keplr-ext') {
     if (!window.keplr) {
@@ -933,30 +889,6 @@ window.connectWallet = async function(type) {
     }
     try {
       document.getElementById('wallet-btn-label').textContent = 'Connecting...';
-      // Auto-suggest Terra Classic chain so users don't have to add manually
-      try {
-        await window.keplr.experimentalSuggestChain({
-          chainId: 'columbus-5',
-          chainName: 'Terra Classic',
-          rpc: 'https://rpc.terraclassic.community',
-          rest: 'https://terra-classic-lcd.publicnode.com',
-          bip44: { coinType: 330 },
-          bech32Config: {
-            bech32PrefixAccAddr: 'terra', bech32PrefixAccPub: 'terrapub',
-            bech32PrefixValAddr: 'terravaloper', bech32PrefixValPub: 'terravaloperpub',
-            bech32PrefixConsAddr: 'terravalcons', bech32PrefixConsPub: 'terravalconspub',
-          },
-          currencies: [
-            { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6, coinGeckoId:'terra-luna' },
-            { coinDenom:'USTC', coinMinimalDenom:'uusd',  coinDecimals:6, coinGeckoId:'terrausd'  },
-          ],
-          feeCurrencies: [
-            { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6,
-              gasPriceStep:{ low:28.325, average:28.325, high:28.325 } },
-          ],
-          stakeCurrency: { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6 },
-        });
-      } catch(e) { /* chain already added */ }
       await window.keplr.enable('columbus-5');
       const signer = window.keplr.getOfflineSigner('columbus-5');
       const accounts = await signer.getAccounts();
@@ -966,72 +898,33 @@ window.connectWallet = async function(type) {
       alert('Connection failed: ' + (e.message || e));
     }
   } else if (type === 'galaxy' || type === 'galaxy-mobile') {
-    // Galaxy Station injects window.galaxyStation.keplr (Keplr-compatible API)
-    const galaxyKeplr = window.galaxyStation?.keplr;
-    if (!galaxyKeplr) {
-      if (confirm('Galaxy Station not found. Install it?')) {
-        window.open('https://chromewebstore.google.com/detail/galaxy-station-wallet/akckefnapafjbpphkefbpkpcamkoaoai', '_blank');
-      }
+    const galaxy = window.galaxyStation || window.station;
+    if (!galaxy) {
+      if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
       return;
     }
     try {
       document.getElementById('wallet-btn-label').textContent = 'Connecting...';
-      // Auto-suggest Terra Classic chain
-      try {
-        await galaxyKeplr.experimentalSuggestChain({
-          chainId: 'columbus-5',
-          chainName: 'Terra Classic',
-          rpc: 'https://rpc.terraclassic.community',
-          rest: 'https://terra-classic-lcd.publicnode.com',
-          bip44: { coinType: 330 },
-          bech32Config: {
-            bech32PrefixAccAddr: 'terra', bech32PrefixAccPub: 'terrapub',
-            bech32PrefixValAddr: 'terravaloper', bech32PrefixValPub: 'terravaloperpub',
-            bech32PrefixConsAddr: 'terravalcons', bech32PrefixConsPub: 'terravalconspub',
-          },
-          currencies: [
-            { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6 },
-            { coinDenom:'USTC', coinMinimalDenom:'uusd',  coinDecimals:6 },
-          ],
-          feeCurrencies: [
-            { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6,
-              gasPriceStep:{ low:28.325, average:28.325, high:28.325 } },
-          ],
-          stakeCurrency: { coinDenom:'LUNC', coinMinimalDenom:'uluna', coinDecimals:6 },
-        });
-      } catch(e) { /* chain already added */ }
-      await galaxyKeplr.enable('columbus-5');
-      const key = await galaxyKeplr.getKey('columbus-5');
-      if (key?.bech32Address && key.bech32Address.startsWith('terra1')) {
-        setWalletConnected(key.bech32Address);
+      const conn = await galaxy.connect();
+      const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
+      if (address) {
+        setWalletConnected(address);
       } else {
-        throw new Error('No Terra Classic address returned');
+        throw new Error('No address returned');
       }
     } catch(e) {
       document.getElementById('wallet-btn-label').textContent = 'Connect';
-      if (e?.message?.includes('denied') || e?.message?.includes('rejected')) return;
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
-  } else if (type === 'keplr-mobile') {
-    // Keplr Mobile — if user opens site inside Keplr browser, window.keplr is available
-    if (window.keplr) {
-      // Already in Keplr browser — use same as extension
-      connectWallet('keplr-ext');
-      return;
-    }
-    // Not in Keplr browser — show instructions
-    showMobileWalletInstructions('keplr');
-
-  } else if (type === 'galaxy-mobile') {
-    // Galaxy Mobile — if opened inside Galaxy browser, galaxyStation is available
-    if (window.galaxyStation?.keplr) {
-      connectWallet('galaxy');
-      return;
-    }
-    showMobileWalletInstructions('galaxy');
-
   } else if (type === 'luncdash') {
-    showMobileWalletInstructions('luncdash');
+    const addr = prompt('Enter your Terra Classic wallet address (terra1...):');
+    if (addr && addr.startsWith('terra1') && addr.length > 20) {
+      setWalletConnected(addr.trim());
+    } else if (addr !== null) {
+      alert('Invalid Terra Classic address.');
+    }
+  } else if (type === 'keplr-mobile') {
+    alert('Keplr Mobile (WalletConnect) coming soon! Use Keplr Extension for now.');
   }
 }
 
@@ -1247,7 +1140,7 @@ function renderChatMessages(msgs) {
   container.innerHTML = msgs.map(m => `
     <div class="chat-page-msg verified-msg" id="msg-${m.txHash}">
       <div class="chat-page-msg-header">
-        <span class="chat-page-msg-author" style="font-family:monospace;">${m.author}</span>
+        <span class="chat-page-msg-author" style="font-family:monospace;">${(typeof getProfileAvatar === 'function' && m.fullAddr && getProfileAvatar(m.fullAddr)) ? `<img src="${getProfileAvatar(m.fullAddr)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:5px;">` : ''}${(typeof getDisplayName === 'function' && m.fullAddr) ? getDisplayName(m.fullAddr) : m.author}</span>
         ${m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function' ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : ''}
         <span style="font-size:8px;background:rgba(102,255,170,0.15);color:var(--green);padding:1px 6px;border-radius:4px;">✓ ON-CHAIN</span>
         ${m.amount ? `<span style="font-size:8px;color:var(--gold);background:rgba(245,197,24,0.1);padding:1px 6px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
