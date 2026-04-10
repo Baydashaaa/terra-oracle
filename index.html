@@ -1008,94 +1008,47 @@
  <span style="font-size:10px;font-family:monospace;color:var(--accent);word-break:break-all;">terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</span>
  </div>
 </div>
-<div class="page" id="page-chat" style="max-width:860px;padding:32px 24px 0;">
-
- <!-- Header -->
- <div style="text-align:center;margin-bottom:24px;">
-  <div class="tag">On-Chain Community</div>
-  <h1 style="margin-bottom:8px;">DAO <span>Chat</span></h1>
-  <p class="subtitle">Every message stored forever on Terra Classic · 5,000 LUNC per message</p>
+<div class="page" id="page-chat">
+ <div class="page-header">
+ <div class="tag">Community Chat</div>
+ <h1>DAO <span>Chat</span></h1>
+ <p class="subtitle">Pay 5,000 LUNC · Speak to validators & developers · Shape governance</p>
  </div>
-
- <!-- Info bar -->
- <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
-  <div style="display:flex;align-items:center;gap:6px;background:rgba(232,200,64,0.08);border:1px solid rgba(232,200,64,0.2);border-radius:20px;padding:6px 14px;">
-   <span style="font-size:13px;">🎰</span>
-   <span style="font-size:11px;color:var(--gold);">Every 10 msgs = <strong>+1 Draw entry</strong> (max 2/day)</span>
-  </div>
-  <div style="display:flex;align-items:center;gap:6px;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:20px;padding:6px 14px;">
-   <span style="font-size:13px;">🔗</span>
-   <span style="font-size:11px;color:var(--accent);">Verified on-chain · stored forever</span>
-  </div>
+ <div class="chat-page-wrap">
+ <div class="note" style="margin-bottom:20px;">
+ Earn a free <strong style="color:var(--gold);white-space:nowrap;">Weekly Draw entry</strong> every <strong style="color:var(--accent);white-space:nowrap;">10 messages</strong>. Up to <strong style="color:var(--accent);white-space:nowrap;">2 entries per day</strong>. Fees are directed to the Protocol Treasury.
  </div>
-
- <!-- Messages area -->
- <div id="chat-page-messages" style="
-   min-height:420px;
-   padding:0 0 24px;
-   display:flex;
-   flex-direction:column;
-   gap:0;
- ">
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:40px 20px;">
-   <div style="font-size:28px;margin-bottom:10px;">⏳</div>
-   Loading messages from blockchain...
-  </div>
+ <div class="chat-page-messages" id="chat-page-messages">
+ <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">Loading messages...</div>
  </div>
-
- <!-- Sticky input -->
- <div style="position:sticky;bottom:0;background:linear-gradient(to top,var(--bg) 85%,transparent);padding:16px 0 24px;margin-top:8px;">
-  <!-- Not connected -->
-  <div id="chat-page-connect-prompt" style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
-   <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Connect your wallet to join the conversation</div>
-   <button class="btn btn-primary" onclick="openBagWalletPicker()" style="width:100%;padding:14px;">🔑 Connect Wallet</button>
-  </div>
-
-  <!-- Connected form -->
-  <div id="chat-page-form" style="display:none;">
-   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
-    <!-- Addr bar -->
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(0,255,176,0.03);">
-     <div style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;"></div>
-     <span style="font-size:10px;color:var(--green);">Connected</span>
-     <span style="font-size:10px;font-family:monospace;color:var(--muted);" id="chat-page-addr"></span>
-    </div>
-    <!-- Textarea row -->
-    <div style="display:flex;align-items:flex-end;gap:0;">
-     <textarea id="chat-page-input"
-      placeholder="Write your message... (stored on Terra Classic forever)"
-      maxlength="256"
-      rows="2"
-      style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:14px 16px;outline:none;resize:none;line-height:1.6;min-height:52px;max-height:120px;"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
-     ></textarea>
-     <!-- Counter + Send -->
-     <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding:10px 12px 10px 0;">
-      <span id="chat-page-count" style="font-size:10px;color:var(--muted);">256</span>
-      <button onclick="sendChatMessage()" id="chat-page-send-btn"
-       style="background:linear-gradient(135deg,var(--accent-dark),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:10px 16px;cursor:pointer;transition:all 0.2s;white-space:nowrap;"
-       onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-       SEND →
-      </button>
-     </div>
-    </div>
-    <!-- Cost row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--border);background:rgba(255,255,255,0.02);">
-     <span style="font-size:10px;color:var(--muted);">Cost: <strong style="color:var(--text);">5,000 LUNC</strong> · Keplr will confirm</span>
-     <div style="display:flex;align-items:center;gap:6px;">
-      <svg width="28" height="28" viewBox="0 0 36 36" style="transform:rotate(-90deg);">
-       <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
-       <circle id="chat-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
-        stroke-dasharray="87.96" stroke-dashoffset="87.96"
-        stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
-      </svg>
-     </div>
-    </div>
-   </div>
-   <div id="chat-tx-status" style="display:none;border-radius:10px;padding:12px 16px;font-size:12px;margin-top:10px;"></div>
-  </div>
+ <div class="chat-page-input-wrap">
+ <div id="chat-page-connect-prompt" style="text-align:center;padding:8px 0 16px;">
+ <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Connect wallet to send messages · 5,000 LUNC per message</div>
+ <button class="btn btn-primary" onclick="openBagWalletPicker()" style="width:100%;">🔑 Connect Wallet to Chat</button>
  </div>
-
+ <div id="chat-page-form" style="display:none;">
+ <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+ <span style="font-size:10px;color:var(--green);">✓ Connected:</span>
+ <span style="font-size:10px;font-family:monospace;color:var(--muted);" id="chat-page-addr"></span>
+ </div>
+ <textarea class="chat-page-textarea" id="chat-page-input" placeholder="Share your thoughts with validators and developers..." maxlength="256"></textarea>
+ <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:8px;">
+ <svg width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex-shrink:0;">
+ <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+ <circle id="chat-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
+ stroke-dasharray="87.96" stroke-dashoffset="87.96"
+ stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
+ </svg>
+ <span id="chat-page-count" style="font-size:11px;color:var(--muted);min-width:28px;text-align:right;">256</span>
+ </div>
+ <div class="chat-send-row">
+ <div class="chat-send-info">Cost: <strong>5,000 LUNC</strong> · Keplr will ask to confirm</div>
+ <button class="btn btn-primary" onclick="sendChatMessage()" id="chat-page-send-btn">Send Message →</button>
+ </div>
+ <div id="chat-tx-status" style="display:none;border-radius:8px;padding:10px 14px;font-size:12px;margin-top:10px;"></div>
+ </div>
+ </div>
+ </div>
 </div>
 <div class="page" id="page-vote">
  <div class="page-header">
@@ -1332,35 +1285,46 @@
   <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">Oracle Ascension</div>
   <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;font-family:'Rajdhani',sans-serif;">Earn reputation — unlock ranks</p>
   <p style="font-size:12px;line-height:1.7;color:var(--muted);margin-bottom:16px;">Ask questions, answer, chat and receive upvotes to earn REP. Higher ranks unlock question fee discounts and weekly reward multipliers.</p>
-  <div style="display:flex;flex-direction:column;gap:0;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:4px;">
 
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#6b82a8;flex-shrink:0;"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#6b82a8;">◈ INITIATE</div><div style="font-size:10px;color:var(--muted);">0 REP · x1.0 · No discount</div></div>
+   <div style="background:rgba(107,130,168,0.06);border:1px solid rgba(107,130,168,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#6b82a8;opacity:0.5;"></div><div style="font-size:20px;margin-bottom:6px;">◈</div><div style="font-size:12px;font-weight:800;color:#6b82a8;letter-spacing:0.06em;margin-bottom:4px;">INITIATE</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">0 REP · Starting rank</div><div style="font-size:10px;color:var(--muted);">x1.0</div></div>
+
+   <div style="background:rgba(102,255,170,0.04);border:1px solid rgba(102,255,170,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#66ffaa;box-shadow:0 0 6px rgba(102,255,170,0.5);"></div><div style="font-size:20px;margin-bottom:6px;">🌱</div><div style="font-size:12px;font-weight:800;color:#66ffaa;letter-spacing:0.06em;margin-bottom:4px;">SEEKER</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">500 REP</div><div style="font-size:10px;color:var(--muted);">x1.0 · No discount</div></div>
+
+   <div style="background:rgba(126,184,255,0.04);border:1px solid rgba(126,184,255,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#7eb8ff;box-shadow:0 0 6px rgba(126,184,255,0.4);"></div><div style="font-size:20px;margin-bottom:6px;">🔵</div><div style="font-size:12px;font-weight:800;color:#7eb8ff;letter-spacing:0.06em;margin-bottom:4px;">ADEPT</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">1,500 REP</div><div style="font-size:10px;color:var(--muted);">x1.2 · <span style="color:var(--green);">−5% off</span></div></div>
+
+   <div style="background:rgba(192,132,252,0.04);border:1px solid rgba(192,132,252,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#c084fc;box-shadow:0 0 6px rgba(192,132,252,0.4);"></div><div style="font-size:20px;margin-bottom:6px;">🔮</div><div style="font-size:12px;font-weight:800;color:#c084fc;letter-spacing:0.06em;margin-bottom:4px;">ANALYST</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">4,000 REP</div><div style="font-size:10px;color:var(--muted);">x1.5 · <span style="color:var(--green);">−10% off</span></div></div>
+
+   <div style="background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.22);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#ffd700;box-shadow:0 0 6px rgba(255,215,0,0.5);"></div><div style="font-size:20px;margin-bottom:6px;">⚡</div><div style="font-size:12px;font-weight:800;color:#ffd700;letter-spacing:0.06em;margin-bottom:4px;">ORACLE</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">8,000 REP</div><div style="font-size:10px;color:var(--muted);">x2.0 · <span style="color:var(--green);">−15% off</span></div></div>
+
+   <div style="background:rgba(255,136,68,0.04);border:1px solid rgba(255,136,68,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#ff8844;box-shadow:0 0 6px rgba(255,136,68,0.4);"></div><div style="font-size:20px;margin-bottom:6px;">🔥</div><div style="font-size:12px;font-weight:800;color:#ff8844;letter-spacing:0.06em;margin-bottom:4px;">ARCHON</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">15,000 REP</div><div style="font-size:10px;color:var(--muted);">x2.5 · <span style="color:var(--green);">−20% off</span></div></div>
+
+   <div style="background:rgba(0,255,255,0.03);border:1px solid rgba(0,255,255,0.22);border-radius:12px;padding:14px;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#00ffff;box-shadow:0 0 8px rgba(0,255,255,0.6);"></div><div style="font-size:20px;margin-bottom:6px;">✦</div><div style="font-size:12px;font-weight:800;color:#00ffff;letter-spacing:0.06em;margin-bottom:4px;">ASCENDED</div><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">30,000 REP</div><div style="font-size:10px;color:var(--muted);">x3.0 · <span style="color:var(--green);">−25% off</span></div></div>
+
+  </div>
+
+   <div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.25);border-radius:12px;padding:14px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#ffd700;opacity:0.7;box-shadow:0 0 8px rgba(255,215,0,0.5);"></div>
+    <div style="font-size:18px;margin-bottom:6px;">⚡</div>
+    <div style="font-size:13px;font-weight:800;color:#ffd700;margin-bottom:4px;">ORACLE</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">8,000 REP</div>
+    <div style="font-size:10px;color:var(--muted);">x2.0 · <span style="color:var(--green);">−15% off</span></div>
    </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#66ffaa;flex-shrink:0;box-shadow:0 0 5px rgba(102,255,170,0.5);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#66ffaa;">🌱 SEEKER</div><div style="font-size:10px;color:var(--muted);">500 REP · x1.0 · No discount</div></div>
+
+   <div style="background:rgba(255,136,68,0.05);border:1px solid rgba(255,136,68,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#ff8844;opacity:0.7;box-shadow:0 0 8px rgba(255,136,68,0.4);"></div>
+    <div style="font-size:18px;margin-bottom:6px;">🔥</div>
+    <div style="font-size:13px;font-weight:800;color:#ff8844;margin-bottom:4px;">ARCHON</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">15,000 REP</div>
+    <div style="font-size:10px;color:var(--muted);">x2.5 · <span style="color:var(--green);">−20% off</span></div>
    </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#7eb8ff;flex-shrink:0;box-shadow:0 0 5px rgba(126,184,255,0.5);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#7eb8ff;">🔵 ADEPT</div><div style="font-size:10px;color:var(--muted);">1,500 REP · x1.2 · <span style="color:var(--green);">−5% off</span></div></div>
-   </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#c084fc;flex-shrink:0;box-shadow:0 0 5px rgba(192,132,252,0.5);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#c084fc;">🔮 ANALYST</div><div style="font-size:10px;color:var(--muted);">4,000 REP · x1.5 · <span style="color:var(--green);">−10% off</span></div></div>
-   </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#ffd700;flex-shrink:0;box-shadow:0 0 5px rgba(255,215,0,0.5);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#ffd700;">⚡ ORACLE</div><div style="font-size:10px;color:var(--muted);">8,000 REP · x2.0 · <span style="color:var(--green);">−15% off</span></div></div>
-   </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,51,88,0.5);">
-    <div style="width:8px;height:8px;border-radius:50%;background:#ff8844;flex-shrink:0;box-shadow:0 0 5px rgba(255,136,68,0.5);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#ff8844;">🔥 ARCHON</div><div style="font-size:10px;color:var(--muted);">15,000 REP · x2.5 · <span style="color:var(--green);">−20% off</span></div></div>
-   </div>
-   <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
-    <div style="width:8px;height:8px;border-radius:50%;background:#00ffff;flex-shrink:0;box-shadow:0 0 6px rgba(0,255,255,0.6);"></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:#00ffff;">✦ ASCENDED</div><div style="font-size:10px;color:var(--muted);">30,000 REP · x3.0 · <span style="color:var(--green);">−25% off</span></div></div>
+
+   <div style="background:rgba(0,255,255,0.04);border:1px solid rgba(0,255,255,0.25);border-radius:12px;padding:14px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#00ffff;opacity:0.8;box-shadow:0 0 10px rgba(0,255,255,0.6);"></div>
+    <div style="font-size:18px;margin-bottom:6px;">✦</div>
+    <div style="font-size:13px;font-weight:800;color:#00ffff;margin-bottom:4px;">ASCENDED</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">30,000 REP</div>
+    <div style="font-size:10px;color:var(--muted);">x3.0 · <span style="color:var(--green);">−25% off</span></div>
    </div>
 
   </div>
