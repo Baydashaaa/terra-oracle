@@ -897,6 +897,34 @@ document.addEventListener('click', function(e) {
   }
 });
 
+
+function showMobileWalletInstructions(walletType) {
+  const instructions = {
+    keplr: {
+      name: 'Keplr Mobile',
+      steps: '1. Open Keplr app\n2. Go to Browser tab\n3. Navigate to this site\n4. Connect from there\n\nOR: Copy your terra1... address and paste below',
+      url: 'https://www.keplr.app/',
+    },
+    galaxy: {
+      name: 'Galaxy Station Mobile',
+      steps: '1. Open Galaxy Station app\n2. Use the built-in browser\n3. Navigate to this site\n4. Connect from there\n\nOR: Copy your terra1... address and paste below',
+      url: 'https://station.hexxagon.io/',
+    },
+    luncdash: {
+      name: 'LUNC Dash',
+      steps: '1. Open LUNC Dash app\n2. Copy your terra1... address\n3. Paste it below',
+      url: 'https://luncdash.com/',
+    },
+  };
+  const info = instructions[walletType] || instructions.keplr;
+  const addr = prompt(info.name + '\n\n' + info.steps + '\n\nYour terra1... address:');
+  if (addr && addr.trim().startsWith('terra1') && addr.trim().length >= 40) {
+    setWalletConnected(addr.trim());
+  } else if (addr !== null && addr.trim().length > 0) {
+    alert('Invalid address. Must start with terra1');
+  }
+}
+
 window.connectWallet = async function(type) {
   if (type === 'keplr-ext') {
     if (!window.keplr) {
@@ -985,50 +1013,25 @@ window.connectWallet = async function(type) {
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
   } else if (type === 'keplr-mobile') {
-    // Keplr mobile — open app via deeplink, then prompt for address
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      // Try to open Keplr mobile app
-      window.location.href = 'keplrwallet://wcV2';
-      setTimeout(() => {
-        const addr = prompt('Copy your terra1... address from Keplr mobile and paste here:');
-        if (addr && addr.trim().startsWith('terra1') && addr.trim().length >= 40) {
-          setWalletConnected(addr.trim());
-        } else if (addr !== null) {
-          alert('Invalid Terra Classic address.');
-        }
-      }, 1500);
-    } else {
-      // Desktop — just use Keplr extension
+    // Keplr Mobile — if user opens site inside Keplr browser, window.keplr is available
+    if (window.keplr) {
+      // Already in Keplr browser — use same as extension
       connectWallet('keplr-ext');
+      return;
     }
+    // Not in Keplr browser — show instructions
+    showMobileWalletInstructions('keplr');
 
   } else if (type === 'galaxy-mobile') {
-    // Galaxy Station mobile — open app via deeplink
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.location.href = 'galaxystation://wcV2';
-      setTimeout(() => {
-        const addr = prompt('Copy your terra1... address from Galaxy Station mobile and paste here:');
-        if (addr && addr.trim().startsWith('terra1') && addr.trim().length >= 40) {
-          setWalletConnected(addr.trim());
-        } else if (addr !== null) {
-          alert('Invalid Terra Classic address.');
-        }
-      }, 1500);
-    } else {
-      // Desktop — use Galaxy Station extension
+    // Galaxy Mobile — if opened inside Galaxy browser, galaxyStation is available
+    if (window.galaxyStation?.keplr) {
       connectWallet('galaxy');
+      return;
     }
+    showMobileWalletInstructions('galaxy');
 
   } else if (type === 'luncdash') {
-    // LUNC Dash — mobile only, enter address manually
-    const addr = prompt('Open LUNC Dash app, copy your terra1... address and paste here:');
-    if (addr && addr.trim().startsWith('terra1') && addr.trim().length >= 40) {
-      setWalletConnected(addr.trim());
-    } else if (addr !== null) {
-      alert('Invalid Terra Classic address. Must start with terra1');
-    }
+    showMobileWalletInstructions('luncdash');
   }
 }
 
