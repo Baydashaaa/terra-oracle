@@ -538,6 +538,7 @@ function renderHowItWorksHTML() {
           ['Answer a question', '+15 REP per answer',   '#66ffaa'      ],
           ['Upvote received',   '+10 REP per upvote',   '#ffd700'      ],
           ['Chat message',      '+2 REP — first 20/day','#c084fc'      ],
+          ['Oracle Draw entry', '+10 REP per entry',    '#ff8844'      ],
         ].map(([label, rep, color]) => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${label}</div>
