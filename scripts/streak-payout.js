@@ -1,0 +1,73 @@
+// scripts/streak-payout.js
+// Processes pending streak milestone payouts from Cloudflare KV
+// Runs hourly via GitHub Actions
+
+const { LCDClient, MnemonicKey, MsgSend, Coin } = require('@terra-money/feather.js');
+
+const WORKER_URL     = process.env.WORKER_URL;
+const ACTIONS_SECRET = process.env.ACTIONS_SECRET;
+const MNEMONIC       = process.env.RESERVE_MNEMONIC;
+
+const LCD_ENDPOINTS = [
+  'https://terra-classic-lcd.publicnode.com',
+  'https://lcd.terraclassic.community',
+];
+
+async function main() {
+  // 1. Fetch pending payouts from Worker
+  const res = await fetch(`${WORKER_URL}/streak/pending-payouts?secret=${ACTIONS_SECRET}`);
+  if (!res.ok) { console.error('Failed to fetch payouts:', await res.text()); process.exit(1); }
+  const { payouts } = await res.json();
+
+  if (!payouts.length) { console.log('No pending streak payouts.'); return; }
+  console.log(`Found ${payouts.length} pending payout(s).`);
+
+  // 2. Setup LCD + wallet
+  const lcd = new LCDClient({
+    'columbus-5': {
+      lcd: LCD_ENDPOINTS[0],
+      chainID: 'columbus-5',
+      gasAdjustment: 1.4,
+      gasPrices: { uluna: '28.325' },
+      prefix: 'terra',
+    },
+  });
+
+  const mk      = new MnemonicKey({ mnemonic: MNEMONIC });
+  const wallet  = lcd.wallet(mk);
+  const sender  = mk.accAddress('terra');
+
+  for (const payout of payouts) {
+    try {
+      console.log(`Processing payout for ${payout.wallet} (milestone ${payout.milestone})`);
+
+      const msg = new MsgSend(sender, payout.to, [new Coin('uluna', payout.amount)]);
+      const tx  = await wallet.createAndSignTx({
+        msgs: [msg],
+        memo: `streak:milestone:${payout.milestone}:${payout.wallet.slice(0, 16)}`,
+        chainID: 'columbus-5',
+      });
+      const result = await lcd.tx.broadcast(tx, 'columbus-5');
+
+      if (result.code && result.code !== 0) {
+        console.error(`Tx failed for ${payout.wallet}:`, result.raw_log);
+        continue;
+      }
+
+      console.log(`✅ Paid ${payout.amount / 1e6} LUNC → ${payout.to} | tx: ${result.txhash}`);
+
+      // 3. Mark as paid in Worker KV
+      const markRes = await fetch(`${WORKER_URL}/streak/mark-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: payout.key, txHash: result.txhash, secret: ACTIONS_SECRET }),
+      });
+      if (!markRes.ok) console.error('Failed to mark paid:', await markRes.text());
+
+    } catch (err) {
+      console.error(`Error processing payout for ${payout.wallet}:`, err.message);
+    }
+  }
+}
+
+main().catch(e => { console.error(e); process.exit(1); });
