@@ -15,6 +15,9 @@ function showRepPage(tab) {
   const pg = document.getElementById('page-reputation');
   if (!pg) return;
   pg.classList.add('active');
+  // Activate reputation nav tab
+  const repTab = document.querySelector('.nav-node');
+  if (repTab) repTab.classList.add('active');
   try { sessionStorage.setItem('currentPage', 'reputation:' + tab); } catch(e) {}
 
   window.scrollTo(0, 0);
