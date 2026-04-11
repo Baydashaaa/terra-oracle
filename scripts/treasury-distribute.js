@@ -6,7 +6,8 @@
 //   50% → LIQUIDITY_WALLET (manual liquidity provision)
 //   10% → DEV_WALLET        (development & operations)
 
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import { DirectSecp256k1HdWallet, makeCosmoshubPath } from '@cosmjs/proto-signing';
+import { stringToPath } from '@cosmjs/crypto';
 import { SigningStargateClient, GasPrice } from '@cosmjs/stargate';
 
 const WALLETS = {
@@ -52,7 +53,10 @@ async function fetchBalance(address) {
 }
 
 async function getClient(mnemonic) {
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'terra' });
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    prefix: 'terra',
+    hdPaths: [stringToPath("m/44'/330'/0'/0/0")],
+  });
   const [account] = await wallet.getAccounts();
   for (const rpc of RPC_ENDPOINTS) {
     try {
