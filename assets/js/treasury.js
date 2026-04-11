@@ -67,9 +67,13 @@ function tStartCountdowns() {
   }
   tick(); _countdownTimer = setInterval(tick, 1000);
 }
-async function tLoadRecentTxs() {
+async function tLoadRecentTxs(retries = 5) {
   const el = document.getElementById('t-recent-txs');
-  if (!el) return;
+  if (!el) {
+    if (retries > 0) setTimeout(() => tLoadRecentTxs(retries - 1), 200);
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Loading transactions...</div>';
   try {
     const url = `${T_LCD[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${T_WALLETS.treasury}%27&pagination.limit=8&order_by=2`;
     const r = await fetch(url);
