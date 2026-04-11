@@ -576,7 +576,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 
 // ─── PROTOCOL WALLETS ─────────────────────────────────────────
 const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
-const ORACLE_WALLET   = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
+const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
 const LOTTERY_WALLET  = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
@@ -800,7 +800,7 @@ async function autoPayAndUnlock() {
 
     // Send to Treasury (discounted amount)
     const txHash2 = await sendLuncDirect(
-      sender, ORACLE_WALLET, toTreasury,
+      sender, TREASURY_WALLET, toTreasury,
       'Terra Oracle Q&A — Treasury', 'columbus-5'
     );
 
@@ -846,7 +846,7 @@ async function verifyTX() {
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
       // Accept payment to Treasury OR Weekly Pool (split payment — either tx is valid proof)
       const MIN_ACCEPTED = 150000 * 1e6; // 150,000 LUNC minimum (max discount = 25%)
-      if ((toAddr === ORACLE_WALLET || toAddr === LOTTERY_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
+      if ((toAddr === TREASURY_WALLET || toAddr === LOTTERY_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount += parseInt(lunc.amount);
       }
     }
@@ -1077,7 +1077,7 @@ window.sendChatMessage = async function() {
     await window.keplr.enable('columbus-5');
     const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
-    const txHash = await sendLuncDirect(sender, ORACLE_WALLET, 5000000000, text.slice(0, 256), 'columbus-5');
+    const txHash = await sendLuncDirect(sender, TREASURY_WALLET, 5000000000, text.slice(0, 256), 'columbus-5');
     const result = { transactionHash: txHash };
     const short = sender.slice(0,8)+'...'+sender.slice(-4);
     const stored = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]');
@@ -1117,8 +1117,8 @@ window.sendChatMessage = async function() {
 }
 
 // ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
-const CHAT_WALLET = ORACLE_WALLET;
-const CHAT_HISTORY_WALLET = ORACLE_WALLET;
+const CHAT_WALLET = TREASURY_WALLET;
+const CHAT_HISTORY_WALLET = TREASURY_WALLET;
 const CHAT_MIN_ULUNA = 5000000000;
 // FIX 4: два разных FCD узла для настоящего fallback
 const FCD_NODES = [
