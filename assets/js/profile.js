@@ -619,7 +619,9 @@ function renderProfilePage() {
     document.getElementById('stat-messages').textContent = chatStats.msgCount;
 
     // Calculate reputation + rank
-    const reputation = calcReputation(qStats, chatStats);
+    const baseReputation = calcReputation(qStats, chatStats);
+    const streakMultiplier = streakData?.multiplier || 1.0;
+    const reputation = Math.round(baseReputation * streakMultiplier);
     const rank       = getRank(reputation);
     const nextRank   = getNextRank(reputation);
 
