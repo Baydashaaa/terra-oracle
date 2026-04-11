@@ -935,25 +935,8 @@ function removeAvatar() {
 }
 
 // ─── PATCH: показывать никнейм вместо Anonymous#xxxx ─────────
-// Переопределяем submitAnswer чтобы прикреплять walletAddr
-const _origSubmitAnswer = window.submitAnswer;
-window.submitAnswer = function(qi) {
-  const text = document.getElementById('atext-' + qi).value.trim();
-  const key = document.getElementById('akey-' + qi).value;
-  if (!text) { alert('Please write your answer first.'); return; }
-  const isAdmin = key === ADMIN_KEY;
-  const address = globalWalletAddress;
-  const nickname = address ? getProfileNickname(address) : null;
-  const alias = isAdmin ? 'Admin' : (nickname || ('Anonymous#' + Math.floor(1000 + Math.random() * 9000)));
-  questions[qi].answers.push({
-    alias, isAdmin, title: null, text, votes: 0, voted: false,
-    walletAddr: address || null
-  });
-  questions[qi].formOpen = false;
-  questions[qi].open = true;
-  saveQuestions(questions);
-  renderBoard();
-};
+// Nickname теперь берётся из Worker через alias при POST /answer
+// Override удалён — используется async submitAnswer из app.js
 
 // ── Load profile from Worker when wallet connects ─────────────
 // Hooks into setWalletConnected to fetch profile from server
