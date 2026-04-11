@@ -182,7 +182,7 @@ function getUserTitleFromStats(qCount, upvotes) {
 // Chat tx: 5,000 LUNC ±1% + non-empty memo → groups by UTC calendar day
 // Free entries: every 10 msgs/day = 1 entry, max 2/day
 // Also counts Q&A questions: each = +2 free entries
-var TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+// TREASURY_WALLET defined in app.js
 const PROFILE_LCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terraclassic.community',
