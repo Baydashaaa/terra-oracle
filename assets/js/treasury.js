@@ -1,8 +1,12 @@
 // ─── TREASURY MODULE · terra-oracle ──────────────────────────
 const T_WALLETS = {
-  treasury: 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt',
-  daily:    'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px',
-  weekly:   'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz',
+  treasury:  'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // Main Treasury
+  daily:     'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', // Daily Draw Pool
+  weekly:    'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz', // Weekly Draw Pool
+  rewards:   'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce', // REP Rewards 20%
+  reserve:   'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz', // Reserve 20%
+  liquidity: 'terra1gukarslv6c8n0s2259822l7059putpqxz405su', // Liquidity 50%
+  dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr', // Development 10%
 };
 const T_LCD = [
   'https://terra-classic-lcd.publicnode.com',
@@ -122,21 +126,36 @@ async function tLoadRecentTxs() {
 async function loadTreasuryData() {
   const btn = document.getElementById('t-refresh-btn');
   if (btn) { btn.textContent='⏳ Loading...'; btn.disabled=true; }
-  const [price, tB, dB, wB] = await Promise.all([
-    tFetchPrice(), tFetchBal(T_WALLETS.treasury),
-    tFetchBal(T_WALLETS.daily), tFetchBal(T_WALLETS.weekly),
+
+  const [price, tB, dB, wB, rB, resB, liqB, devB] = await Promise.all([
+    tFetchPrice(),
+    tFetchBal(T_WALLETS.treasury),
+    tFetchBal(T_WALLETS.daily),
+    tFetchBal(T_WALLETS.weekly),
+    tFetchBal(T_WALLETS.rewards),
+    tFetchBal(T_WALLETS.reserve),
+    tFetchBal(T_WALLETS.liquidity),
+    tFetchBal(T_WALLETS.dev),
   ]);
+
   const setWallet = (balId, usdId, bal) => {
     if (bal!==null) { tSet(balId,tFmt(bal)); tSet(usdId,tFmtUsd(bal,price)); }
     else { tSet(balId,'Error'); tSet(usdId,'Node unreachable'); }
   };
-  setWallet('t-oracle-bal','t-oracle-usd',tB);
-  setWallet('t-draw-bal',  't-draw-usd',  dB);
-  setWallet('t-weekly-bal','t-weekly-usd',wB);
-  const total = (tB||0)+(dB||0)+(wB||0);
+
+  setWallet('t-oracle-bal',   't-oracle-usd',   tB);
+  setWallet('t-draw-bal',     't-draw-usd',     dB);
+  setWallet('t-weekly-bal',   't-weekly-usd',   wB);
+  setWallet('t-rewards-bal',  't-rewards-usd',  rB);
+  setWallet('t-reserve-bal',  't-reserve-usd',  resB);
+  setWallet('t-liquidity-bal','t-liquidity-usd',liqB);
+  setWallet('t-dev-bal',      't-dev-usd',      devB);
+
+  const total = (tB||0)+(dB||0)+(wB||0)+(rB||0)+(resB||0)+(liqB||0)+(devB||0);
   tSet('t-total-tvl', tFmt(total));
   tSet('t-total-usd', tFmtUsd(total,price));
   tSet('t-last-updated','Updated '+new Date().toLocaleTimeString());
+
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
   tLoadRecentTxs();
 }
