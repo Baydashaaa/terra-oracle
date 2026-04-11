@@ -1080,6 +1080,13 @@ window.sendChatMessage = async function() {
     const txHash = await sendLuncDirect(sender, TREASURY_WALLET, 5000000000, text.slice(0, 256), 'columbus-5');
     const result = { transactionHash: txHash };
     const short = sender.slice(0,8)+'...'+sender.slice(-4);
+
+    // ✅ Streak: Chat — платное действие (5,000 LUNC)
+    fetch(`${WORKER_URL}/streak/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: sender, action: 'chat' }),
+    }).catch(() => {});
     const stored = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]');
     stored.push({ text, author: short, fullAddr: sender, txHash: result.transactionHash, isVerified: true, timestamp: Date.now() });
     localStorage.setItem('dao_chat_pending', JSON.stringify(stored));
