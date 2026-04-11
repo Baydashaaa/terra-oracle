@@ -481,6 +481,88 @@ async function fetchQuestionStats(address) {
   }
 }
 
+// ─── STREAK FETCH ─────────────────────────────────────────────
+async function fetchStreakData(address) {
+  try {
+    const res = await fetch(`${WORKER_URL}/streak?wallet=${address}`);
+    if (!res.ok) throw new Error('Worker error');
+    return await res.json();
+  } catch(e) {
+    console.warn('fetchStreakData failed:', e.message);
+    return { currentStreak: 0, longestStreak: 0, todayDone: false, multiplier: 1.0, milestones: [], lastActivityDate: null };
+  }
+}
+
+// ─── STREAK BLOCK RENDERER ────────────────────────────────────
+function renderStreakBlock(streakData) {
+  const el = document.getElementById('streak-block');
+  if (!el) return;
+
+  const { currentStreak, longestStreak, todayDone, multiplier, milestones } = streakData;
+
+  const flameSize   = currentStreak >= 30 ? '32px' : currentStreak >= 14 ? '28px' : currentStreak >= 7 ? '24px' : '20px';
+  const streakColor = currentStreak >= 30 ? '#00ffff' : currentStreak >= 14 ? '#ffd700' : currentStreak >= 7 ? '#ff8844' : currentStreak >= 3 ? '#66ffaa' : 'var(--muted)';
+  const streakGlow  = currentStreak >= 30 ? 'rgba(0,212,255,0.5)' : currentStreak >= 14 ? 'rgba(245,197,24,0.45)' : currentStreak >= 7 ? 'rgba(255,102,0,0.4)' : currentStreak >= 3 ? 'rgba(30,200,100,0.35)' : 'none';
+
+  const MILESTONES       = [3, 5, 7, 14, 30];
+  const MILESTONE_LABELS = {
+    3:  'x1.1 REP multiplier',
+    5:  'x1.2 REP multiplier',
+    7:  'x1.3 REP + 25% question discount',
+    14: 'x1.5 REP + 2 free Weekly Draw entries',
+    30: 'x2.0 REP + Trusted User status',
+  };
+  const nextMs      = MILESTONES.find(m => currentStreak < m);
+  const nextMsLabel = nextMs ? MILESTONE_LABELS[nextMs] : null;
+
+  const statusBadge = todayDone
+    ? `<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(30,200,100,0.12);border:1px solid rgba(30,200,100,0.35);color:#4ade80;font-weight:700;">✓ Streak secured today</span>`
+    : `<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);color:#ffaa00;font-weight:700;">⏳ Today not completed</span>`;
+
+  const msBadges = MILESTONES.map(m => {
+    const reached = milestones.includes(m);
+    return `<div style="text-align:center;padding:8px 6px;border-radius:8px;flex:1;min-width:50px;
+      background:${reached ? 'rgba(30,200,100,0.08)' : 'rgba(255,255,255,0.03)'};
+      border:1px solid ${reached ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
+      opacity:${reached ? 1 : 0.45};">
+      <div style="font-size:14px;">${reached ? '✅' : '🔒'}</div>
+      <div style="font-size:10px;font-weight:700;color:${reached ? '#4ade80' : 'var(--muted)'};margin-top:2px;">${m}d</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:${flameSize};filter:${currentStreak > 0 ? `drop-shadow(0 0 8px ${streakGlow})` : 'none'};">🔥</span>
+        <div>
+          <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;">Daily Streak</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:${streakColor};${currentStreak > 0 ? `text-shadow:0 0 14px ${streakGlow};` : ''}line-height:1;">
+            ${currentStreak} <span style="font-size:14px;font-weight:600;opacity:0.7;">days</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        ${statusBadge}
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">Best: ${longestStreak}d · REP ×${multiplier.toFixed(1)}</div>
+      </div>
+    </div>
+    ${nextMs ? `
+      <div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Next milestone: <strong style="color:var(--text);">${nextMs} days</strong></div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:5px;overflow:hidden;">
+          <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#ff8844,#ffd700);width:${Math.round((currentStreak / nextMs) * 100)}%;transition:width 0.6s ease;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">${currentStreak}/${nextMs} days · unlocks: <span style="color:var(--green);">${nextMsLabel}</span></div>
+      </div>
+    ` : `<div style="font-size:11px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK — TRUSTED STATUS UNLOCKED</div>`}
+    <div style="display:flex;gap:6px;">${msBadges}</div>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
+      Active in <strong style="color:var(--text);">Ask · Answer · Vote · Chat · Draw</strong> = 1 streak day.
+      Miss 1 day per 7 days = grace period applied automatically.
+    </div>
+  `;
+}
+
 function renderProfilePage() {
   const address = globalWalletAddress;
   if (!address) return;
@@ -522,11 +604,12 @@ function renderProfilePage() {
   document.getElementById('stat-top-answers').textContent = '…';
   document.getElementById('stat-messages').textContent = '…';
 
-  // Load question stats from worker + chat stats from chain in parallel
+  // Load question stats from worker + chat stats from chain + streak in parallel
   Promise.all([
     fetchQuestionStats(address),
     fetchChatStats(address),
-  ]).then(([qStats, chatStats]) => {
+    fetchStreakData(address),
+  ]).then(([qStats, chatStats, streakData]) => {
     const { myQuestions, myAnswers, totalUpvotes, topAnswers, allQuestions } = qStats;
 
     document.getElementById('stat-questions').textContent = myQuestions.length;
@@ -552,6 +635,7 @@ function renderProfilePage() {
 
     renderMessageProgress(chatStats);
     renderRankProgress(reputation);
+    renderStreakBlock(streakData);
     renderHistoryTab(currentHistoryTab || 'answers', myAnswers, myQuestions);
   });
 }
