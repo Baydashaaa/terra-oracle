@@ -355,10 +355,7 @@ function getUserTitleFromStats(qCount, upvotes) {
   return current;
 }
 
-// getMessageCount — kept as no-op shim so app.js sendChatMessage doesn't break
-// Real stats come from fetchChatStats (on-chain)
-function getMessageCount(address) { return 0; }
-function incrementMessageCount(address) { return 0; }
+// Message counting moved to Worker — see POST /chat/message
 
 // ─── PROFILE DATA ─────────────────────────────────────────────
 function getProfileKey(address) { return 'profile_' + address; }
