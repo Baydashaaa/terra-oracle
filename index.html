@@ -1861,13 +1861,17 @@ setTimeout(() => {
 </style>
 
 <script>
-/* ── Starfield canvas ──────────────────────────── */
+/* ── Starfield canvas — optimized (20fps, paused when hidden) ── */
 (function() {
+  // Disable on mobile/touch devices
+  if (window.matchMedia('(hover: none)').matches) return;
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
-  let W, H, stars, nebulas;
+  let W, H, stars, nebulas, rafId, lastTime = 0;
+  const FPS = 20, INTERVAL = 1000 / FPS;
+  // Fewer stars for better performance
+  const STAR_COUNT = 90;
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -1875,80 +1879,61 @@ setTimeout(() => {
   }
 
   function initStars() {
-    // Regular stars
-    stars = Array.from({ length: 180 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
+    stars = Array.from({ length: STAR_COUNT }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 1.2 + 0.2,
       speed: Math.random() * 0.12 + 0.02,
       opacity: Math.random() * 0.6 + 0.2,
       twinkleSpeed: Math.random() * 0.008 + 0.003,
       twinkleDir: Math.random() > 0.5 ? 1 : -1,
-      // colour: mostly white, some blue-tinted, a few gold
       hue: Math.random() < 0.15 ? 'gold' : Math.random() < 0.25 ? 'blue' : 'white',
     }));
-
-    // Soft nebula blobs
     nebulas = Array.from({ length: 4 }, (_, i) => ({
       x: [0.15, 0.85, 0.3, 0.7][i] * W,
-      y: [0.2,  0.15, 0.8, 0.75][i] * H,
-      r: (Math.random() * 180 + 160),
-      color: i % 2 === 0
-        ? 'rgba(84,147,247,0.045)'
-        : 'rgba(167,100,250,0.035)',
+      y: [0.2, 0.15, 0.8, 0.75][i] * H,
+      r: Math.random() * 180 + 160,
+      color: i % 2 === 0 ? 'rgba(84,147,247,0.045)' : 'rgba(167,100,250,0.035)',
       driftX: (Math.random() - 0.5) * 0.15,
       driftY: (Math.random() - 0.5) * 0.10,
     }));
   }
 
-  let frame = 0;
-  function draw() {
+  function draw(ts) {
+    rafId = requestAnimationFrame(draw);
+    if (ts - lastTime < INTERVAL) return;
+    lastTime = ts;
     ctx.clearRect(0, 0, W, H);
-    frame++;
-
-    // Nebula blobs
     nebulas.forEach(n => {
-      n.x += n.driftX;
-      n.y += n.driftY;
+      n.x += n.driftX; n.y += n.driftY;
       if (n.x < -n.r || n.x > W + n.r) n.driftX *= -1;
       if (n.y < -n.r || n.y > H + n.r) n.driftY *= -1;
       const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-      g.addColorStop(0, n.color);
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fill();
+      g.addColorStop(0, n.color); g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g; ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
     });
-
-    // Stars
     stars.forEach(s => {
-      // gentle drift downward
       s.y += s.speed;
       if (s.y > H + 2) { s.y = -2; s.x = Math.random() * W; }
-
-      // twinkle
       s.opacity += s.twinkleSpeed * s.twinkleDir;
       if (s.opacity > 0.85 || s.opacity < 0.1) s.twinkleDir *= -1;
-
-      let color;
-      if (s.hue === 'gold')  color = `rgba(245,197,24,${s.opacity})`;
-      else if (s.hue === 'blue') color = `rgba(130,180,255,${s.opacity})`;
-      else color = `rgba(220,230,255,${s.opacity})`;
-
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
+      const c = s.hue === 'gold' ? `rgba(245,197,24,${s.opacity})`
+              : s.hue === 'blue' ? `rgba(130,180,255,${s.opacity})`
+              : `rgba(220,230,255,${s.opacity})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
     });
-
-    requestAnimationFrame(draw);
   }
 
+  // Pause when tab is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(rafId); rafId = null; }
+    else if (!rafId) rafId = requestAnimationFrame(draw);
+  });
+
   window.addEventListener('resize', () => { resize(); initStars(); });
-  resize();
-  initStars();
-  draw();
+  resize(); initStars();
+  rafId = requestAnimationFrame(draw);
 })();
 
 window.openBagWalletPicker = function() {
@@ -1986,36 +1971,35 @@ window.addEventListener('resize', drawNavLines);
 
 <script>
 /* ══════════════════════════════════════════════════════════
-   PARALLAX + CURSOR ENERGY
+   PARALLAX + CURSOR ENERGY — optimized (disabled on mobile)
    ══════════════════════════════════════════════════════════ */
 (function() {
+  if (window.matchMedia('(hover: none)').matches) return;
   const cursorEnergy = document.getElementById('cursor-energy');
   const energyField  = document.getElementById('energy-field');
   let mx = window.innerWidth / 2, my = window.innerHeight / 2;
   let cx = mx, cy = my;
+  let rafId = null, moved = false;
 
   document.addEventListener('mousemove', e => {
-    mx = e.clientX;
-    my = e.clientY;
+    mx = e.clientX; my = e.clientY; moved = true;
   });
 
-  // Smooth cursor follow
   function tick() {
+    rafId = requestAnimationFrame(tick);
+    if (!moved) return;
+    moved = false;
     cx += (mx - cx) * 0.07;
     cy += (my - cy) * 0.07;
     if (cursorEnergy) {
       cursorEnergy.style.left = cx + 'px';
       cursorEnergy.style.top  = cy + 'px';
     }
-
-    // Layer 2 parallax: energy field shifts gently with mouse
     if (energyField) {
       const ox = (mx / window.innerWidth  - 0.5) * 18;
       const oy = (my / window.innerHeight - 0.5) * 12;
       energyField.style.transform = `translate(${ox}px,${oy}px)`;
     }
-
-    // Layer 1 parallax: bg-canvas orbs shift very slightly
     const orb1 = document.querySelector('.orb-1');
     const orb2 = document.querySelector('.orb-2');
     if (orb1) {
@@ -2028,9 +2012,14 @@ window.addEventListener('resize', drawNavLines);
       const oy2 = (my / window.innerHeight - 0.5) * -14;
       orb2.style.transform = `translate(${ox2}px,${oy2}px)`;
     }
-    requestAnimationFrame(tick);
   }
-  tick();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(rafId); rafId = null; }
+    else if (!rafId) { rafId = requestAnimationFrame(tick); }
+  });
+
+  rafId = requestAnimationFrame(tick);
 })();
 
 /* ══════════════════════════════════════════════════════════
