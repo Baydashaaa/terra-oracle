@@ -1953,8 +1953,8 @@ function drawNavLines() {
 function _wrapShowPage() {
   if (typeof window.showPage !== 'function') return;
   const _orig = window.showPage;
-  window.showPage = function(name, e) {
-    _orig(name, e);
+  window.showPage = function(name, e, skipHistory) {
+    _orig(name, e, skipHistory);
     document.querySelectorAll('.nav-node').forEach(function(n) {
       n.classList.toggle('active', n.dataset.page === name);
     });
