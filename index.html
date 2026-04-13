@@ -205,28 +205,30 @@
 
   <!-- Charts -->
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-  <!-- WalletConnect v2 + QR -->
+  <!-- QR generator (lightweight, no deps) -->
   <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script src="https://unpkg.com/@walletconnect/sign-client@2.17.4/dist/index.umd.js"></script>
   <script>
   window._wcProjectId = '4b0ea5adcda180c7ea42ba35259b2a87';
   window.renderQRToCanvas = function(text, canvas) {
     try {
       var qr = qrcode(0, text.length > 200 ? 'L' : 'M');
-      qr.addData(text);
-      qr.make();
-      var n = qr.getModuleCount();
-      var sz = 260;
+      qr.addData(text); qr.make();
+      var n = qr.getModuleCount(), sz = 260;
       canvas.width = sz; canvas.height = sz;
-      var ctx = canvas.getContext('2d');
-      var cell = sz / n;
+      var ctx = canvas.getContext('2d'), cell = sz / n;
       ctx.fillStyle = '#fff'; ctx.fillRect(0,0,sz,sz);
       ctx.fillStyle = '#000';
       for (var r=0;r<n;r++) for (var c=0;c<n;c++)
         if (qr.isDark(r,c)) ctx.fillRect(Math.floor(c*cell),Math.floor(r*cell),Math.ceil(cell)+1,Math.ceil(cell)+1);
       return true;
-    } catch(e) { console.error('QR error',e); return false; }
+    } catch(e) { return false; }
   };
+  </script>
+  <!-- WalletConnect SignClient via ESM (loads lazily when QR modal opens) -->
+  <script type="module">
+  import SignClient from 'https://esm.sh/@walletconnect/sign-client@2.17.4';
+  window._WCSignClient = SignClient;
+  window.dispatchEvent(new Event('wc-ready'));
   </script>
 
 <style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}</style>
@@ -2199,74 +2201,75 @@ function toggleAccordion(id) {
 </div>
 
 <script>
-/* ═══ WALLET QR MODAL LOGIC ═══ */
-/* ═══ WALLETCONNECT v2 QR MODAL ═══ */
+/* ═══ WALLET QR / CONNECT MODAL ═══ */
+
 const WQR_CONFIGS = {
   'keplr-mobile': {
     title: 'Keplr',
-    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7B5CFF,#4B3CB7);display:flex;align-items:center;justify-content:center;font-size:20px;">🔑</div>',
+    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7B5CFF,#4B3CB7);display:flex;align-items:center;justify-content:center;font-size:20px;">\u{1F511}</div>',
     deeplink: (uri) => `keplr://wc?uri=${encodeURIComponent(uri)}`,
-    fallbackUri: 'https://wallet.keplr.app',
   },
   'galaxy-mobile': {
     title: 'Galaxy Station',
-    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a1a2e,#4a2a6e);display:flex;align-items:center;justify-content:center;font-size:20px;">🌌</div>',
+    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a1a2e,#4a2a6e);display:flex;align-items:center;justify-content:center;font-size:20px;">\u{1F30C}</div>',
     deeplink: (uri) => `galaxystation://wc?uri=${encodeURIComponent(uri)}`,
-    fallbackUri: 'https://station.hexxagon.io',
   },
   'luncdash': {
     title: 'Luncdash',
-    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a0e00,#3a2200);display:flex;align-items:center;justify-content:center;font-size:20px;">🌙</div>',
+    icon: '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a0e00,#3a2200);display:flex;align-items:center;justify-content:center;font-size:20px;">\u{1F319}</div>',
     deeplink: (uri) => `luncdash://wc?uri=${encodeURIComponent(uri)}`,
-    fallbackUri: 'https://luncdash.com',
   }
 };
 
+const _isMobile = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.matchMedia('(hover:none)').matches;
 let _wqrClient = null;
 let _wqrActive = false;
 
 function openWalletQRModal(walletType) {
   const cfg = WQR_CONFIGS[walletType];
   if (!cfg) return;
-  if (_wqrActive) closeWalletQRModal();
 
+  // MOBILE: сразу deep link без QR
+  if (_isMobile()) {
+    if (typeof closeMobileWalletModal === 'function') closeMobileWalletModal();
+    window.location.href = cfg.deeplink('');
+    return;
+  }
+
+  // DESKTOP: показываем QR модалку
+  if (_wqrActive) closeWalletQRModal();
   document.getElementById('wqr-icon').innerHTML = cfg.icon;
   document.getElementById('wqr-title').textContent = cfg.title;
   document.getElementById('wqr-status').textContent = 'Connecting...';
   document.getElementById('wqr-deeplink').style.display = 'none';
-
-  // Clear canvas
   const canvas = document.getElementById('wqr-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
   document.getElementById('wallet-qr-modal').style.display = 'flex';
   _wqrActive = true;
-
   _startWC(walletType, cfg);
 }
 
 async function _startWC(walletType, cfg) {
+  const statusEl = document.getElementById('wqr-status');
   try {
-    // Wait for SignClient to be available (loaded async)
-    let attempts = 0;
-    while (!window.SignClient && !window.WalletConnectSignClient?.SignClient && attempts < 80) {
-      await new Promise(r => setTimeout(r, 100));
-      attempts++;
-    }
-
-    const SignClient = window.SignClient || window.WalletConnectSignClient?.SignClient;
-    if (!SignClient) throw new Error('SignClient not loaded');
+    const SignClient = await new Promise((resolve, reject) => {
+      if (window._WCSignClient) return resolve(window._WCSignClient);
+      const t = setTimeout(() => reject(new Error('timeout')), 20000);
+      window.addEventListener('wc-ready', () => { clearTimeout(t); resolve(window._WCSignClient); }, { once: true });
+    });
+    if (!_wqrActive) return;
+    statusEl.textContent = 'Generating QR...';
 
     _wqrClient = await SignClient.init({
       projectId: window._wcProjectId,
       metadata: {
         name: 'Terra Oracle Classic',
-        description: 'Oracle Q&A · Terra Classic',
+        description: 'Oracle Q&A on Terra Classic',
         url: 'https://baydashaaa.github.io/terra-oracle',
         icons: ['https://baydashaaa.github.io/terra-oracle/v1.gif']
       }
     });
+    if (!_wqrActive) return;
 
     const { uri, approval } = await _wqrClient.connect({
       requiredNamespaces: {
@@ -2277,74 +2280,41 @@ async function _startWC(walletType, cfg) {
         }
       }
     });
+    if (!uri || !_wqrActive) return;
 
-    if (!uri) throw new Error('No URI generated');
-
-    // Render QR
     _renderQRSafe(uri);
+    statusEl.textContent = 'Scan with ' + cfg.title;
 
-    // Deep link for mobile
-    const dlBtn = document.getElementById('wqr-deeplink');
-    dlBtn.href = cfg.deeplink(uri);
-    if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-      dlBtn.style.display = 'block';
-    }
-
-    const statusEl = document.getElementById('wqr-status');
-    statusEl.textContent = 'Scan with ' + cfg.title + ' app';
-
-    // Await wallet approval
     const session = await approval();
-    if (!_wqrActive) return; // modal was closed
-
+    if (!_wqrActive) return;
     closeWalletQRModal();
 
-    const accounts = (session.namespaces?.cosmos?.accounts) || [];
+    const accounts = session?.namespaces?.cosmos?.accounts || [];
     if (accounts.length > 0) {
       const addr = accounts[0].split(':')[2];
       if (addr) _onWCConnected(addr, walletType);
     }
-
   } catch(e) {
-    console.warn('[WC] Error:', e.message);
+    console.warn('[WC]', e.message);
     if (!_wqrActive) return;
-    // Fallback to static QR
-    const statusEl = document.getElementById('wqr-status');
-    statusEl.textContent = 'Scan to open ' + (WQR_CONFIGS[walletType]?.title || 'wallet');
-    _renderQRSafe(WQR_CONFIGS[walletType]?.fallbackUri || 'https://wallet.keplr.app');
+    statusEl.textContent = e.message === 'timeout' ? 'SDK load timeout' : 'Connection error';
   }
 }
 
 function _renderQRSafe(text) {
   const canvas = document.getElementById('wqr-canvas');
   if (!canvas) return;
-  function attempt() {
-    if (typeof qrcode !== 'undefined' && typeof window.renderQRToCanvas === 'function') {
-      window.renderQRToCanvas(text, canvas);
-    } else {
-      setTimeout(attempt, 150);
-    }
-  }
+  const attempt = () => {
+    if (typeof qrcode !== 'undefined' && window.renderQRToCanvas) window.renderQRToCanvas(text, canvas);
+    else setTimeout(attempt, 150);
+  };
   attempt();
 }
 
 function _onWCConnected(address, walletType) {
-  // Try setWalletConnected from app.js
-  if (typeof window.setWalletConnected === 'function') {
-    window.setWalletConnected(address);
-  }
-  // Also update mobile UI
-  if (typeof window.updateMobileWalletUI === 'function') {
-    window.updateMobileWalletUI(address);
-  }
-  // Save session
-  try {
-    localStorage.setItem('wallet_session', JSON.stringify({
-      address: address,
-      type: walletType,
-      expires: Date.now() + 7 * 24 * 60 * 60 * 1000
-    }));
-  } catch(e) {}
+  if (typeof window.setWalletConnected === 'function') window.setWalletConnected(address);
+  if (typeof window.updateMobileWalletUI === 'function') window.updateMobileWalletUI(address);
+  try { localStorage.setItem('wallet_session', JSON.stringify({ address, type: walletType, expires: Date.now() + 7*24*60*60*1000 })); } catch(e) {}
 }
 
 function closeWalletQRModal() {
@@ -2352,14 +2322,13 @@ function closeWalletQRModal() {
   const modal = document.getElementById('wallet-qr-modal');
   if (modal) modal.style.display = 'none';
   const canvas = document.getElementById('wqr-canvas');
-  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
 }
 
 document.getElementById('wallet-qr-modal').addEventListener('click', function(e) {
   if (e.target === this) closeWalletQRModal();
 });
 
-/* ─── Patch connectWallet to intercept mobile types ─── */
 (function() {
   const mobileTypes = ['keplr-mobile', 'galaxy-mobile', 'luncdash'];
   function tryPatch() {
@@ -2369,7 +2338,7 @@ document.getElementById('wallet-qr-modal').addEventListener('click', function(e)
         if (mobileTypes.includes(type)) {
           if (typeof closeMobileWalletModal === 'function') closeMobileWalletModal();
           const dd = document.getElementById('wallet-dropdown');
-          if (dd && dd.classList.contains('open') && typeof toggleWalletDropdown === 'function') toggleWalletDropdown();
+          if (dd?.classList.contains('open') && typeof toggleWalletDropdown === 'function') toggleWalletDropdown();
           openWalletQRModal(type);
           return;
         }
