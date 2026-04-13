@@ -1405,7 +1405,7 @@ if (document.readyState === 'loading') {
 } else {
   renderChatPage();
 }
-setInterval(loadChatFromChain, 30000);
+setInterval(loadChatFromChain, 60000); // 60s poll — reduced from 30s for performance
 
 const _origSetWallet = window.setWalletConnected;
 window.setWalletConnected = function(address) {
