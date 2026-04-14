@@ -2745,19 +2745,7 @@ const DUST_ULUNC = 1000000;
 const KNOWN_HEALTHY = new Set(['uluna','uusd','ukrw','usdr','umnt','ueur','ucny','ujpy','ugbp','uinr','ucad','uchf','uhkd','usgd','uthb','usek','unok','udkk','uidr','uphp','umyr','utwd']);
 
 function _getAuditAddr() {
-  if (window.globalWalletAddress) return window.globalWalletAddress;
-  if (window.connectedAddress) return window.connectedAddress;
-  // Check wallet-connected-addr element (contains full address)
-  const addrEl = document.getElementById('wallet-connected-addr');
-  if (addrEl && addrEl.textContent && addrEl.textContent.startsWith('terra1')) {
-    return addrEl.textContent.trim();
-  }
-  // Check localStorage
-  try {
-    const s = JSON.parse(localStorage.getItem('wallet_session')||'null');
-    if (s && s.address && s.expires > Date.now()) return s.address;
-  } catch(e) {}
-  return null;
+  return window.globalWalletAddress || window.connectedAddress || null;
 }
 
 async function fetchCW20Info(addr) {
@@ -2780,6 +2768,60 @@ async function fetchRecentTxCount(addr) {
   } catch(e){return {total:0,daysSinceLast:999};}
 }
 
+// Discover CW20 contracts from wallet tx history
+async function discoverCW20Contracts(walletAddr) {
+  const contracts = new Set();
+  try {
+    // Query txs where wallet is sender
+    const urls = [
+      `${LCD_AUDIT}/cosmos/tx/v1beta1/txs?events=message.sender%3D'${walletAddr}'&pagination.limit=50&order_by=ORDER_BY_DESC`,
+      `${LCD_AUDIT}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D'${walletAddr}'&pagination.limit=50&order_by=ORDER_BY_DESC`,
+      `${LCD_AUDIT}/cosmos/tx/v1beta1/txs?events=wasm.recipient%3D'${walletAddr}'&pagination.limit=50&order_by=ORDER_BY_DESC`,
+    ];
+    
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, {signal:AbortSignal.timeout(5000)});
+        const d = await r.json();
+        const txs = d?.txs || [];
+        
+        for (const tx of txs) {
+          const msgs = tx?.body?.messages || [];
+          for (const msg of msgs) {
+            // MsgExecuteContract — extract contract address
+            if (msg['@type'] === '/terra.wasm.v1beta1.MsgExecuteContract' || 
+                msg['@type'] === '/cosmwasm.wasm.v1.MsgExecuteContract') {
+              const contract = msg.contract;
+              if (contract && contract.startsWith('terra1') && contract.length > 30) {
+                contracts.add(contract);
+              }
+            }
+          }
+          // Also check events for contract addresses
+          const responses = d?.tx_responses || [];
+          for (const resp of responses) {
+            const events = resp?.events || [];
+            for (const evt of events) {
+              if (evt.type === 'wasm') {
+                const attrs = evt.attributes || [];
+                for (const attr of attrs) {
+                  if (attr.key === '_contract_address' || attr.key === 'contract_address') {
+                    const val = attr.value;
+                    if (val && val.startsWith('terra1') && val.length > 30) {
+                      contracts.add(val);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  return contracts;
+}
+
 async function runWalletAudit() {
   const addr = _getAuditAddr();
   if (!addr) {alert('Please connect your wallet first');return;}
@@ -2794,10 +2836,34 @@ async function runWalletAudit() {
   document.getElementById('audit-recovery-cta').style.display='none';
 
   try {
-    status.textContent = '📡 Fetching balances...';
-    const res = await fetch(`${LCD_AUDIT}/cosmos/bank/v1beta1/balances/${addr}?pagination.limit=500`,{signal:AbortSignal.timeout(6000)});
-    const data = await res.json();
-    const balances = data?.balances || [];
+    status.textContent = '📡 Fetching native balances...';
+    const nativeRes = await fetch(`${LCD_AUDIT}/cosmos/bank/v1beta1/balances/${addr}?pagination.limit=500`,{signal:AbortSignal.timeout(6000)});
+    const nativeData = await nativeRes.json();
+    const nativeBalances = nativeData?.balances || [];
+
+    status.textContent = '🔍 Finding CW20 tokens from tx history...';
+    // Get CW20 contracts from tx history
+    const cw20Contracts = await discoverCW20Contracts(addr);
+    status.textContent = `🔍 Found ${cw20Contracts.size} CW20 contracts, checking balances...`;
+    
+    // Check balance for each discovered contract
+    const cw20Balances = [];
+    const contractArr = [...cw20Contracts];
+    for (let i = 0; i < contractArr.length; i++) {
+      const contract = contractArr[i];
+      status.textContent = `🔍 Checking CW20 ${i+1}/${contractArr.length}...`;
+      try {
+        const q = btoa(JSON.stringify({balance:{address:addr}}));
+        const r = await fetch(`${LCD_AUDIT}/terra/wasm/v1beta1/contracts/${contract}/store?query_msg=${q}`,{signal:AbortSignal.timeout(3000)});
+        const d = await r.json();
+        const bal = d?.query_result?.balance || '0';
+        if (bal && bal !== '0') {
+          cw20Balances.push({ denom: contract, amount: bal });
+        }
+      } catch(e) {}
+    }
+
+    const balances = [...nativeBalances, ...cw20Balances];
 
     const dead=[], dust=[], healthy=[];
     let luncBalance = '0';
@@ -2919,82 +2985,30 @@ function joinRecoveryWaitlist() {
 }
 
 function updateAuditUI() {
-  // Try all possible sources for wallet address
-  let addr = window.globalWalletAddress || window.connectedAddress || null;
-  
-  // Fallback: check wallet-connected-panel visibility (most reliable)
-  if (!addr) {
-    const panel = document.getElementById('wallet-connected-panel');
-    const addrEl = document.getElementById('wallet-connected-addr');
-    if (panel && panel.style.display !== 'none' && addrEl && addrEl.textContent) {
-      addr = addrEl.textContent.trim();
-    }
-  }
-  
-  // Fallback: check wallet-btn-label (shows short address when connected)
-  if (!addr) {
-    const label = document.getElementById('wallet-btn-label');
-    if (label && label.textContent && label.textContent !== 'Connect' && label.textContent.includes('...')) {
-      addr = label.textContent; // short form, still truthy
-    }
-  }
-
-  // Fallback: check localStorage session
-  if (!addr) {
-    try {
-      const s = JSON.parse(localStorage.getItem('wallet_session')||'null');
-      if (s && s.address && s.expires > Date.now()) addr = s.address;
-    } catch(e) {}
-  }
-
+  const addr = _getAuditAddr();
   const prompt = document.getElementById('audit-connect-prompt');
-  const scanPanel = document.getElementById('audit-scan-panel');
-  if (!prompt || !scanPanel) return;
-  if (addr) {
-    prompt.style.display = 'none';
-    scanPanel.style.display = 'block';
-  } else {
-    prompt.style.display = 'block';
-    scanPanel.style.display = 'none';
-  }
+  const panel = document.getElementById('audit-scan-panel');
+  if (!prompt||!panel) return;
+  if (addr){prompt.style.display='none';panel.style.display='block';}
+  else{prompt.style.display='block';panel.style.display='none';}
 }
 
-// Watch for audit page becoming active via MutationObserver
-(function() {
-  function setupAuditObserver() {
-    const auditPage = document.getElementById('page-audit');
-    if (!auditPage) { setTimeout(setupAuditObserver, 200); return; }
-    
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(m) {
-        if (m.attributeName === 'class' && auditPage.classList.contains('active')) {
-          setTimeout(updateAuditUI, 50);
-        }
-      });
-    });
-    observer.observe(auditPage, { attributes: true, attributeFilter: ['class'] });
-    
-    // Also patch setWalletConnected
-    setTimeout(function() {
-      if (typeof window.setWalletConnected === 'function') {
-        const _p = window.setWalletConnected;
-        window.setWalletConnected = function(a) {
-          _p(a);
-          updateAuditUI();
-        };
-      }
-    }, 500);
-    
-    // Initial check
-    updateAuditUI();
+setTimeout(function(){
+  if (typeof window.setWalletConnected==='function'){
+    const _p=window.setWalletConnected;
+    window.setWalletConnected=function(a){_p(a);updateAuditUI();};
   }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupAuditObserver);
-  } else {
-    setupAuditObserver();
+  // Also patch showPage to update audit UI when audit page opens
+  if (typeof window.showPage==='function'){
+    const _sp=window.showPage;
+    window.showPage=function(name){
+      _sp.apply(this,arguments);
+      if(name==='audit') setTimeout(updateAuditUI,50);
+    };
   }
-})();
+  updateAuditUI();
+},700);
+document.addEventListener('DOMContentLoaded',function(){setTimeout(updateAuditUI,900);});
 </script>
 </body>
 </html>
