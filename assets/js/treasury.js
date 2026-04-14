@@ -120,23 +120,23 @@ async function tLoadRecentTxs(retries = 5) {
         if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
           label = 'Chat';
         else if (rawUluna >= QA_TREASURY_AMT*(1-TOL) && rawUluna <= QA_TREASURY_AMT*(1+TOL))
-          label = 'Q&A — Treasury';
+          label = 'Q&A - Treasury';
         else if (memo && memo.toLowerCase().includes('daily'))
-          label = 'Oracle Draw — Daily (10%)';
+          label = 'Oracle Draw - Daily (10%)';
         else if (memo && memo.toLowerCase().includes('weekly'))
-          label = 'Oracle Draw — Weekly (10%)';
+          label = 'Oracle Draw - Weekly (10%)';
         else
           label = memo || 'Transfer';
       } else if (wallet === T_WALLETS.weekly) {
         if (rawUluna >= QA_WEEKLY_AMT*(1-TOL) && rawUluna <= QA_WEEKLY_AMT*(1+TOL))
-          label = 'Q&A — Weekly Pool';
+          label = 'Q&A - Weekly Pool';
         else if (rawUluna >= DRAW_NFT_MIN)
-          label = 'Oracle Draw — Weekly NFT';
+          label = 'Oracle Draw - Weekly NFT';
         else
           label = memo || 'Transfer';
       } else if (wallet === T_WALLETS.daily) {
         if (rawUluna >= DRAW_NFT_MIN)
-          label = 'Oracle Draw — Daily NFT';
+          label = 'Oracle Draw - Daily NFT';
         else
           label = memo || 'Transfer';
       } else {
