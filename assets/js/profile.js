@@ -1,6 +1,6 @@
 // ─── PROFILE SYSTEM ──────────────────────────────────────────
 
-// CSS стили для профиля — добавляются динамически
+// CSS стили для профиля - добавляются динамически
 (function injectProfileStyles() {
   const style = document.createElement('style');
   style.textContent = `
@@ -28,7 +28,7 @@
 // Reputation = Action Score + Quality Score
 // Action:  Ask question +40 | Vote +15 | Chat msg +2 | Join draw +10
 // Quality: Upvote received on question/answer +10 | Answer activity +5
-// Discount applies to question fee — pool always gets full amount
+// Discount applies to question fee - pool always gets full amount
 
 const RANKS = [
   {
@@ -49,35 +49,35 @@ const RANKS = [
     name: 'ADEPT',      icon: '🔵', minScore: 1500,
     color: '#7eb8ff',   bar: '#5493f7',   glow: 'rgba(84,147,247,0.4)',
     discount: 5,        questionPrice: 190000,
-    discountLabel: '5% off — 190,000 LUNC',
+    discountLabel: '5% off - 190,000 LUNC',
     multiplier: 1.2,
   },
   {
     name: 'ANALYST',    icon: '🔮', minScore: 4000,
     color: '#c084fc',   bar: '#a855f7',   glow: 'rgba(168,85,247,0.4)',
     discount: 10,       questionPrice: 180000,
-    discountLabel: '10% off — 180,000 LUNC',
+    discountLabel: '10% off - 180,000 LUNC',
     multiplier: 1.5,
   },
   {
     name: 'ORACLE',     icon: '⚡', minScore: 8000,
     color: '#ffd700',   bar: '#f5c518',   glow: 'rgba(245,197,24,0.45)',
     discount: 15,       questionPrice: 170000,
-    discountLabel: '15% off — 170,000 LUNC',
+    discountLabel: '15% off - 170,000 LUNC',
     multiplier: 2.0,
   },
   {
     name: 'ARCHON',     icon: '🔥', minScore: 15000,
     color: '#ff8844',   bar: '#ff6600',   glow: 'rgba(255,102,0,0.45)',
     discount: 20,       questionPrice: 160000,
-    discountLabel: '20% off — 160,000 LUNC',
+    discountLabel: '20% off - 160,000 LUNC',
     multiplier: 2.5,
   },
   {
     name: 'ASCENDED',   icon: '✦',  minScore: 30000,
     color: '#00ffff',   bar: '#00d4ff',   glow: 'rgba(0,212,255,0.55)',
     discount: 25,       questionPrice: 150000,
-    discountLabel: '25% off — 150,000 LUNC',
+    discountLabel: '25% off - 150,000 LUNC',
     multiplier: 3.0,
   },
 ];
@@ -102,7 +102,7 @@ function calcReputation(qStats, chatStats) {
   const actionScore =
     myQuestions.length * 40 +   // Ask question
     myAnswers.length  * 15 +    // Answer (proxy for vote action)
-    Math.min(msgCount, 20) * 2 + // Chat — first 20 msgs full reward
+    Math.min(msgCount, 20) * 2 + // Chat - first 20 msgs full reward
     Math.max(0, msgCount - 20) * Math.round(2 * 0.2); // rest 20%
 
   // Quality Score
@@ -161,7 +161,7 @@ function buildScoreMap(allQuestions) {
   return scores;
 }
 
-// Global score map — populated after questions load
+// Global score map - populated after questions load
 window._walletScores = {};
 
 // Legacy function so existing calls don't break
@@ -202,7 +202,7 @@ async function fetchChatStats(address) {
   const days   = {};
   let   qaCount = 0;
 
-  // FCD is primary — reliably indexes all tx types on columbus-5
+  // FCD is primary - reliably indexes all tx types on columbus-5
   const allNodes = [
     { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
     { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
@@ -340,7 +340,7 @@ function getTopAnswerCount(walletAddress) {
 
 function getUserTitle(walletAddress) {
   if (!walletAddress) return null;
-  // Uses local questions array — for real stats use getUserTitleFromStats
+  // Uses local questions array - for real stats use getUserTitleFromStats
   const qCount = (typeof questions !== 'undefined' ? questions : [])
     .filter(q => q.wallet === walletAddress || q.fullAddr === walletAddress).length;
   const upvotes = getTotalUpvotesReceived(walletAddress);
@@ -355,7 +355,7 @@ function getUserTitleFromStats(qCount, upvotes) {
   return current;
 }
 
-// Message counting moved to Worker — see POST /chat/message
+// Message counting moved to Worker - see POST /chat/message
 
 // ─── PROFILE DATA ─────────────────────────────────────────────
 function getProfileKey(address) { return 'profile_' + address; }
@@ -375,7 +375,7 @@ function saveProfileData(address, data) {
 async function syncProfileToWorker(address, data) {
   try {
     const payload = { wallet: address, nickname: data.nickname || null };
-    // Only send avatar if it exists — don't overwrite with null
+    // Only send avatar if it exists - don't overwrite with null
     if (data.avatar !== undefined && data.avatar !== null) {
       payload.avatar = data.avatar;
     }
@@ -396,7 +396,7 @@ async function loadProfileFromWorker(address) {
     if (!res.ok) return null;
     const data = await res.json();
     if (data.nickname || data.avatar) {
-      // Merge with localStorage — worker is source of truth
+      // Merge with localStorage - worker is source of truth
       const local = loadProfile(address) || {};
       const merged = { ...local, ...data };
       localStorage.setItem(getProfileKey(address), JSON.stringify(merged));
@@ -571,7 +571,7 @@ function renderStreakBlock(streakData) {
         </div>
         <div style="font-size:10px;color:var(--muted);margin-top:4px;">${currentStreak}/${nextMs} days · unlocks: <span style="color:var(--green);">${nextMsLabel}</span></div>
       </div>
-    ` : `<div style="font-size:11px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK — TRUSTED STATUS UNLOCKED</div>`}
+    ` : `<div style="font-size:11px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK - TRUSTED STATUS UNLOCKED</div>`}
     <div style="display:flex;gap:6px;">${msBadges}</div>
     <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
       Active in <strong style="color:var(--text);">Ask · Answer · Vote · Chat · Draw</strong> = 1 streak day.
@@ -592,7 +592,7 @@ function renderProfilePage() {
   // Display name
   document.getElementById('profile-display-name').textContent = profile.nickname || ('Anonymous#' + address.slice(-4).toUpperCase());
 
-  // Title badge — show loading until real data arrives
+  // Title badge - show loading until real data arrives
   const titleEl = document.getElementById('profile-title-badge');
   if (titleEl) {
     titleEl.textContent = '…';
@@ -614,7 +614,7 @@ function renderProfilePage() {
   // Nickname input
   document.getElementById('profile-nickname-input').value = profile.nickname || '';
 
-  // Stats — show loading state
+  // Stats - show loading state
   document.getElementById('stat-questions').textContent = '…';
   document.getElementById('stat-answers').textContent = '…';
   document.getElementById('stat-upvotes').textContent = '…';
@@ -737,7 +737,7 @@ function renderReputationBlock(reputation, rank, nextRank) {
       </div>
     ` : `
       <div style="font-size:11px;color:${rank.color};text-shadow:0 0 10px ${rank.glow};font-weight:700;letter-spacing:0.08em;">
-        ✦ MAX RANK ACHIEVED — ASCENDED
+        ✦ MAX RANK ACHIEVED - ASCENDED
       </div>
     `}
   `;
@@ -776,7 +776,7 @@ function renderRankProgress(reputation) {
   }).join('');
 }
 
-// Legacy — kept so old calls don't break
+// Legacy - kept so old calls don't break
 function renderTitleProgress(qCount, upvotes) {
   const approxScore = qCount * 40 + upvotes * 10;
   renderRankProgress(approxScore);
@@ -854,7 +854,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     return;
   }
   if (tab === 'answers') {
-    if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No answers yet — go to the Board and share your knowledge!</div>'; return; }
+    if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No answers yet - go to the Board and share your knowledge!</div>'; return; }
     el.innerHTML = myAnswers.map(a => `
       <div class="history-item">
         <div class="history-item-meta">
@@ -868,7 +868,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
       </div>
     `).join('');
   } else {
-    if (!myQuestions.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No questions yet — ask the community something!</div>'; return; }
+    if (!myQuestions.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No questions yet - ask the community something!</div>'; return; }
     el.innerHTML = myQuestions.map(q => `
       <div class="history-item">
         <div class="history-item-meta">
@@ -956,7 +956,7 @@ function removeAvatar() {
 
 // ─── PATCH: показывать никнейм вместо Anonymous#xxxx ─────────
 // Nickname теперь берётся из Worker через alias при POST /answer
-// Override удалён — используется async submitAnswer из app.js
+// Override удалён - используется async submitAnswer из app.js
 
 // ── Load profile from Worker when wallet connects ─────────────
 // Hooks into setWalletConnected to fetch profile from server
@@ -966,7 +966,7 @@ setTimeout(() => {
     const _prev = window.setWalletConnected;
     window.setWalletConnected = function(address) {
       _prev(address);
-      // Load profile from Worker — updates localStorage then re-renders
+      // Load profile from Worker - updates localStorage then re-renders
       loadProfileFromWorker(address).then(data => {
         if (data) {
           if (typeof renderBoard === 'function') renderBoard();
