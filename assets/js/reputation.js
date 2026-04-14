@@ -439,7 +439,8 @@ async function loadStatsData() {
             <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:#66ffaa;">
               ${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '—'}
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;">20% of Treasury</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">REP Rewards Pool balance</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:3px;font-family:monospace;">terra1ty6...x4ce</div>
           </div>
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Your Status</div>
@@ -494,7 +495,7 @@ async function loadStatsData() {
             </div>
           </div>
           <div style="font-size:11px;color:var(--muted);max-width:260px;line-height:1.7;">
-            Distributed to top 20% contributors proportional to 7-day REP x rank multiplier.
+            Full pool distributed to top 20% contributors · proportional to 7-day REP × rank multiplier.
           </div>
         </div>` : `
         <div style="text-align:center;padding:20px;">
@@ -588,7 +589,7 @@ function renderHowItWorksHTML() {
         Weekly Reward Pool
       </div>
       <p style="font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:20px;">
-        Each week, <strong style="color:var(--text);">20% of the Protocol Treasury</strong> is set aside as the reward pool.
+        Each week, <strong style="color:var(--text);">20% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet — and the full balance is paid out to top contributors.
         This pool is distributed to the <strong style="color:var(--text);">top 20% of contributors</strong>
         ranked by their REP earned in the last 7 days. Your share is proportional to your weekly REP
         multiplied by your rank multiplier.
