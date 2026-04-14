@@ -1710,6 +1710,87 @@
   <!-- filled by reputation.js -->
 </div>
 
+<div class="page" id="page-audit" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;">
+
+  <div style="text-align:center;margin-bottom:40px;">
+    <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:16px;padding:10px 24px;margin-bottom:20px;">
+      <span style="font-size:18px;">🔍</span>
+      <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.2em;color:#00FFB0;">WALLET AUDIT</span>
+    </div>
+    <h1 style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#fff;margin:0 0 12px;">Dead Weight Scanner</h1>
+    <p style="color:rgba(255,255,255,0.5);font-size:14px;max-width:500px;margin:0 auto;line-height:1.6;">
+      Scan your wallet for dead tokens, dust and forgotten assets on Terra Classic
+    </p>
+  </div>
+
+  <div id="audit-connect-prompt" style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:20px;margin-bottom:32px;">
+    <div style="font-size:48px;margin-bottom:16px;">🔌</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Connect your wallet to scan</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:13px;">We'll analyze your Terra Classic holdings</div>
+  </div>
+
+  <div id="audit-scan-panel" style="display:none;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <button id="audit-scan-btn" onclick="runWalletAudit()" style="background:linear-gradient(135deg,rgba(0,255,176,0.15),rgba(0,212,255,0.1));border:1px solid rgba(0,255,176,0.4);border-radius:14px;padding:14px 40px;color:#00FFB0;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;cursor:pointer;">
+        🔍 SCAN WALLET
+      </button>
+      <div id="audit-scan-status" style="margin-top:12px;font-size:12px;color:rgba(255,255,255,0.4);min-height:20px;"></div>
+    </div>
+
+    <div id="audit-results" style="display:none;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
+        <div style="background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.2);border-radius:16px;padding:20px;text-align:center;">
+          <div id="audit-dead-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#ff6464;">0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">DEAD TOKENS</div>
+        </div>
+        <div style="background:rgba(255,200,0,0.06);border:1px solid rgba(255,200,0,0.2);border-radius:16px;padding:20px;text-align:center;">
+          <div id="audit-dust-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#ffc840;">0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">DUST TOKENS</div>
+        </div>
+        <div style="background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:16px;padding:20px;text-align:center;">
+          <div id="audit-lunc-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#00FFB0;">0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">LUNC BALANCE</div>
+        </div>
+      </div>
+
+      <div id="audit-dead-section" style="display:none;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ff6464;box-shadow:0 0 8px #ff6464;"></div>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">DEAD / INACTIVE TOKENS</span>
+        </div>
+        <div id="audit-dead-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <div id="audit-dust-section" style="display:none;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ffc840;box-shadow:0 0 8px #ffc840;"></div>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">DUST / SMALL BALANCES</span>
+        </div>
+        <div id="audit-dust-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <div id="audit-healthy-section" style="display:none;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#00FFB0;box-shadow:0 0 8px #00FFB0;"></div>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">ACTIVE ASSETS</span>
+        </div>
+        <div id="audit-healthy-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <div id="audit-recovery-cta" style="display:none;background:linear-gradient(135deg,rgba(123,92,255,0.1),rgba(0,212,255,0.05));border:1px solid rgba(123,92,255,0.3);border-radius:20px;padding:28px;text-align:center;margin-top:32px;">
+        <div style="font-size:32px;margin-bottom:12px;">💎</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Recovery coming soon</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:13px;max-width:400px;margin:0 auto 20px;line-height:1.6;">
+          Turn your dead tokens into LUNC through Oracle Recovery Protocol.
+        </div>
+        <button onclick="joinRecoveryWaitlist()" style="background:rgba(123,92,255,0.2);border:1px solid rgba(123,92,255,0.5);border-radius:12px;padding:12px 32px;color:#c8b0ff;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1em;cursor:pointer;">
+          JOIN WAITLIST
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer style="position:relative;z-index:2;border-top:1px solid rgba(255,255,255,0.06);background:rgba(4,10,20,0.85);backdrop-filter:blur(12px);padding:32px 24px 24px;margin-top:auto;flex-shrink:0;">
   <div style="max-width:960px;margin:0 auto;">
     <!-- Top row -->
@@ -2655,86 +2736,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 });
 </script>
 
-<div class="page" id="page-audit" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;">
 
-  <div style="text-align:center;margin-bottom:40px;">
-    <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:16px;padding:10px 24px;margin-bottom:20px;">
-      <span style="font-size:18px;">🔍</span>
-      <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.2em;color:#00FFB0;">WALLET AUDIT</span>
-    </div>
-    <h1 style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#fff;margin:0 0 12px;">Dead Weight Scanner</h1>
-    <p style="color:rgba(255,255,255,0.5);font-size:14px;max-width:500px;margin:0 auto;line-height:1.6;">
-      Scan your wallet for dead tokens, dust and forgotten assets on Terra Classic
-    </p>
-  </div>
-
-  <div id="audit-connect-prompt" style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:20px;margin-bottom:32px;">
-    <div style="font-size:48px;margin-bottom:16px;">🔌</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Connect your wallet to scan</div>
-    <div style="color:rgba(255,255,255,0.4);font-size:13px;">We'll analyze your Terra Classic holdings</div>
-  </div>
-
-  <div id="audit-scan-panel" style="display:none;">
-    <div style="text-align:center;margin-bottom:32px;">
-      <button id="audit-scan-btn" onclick="runWalletAudit()" style="background:linear-gradient(135deg,rgba(0,255,176,0.15),rgba(0,212,255,0.1));border:1px solid rgba(0,255,176,0.4);border-radius:14px;padding:14px 40px;color:#00FFB0;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;cursor:pointer;">
-        🔍 SCAN WALLET
-      </button>
-      <div id="audit-scan-status" style="margin-top:12px;font-size:12px;color:rgba(255,255,255,0.4);min-height:20px;"></div>
-    </div>
-
-    <div id="audit-results" style="display:none;">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
-        <div style="background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.2);border-radius:16px;padding:20px;text-align:center;">
-          <div id="audit-dead-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#ff6464;">0</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">DEAD TOKENS</div>
-        </div>
-        <div style="background:rgba(255,200,0,0.06);border:1px solid rgba(255,200,0,0.2);border-radius:16px;padding:20px;text-align:center;">
-          <div id="audit-dust-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#ffc840;">0</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">DUST TOKENS</div>
-        </div>
-        <div style="background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:16px;padding:20px;text-align:center;">
-          <div id="audit-lunc-count" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#00FFB0;">0</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;margin-top:4px;">LUNC BALANCE</div>
-        </div>
-      </div>
-
-      <div id="audit-dead-section" style="display:none;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#ff6464;box-shadow:0 0 8px #ff6464;"></div>
-          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">DEAD / INACTIVE TOKENS</span>
-        </div>
-        <div id="audit-dead-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div id="audit-dust-section" style="display:none;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#ffc840;box-shadow:0 0 8px #ffc840;"></div>
-          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">DUST / SMALL BALANCES</span>
-        </div>
-        <div id="audit-dust-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div id="audit-healthy-section" style="display:none;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#00FFB0;box-shadow:0 0 8px #00FFB0;"></div>
-          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.7);">ACTIVE ASSETS</span>
-        </div>
-        <div id="audit-healthy-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div id="audit-recovery-cta" style="display:none;background:linear-gradient(135deg,rgba(123,92,255,0.1),rgba(0,212,255,0.05));border:1px solid rgba(123,92,255,0.3);border-radius:20px;padding:28px;text-align:center;margin-top:32px;">
-        <div style="font-size:32px;margin-bottom:12px;">💎</div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Recovery coming soon</div>
-        <div style="color:rgba(255,255,255,0.5);font-size:13px;max-width:400px;margin:0 auto 20px;line-height:1.6;">
-          Turn your dead tokens into LUNC through Oracle Recovery Protocol.
-        </div>
-        <button onclick="joinRecoveryWaitlist()" style="background:rgba(123,92,255,0.2);border:1px solid rgba(123,92,255,0.5);border-radius:12px;padding:12px 32px;color:#c8b0ff;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1em;cursor:pointer;">
-          JOIN WAITLIST
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
 /* ═══ WALLET AUDIT ═══ */
@@ -2918,9 +2920,17 @@ setTimeout(function(){
     const _p=window.setWalletConnected;
     window.setWalletConnected=function(a){_p(a);updateAuditUI();};
   }
+  // Also patch showPage to update audit UI when audit page opens
+  if (typeof window.showPage==='function'){
+    const _sp=window.showPage;
+    window.showPage=function(name){
+      _sp.apply(this,arguments);
+      if(name==='audit') setTimeout(updateAuditUI,50);
+    };
+  }
   updateAuditUI();
-},600);
-document.addEventListener('DOMContentLoaded',function(){setTimeout(updateAuditUI,800);});
+},700);
+document.addEventListener('DOMContentLoaded',function(){setTimeout(updateAuditUI,900);});
 </script>
 </body>
 </html>
