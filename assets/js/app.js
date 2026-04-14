@@ -1492,8 +1492,10 @@ async function loadVotesFromWorker() {
     if (!res.ok) return;
     const workerVotes = await res.json();
     if (!Array.isArray(workerVotes)) return;
-    // Merge: worker votes take priority (they have real vote counts)
+    const deleted = getDeletedVotes();
+    // Merge: worker votes take priority, skip deleted
     for (const wv of workerVotes) {
+      if (deleted.includes(wv.id)) continue; // skip deleted
       const existingIdx = VOTES_DATA.findIndex(v => v.id === wv.id);
       if (existingIdx > -1) {
         VOTES_DATA[existingIdx] = { ...VOTES_DATA[existingIdx], ...wv, userVoted: VOTES_DATA[existingIdx].userVoted };
@@ -1514,6 +1516,18 @@ const VOTES_DATA = [
   generateMonthlyLiquidityVote(),
   { id: 'v3', type: 'special', status: 'active', title: 'Terra Oracle — Reward Distribution Model', desc: 'Should we switch from "winner takes all" to top-3 distribution for Q&A rewards?', source: 'Proposal by community member · Terra Oracle governance', timer: '6d 2h remaining', totalVotes: 156, quorum: 100, options: [{ label: '70% winner + 30% voters', votes: 89 }, { label: 'Top-3 split (60/25/15)', votes: 41 }, { label: 'Keep current model', votes: 26 }], userVoted: null }
 ];
+
+// Filter out locally deleted static votes
+const DELETED_VOTES_KEY = 'admin_deleted_votes';
+function getDeletedVotes() { try { return JSON.parse(localStorage.getItem(DELETED_VOTES_KEY)||'[]'); } catch(e) { return []; } }
+function markVoteDeleted(id) { const d=getDeletedVotes(); if(!d.includes(id)){d.push(id);localStorage.setItem(DELETED_VOTES_KEY,JSON.stringify(d));} }
+(function pruneDeletedVotes() {
+  const deleted = getDeletedVotes();
+  if (!deleted.length) return;
+  for (let i = VOTES_DATA.length - 1; i >= 0; i--) {
+    if (deleted.includes(VOTES_DATA[i].id)) VOTES_DATA.splice(i, 1);
+  }
+})();
 
 let currentVoteFilter = 'all';
 function filterVotes(type) { currentVoteFilter = type; document.querySelectorAll('.vote-tab').forEach(t => t.classList.remove('active')); event.target.classList.add('active'); renderVotes(); }
@@ -1725,11 +1739,13 @@ window.adminCreateVote = async function() {
 
 window.adminDeleteVote = async function(voteId) {
   if (!confirm('Delete this vote permanently?')) return;
-  // Always remove from local VOTES_DATA immediately
+  // Mark as deleted in localStorage (survives page refresh for static votes)
+  markVoteDeleted(voteId);
+  // Remove from local VOTES_DATA immediately
   const idx = VOTES_DATA.findIndex(v => v.id === voteId);
   if (idx > -1) VOTES_DATA.splice(idx, 1);
   updateAdminPanel(); renderVotes();
-  // Also remove from Worker if it's a custom vote
+  // Also remove from Worker
   try {
     await fetch(`${WORKER_URL}/votes`, {
       method: 'DELETE',
