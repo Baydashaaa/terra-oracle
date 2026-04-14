@@ -171,7 +171,7 @@ async function loadLeaderboard() {
     }).sort((a, b) => b.score - a.score).slice(0, 50);
 
     if (!ranked.length) {
-      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">No contributors yet — be the first!</div>';
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">No contributors yet - be the first!</div>';
       return;
     }
 
@@ -419,7 +419,7 @@ async function loadStatsData() {
           <div style="padding:14px 16px;background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.2);
             border-radius:10px;margin-bottom:16px;">
             <div style="font-size:10px;color:rgba(255,165,0,0.9);font-weight:700;margin-bottom:6px;
-              letter-spacing:0.1em;text-transform:uppercase;">Pool Inactive — Rollover Mode</div>
+              letter-spacing:0.1em;text-transform:uppercase;">Pool Inactive - Rollover Mode</div>
             <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
               Weekly rewards activate when <strong style="color:var(--text);">${MIN_CONTRIBUTORS} contributors</strong>
               are active. The pool accumulates and carries over each week until the threshold is reached.
@@ -437,7 +437,7 @@ async function loadStatsData() {
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Weekly Pool</div>
             <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:#66ffaa;">
-              ${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '—'}
+              ${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '-'}
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:4px;">REP Rewards Pool balance</div>
             <div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:3px;font-family:monospace;">terra1ty6...x4ce</div>
@@ -481,14 +481,14 @@ async function loadStatsData() {
           <div style="font-size:13px;color:var(--muted);line-height:1.7;">
             The pool is accumulating. Rewards will be distributed once
             <strong style="color:var(--text);">${MIN_CONTRIBUTORS} active contributors</strong> are reached.
-            Current pool: <strong style="color:#66ffaa;">${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '—'}</strong>
+            Current pool: <strong style="color:#66ffaa;">${poolLunc > 0 ? poolLunc.toLocaleString() + ' LUNC' : '-'}</strong>
           </div>
         </div>` : inTop20 ? `
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
           <div>
             <div style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:800;color:#ffd700;
               text-shadow:0 0 16px rgba(255,215,0,0.4);">
-              ~${estimatedLunc > 0 ? estimatedLunc.toLocaleString() : '—'} LUNC
+              ~${estimatedLunc > 0 ? estimatedLunc.toLocaleString() : '-'} LUNC
             </div>
             <div style="font-size:11px;color:var(--muted);margin-top:4px;">
               ${myWeeklyScore.toLocaleString()} weekly REP x${rank?.multiplier || 1} multiplier
@@ -503,7 +503,7 @@ async function loadStatsData() {
             You need to be in the <strong style="color:var(--text);">top 20%</strong> to earn weekly rewards
           </div>
           <div style="font-size:12px;color:var(--muted);">
-            Current rank: <strong style="color:var(--text);">#${myPosition || '—'}</strong> of ${totalContributors} ·
+            Current rank: <strong style="color:var(--text);">#${myPosition || '-'}</strong> of ${totalContributors} ·
             Top <strong style="color:var(--text);">${top20pct}</strong> qualify this week
           </div>
         </div>`;
@@ -525,7 +525,7 @@ function renderHowItWorksHTML() {
       </div>
       <p style="font-size:13px;color:var(--text);line-height:1.85;margin-bottom:20px;">
         Oracle Reputation (REP) measures your contribution to the Terra Oracle protocol.
-        It is <strong style="color:var(--accent);">not a token or balance</strong> —
+        It is <strong style="color:var(--accent);">not a token or balance</strong> -
         it reflects your <strong style="color:var(--text);">activity, quality, and engagement</strong>
         across all protocol modules. REP accumulates over time and unlocks ranks, fee discounts, and weekly rewards.
       </p>
@@ -537,7 +537,7 @@ function renderHowItWorksHTML() {
           ['Ask a question',    '+40 REP per question', 'var(--accent)'],
           ['Answer a question', '+15 REP per answer',   '#66ffaa'      ],
           ['Upvote received',   '+10 REP per upvote',   '#ffd700'      ],
-          ['Chat message',      '+2 REP — first 20/day','#c084fc'      ],
+          ['Chat message',      '+2 REP - first 20/day','#c084fc'      ],
           ['Oracle Draw entry', '+10 REP per entry',    '#ff8844'      ],
         ].map(([label, rep, color]) => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
@@ -589,7 +589,7 @@ function renderHowItWorksHTML() {
         Weekly Reward Pool
       </div>
       <p style="font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:20px;">
-        Each week, <strong style="color:var(--text);">20% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet — and the full balance is paid out to top contributors.
+        Each week, <strong style="color:var(--text);">20% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet - and the full balance is paid out to top contributors.
         This pool is distributed to the <strong style="color:var(--text);">top 20% of contributors</strong>
         ranked by their REP earned in the last 7 days. Your share is proportional to your weekly REP
         multiplied by your rank multiplier.
