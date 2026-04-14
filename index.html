@@ -2745,7 +2745,19 @@ const DUST_ULUNC = 1000000;
 const KNOWN_HEALTHY = new Set(['uluna','uusd','ukrw','usdr','umnt','ueur','ucny','ujpy','ugbp','uinr','ucad','uchf','uhkd','usgd','uthb','usek','unok','udkk','uidr','uphp','umyr','utwd']);
 
 function _getAuditAddr() {
-  return window.globalWalletAddress || window.connectedAddress || null;
+  if (window.globalWalletAddress) return window.globalWalletAddress;
+  if (window.connectedAddress) return window.connectedAddress;
+  // Check wallet-connected-addr element (contains full address)
+  const addrEl = document.getElementById('wallet-connected-addr');
+  if (addrEl && addrEl.textContent && addrEl.textContent.startsWith('terra1')) {
+    return addrEl.textContent.trim();
+  }
+  // Check localStorage
+  try {
+    const s = JSON.parse(localStorage.getItem('wallet_session')||'null');
+    if (s && s.address && s.expires > Date.now()) return s.address;
+  } catch(e) {}
+  return null;
 }
 
 async function fetchCW20Info(addr) {
@@ -2907,30 +2919,82 @@ function joinRecoveryWaitlist() {
 }
 
 function updateAuditUI() {
-  const addr = _getAuditAddr();
+  // Try all possible sources for wallet address
+  let addr = window.globalWalletAddress || window.connectedAddress || null;
+  
+  // Fallback: check wallet-connected-panel visibility (most reliable)
+  if (!addr) {
+    const panel = document.getElementById('wallet-connected-panel');
+    const addrEl = document.getElementById('wallet-connected-addr');
+    if (panel && panel.style.display !== 'none' && addrEl && addrEl.textContent) {
+      addr = addrEl.textContent.trim();
+    }
+  }
+  
+  // Fallback: check wallet-btn-label (shows short address when connected)
+  if (!addr) {
+    const label = document.getElementById('wallet-btn-label');
+    if (label && label.textContent && label.textContent !== 'Connect' && label.textContent.includes('...')) {
+      addr = label.textContent; // short form, still truthy
+    }
+  }
+
+  // Fallback: check localStorage session
+  if (!addr) {
+    try {
+      const s = JSON.parse(localStorage.getItem('wallet_session')||'null');
+      if (s && s.address && s.expires > Date.now()) addr = s.address;
+    } catch(e) {}
+  }
+
   const prompt = document.getElementById('audit-connect-prompt');
-  const panel = document.getElementById('audit-scan-panel');
-  if (!prompt||!panel) return;
-  if (addr){prompt.style.display='none';panel.style.display='block';}
-  else{prompt.style.display='block';panel.style.display='none';}
+  const scanPanel = document.getElementById('audit-scan-panel');
+  if (!prompt || !scanPanel) return;
+  if (addr) {
+    prompt.style.display = 'none';
+    scanPanel.style.display = 'block';
+  } else {
+    prompt.style.display = 'block';
+    scanPanel.style.display = 'none';
+  }
 }
 
-setTimeout(function(){
-  if (typeof window.setWalletConnected==='function'){
-    const _p=window.setWalletConnected;
-    window.setWalletConnected=function(a){_p(a);updateAuditUI();};
+// Watch for audit page becoming active via MutationObserver
+(function() {
+  function setupAuditObserver() {
+    const auditPage = document.getElementById('page-audit');
+    if (!auditPage) { setTimeout(setupAuditObserver, 200); return; }
+    
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.attributeName === 'class' && auditPage.classList.contains('active')) {
+          setTimeout(updateAuditUI, 50);
+        }
+      });
+    });
+    observer.observe(auditPage, { attributes: true, attributeFilter: ['class'] });
+    
+    // Also patch setWalletConnected
+    setTimeout(function() {
+      if (typeof window.setWalletConnected === 'function') {
+        const _p = window.setWalletConnected;
+        window.setWalletConnected = function(a) {
+          _p(a);
+          updateAuditUI();
+        };
+      }
+    }, 500);
+    
+    // Initial check
+    updateAuditUI();
   }
-  // Also patch showPage to update audit UI when audit page opens
-  if (typeof window.showPage==='function'){
-    const _sp=window.showPage;
-    window.showPage=function(name){
-      _sp.apply(this,arguments);
-      if(name==='audit') setTimeout(updateAuditUI,50);
-    };
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupAuditObserver);
+  } else {
+    setupAuditObserver();
   }
-  updateAuditUI();
-},700);
-document.addEventListener('DOMContentLoaded',function(){setTimeout(updateAuditUI,900);});
+})();
 </script>
 </body>
 </html>
