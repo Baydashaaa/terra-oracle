@@ -1125,58 +1125,93 @@
  </div>
  <div id="admin-panel" style="display:none;margin-bottom:28px;">
  <div style="background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:24px;">
- <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
- <span style="font-size:16px;">🛡️</span>
- <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
- <span style="font-size:9px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:10px;padding:2px 8px;letter-spacing:0.1em;">ADMIN ONLY</span>
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+   <span style="font-size:16px;">🛡️</span>
+   <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
+   <span style="font-size:9px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:10px;padding:2px 8px;letter-spacing:0.1em;">ADMIN ONLY</span>
+  </div>
+
+  <!-- Vote Builder -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+   <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:16px;">➕ Create New Vote</div>
+
+   <!-- Title -->
+   <div style="margin-bottom:12px;">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">TITLE</div>
+    <input id="av-title" type="text" placeholder="Vote title..." maxlength="120"
+     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
+   </div>
+
+   <!-- Description -->
+   <div style="margin-bottom:12px;">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">DESCRIPTION</div>
+    <textarea id="av-desc" placeholder="What is this vote about?" maxlength="300" rows="2"
+     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:vertical;"></textarea>
+   </div>
+
+   <!-- Type + Duration -->
+   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+    <div>
+     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">TYPE</div>
+     <select id="av-type"
+      style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
+      <option value="weekly">📅 Weekly</option>
+      <option value="monthly">🗓 Monthly</option>
+      <option value="special">⚡ Special</option>
+     </select>
+    </div>
+    <div>
+     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">DURATION (DAYS)</div>
+     <input id="av-days" type="number" value="7" min="1" max="30"
+      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
+    </div>
+    <div>
+     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">QUORUM</div>
+     <input id="av-quorum" type="number" value="100" min="1" max="9999"
+      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
+    </div>
+   </div>
+
+   <!-- Source note -->
+   <div style="margin-bottom:12px;">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">SOURCE / NOTE (optional)</div>
+    <input id="av-source" type="text" placeholder="e.g. Based on community discussion..." maxlength="150"
+     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
+   </div>
+
+   <!-- Options -->
+   <div style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+     <div style="font-size:11px;color:var(--muted);letter-spacing:0.08em;">OPTIONS (min 2, max 8)</div>
+     <button onclick="adminAddOption()" style="background:rgba(123,92,255,0.1);border:1px solid rgba(123,92,255,0.3);border-radius:6px;color:#c8b0ff;font-size:11px;font-weight:600;padding:4px 12px;cursor:pointer;">+ Add option</button>
+    </div>
+    <div id="av-options-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+   </div>
+
+   <!-- Preview -->
+   <div id="av-preview" style="display:none;background:rgba(0,255,176,0.03);border:1px solid rgba(0,255,176,0.15);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);">
+    <div style="color:var(--green);font-weight:700;margin-bottom:6px;">Preview:</div>
+    <div id="av-preview-text"></div>
+   </div>
+
+   <!-- Buttons -->
+   <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button onclick="adminPreviewVote()" style="background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.3);border-radius:8px;color:#7eb8ff;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;padding:10px 20px;cursor:pointer;letter-spacing:0.06em;">👁 PREVIEW</button>
+    <button onclick="adminCreateVote()" style="background:rgba(102,255,170,0.1);border:1px solid rgba(102,255,170,0.3);border-radius:8px;color:var(--green);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:0.06em;">✅ CREATE & START</button>
+    <button onclick="adminResetForm()" style="background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;padding:10px 16px;cursor:pointer;">✕ Clear</button>
+   </div>
+  </div>
+
+  <!-- Active votes management -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;">
+   <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">⚡ Manage Active Votes</div>
+   <div id="admin-other-votes"></div>
+  </div>
+
  </div>
- <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;">
- <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
- <div>
- <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">🗓 Monthly Liquidity Vote</div>
- <div style="font-size:11px;color:var(--muted);" id="admin-monthly-status">Status: checking...</div>
- </div>
- <div style="display:flex;gap:8px;">
- <button onclick="adminStartVote('monthly-liquidity')"
- id="admin-start-btn"
- style="background:rgba(102,255,170,0.1);border:1px solid rgba(102,255,170,0.3);color:var(--green);
- font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
- padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
- ▶ START
- </button>
- <button onclick="adminStopVote('monthly-liquidity')"
- id="admin-stop-btn"
- style="background:rgba(255,60,60,0.08);border:1px solid rgba(255,60,60,0.25);color:#ff6464;
- font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
- padding:9px 18px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
- ■ STOP
- </button>
- </div>
- </div>
- <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
- <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Override pairs for this vote:</div>
- <div style="display:flex;gap:6px;flex-wrap:wrap;" id="admin-pairs-wrap">
- <input type="text" id="admin-pair-1" placeholder="LUNC/USDT" value="LUNC/USDT"
- style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
- font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
- <input type="text" id="admin-pair-2" placeholder="LUNC/USTC" value="LUNC/USTC"
- style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
- font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
- <input type="text" id="admin-pair-3" placeholder="LUNC/ATOM" value="LUNC/ATOM"
- style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
- font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
- <input type="text" id="admin-pair-4" placeholder="LUNC/BTC" value="LUNC/BTC"
- style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);
- font-family:'Exo 2',sans-serif;font-size:11px;padding:6px 10px;width:110px;outline:none;">
- </div>
- </div>
- </div>
- <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;">
- <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">⚡ Other Votes</div>
- <div id="admin-other-votes"></div>
- </div>
- </div>
- </div>
+</div>
  <div id="votes-list"></div>
 </div>
 <div class="page" id="page-treasury" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;flex-grow:1;">
