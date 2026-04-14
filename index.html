@@ -2571,25 +2571,31 @@ window.handleMobileNavWalletBtn = function() {
 // mobileConnectWallet — умный коннект для мобильных кнопок
 function mobileConnectWallet(type) {
   if (type === 'keplr-mobile') {
-    // В браузере Keplr — window.keplr уже есть
     if (window.keplr) {
       if (typeof connectWallet === 'function') connectWallet('keplr-ext');
       return;
     }
-    // Обычный браузер — deep link
+    if (window.galaxyStation || window.station) {
+      setTimeout(function(){ alert('Please open this site in Keplr browser to connect with Keplr wallet.'); }, 300);
+      return;
+    }
     window.location.href = 'keplr://';
     return;
   }
   if (type === 'galaxy-mobile') {
-    if (window.station || window.cosmostation) {
+    if (window.galaxyStation || window.station) {
       if (typeof connectWallet === 'function') connectWallet('galaxy');
+      return;
+    }
+    if (window.keplr) {
+      setTimeout(function(){ alert('Please open this site in Galaxy Station browser to connect with Galaxy wallet.'); }, 300);
       return;
     }
     window.location.href = 'galaxystation://';
     return;
   }
   if (type === 'luncdash') {
-    window.location.href = 'luncdash://';
+    setTimeout(function() { openLuncdashInput(); }, 300);
     return;
   }
 }
@@ -2597,6 +2603,50 @@ function mobileConnectWallet(type) {
 // Запускаем проверку после загрузки
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(updateMobileExtSection, 500);
+});
+</script>
+
+<!-- LUNCDASH INPUT MODAL -->
+<div id="luncdash-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;">
+  <div style="background:#0d1117;border:1px solid rgba(232,200,64,0.25);border-radius:20px;padding:28px 24px;width:calc(100% - 32px);max-width:360px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#f4c842;">Luncdash</div>
+      <button onclick="closeLuncdashModal()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;">Enter your Terra Classic wallet address</div>
+    <input id="luncdash-addr-input" type="text" placeholder="terra1..." style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(232,200,64,0.3);border-radius:12px;padding:12px 14px;color:#fff;font-size:13px;font-family:monospace;margin-bottom:12px;outline:none;">
+    <button onclick="confirmLuncdashAddr()" style="width:100%;background:rgba(232,200,64,0.15);border:1px solid rgba(232,200,64,0.4);border-radius:12px;padding:13px;color:#f4c842;font-size:14px;font-weight:600;cursor:pointer;">Connect</button>
+  </div>
+</div>
+
+<script>
+function openLuncdashInput() {
+  const modal = document.getElementById('luncdash-modal');
+  const input = document.getElementById('luncdash-addr-input');
+  if (modal) modal.style.display = 'flex';
+  if (input) { input.value = ''; setTimeout(function(){ input.focus(); }, 100); }
+}
+function closeLuncdashModal() {
+  const modal = document.getElementById('luncdash-modal');
+  if (modal) modal.style.display = 'none';
+}
+function confirmLuncdashAddr() {
+  const input = document.getElementById('luncdash-addr-input');
+  const addr = input ? input.value.trim() : '';
+  if (addr.startsWith('terra1') && addr.length >= 40) {
+    closeLuncdashModal();
+    if (typeof window.setWalletConnected === 'function') {
+      window.setWalletConnected(addr);
+    } else if (typeof connectWallet === 'function') {
+      connectWallet('luncdash');
+    }
+  } else {
+    input.style.borderColor = 'rgba(255,80,80,0.6)';
+    setTimeout(function(){ input.style.borderColor = 'rgba(232,200,64,0.3)'; }, 1500);
+  }
+}
+document.getElementById('luncdash-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeLuncdashModal();
 });
 </script>
 </body>
