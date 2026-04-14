@@ -168,7 +168,7 @@ function showPage(name, e, skipHistory) {
   if (pg) pg.classList.add('active');
   if (e && e.target) e.target.classList.add('active');
   if (name === 'board') { if (!_questionsLoaded) loadQuestionsFromWorker(); else renderBoard(); }
-  if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); }
+  if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); loadVotesFromWorker(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
   if (!skipHistory && history.pushState) {
@@ -1482,6 +1482,33 @@ function generateMonthlyLiquidityVote() {
   };
 }
 
+
+/* ═══ WORKER VOTES ═══ */
+
+// Load community votes from Cloudflare Worker (visible to ALL users)
+async function loadVotesFromWorker() {
+  try {
+    const res = await fetch(`${WORKER_URL}/votes`, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return;
+    const workerVotes = await res.json();
+    if (!Array.isArray(workerVotes)) return;
+    // Merge: worker votes take priority (they have real vote counts)
+    for (const wv of workerVotes) {
+      const existingIdx = VOTES_DATA.findIndex(v => v.id === wv.id);
+      if (existingIdx > -1) {
+        VOTES_DATA[existingIdx] = { ...VOTES_DATA[existingIdx], ...wv, userVoted: VOTES_DATA[existingIdx].userVoted };
+      } else {
+        VOTES_DATA.unshift(wv);
+      }
+    }
+    applyStoredVotes();
+    renderVotes();
+    if (typeof updateAdminPanel === 'function') updateAdminPanel();
+  } catch(e) {
+    console.warn('Could not load votes from worker:', e.message);
+  }
+}
+
 const VOTES_DATA = [
   { id: 'v1', type: 'weekly', status: 'active', title: 'Protocol Development Priority — Week 11', desc: 'What should the development team focus on this week?', source: 'Based on community chat discussions', timer: '3d 14h remaining', totalVotes: 234, quorum: 100, options: [{ label: 'SDK 0.53 upgrade testing & QA', votes: 112 }, { label: 'MM 2.0 activation preparation', votes: 78 }, { label: 'USTC re-peg research', votes: 44 }], userVoted: null },
   generateMonthlyLiquidityVote(),
@@ -1535,14 +1562,39 @@ function applyVoteStates() {
   }
 }
 
-window.adminStartVote = function(voteId) {
-  const vote = VOTES_DATA.find(v => v.id === voteId); if (!vote) return;
-  const pairs = voteId === 'monthly-liquidity' ? [document.getElementById('admin-pair-1')?.value||'LUNC/USDT',document.getElementById('admin-pair-2')?.value||'LUNC/USTC',document.getElementById('admin-pair-3')?.value||'LUNC/ATOM',document.getElementById('admin-pair-4')?.value||'LUNC/BTC'].filter(Boolean) : null;
-  const state = { status: 'active', startedAt: Date.now(), stoppedAt: null };
-  if (pairs) state.pairs = pairs;
-  saveVoteState(voteId, state); applyVoteStates(); updateAdminPanel(); applyStoredVotes(); renderVotes(); showAdminToast('▶ Vote started!', 'green');
+window.adminStartVote = async function(voteId) {
+  try {
+    await fetch(`${WORKER_URL}/votes/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId, action: 'start' }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadVotesFromWorker();
+    showAdminToast('▶ Vote started!', 'green');
+  } catch(e) {
+    const vote = VOTES_DATA.find(v => v.id === voteId); if (!vote) return;
+    saveVoteState(voteId, { status: 'active', startedAt: Date.now() });
+    applyVoteStates(); updateAdminPanel(); renderVotes();
+    showAdminToast('▶ Started (offline)', 'green');
+  }
 }
-window.adminStopVote = function(voteId) { saveVoteState(voteId, { status: 'stopped', stoppedAt: Date.now() }); applyVoteStates(); updateAdminPanel(); renderVotes(); showAdminToast('■ Vote stopped', 'red'); }
+window.adminStopVote = async function(voteId) {
+  try {
+    await fetch(`${WORKER_URL}/votes/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId, action: 'stop' }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadVotesFromWorker();
+    showAdminToast('■ Vote stopped', 'red');
+  } catch(e) {
+    saveVoteState(voteId, { status: 'stopped', stoppedAt: Date.now() });
+    applyVoteStates(); updateAdminPanel(); renderVotes();
+    showAdminToast('■ Stopped (offline)', 'red');
+  }
+}
 window.adminToggleVote = function(voteId, newStatus) { if (newStatus === 'active') adminStartVote(voteId); else adminStopVote(voteId); }
 
 function updateAdminPanel() {
@@ -1557,6 +1609,62 @@ function updateAdminPanel() {
     else { otherEl.innerHTML = others.map(v => { const s=states[v.id]?.status||v.status; const icons={active:'🟢',stopped:'🔴',upcoming:'🟡',closed:'⚫'}; return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><div><span style="font-size:12px;color:var(--text);">${v.title}</span><span style="font-size:10px;color:var(--muted);margin-left:8px;">${icons[s]||'⚪'} ${(s||'unknown').toUpperCase()}</span></div><div style="display:flex;gap:6px;"><button onclick="adminToggleVote('${v.id}','active')" style="font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">▶</button><button onclick="adminToggleVote('${v.id}','stopped')" style="font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid rgba(255,60,60,0.25);background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">■</button></div></div>`; }).join(''); }
   }
 }
+
+
+window.adminCreateVote = async function() {
+  const title = document.getElementById('av-title')?.value.trim();
+  const desc = document.getElementById('av-desc')?.value.trim();
+  const type = document.getElementById('av-type')?.value || 'weekly';
+  const days = parseInt(document.getElementById('av-days')?.value || '7');
+  const quorum = parseInt(document.getElementById('av-quorum')?.value || '100');
+  const source = document.getElementById('av-source')?.value.trim() || 'Admin proposal';
+  const opts = typeof getAdminOptions === 'function' ? getAdminOptions() : [];
+
+  if (!title) { showAdminToast('Enter a title', 'red'); return; }
+  if (opts.length < 2) { showAdminToast('Add at least 2 options', 'red'); return; }
+  if (!globalWalletAddress || globalWalletAddress !== ADMIN_WALLET) { showAdminToast('Admin wallet required', 'red'); return; }
+
+  const durationMs = days * 24 * 60 * 60 * 1000;
+  const btn = document.querySelector('[onclick="adminCreateVote()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+
+  try {
+    const res = await fetch(`${WORKER_URL}/votes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ title, desc, type, durationMs, quorum, source, options: opts }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAdminToast('❌ ' + (data.error || 'Error'), 'red'); return; }
+    if (typeof adminResetForm === 'function') adminResetForm();
+    showAdminToast('✅ Vote created for all users!', 'green');
+    await loadVotesFromWorker();
+  } catch(e) {
+    showAdminToast('❌ Network error: ' + e.message, 'red');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ CREATE & START'; }
+  }
+};
+
+window.adminDeleteVote = async function(voteId) {
+  if (!confirm('Delete this vote permanently?')) return;
+  try {
+    await fetch(`${WORKER_URL}/votes`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadVotesFromWorker();
+    showAdminToast('🗑 Vote deleted', 'red');
+  } catch(e) {
+    const idx = VOTES_DATA.findIndex(v => v.id === voteId);
+    if (idx > -1) VOTES_DATA.splice(idx, 1);
+    updateAdminPanel(); renderVotes();
+    showAdminToast('🗑 Deleted (offline)', 'red');
+  }
+};
 
 function showAdminToast(msg, color) {
   const toast = document.createElement('div');
@@ -1576,10 +1684,18 @@ function castVote(voteId, optionIdx) {
   const vote = VOTES_DATA.find(v => v.id === voteId);
   if (!vote || vote.userVoted !== null) return;
   if (vote.status === 'upcoming') { alert('Voting is not open yet! Check back on the 20th.'); return; }
+  // Optimistic update
   vote.options[optionIdx].votes++; vote.totalVotes++; vote.userVoted = optionIdx;
   saveVoteToStorage(voteId, optionIdx);
   if (vote.isMonthlyLiquidity && vote.voteKey) { try { localStorage.setItem(vote.voteKey, JSON.stringify({ totalVotes: vote.totalVotes, options: vote.options.map(o => o.votes) })); } catch(e) {} }
   renderVotes();
+  // Persist to Worker for server-side count
+  fetch(`${WORKER_URL}/votes/cast`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voteId, optionIdx, wallet: globalWalletAddress }),
+    signal: AbortSignal.timeout(6000),
+  }).catch(() => {});
 }
 
 
