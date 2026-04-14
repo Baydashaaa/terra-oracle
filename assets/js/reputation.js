@@ -401,13 +401,14 @@ async function loadStatsData() {
     const inTop20           = myPosition > 0 && myPosition <= top20pct;
     const poolActive        = totalContributors >= MIN_CONTRIBUTORS;
 
-    // Fetch treasury balance
+    // Fetch REP Rewards wallet balance directly (already 20% of treasury)
+    const REP_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
     let poolLunc = 0;
     try {
-      const tRes  = await fetch('https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/balances/terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt');
+      const tRes  = await fetch(`https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/balances/${REP_REWARDS_WALLET}`);
       const tData = await tRes.json();
       const uluna = parseInt(tData.balances?.find(b => b.denom === 'uluna')?.amount || '0');
-      poolLunc    = Math.round((uluna / 1_000_000) * 0.20);
+      poolLunc    = Math.round(uluna / 1_000_000);
     } catch(e) {}
 
     // Pool block
