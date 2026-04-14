@@ -74,57 +74,113 @@ async function tLoadRecentTxs(retries = 5) {
     return;
   }
   el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Loading transactions...</div>';
-  try {
-    const url = `${T_LCD[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${T_WALLETS.treasury}%27&pagination.limit=8&order_by=2`;
+
+  // Helper: fetch txs for one wallet and parse into unified rows
+  async function fetchTxsFor(wallet, limit) {
+    const url = `${T_LCD[0]}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${wallet}%27&pagination.limit=${limit}&order_by=2`;
     const r = await fetch(url);
-    if (!r.ok) throw new Error();
+    if (!r.ok) return [];
     const data = await r.json();
-    // LCD v1beta1: txs[] = bodies, tx_responses[] = metadata (hash, timestamp)
     const txBodies    = data.txs || [];
     const txResponses = data.tx_responses || [];
+    const results = [];
     const count = Math.max(txBodies.length, txResponses.length);
-    if (!count) {
-      el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">No transactions yet</div>';
-      return;
-    }
-    const rows = [];
+
+    const CHAT_AMT = 5000 * 1e6;
+    const QA_WEEKLY_AMT = 100000 * 1e6; // Q&A → Weekly Pool
+    const QA_TREASURY_AMT = 100000 * 1e6; // Q&A → Treasury
+    const DRAW_NFT_MIN = 24750 * 1e6; // ~25k LUNC (Common NFT with tax)
+    const TOL = 0.05;
+
     for (let i = 0; i < count; i++) {
       const txBody = txBodies[i];
       const txMeta = txResponses[i];
-      const ts   = txMeta?.timestamp ? new Date(txMeta.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + new Date(txMeta.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+      if (!txMeta) continue;
+
+      const tsRaw = txMeta.timestamp ? new Date(txMeta.timestamp) : null;
+      const ts = tsRaw
+        ? tsRaw.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + tsRaw.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+        : '';
+      const tsMs = tsRaw ? tsRaw.getTime() : 0;
+      const hash = txMeta.txhash || '';
       const memo = txBody?.body?.memo || '';
-      const hash = txMeta?.txhash || '';
       const msgs = txBody?.body?.messages || [];
-      let amount = '';
+
       let rawUluna = 0;
       for (const msg of msgs) {
         const coins = msg.amount || [];
         const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
-        if (lunc) { rawUluna = parseInt(lunc.amount); amount = tFmt(rawUluna); break; }
+        if (lunc) { rawUluna = parseInt(lunc.amount); break; }
       }
-      // Label by amount instead of raw memo
-      const CHAT_AMT = 5000 * 1e6;
-      const QA_AMT   = 100000 * 1e6;
-      const TOL = 0.02;
-      let label = memo || 'Transfer';
-      if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL)) label = '💬 Chat';
-      else if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL)) label = '❓ Q&A — Treasury';
-      rows.push(`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
+      if (!rawUluna) continue;
+
+      // Classify by destination wallet + amount
+      let label;
+      if (wallet === T_WALLETS.treasury) {
+        if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
+          label = 'Chat';
+        else if (rawUluna >= QA_TREASURY_AMT*(1-TOL) && rawUluna <= QA_TREASURY_AMT*(1+TOL))
+          label = 'Q&A — Treasury';
+        else if (memo && memo.toLowerCase().includes('daily'))
+          label = 'Oracle Draw — Daily (10%)';
+        else if (memo && memo.toLowerCase().includes('weekly'))
+          label = 'Oracle Draw — Weekly (10%)';
+        else
+          label = memo || 'Transfer';
+      } else if (wallet === T_WALLETS.weekly) {
+        if (rawUluna >= QA_WEEKLY_AMT*(1-TOL) && rawUluna <= QA_WEEKLY_AMT*(1+TOL))
+          label = 'Q&A — Weekly Pool';
+        else if (rawUluna >= DRAW_NFT_MIN)
+          label = 'Oracle Draw — Weekly NFT';
+        else
+          label = memo || 'Transfer';
+      } else if (wallet === T_WALLETS.daily) {
+        if (rawUluna >= DRAW_NFT_MIN)
+          label = 'Oracle Draw — Daily NFT';
+        else
+          label = memo || 'Transfer';
+      } else {
+        label = memo || 'Transfer';
+      }
+
+      results.push({ label, amount: tFmt(rawUluna), hash, ts, tsMs });
+    }
+    return results;
+  }
+
+  try {
+    // Fetch from Treasury, Weekly Pool and Daily Pool in parallel
+    const [treasuryTxs, weeklyTxs, dailyTxs] = await Promise.all([
+      fetchTxsFor(T_WALLETS.treasury, 8),
+      fetchTxsFor(T_WALLETS.weekly, 8),
+      fetchTxsFor(T_WALLETS.daily, 8),
+    ]);
+
+    // Merge and sort by time descending, show latest 10
+    const allTxs = [...treasuryTxs, ...weeklyTxs, ...dailyTxs]
+      .sort((a, b) => b.tsMs - a.tsMs)
+      .slice(0, 10);
+
+    if (!allTxs.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">No transactions yet</div>';
+      return;
+    }
+
+    el.innerHTML = allTxs.map(tx => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
-          <div style="font-size:10px;color:var(--muted);">${ts}</div>
+          <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tx.label}</div>
+          <div style="font-size:10px;color:var(--muted);">${tx.ts}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-          ${amount?'<span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:Rajdhani,sans-serif;">+'+amount+'</span>':''}
-          <a href="https://finder.terraclassic.community/columbus-5/tx/${hash}" target="_blank"
+          <span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:Rajdhani,sans-serif;">+${tx.amount}</span>
+          <a href="https://finder.terraclassic.community/columbus-5/tx/${tx.hash}" target="_blank"
             style="font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
-            🔗 ${hash.slice(0,8)}...</a>
+            🔗 ${tx.hash.slice(0,8)}...</a>
         </div>
-      </div>`);
-    }
-    el.innerHTML = rows.join('');
+      </div>`).join('');
   } catch(e) {
-    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Could not load transactions</div>';
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Could not load transactions</div>';
   }
 }
 async function loadTreasuryData() {
