@@ -1417,13 +1417,6 @@ async function renderPoolMilestoneBanner() {
 }
 
 function renderChatPage() {
-  // Fix mobile padding - remove space left by hidden header
-  if (window.matchMedia('(hover:none)').matches || window.innerWidth <= 600) {
-    const page = document.getElementById('page-chat');
-    if (page) page.style.paddingTop = '8px';
-    // Remove margin from hidden header divs
-    document.querySelectorAll('.chat-desktop-header').forEach(el => el.style.marginBottom = '0');
-  }
   if (cachedMsgs.length) renderChatMessages(cachedMsgs);
   loadChatFromChain();
   renderPoolMilestoneBanner();
