@@ -232,12 +232,12 @@
   </script>
 
 <style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}
-/* Chat scrollbar */
+.page#page-chat.active{display:flex;}
 #chat-page-messages::-webkit-scrollbar{width:4px;}
 #chat-page-messages::-webkit-scrollbar-track{background:transparent;}
 #chat-page-messages::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(123,92,255,0.6),rgba(0,212,255,0.4));border-radius:4px;}
 #chat-page-messages::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(123,92,255,0.9),rgba(0,212,255,0.7));}
-.page#page-chat.active{display:flex;}
+#chat-page-messages .chat-page-msg:first-child{margin-top:auto;}
 </style>
 <style>
 @media (max-width: 768px), (hover: none) {
