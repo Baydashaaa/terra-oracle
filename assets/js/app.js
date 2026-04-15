@@ -185,12 +185,13 @@ function showPage(name, e, skipHistory) {
       const navH = nav ? nav.offsetHeight : 60;
       const chatPage = document.getElementById('page-chat');
       if (chatPage) {
+        const chatH = window.innerHeight - navH;
         chatPage.style.position = 'fixed';
         chatPage.style.top = navH + 'px';
         chatPage.style.left = '0';
         chatPage.style.right = '0';
-        chatPage.style.bottom = '0';
-        chatPage.style.height = 'auto';
+        chatPage.style.bottom = 'auto';
+        chatPage.style.height = chatH + 'px';
         chatPage.style.maxWidth = '100%';
         chatPage.style.padding = '8px 12px 0';
         chatPage.style.display = 'flex';
