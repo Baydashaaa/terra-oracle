@@ -1230,3 +1230,10 @@ canvas {
   }
 
 } /* end @media 900px */
+/* ── Mobile chat: remove page padding-bottom ── */
+@media (hover:none), (max-width:900px) {
+  #page-chat.active {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}
