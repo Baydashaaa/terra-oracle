@@ -180,7 +180,11 @@ function showPage(name, e, skipHistory) {
   if (_isMobileChat()) {
     if (name === 'chat') {
       if (footer) footer.style.display = 'none';
-      document.body.style.overflow = 'auto';
+      // Kill min-height so body doesn't stretch beyond visible area
+      document.body.style.minHeight = 'unset';
+      document.body.style.height = '100%';
+      document.documentElement.style.height = '100%';
+      document.body.style.overflow = 'hidden';
       document.body.style.paddingBottom = '0';
       document.documentElement.style.paddingBottom = '0';
       const chatPage = document.getElementById('page-chat');
@@ -205,6 +209,9 @@ function showPage(name, e, skipHistory) {
       if (inputBar) { inputBar.style.padding = '8px 0 0'; inputBar.style.marginBottom = '0'; }
     } else {
       if (footer) footer.style.display = '';
+      document.body.style.minHeight = '';
+      document.body.style.height = '';
+      document.documentElement.style.height = '';
       document.body.style.overflow = '';
       document.body.style.paddingBottom = '';
       document.documentElement.style.paddingBottom = '';
