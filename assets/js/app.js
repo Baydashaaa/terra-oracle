@@ -179,42 +179,23 @@ function showPage(name, e, skipHistory) {
   const footer = document.querySelector('footer');
   if (_isMobileChat()) {
     if (name === 'chat') {
+      document.body.classList.add('mobile-chat-open');
       if (footer) footer.style.display = 'none';
-      // Kill min-height so body doesn't stretch beyond visible area
-      document.body.style.minHeight = 'unset';
-      document.body.style.height = '100%';
-      document.documentElement.style.height = '100%';
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingBottom = '0';
-      document.documentElement.style.paddingBottom = '0';
-      const chatPage = document.getElementById('page-chat');
-      if (chatPage) {
-        chatPage.style.padding = '8px 12px 0';
-        chatPage.style.paddingBottom = '0';
-        chatPage.style.marginBottom = '0';
-      }
       const msgs = document.getElementById('chat-page-messages');
       if (msgs) {
         const nav = document.querySelector('nav');
         const navH = nav ? nav.offsetHeight : 60;
         const inputBar = document.getElementById('chat-input-bar');
-        const inputH = inputBar ? inputBar.offsetHeight : 140;
+        const inputH = inputBar ? inputBar.offsetHeight || 140 : 140;
         const badgeEl = document.querySelector('.chat-mobile-badge');
         const badgeH = badgeEl ? badgeEl.offsetHeight + 8 : 30;
         const available = window.innerHeight - navH - inputH - badgeH - 16;
         msgs.style.minHeight = Math.max(available, 300) + 'px';
         msgs.style.overflowY = 'auto';
       }
-      const inputBar = document.getElementById('chat-input-bar');
-      if (inputBar) { inputBar.style.padding = '8px 0 0'; inputBar.style.marginBottom = '0'; }
     } else {
+      document.body.classList.remove('mobile-chat-open');
       if (footer) footer.style.display = '';
-      document.body.style.minHeight = '';
-      document.body.style.height = '';
-      document.documentElement.style.height = '';
-      document.body.style.overflow = '';
-      document.body.style.paddingBottom = '';
-      document.documentElement.style.paddingBottom = '';
       const chatPage = document.getElementById('page-chat');
       if (chatPage) chatPage.removeAttribute('style');
       const msgs = document.getElementById('chat-page-messages');
