@@ -161,6 +161,10 @@ if (document.readyState === 'loading') {
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────
+function _isMobileChat() {
+  return window.matchMedia('(hover:none)').matches || window.innerWidth <= 900;
+}
+
 function showPage(name, e, skipHistory) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -171,6 +175,22 @@ function showPage(name, e, skipHistory) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); loadVotesFromWorker(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
+  // Mobile chat: hide footer, lock body scroll, set dynamic top
+  const footer = document.querySelector('footer');
+  if (_isMobileChat()) {
+    if (name === 'chat') {
+      if (footer) footer.style.display = 'none';
+      document.body.style.overflow = 'hidden';
+      // Set top offset dynamically based on actual nav height
+      const nav = document.querySelector('nav');
+      const navH = nav ? nav.offsetHeight : 60;
+      const chatPage = document.getElementById('page-chat');
+      if (chatPage) chatPage.style.top = navH + 'px';
+    } else {
+      if (footer) footer.style.display = '';
+      document.body.style.overflow = '';
+    }
+  }
   if (!skipHistory && history.pushState) {
     history.pushState({ page: name }, '', '#' + name);
   }
