@@ -1273,7 +1273,10 @@ function renderChatMessages(msgs) {
       </div>
     </div>`;
   }).join('');
-  // Scroll to latest message
+  // Push messages to bottom when few, scroll to latest
+  const spacer = document.createElement('div');
+  spacer.style.marginTop = 'auto';
+  container.prepend(spacer);
   requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
 
@@ -1418,7 +1421,6 @@ async function renderPoolMilestoneBanner() {
 }
 
 function renderChatPage() {
-  // Show cached messages instantly if available
   if (cachedMsgs.length) renderChatMessages(cachedMsgs);
   loadChatFromChain();
   renderPoolMilestoneBanner();
