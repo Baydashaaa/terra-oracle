@@ -185,14 +185,13 @@ function showPage(name, e, skipHistory) {
       const navH = nav ? nav.offsetHeight : 60;
       const chatPage = document.getElementById('page-chat');
       if (chatPage) {
-        const viewH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const chatH = viewH - navH;
         chatPage.style.position = 'fixed';
         chatPage.style.top = navH + 'px';
         chatPage.style.left = '0';
         chatPage.style.right = '0';
-        chatPage.style.bottom = 'auto';
-        chatPage.style.height = chatH + 'px';
+        chatPage.style.bottom = '0';
+        chatPage.style.height = 'calc(100dvh - ' + navH + 'px)';
+        chatPage.style.maxHeight = 'calc(100dvh - ' + navH + 'px)';
         chatPage.style.maxWidth = '100%';
         chatPage.style.padding = '8px 12px 0';
         chatPage.style.display = 'flex';
@@ -200,13 +199,6 @@ function showPage(name, e, skipHistory) {
         chatPage.style.overflow = 'hidden';
         chatPage.style.background = 'var(--bg)';
         chatPage.style.zIndex = '10';
-        if (window.visualViewport) {
-          window.visualViewport.onresize = () => {
-            if (chatPage.classList.contains('active')) {
-              chatPage.style.height = (window.visualViewport.height - navH) + 'px';
-            }
-          };
-        }
       }
       const msgs = document.getElementById('chat-page-messages');
       if (msgs) { msgs.style.flex = '1'; msgs.style.overflowY = 'auto'; msgs.style.minHeight = '0'; }
