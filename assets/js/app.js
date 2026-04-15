@@ -1440,47 +1440,7 @@ window.setWalletConnected = function(address) {
 }
 
 // ─── VOTE PAGE ────────────────────────────────────────────────
-const LIQUIDITY_PAIRS = ['LUNC/USDT','LUNC/USTC','LUNC/ATOM','LUNC/BTC','LUNC/ETH','LUNC/BNB','LUNC/OSMO','LUNC/JUNO'];
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function generateMonthlyLiquidityVote() {
-  const now = new Date();
-  const year = now.getFullYear(), month = now.getMonth(), day = now.getDate();
-  const openDate = new Date(year, month, 20, 0, 0, 0);
-  const closeDate = new Date(year, month, 25, 23, 59, 59);
-  let status, timerStr, displayMonth, displayYear;
-  if (day < 20) {
-    const ms = openDate - now;
-    status = 'upcoming'; timerStr = `Opens in ${Math.floor(ms/86400000)}d ${Math.floor((ms%86400000)/3600000)}h`;
-    displayMonth = MONTH_NAMES[month]; displayYear = year;
-  } else if (day <= 25) {
-    const ms = closeDate - now;
-    const d = Math.floor(ms/86400000), h = Math.floor((ms%86400000)/3600000), m = Math.floor((ms%3600000)/60000);
-    status = 'active'; timerStr = d > 0 ? `${d}d ${h}h remaining` : `${h}h ${m}m remaining`;
-    displayMonth = MONTH_NAMES[month]; displayYear = year;
-  } else {
-    const nm = month === 11 ? 0 : month + 1, ny = month === 11 ? year + 1 : year;
-    const nextOpen = new Date(ny, nm, 20, 0, 0, 0); const ms = nextOpen - now;
-    status = 'upcoming'; timerStr = `Opens in ${Math.floor(ms/86400000)}d ${Math.floor((ms%86400000)/3600000)}h`;
-    displayMonth = MONTH_NAMES[nm]; displayYear = ny;
-  }
-  const seed = year * 12 + month;
-  const pairs = [...LIQUIDITY_PAIRS];
-  for (let i = pairs.length - 1; i > 0; i--) { const j = (seed * 1103515245 + i * 12345) % (i + 1); [pairs[i], pairs[j]] = [pairs[j], pairs[i]]; }
-  const votePairs = pairs.slice(0, 4);
-  const voteKey = `monthly_liquidity_${year}_${month}`;
-  let savedVotes = null;
-  try { savedVotes = JSON.parse(localStorage.getItem(voteKey) || 'null'); } catch(e) {}
-  return {
-    id: 'monthly-liquidity', type: 'monthly', status, voteKey,
-    title: `Liquidity Pool Pairs - ${displayMonth} ${displayYear}`,
-    desc: status === 'active' ? `Which LUNC trading pair should receive liquidity incentives for ${displayMonth}? Voting is open 20–25 of each month.` : `Monthly liquidity vote for ${displayMonth} ${displayYear}. Voting opens on the 20th and closes on the 25th.`,
-    source: '🗓 Runs every month · 20th → 25th · Auto-generated',
-    timer: timerStr, totalVotes: savedVotes ? savedVotes.totalVotes : 0, quorum: 200,
-    options: votePairs.map((pair, i) => ({ label: pair, votes: savedVotes ? (savedVotes.options[i] || 0) : 0 })),
-    userVoted: null, isMonthlyLiquidity: true
-  };
-}
 
 
 /* ═══ WORKER VOTES ═══ */
@@ -1513,7 +1473,6 @@ async function loadVotesFromWorker() {
 
 const VOTES_DATA = [
   { id: 'v1', type: 'weekly', status: 'active', title: 'Protocol Development Priority - Week 11', desc: 'What should the development team focus on this week?', source: 'Based on community chat discussions', timer: '3d 14h remaining', totalVotes: 234, quorum: 100, options: [{ label: 'SDK 0.53 upgrade testing & QA', votes: 112 }, { label: 'MM 2.0 activation preparation', votes: 78 }, { label: 'USTC re-peg research', votes: 44 }], userVoted: null },
-  generateMonthlyLiquidityVote(),
   { id: 'v3', type: 'special', status: 'active', title: 'Terra Oracle - Reward Distribution Model', desc: 'Should we switch from "winner takes all" to top-3 distribution for Q&A rewards?', source: 'Proposal by community member · Terra Oracle governance', timer: '6d 2h remaining', totalVotes: 156, quorum: 100, options: [{ label: '70% winner + 30% voters', votes: 89 }, { label: 'Top-3 split (60/25/15)', votes: 41 }, { label: 'Keep current model', votes: 26 }], userVoted: null }
 ];
 
