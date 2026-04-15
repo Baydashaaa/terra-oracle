@@ -1416,16 +1416,14 @@ async function renderPoolMilestoneBanner() {
   }).join('');
 }
 
-function setChatHeight() {
-  const page = document.getElementById('page-chat');
-  const nav = document.querySelector('nav') || document.querySelector('header');
-  if (!page) return;
-  const navH = nav ? nav.offsetHeight : 60;
-  page.style.height = (window.innerHeight - navH) + 'px';
-}
-
 function renderChatPage() {
-  setChatHeight();
+  // Fix mobile padding - remove space left by hidden header
+  if (window.matchMedia('(hover:none)').matches || window.innerWidth <= 600) {
+    const page = document.getElementById('page-chat');
+    if (page) page.style.paddingTop = '8px';
+    // Remove margin from hidden header divs
+    document.querySelectorAll('.chat-desktop-header').forEach(el => el.style.marginBottom = '0');
+  }
   if (cachedMsgs.length) renderChatMessages(cachedMsgs);
   loadChatFromChain();
   renderPoolMilestoneBanner();
@@ -1433,7 +1431,6 @@ function renderChatPage() {
 // Wait for all scripts to load before initializing
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => { renderChatPage(); });
-window.addEventListener('resize', () => { if (document.getElementById('page-chat')?.classList.contains('active')) setChatHeight(); });
 } else {
   renderChatPage();
 }
