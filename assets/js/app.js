@@ -1416,7 +1416,16 @@ async function renderPoolMilestoneBanner() {
   }).join('');
 }
 
+function setChatHeight() {
+  const page = document.getElementById('page-chat');
+  const nav = document.querySelector('nav') || document.querySelector('header');
+  if (!page) return;
+  const navH = nav ? nav.offsetHeight : 60;
+  page.style.height = (window.innerHeight - navH) + 'px';
+}
+
 function renderChatPage() {
+  setChatHeight();
   if (cachedMsgs.length) renderChatMessages(cachedMsgs);
   loadChatFromChain();
   renderPoolMilestoneBanner();
@@ -1424,6 +1433,7 @@ function renderChatPage() {
 // Wait for all scripts to load before initializing
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => { renderChatPage(); });
+window.addEventListener('resize', () => { if (document.getElementById('page-chat')?.classList.contains('active')) setChatHeight(); });
 } else {
   renderChatPage();
 }
