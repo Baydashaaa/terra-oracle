@@ -1,2020 +1,1051 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>if (history.scrollRestoration) history.scrollRestoration = 'manual';</script>
-  <title>Terra Oracle · Anonymous Q&A Protocol</title>
-
-  <!-- Шрифты -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
-
-  <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css">
-<style>
-/* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
-#wallet-dropdown .wallet-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  padding: 0 4px;
+if (history.scrollRestoration) history.scrollRestoration = 'manual';
+// ── Safe profile helpers (defined in profile.js, may load later) ──────────
+function _getDisplayName(address, fallback) {
+  if (!address) return fallback || 'Anonymous';
+  if (typeof getDisplayName === 'function') return getDisplayName(address);
+  return fallback || ('Anonymous#' + address.slice(-4).toUpperCase());
 }
-#wallet-dropdown .wallet-grid-4 {
-  grid-template-columns: repeat(3, 1fr);
-}
-#wallet-dropdown .wallet-grid .wallet-option {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 10px 6px !important;
-  background: rgba(255,255,255,0.03) !important;
-  border: 1px solid rgba(255,255,255,0.07) !important;
-  border-radius: 12px !important;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-  height: auto !important;
-  text-align: center;
-}
-#wallet-dropdown .wallet-grid .wallet-option:hover {
-  background: rgba(255,255,255,0.07) !important;
-  border-color: rgba(255,255,255,0.15) !important;
-}
-#wallet-dropdown .wallet-grid .wallet-option .wicon {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-#wallet-dropdown .wallet-grid .wallet-option .wicon img,
-#wallet-dropdown .wallet-grid .wallet-option .wicon svg {
-  width: 52px !important;
-  height: 52px !important;
-  border-radius: 14px;
-  display: block;
-}
-#wallet-dropdown .wallet-grid .wallet-option .wallet-option-name {
-  font-size: 11px !important;
-  color: #9FB0D0 !important;
-  letter-spacing: 0.05em;
-  font-weight: 500;
-}
-.wallet-picker-section-title {
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #6B7AA6;
-  padding: 8px 4px 6px;
-}
-.wallet-picker-sep {
-  height: 1px;
-  background: rgba(255,255,255,0.06);
-  margin: 8px 0;
-}
-</style>
-
-<style>
-/* ── LOGO GLOW ANIMATION ─────────────────────────────────── */
-@keyframes logoGlow {
-  from { opacity:0.6; transform:translateY(-50%) scale(0.95); }
-  to   { opacity:1;   transform:translateY(-50%) scale(1.08); }
+function _getProfileAvatar(address) {
+  if (!address) return null;
+  if (typeof getProfileAvatar === 'function') return getProfileAvatar(address);
+  return null;
 }
 
-/* ── ENERGY FIELD ANIMATION ──────────────────────────────── */
-@keyframes energyBreathe {
-  0%   { opacity:0.6; transform:scale(1); }
-  50%  { opacity:1;   transform:scale(1.03); }
-  100% { opacity:0.7; transform:scale(0.98); }
-}
 
-/* ── CENTER LOGO PULSE ───────────────────────────────────── */
-@keyframes centerPulse {
-  0%,100% { opacity:0.2; transform:scale(1)    filter:blur(0px); }
-  50%     { opacity:0.32; transform:scale(1.04); filter:blur(1px); }
-}
-
-/* ── NAV SYSTEM (connected nodes) ───────────────────────── */
-.nav-system {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  position: relative;
-  padding: 0 4px;
-}
-
-.nav-node {
-  position: relative;
-  z-index: 1;
-  transition: color 0.2s, text-shadow 0.2s;
-}
-
-/* Connector line AFTER each node (except last) */
-.nav-node:not(:last-child)::before {
-  content: '';
-  position: absolute;
-  right: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(100,70,220,0.3), rgba(100,70,220,0.15));
-  z-index: 0;
-  transition: background 0.3s;
-  pointer-events: none;
-}
-
-.nav-node:not(:last-child):hover::before {
-  background: linear-gradient(90deg, rgba(150,100,255,0.7), rgba(150,100,255,0.3));
-  box-shadow: 0 0 4px rgba(150,100,255,0.4);
-}
-
-/* Bottom glow line on active/hover */
-.nav-node::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 80%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(120,80,255,0.8), transparent);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-radius: 1px;
-}
-
-.nav-node:hover::after,
-.nav-node.active::after {
-  transform: translateX(-50%) scaleX(1);
-  box-shadow: 0 0 6px rgba(120,80,255,0.6);
-}
-
-.nav-node:hover {
-  color: #c8b0ff !important;
-  text-shadow: 0 0 10px rgba(120,80,255,0.5);
-}
-
-.nav-node.active {
-  color: #c8b0ff !important;
-  text-shadow: 0 0 12px rgba(120,80,255,0.7);
-}
-
-/* ── GLASSMORPHISM BUTTONS ───────────────────────────────── */
-.glass-btn {
-  background: rgba(20,25,40,0.6) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-  transition: all 0.25s ease !important;
-}
-
-/* Wallet button glass */
-.wallet-btn.glass-btn {
-  border: 1px solid rgba(123,92,255,0.4) !important;
-  box-shadow: 0 0 10px rgba(123,92,255,0.2), inset 0 0 10px rgba(123,92,255,0.08) !important;
-}
-.wallet-btn.glass-btn:hover,
-.wallet-btn.glass-btn.connected {
-  border-color: rgba(123,92,255,0.7) !important;
-  box-shadow: 0 0 16px rgba(123,92,255,0.4), inset 0 0 14px rgba(123,92,255,0.15) !important;
-}
-
-/* Treasury button glass - gold */
-.treasury-btn.glass-gold {
-  border: 1px solid rgba(232,200,64,0.4) !important;
-  box-shadow: 0 0 10px rgba(232,200,64,0.15), inset 0 0 10px rgba(232,200,64,0.06) !important;
-}
-.treasury-btn.glass-gold:hover {
-  border-color: rgba(232,200,64,0.7) !important;
-  box-shadow: 0 0 16px rgba(232,200,64,0.3), inset 0 0 14px rgba(232,200,64,0.12) !important;
-}
-
-/* Oracle Draw button glass - purple/electric */
-.lottery-btn.glass-orange {
-  border: 1px solid rgba(123,92,255,0.5) !important;
-  box-shadow: 0 0 12px rgba(123,92,255,0.3), inset 0 0 10px rgba(0,212,255,0.05) !important;
-}
-.lottery-btn.glass-orange:hover {
-  border-color: rgba(0,212,255,0.5) !important;
-  box-shadow: 0 0 20px rgba(123,92,255,0.45), 0 0 40px rgba(0,212,255,0.15), inset 0 0 14px rgba(0,212,255,0.08) !important;
-}
-</style>
-
-  <!-- Charts -->
-  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-  <!-- QR generator (lightweight, no deps) -->
-  <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
-  <script>
-  window._wcProjectId = '4b0ea5adcda180c7ea42ba35259b2a87';
-  window.renderQRToCanvas = function(text, canvas) {
-    try {
-      var qr = qrcode(0, text.length > 200 ? 'L' : 'M');
-      qr.addData(text); qr.make();
-      var n = qr.getModuleCount(), sz = 260;
-      canvas.width = sz; canvas.height = sz;
-      var ctx = canvas.getContext('2d'), cell = sz / n;
-      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,sz,sz);
-      ctx.fillStyle = '#000';
-      for (var r=0;r<n;r++) for (var c=0;c<n;c++)
-        if (qr.isDark(r,c)) ctx.fillRect(Math.floor(c*cell),Math.floor(r*cell),Math.ceil(cell)+1,Math.ceil(cell)+1);
-      return true;
-    } catch(e) { return false; }
-  };
-  </script>
-  <!-- WalletConnect SignClient via ESM (loads lazily when QR modal opens) -->
-  <script type="module">
-  import SignClient from 'https://esm.sh/@walletconnect/sign-client@2.17.4';
-  window._WCSignClient = SignClient;
-  window.dispatchEvent(new Event('wc-ready'));
-  </script>
-
-<style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}
-/* Chat desktop: fixed height, internal scroll */
-@media(min-width:768px){
-  .page#page-chat.active{display:flex;flex-direction:column;height:calc(100vh - 80px);}
-  #chat-page-messages{flex:1;overflow-y:auto;min-height:0;}
-  #chat-page-messages .chat-page-msg:first-child{margin-top:auto;}
-  #chat-input-bar{flex-shrink:0;}
-  #chat-page-messages::-webkit-scrollbar{width:4px;}
-  #chat-page-messages::-webkit-scrollbar-track{background:transparent;}
-  #chat-page-messages::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(123,92,255,0.6),rgba(0,212,255,0.4));border-radius:4px;}
-  #chat-page-messages::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(123,92,255,0.9),rgba(0,212,255,0.7));}
-}
-/* Chat mobile: normal page scroll */
-@media(max-width:767px){
-  #chat-page-messages{min-height:300px;}
-}
-</style>
-<style>
-@media (max-width: 768px), (hover: none) {
-
-
-  @media (max-width: 768px) {
-    #mobile-nav-controls { display: flex !important; }
+// Fast smooth scroll to top (300ms, ease-out)
+function smoothScrollTop() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.scrollTo(0, 0);
+    return;
   }
-  /* Disable heavy GPU effects on mobile */
-  .orb-1, .orb-2 { display: none !important; }
-  #bg-canvas { display: none !important; }
-  #cursor-energy { display: none !important; }
-  #nav-scanner-light { display: none !important; }
-  /* Disable blur filters that cause white flicker */
-  * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-  /* Disable heavy animations */
-  .orb-1, .orb-2, #nav-scanner-light { animation: none !important; }
-  /* Simple solid nav background instead of blur */
-  nav { background: rgba(3,7,15,0.98) !important; }
-  footer { background: rgba(4,10,20,0.98) !important; }
+  const start = window.scrollY;
+  if (start === 0) return;
+  const duration = 300;
+  const startTime = performance.now();
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, start * (1 - easeOut(progress)));
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
-
-</style>
-  <link rel="icon" type="image/png" href="logo.png">
-  <link rel="shortcut icon" type="image/png" href="logo.png">
-  <link rel="apple-touch-icon" href="logo.png">
-</head>
-<body style="min-height:100vh;display:flex;flex-direction:column;">
-
-<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
-<!-- Parallax layer 3: energy cursor reactive -->
-<div id="cursor-energy" style="position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;z-index:0;transition:transform 0.08s linear;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(123,92,255,0.07) 0%,rgba(0,212,255,0.04) 40%,transparent 70%);"></div>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-
-<!-- Energy field: breathing gradient -->
-<div id="energy-field" style="position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(90,59,255,0.06) 0%, transparent 70%),
-             radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0,212,255,0.04) 0%, transparent 60%);
-  animation:energyBreathe 8s ease-in-out infinite alternate;">
-</div>
-
-<!-- Noise overlay -->
-<div id="noise-overlay" style="position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;
-  background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/><feColorMatrix type=%22saturate%22 values=%220%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');
-  background-size: 200px 200px;">
-</div>
-<nav>
-<!-- HUD scanner line -->
-<div id="nav-scanner" style="position:absolute;bottom:0;left:0;right:0;height:1px;overflow:hidden;pointer-events:none;">
-  <div id="nav-scanner-light" style="position:absolute;top:0;height:1px;width:120px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.9),rgba(123,92,255,0.6),transparent);animation:navScan 4s linear infinite;"></div>
-  <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(123,92,255,0.15),rgba(0,212,255,0.08),rgba(123,92,255,0.15));"></div>
-</div>
- <div class="nav-logo" onclick="showPage('home')" style="cursor:pointer;position:relative;" title="Go to Home">
- <!-- Radial glow behind logo -->
- <div style="position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:110px;height:110px;border-radius:50%;
-   background:radial-gradient(circle,rgba(120,60,255,0.35) 0%,rgba(60,100,255,0.2) 40%,transparent 70%);
-   pointer-events:none;animation:logoGlow 3s ease-in-out infinite alternate;"></div>
- <div style="display:flex;align-items:center;gap:0px;position:relative;z-index:1;">
- <img src="v1.gif"
- style="height:100px;width:100px;object-fit:contain;flex-shrink:0;margin:-16px 0;mix-blend-mode:lighten;"
- alt="Terra Oracle Classic">
- <div style="position:absolute;left:45px;display:flex;flex-direction:column;justify-content:center;z-index:2;">
- <div style="font-family:'Boldonse',sans-serif;font-weight:400;font-size:14px;
- letter-spacing:0.06em;color:#fff;text-transform:uppercase;line-height:1.1;white-space:nowrap;
- text-shadow:0 0 12px rgba(0,0,0,0.9),0 2px 6px rgba(0,0,0,0.8);">
- Terra Oracle <span style="color:#7eb8ff;">Classic</span>
- </div>
- <div style="font-size:9px;color:var(--gold);letter-spacing:0.2em;margin-top:3px;opacity:0.95;white-space:nowrap;
- font-family:'Exo 2',sans-serif;text-shadow:0 0 8px rgba(0,0,0,0.9);margin-left:40px;">
- TCO · LUNC ECOSYSTEM
- </div>
- </div>
- </div>
- </div>
- <div class="nav-tabs">
- <div class="nav-system" id="nav-system">
- <button class="nav-tab nav-node" onclick="showRepPage('leaderboard')">Reputation</button>
- <button class="nav-tab nav-node" onclick="showPage('board')" data-page="board">Board</button>
- <button class="nav-tab nav-node" onclick="showPage('ask')" data-page="ask">Ask</button>
- <button class="nav-tab nav-node" onclick="showPage('chat')" data-page="chat">Chat</button>
- <button class="nav-tab nav-node" onclick="showPage('vote')" data-page="vote">Vote</button>
- <button class="nav-tab nav-node" onclick="showPage('about')" data-page="about">About</button>
- <button class="nav-tab nav-node" onclick="showPage('bag',event)" data-page="bag" style="color:#f4d03f;">My Bag</button>
- <svg class="nav-lines" id="nav-lines" style="display:none;"></svg>
- </div>
- <div class="wallet-btn-wrap" id="wallet-wrap">
- <button class="wallet-btn glass-btn" id="wallet-main-btn" onclick="toggleWalletDropdown()">
- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
- <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/>
- </svg>
- <span id="wallet-btn-label">Connect</span>
- <span class="wallet-dot"></span>
- </button>
- <div class="wallet-dropdown" id="wallet-dropdown">
- <div class="wallet-dropdown-title">Connect Wallet</div>
- <div id="wallet-not-connected">
- <div class="wallet-picker-section-title">Extension Wallets</div>
- <div class="wallet-grid">
- <button class="wallet-option" onclick="connectWallet('keplr-ext')">
-  <div class="wicon"><img src="data:image/png;base64,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" width="52" height="52" style="border-radius:14px;" /></div>
-  <div class="wallet-option-name">Keplr</div>
- </button>
- <button class="wallet-option" onclick="connectWallet('galaxy')">
-  <div class="wicon"><img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" width="52" height="52" style="border-radius:14px;display:block;"></div>
-  <div class="wallet-option-name">Galaxy</div>
- </button>
- </div>
- <div class="wallet-picker-sep"></div>
- <div class="wallet-picker-section-title">Mobile Wallets</div>
- <div class="wallet-grid wallet-grid-4">
- <button class="wallet-option" onclick="openWalletQRModal('keplr-mobile')">
-  <div class="wicon"><img src="data:image/png;base64,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" width="52" height="52" style="border-radius:14px;" /></div>
-  <div class="wallet-option-name">Keplr</div>
- </button>
- <button class="wallet-option" onclick="openWalletQRModal('galaxy-mobile')">
-  <div class="wicon"><img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" width="52" height="52" style="border-radius:14px;display:block;"></div>
-  <div class="wallet-option-name">Galaxy</div>
- </button>
- <button class="wallet-option" onclick="openWalletQRModal('luncdash')">
-  <div class="wicon">
-  <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px;">
-  <rect width="52" height="52" rx="14" fill="#1a0e00"/>
-  <circle cx="26" cy="26" r="18" stroke="url(#lg_to2)" stroke-width="2.5" fill="none"/>
-  <circle cx="26" cy="26" r="13" fill="#0d0800"/>
-  <circle cx="26" cy="26" r="9" fill="#d4a017"/>
-  <circle cx="30" cy="23" r="7.5" fill="#1a0e00"/>
-  <circle cx="16" cy="16" r="1" fill="#f4c842" opacity="0.7"/>
-  <circle cx="38" cy="14" r="0.7" fill="#f4c842" opacity="0.5"/>
-  <circle cx="40" cy="36" r="0.8" fill="#f4c842" opacity="0.4"/>
-  <defs><linearGradient id="lg_to2" x1="8" y1="8" x2="44" y2="44"><stop stop-color="#f4c842"/><stop offset="1" stop-color="#c47d00"/></linearGradient></defs>
-  </svg>
-  </div>
-  <div class="wallet-option-name">Luncdash</div>
- </button>
- </div>
- </div>
-<div id="wallet-connected-panel" style="display:none;">
-  <div class="wallet-connected-info" id="wallet-connected-addr"></div>
-  <button class="wallet-profile-btn" onclick="openProfile()">👤 My Profile</button>
-  <button class="wallet-disconnect" onclick="disconnectWallet()">✕ Disconnect</button>
-</div>
- </div>
- </div>
- <button class="treasury-btn glass-btn glass-gold" onclick="showPage_treasury(event)">
- 💰 Treasury
- </button>
-
- <a class="lottery-btn glass-btn glass-orange" href="https://baydashaaa.github.io/oracle-draw" target="_blank">
- <svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink:0">
- <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
- <circle cx="50" cy="50" r="8" fill="#fff" opacity="0.9"/>
- <line x1="50" y1="4" x2="50" y2="96" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
- <line x1="4" y1="50" x2="96" y2="50" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
- <line x1="17" y1="17" x2="83" y2="83" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
- <line x1="83" y1="17" x2="17" y2="83" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
- <circle cx="50" cy="4" r="4" fill="#ffd700"/>
- <circle cx="50" cy="96" r="4" fill="#ffd700"/>
- <circle cx="4" cy="50" r="4" fill="#ffd700"/>
- <circle cx="96" cy="50" r="4" fill="#ffd700"/>
- <circle cx="17" cy="17" r="4" fill="#ffd700"/>
- <circle cx="83" cy="83" r="4" fill="#ffd700"/>
- <circle cx="83" cy="17" r="4" fill="#ffd700"/>
- <circle cx="17" cy="83" r="4" fill="#ffd700"/>
- <circle cx="50" cy="50" r="6" fill="#ffd700"/>
- </svg>
- Oracle Draw <svg width="14" height="14" viewBox="0 0 100 100" style="flex-shrink:0;margin:0 2px">
- <rect x="5" y="25" width="90" height="50" rx="6" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
- <circle cx="5" cy="50" r="8" fill="#cc2200"/>
- <circle cx="95" cy="50" r="8" fill="#cc2200"/>
- <line x1="30" y1="25" x2="30" y2="75" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-dasharray="4,3"/>
- <line x1="70" y1="25" x2="70" y2="75" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-dasharray="4,3"/>
- <circle cx="50" cy="42" r="5" fill="#ffd700"/>
- <circle cx="50" cy="58" r="5" fill="#ffd700"/>
- </svg>
- </a>
- </div>
-
- <!-- Mobile: wallet + hamburger -->
- <div id="mobile-nav-controls" style="display:none;align-items:center;gap:8px;">
-  <button id="mobile-wallet-nav-btn" onclick="handleMobileNavWalletBtn()" style="align-items:center;gap:6px;background:rgba(84,147,247,0.15);border:1px solid rgba(84,147,247,0.4);border-radius:20px;padding:6px 13px;color:#7eb8ff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;">
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10V5a2 2 0 012-2h16a2 2 0 012 2v5"/></svg>
-   <span id="mobile-wallet-nav-label">Connect</span>
-  </button>
-  <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
-   <span></span><span></span><span></span>
-  </button>
- </div>
-</nav>
-
-
-<!-- Mobile navigation drawer -->
-<div class="nav-mobile-drawer" id="nav-mobile-drawer">
-
- <button class="nav-tab" onclick="mobileNavGo('board')">📋 Board</button>
- <button class="nav-tab" onclick="mobileNavGo('ask')">❓ Ask</button>
- <button class="nav-tab" onclick="mobileNavGo('chat')">💬 Chat</button>
- <button class="nav-tab" onclick="mobileNavGo('vote')">🗳️ Vote</button>
- <button class="nav-tab" onclick="mobileNavGo('about')">ℹ️ About</button>
- <button class="nav-tab" onclick="mobileNavGo('bag')" style="color:#f4d03f;">My Bag</button>
- <button class="nav-tab" onclick="mobileNavGoFn('showPage_treasury')">💰 Treasury</button>
-
- <!-- Reputation section -->
- <div style="width:100%;margin-top:4px;">
-  <button onclick="toggleMobileRepMenu()" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:transparent;border:none;border-top:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);font-size:11px;letter-spacing:0.1em;padding:10px 4px;cursor:pointer;">
-   <span>⭐ REPUTATION</span>
-   <span id="rep-menu-arrow" style="font-size:10px;transition:transform 0.2s;">▼</span>
-  </button>
-  <div id="mobile-rep-menu" style="display:none;padding-left:8px;">
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('leaderboard'),50)" style="font-size:11px;">🏆 Leaderboard</button>
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('how'),50)" style="font-size:11px;">📖 How it works</button>
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('stats'),50)" style="font-size:11px;">📊 Your Stats</button>
-  </div>
- </div>
-
- <div style="width:100%;max-width:320px;margin-top:8px;">
-  <a class="lottery-btn" href="https://baydashaaa.github.io/oracle-draw" target="_blank" style="width:100%;justify-content:center;text-decoration:none;">
-   🎰 Oracle Draw
-  </a>
- </div>
-</div>
-<div class="page active" id="page-home" style="position:relative;max-width:100%;padding:0;">
-
-<!-- ══ MOBILE HERO ══ -->
-<div class="mobile-hero">
-
-  <!-- Фоновый логотип - за текстом, приглушён -->
-  <div class="mobile-hero-bg-logo">
-    <img src="logo.png" alt="">
-  </div>
-
-  <!-- Контент поверх -->
-  <div class="mobile-hero-content">
-    <div class="mobile-hero-eyebrow">Terra Classic Ecosystem</div>
-    <div class="mobile-hero-title">Terra <span class="oracle-word">Oracle</span></div>
-    <div class="mobile-hero-sub">Classic</div>
-    <div class="mobile-hero-tagline">The intelligence layer of Terra Classic</div>
-  </div>
-
-  <!-- Primary CTA -->
-  <button class="mobile-hero-cta-primary" onclick="showPage('about')">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-    About Protocol
-  </button>
-</div>
-
-<!-- ══ MOBILE HOME SECTIONS ══ -->
-<div class="mobile-home-sections">
-
-  <!-- MODULES label -->
-  <div class="mobile-section-label">Modules</div>
-
-  <!-- PRIMARY: Oracle Draw -->
-  <div onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')" class="zk-module zk-module-star mobile-primary-card">
-    <div class="zk-star-shimmer"></div>
-    <div class="zk-module-bar zk-module-bar-fast"></div>
-    <div class="zk-module-inner" style="position:relative;z-index:2;">
-      <div class="zk-module-tag" style="color:rgba(0,212,255,0.9);">&#9678; ACTIVE MODULE</div>
-      <div style="font-size:32px;margin-bottom:10px;">🎰</div>
-      <div style="font-weight:700;font-size:17px;margin-bottom:8px;color:#fff;" class="zk-module-title">Oracle Draw</div>
-      <div style="font-size:13px;color:#b4c8e8;line-height:1.65;" class="zk-module-desc">Two draws - Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
-      <div style="margin-top:14px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);" class="zk-module-cta">Enter the draw →</div>
-      <div class="zk-module-dots"></div>
-    </div>
-  </div>
-
-  <!-- SECONDARY: 3 карточки в столбец -->
-  <div class="mobile-secondary-cards">
-    <div onclick="showPage('board')" class="zk-module mobile-card-row">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon">🔮</div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag">◈ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Oracle Board</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Ask questions about governance, validators &amp; market.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#7B5CFF;">Board →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('vote')" class="zk-module mobile-card-row" style="--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon">🗳️</div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">◆ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Governance Vote</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Vote on weekly and monthly proposals.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#A855F7;">Vote →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('chat')" class="zk-module mobile-card-row" style="--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon">💬</div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">◎ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">DAO Chat</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">On-chain messages, forever on Terra Classic.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#00D4FF;">5K →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('ask')" class="zk-module mobile-card-row" style="--mod-c1:#00FFB0;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon">❓</div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(0,255,176,0.65);">◈ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Ask</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Anonymous questions to the community.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#00FFB0;">200K →</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOKEN label -->
-  <div class="mobile-section-label">Token</div>
-
-  <!-- TCO Token block -->
-  <div class="mobile-tco-block">
-    <div class="mobile-tco-bar"></div>
-    <div class="mobile-tco-inner">
-      <div class="mobile-tco-header">
-        <div class="mobile-tco-icon">🪙</div>
-        <div class="mobile-tco-title-wrap">
-          <div class="name">TCO Token <span class="badge">Coming Soon</span></div>
-          <div class="sub">Terra Classic Oracle - native governance &amp; reward token</div>
-        </div>
-      </div>
-      <div class="mobile-tco-desc">TCO powers governance and rewards - earn by participating in Oracle.</div>
-      <div class="mobile-tco-grid">
-        <div class="mobile-tco-item"><div class="ico">🏛️</div><div class="lbl">Governance</div><div class="desc">Vote weight by TCO stake</div></div>
-        <div class="mobile-tco-item"><div class="ico">💎</div><div class="lbl">Rewards</div><div class="desc">Earned by participation</div></div>
-        <div class="mobile-tco-item"><div class="ico">🔥</div><div class="lbl">Deflationary</div><div class="desc">% burned on every action</div></div>
-        <div class="mobile-tco-item"><div class="ico">⛓️</div><div class="lbl">On-Chain</div><div class="desc">Terra Classic · columbus-5</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FLOW label -->
-  <div class="mobile-section-label">Protocol Flow</div>
-
-  <!-- Protocol Flow Accordion -->
-  <div class="mobile-flow-block">
-    <div class="mobile-flow-bar"></div>
-    <div class="mobile-flow-header">◈ Protocol Flow</div>
-
-    <!-- Accordion 1: Oracle Questions -->
-    <div class="mobile-accordion-item" id="acc-1">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-1')">
-        🔮 Oracle Questions
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">200,000 LUNC per question</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill">🎰 50% → Weekly Pool</span>
-            <span class="mobile-flow-pill gold">🏛 50% → Treasury</span>
-            <span class="mobile-flow-pill green">🎟 +2 free Weekly entries</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Accordion 2: Daily Draw -->
-    <div class="mobile-accordion-item" id="acc-2">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-2')">
-        🌙 Daily Draw · every day 20:00 UTC
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">NFT Mint → Daily Pool</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill green">🥇 80% → 1 Winner</span>
-            <span class="mobile-flow-pill">🌱 10% → Seeds</span>
-            <span class="mobile-flow-pill gold">🏛 10% → Treasury</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Accordion 3: Weekly Draw -->
-    <div class="mobile-accordion-item" id="acc-3">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-3')">
-        📅 Weekly Draw · every Monday 20:00 UTC
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">NFT Mint + Questions → Weekly Pool</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill green">🥇 48% → 1st</span>
-            <span class="mobile-flow-pill blue">🥈 20% → 2nd</span>
-            <span class="mobile-flow-pill">🥉 12% → 3rd</span>
-            <span class="mobile-flow-pill">🌱 10% → Seeds</span>
-            <span class="mobile-flow-pill gold">🏛 10% → Treasury</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /.mobile-home-sections -->
-
-<!-- sticky bottom bar удалён -->
-
- <!-- ══ HERO WRAPPER - фиксированная высота, всё абсолютное внутри ══ -->
- <div id="hero-stage" style="position:relative;width:100%;min-height:620px;overflow:visible;isolation:isolate;">
-
-
-  <!-- Фоновый логотип - точно по центру stage -->
-  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2;">
-   <img src="logo.png" style="width:640px;height:640px;opacity:0.2;user-select:none;object-fit:contain;animation:centerPulse 6s ease-in-out infinite;">
-  </div>
-
-  <!-- КАРТОЧКИ + CENTER - единый flex-контейнер, текст по центру flex -->
-  <div style="position:relative;z-index:3;width:100%;min-height:620px;
-    display:flex;align-items:stretch;justify-content:space-between;
-    padding:32px 24px;box-sizing:border-box;gap:20px;max-width:1280px;margin:0 auto;">
-
-    <!-- CENTER TEXT - в потоке flex, занимает место между колонками -->
-
-    <!-- ЛЕВАЯ КОЛОНКА -->
-    <div style="display:flex;flex-direction:column;gap:20px;width:300px;flex-shrink:0;">
-
-      <!-- Oracle Board -->
-      <div onclick="showPage('board')" class="zk-module" style="flex:1;position:relative;overflow:hidden;">
-        <img src="assets/img/oracle_board-v1.png" style="position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);width:274px;height:274px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;">
-          <div class="zk-module-tag">&#9672; ACTIVE MODULE</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:#fff;" class="zk-module-title">Oracle Board</div>
-          <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
-          <div style="margin-top:16px;font-size:12px;color:#7B5CFF;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">200,000 LUNC per question →</div>
-          <div class="zk-module-dots"></div>
-        </div>
-      </div>
-
-      <!-- Governance Vote -->
-      <div onclick="showPage('vote')" class="zk-module" style="flex:1;--mod-c1:#A855F7;--mod-c2:#7B5CFF;position:relative;overflow:hidden;">
-        <img src="assets/img/governance-v2.png" style="position:absolute;left:calc(50% + 10px);bottom:-60px;transform:translateX(-50%);width:324px;height:324px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;">
-          <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">&#9670; ACTIVE MODULE</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:#fff;" class="zk-module-title">Governance Vote</div>
-          <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
-          <div style="margin-top:16px;font-size:12px;color:#A855F7;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">Monthly draw: 20–25th →</div>
-          <div class="zk-module-dots"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ЦЕНТР - текст в потоке flex -->
-    <div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;">
-      <div class="hero-center" style="text-align:center;display:flex;flex-direction:column;
-        align-items:center;width:360px;pointer-events:none;">
-
-        <div class="hero-eyebrow">Terra Classic Ecosystem</div>
-        <h1 class="hero-h1"><span class="hero-h1-terra">Terra</span> <span class="hero-h1-oracle">Oracle</span></h1>
-        <div class="hero-h1-sub">Classic</div>
-        <div class="hero-sub">The intelligence layer of Terra Classic</div>
-        <div class="hero-micro">
-          <span class="hero-micro-inner">Q&amp;A · Governance · Verifiable Draws</span><br>
-          <span class="hero-micro-muted">powered by LUNC</span>
-        </div>
-        <div class="hero-tco-pill" style="pointer-events:all;">
-          🪙 Future token: <strong style="letter-spacing:0.1em;">TCO</strong> · Terra Classic Oracle
-        </div>
-      </div>
-    </div>
-
-    <!-- ПРАВАЯ КОЛОНКА -->
-    <div style="display:flex;flex-direction:column;gap:20px;width:300px;flex-shrink:0;">
-
-      <!-- DAO Chat -->
-      <div onclick="showPage('chat')" class="zk-module" style="flex:1;--mod-c1:#00D4FF;--mod-c2:#7B5CFF;position:relative;overflow:hidden;">
-        <img src="assets/img/chat-v2.png" style="position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);width:261px;height:261px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;">
-          <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">&#9678; ACTIVE MODULE</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:#fff;" class="zk-module-title">DAO Chat</div>
-          <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
-          <div style="margin-top:16px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">5,000 LUNC per message →</div>
-          <div class="zk-module-dots"></div>
-        </div>
-      </div>
-
-      <!-- Oracle Draw STAR -->
-      <div onclick="window.open('https://baydashaaa.github.io/oracle-draw','_blank')" class="zk-module zk-module-star" style="flex:1;position:relative;overflow:hidden;">
-        <img src="assets/img/draw-v2.png" style="position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);width:297px;height:297px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:1;">
-        <div class="zk-star-shimmer"></div>
-        <div class="zk-module-bar zk-module-bar-fast"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:2;">
-          <div class="zk-module-tag" style="color:rgba(0,212,255,0.8);">&#9678; ACTIVE MODULE</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:#fff;" class="zk-module-title">Oracle Draw</div>
-          <div style="font-size:13px;color:#b4c8e8;line-height:1.75;" class="zk-module-desc">Two draws - Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
-          <div style="margin-top:16px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);" class="zk-module-cta">Enter the draw →</div>
-          <div class="zk-module-dots"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
- </div>
-
-  <!-- Protocol sections below -->
- <div style="max-width:720px;margin:0 auto;padding:16px 24px 80px;position:relative;z-index:1;">
-
- <!-- ── TCO TOKEN ── -->
- <div class="zk-module" style="margin-bottom:20px;--mod-c1:#E8C840;--mod-c2:#7B5CFF;">
-  <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:20px 22px;">
-   <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-    <div style="width:36px;height:36px;border-radius:50%;background:rgba(232,200,64,0.12);border:1px solid rgba(232,200,64,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🪙</div>
-    <div>
-     <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-weight:700;font-size:14px;color:#fff;">TCO Token</span>
-      <span style="font-size:8px;background:rgba(232,200,64,0.12);color:var(--gold);border:1px solid rgba(232,200,64,0.25);border-radius:6px;padding:2px 8px;letter-spacing:0.1em;text-transform:uppercase;">COMING SOON</span>
-     </div>
-     <div style="font-size:11px;color:var(--muted);margin-top:2px;">Terra Classic Oracle - native governance &amp; reward token</div>
-    </div>
-   </div>
-   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">🏛️</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Governance</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Vote weight by TCO stake</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">💎</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Rewards</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Earned by Oracle participation</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">🔥</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Deflationary</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">% burned on every activity</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">⛓️</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">On-Chain</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Terra Classic · columbus-5</div>
-    </div>
-   </div>
-  </div>
- </div>
-
- <!-- ── PROTOCOL FLOW ── -->
- <div class="zk-module" style="--mod-c1:#7B5CFF;--mod-c2:#00D4FF;">
-  <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:20px 22px;">
-
-   <div style="font-size:9px;letter-spacing:0.22em;color:rgba(160,140,255,0.9);text-transform:uppercase;margin-bottom:20px;font-family:'Exo 2',sans-serif;">◈ Protocol Flow</div>
-
-   <!-- STREAM 1: Oracle Questions -->
-   <div style="margin-bottom:20px;">
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#a08fff;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;animation:dotPulse 2s infinite;"></span>
-     Oracle Questions
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(123,92,255,0.1);border:1px solid rgba(123,92,255,0.25);border-radius:8px;padding:8px 14px;min-width:100px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;letter-spacing:0.02em;">200,000 LUNC</div>
-      <div style="font-size:10px;color:rgba(160,180,210,0.7);margin-top:1px;">per question</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(192,168,255,0.98);">🎰 <strong>50%</strong> → Weekly Prize Pool</div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.15);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.98);">🏛 <strong>50%</strong> → Protocol Treasury</div>
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.7);">🎟 <strong>+2</strong> free Weekly entries</div>
-     </div>
-    </div>
-   </div>
-
-   <div style="height:1px;background:rgba(255,255,255,0.04);margin-bottom:20px;"></div>
-
-   <!-- STREAM 2: Daily Draw -->
-   <div style="margin-bottom:20px;">
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#fbbf24;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;display:inline-block;animation:dotPulse 2s 0.3s infinite;"></span>
-     Daily Draw · every day 20:00 UTC
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:8px 14px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;">NFT Mint</div>
-      <div style="font-size:10px;color:rgba(160,180,210,0.7);margin-top:1px;">Common / Rare / Legendary</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.18);border-radius:8px;padding:6px 14px;font-size:12px;color:#fbbf24;font-weight:700;">Daily Pool</div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.95);">🥇 <strong>80%</strong> → 1 Winner</div>
-      <div style="background:rgba(123,92,255,0.06);border:1px solid rgba(123,92,255,0.15);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(160,130,255,0.98);">🌱 <strong>10%</strong> → Seeds next round</div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.95);">🏛 <strong>10%</strong> → Treasury</div>
-     </div>
-    </div>
-   </div>
-
-   <div style="height:1px;background:rgba(255,255,255,0.04);margin-bottom:20px;"></div>
-
-   <!-- STREAM 3: Weekly Draw -->
-   <div>
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#c4b5fd;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:#a78bfa;display:inline-block;animation:dotPulse 2s 0.6s infinite;"></span>
-     Weekly Draw · every Monday 20:00 UTC
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.22);border-radius:8px;padding:8px 14px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;">NFT Mint + Questions</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:6px 14px;font-size:12px;color:#c4b5fd;font-weight:700;">Weekly Pool</div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.98);">🥇 <strong>48%</strong> → 1st</div>
-      <div style="background:rgba(0,255,176,0.03);border:1px solid rgba(0,255,176,0.08);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.88);">🥈 <strong>20%</strong> → 2nd</div>
-      <div style="background:rgba(0,255,176,0.02);border:1px solid rgba(0,255,176,0.06);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.78);">🥉 <strong>12%</strong> → 3rd</div>
-      <div style="background:rgba(123,92,255,0.06);border:1px solid rgba(123,92,255,0.14);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(160,130,255,0.98);">🌱 <strong>10%</strong> → Seeds</div>
-      <div style="background:rgba(232,200,64,0.05);border:1px solid rgba(232,200,64,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.95);">🏛 <strong>10%</strong> → Treasury</div>
-     </div>
-    </div>
-   </div>
-
-  </div>
- </div>
-
- </div>
-</div>
-
-<div class="page" id="page-board" style="min-height:60vh;">
- <div class="board-header">
- <div>
- <div class="board-title">Active Questions</div>
- <div class="board-count" id="board-count">Loading...</div>
- </div>
- </div>
- <div style="position:relative;margin-bottom:14px;">
- <input type="text" id="board-search" placeholder="🔍 Search questions..."
- oninput="setBoardSearch(this.value)"
- style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
- color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;
- padding:12px 16px 12px 40px;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
- <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:0.35;pointer-events:none;"
- width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
- <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
- </svg>
- <button id="search-clear" onclick="clearSearch()"
- style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);
- background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;">✕</button>
- </div>
- <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
- <div style="display:flex;gap:6px;flex-wrap:wrap;">
- <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
- <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('Governance')">Gov</button>
- <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('Technical')">Tech</button>
- <button class="vote-tab" id="filter-val" onclick="setBoardFilter('Validator Issue')">Validators</button>
- <button class="vote-tab" id="filter-market" onclick="setBoardFilter('Market')">Market</button>
- <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('Community')">Community</button>
- </div>
- <div style="margin-left:auto;display:flex;gap:6px;">
- <button class="vote-tab active" id="sort-new" onclick="setBoardSort('new')">🕐 New</button>
- <button class="vote-tab" id="sort-hot" onclick="setBoardSort('hot')">🔥 Hot</button>
- <button class="vote-tab" id="sort-unanswered" onclick="setBoardSort('unanswered')">❓ Unanswered</button>
- </div>
- </div>
- <div id="questions-list"></div>
-</div>
-<div class="page" id="page-ask">
- <div class="page-header">
- <div class="tag">Submit Question</div>
- <h1>Ask the <span>Community</span></h1>
- <p class="subtitle">Stay anonymous · Get community answers</p>
- </div>
- <div class="card">
- <div id="ask-form-section">
- <div class="note">
- 🔒 Your identity is never stored. Connect your wallet to verify your payment - wallet address will NOT be linked to your question.
- </div>
- <div id="keplr-section">
- <div id="keplr-disconnected">
- <div style="text-align:center;padding:4px 0 20px;">
- <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Step 1 - Connect Wallet</div>
- <button class="btn btn-primary btn-full" id="keplr-connect-btn" onclick="openBagWalletPicker()">
- 🔑 Connect Wallet
- </button>
- <div style="margin-top:14px;padding:12px;background:rgba(84,147,247,0.04);border:1px solid rgba(84,147,247,0.1);border-radius:8px;">
- <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Supported: Keplr · Galaxy Station · Luncdash</div>
- </div>
- </div>
- </div>
- <div id="keplr-connected" style="display:none;">
- <div style="display:flex;align-items:center;gap:10px;background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;">
- <span>✅</span>
- <div>
- <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px;">Wallet Connected</div>
- <div style="font-size:11px;color:var(--muted);font-family:monospace;" id="connected-addr">terra1...</div>
- </div>
- <button onclick="disconnectKeplr()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕</button>
- </div>
- </div>
- </div>
- <div id="tx-section" style="display:none;">
- <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;text-align:center;">Step 2 - Verify Payment</div>
- <div class="form-group">
- <label>TX Hash</label>
- <div style="display:flex;gap:8px;">
- <input type="text" id="tx-input" style="display:none;" placeholder="Paste your 200,000 LUNC transaction hash..." style="flex:1;">
- <button class="btn btn-primary" onclick="autoPayAndUnlock()" id="verify-btn" style="white-space:nowrap;padding:12px 16px;">Pay 200,000 LUNC & Unlock →</button>
- </div>
- </div>
- <div id="tx-status" style="display:none;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;"></div>
- </div>
- <form id="ask-form" action="https://formspree.io/f/maqpebee" method="POST" style="display:none;">
- <input type="text" name="_gotcha" style="display:none">
- <input type="hidden" name="_subject" value="[Terra Oracle] New Question Submitted">
- <input type="hidden" name="tx_hash" id="verified-tx-hidden">
- <input type="hidden" name="wallet" id="verified-wallet-hidden">
- <div style="display:flex;align-items:center;gap:10px;background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;">
- <span>🔓</span>
- <div style="font-size:12px;color:var(--green);">Payment verified - form unlocked!</div>
- </div>
- <div class="form-group">
- <label>Category</label>
- <select name="category" required>
- <option value="" disabled selected>Select category...</option>
- <option>Security / Vulnerability</option>
- <option>Protocol Bug</option>
- <option>Governance</option>
- <option>Proposal / Idea</option>
- <option>Validator Issue</option>
- <option>Community</option>
- <option>Fraud / Manipulation</option>
- <option>Other</option>
- </select>
- </div>
- <div class="form-group">
- <label>Your Question</label>
- <textarea name="message" id="ask-message" placeholder="Ask anything about Terra Classic - governance, technical, community, market..." required maxlength="2000"></textarea>
- <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;">
- <svg width="28" height="28" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex-shrink:0;">
- <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
- <circle id="ask-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
- stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
- </svg>
- <span style="font-size:10px;color:var(--muted);min-width:28px;text-align:right;" id="ask-count">2000</span>
- </div>
- </div>
- <div class="form-group">
- <label>Hashtags <span style="font-size:9px;color:var(--muted);text-transform:none">(optional · max 5 · press Enter or comma to add)</span></label>
- <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-raw-input').focus()">
- <span id="tag-pills"></span>
- <input type="text" class="tag-input" id="tag-raw-input" placeholder="#ustc #sdk053 #validators..."
- maxlength="24" autocomplete="off">
- </div>
- <div class="tag-suggestions" id="tag-suggestions">
- <span style="font-size:10px;color:var(--muted);margin-right:2px;">Popular:</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('ustc')">#ustc</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('sdk053')">#sdk053</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('validators')">#validators</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('lunc')">#lunc</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('governance')">#governance</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('mm20')">#mm20</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('defi')">#defi</span>
- </div>
- <input type="hidden" name="tags" id="tags-hidden">
- </div>
- <div class="form-group">
- <label>Poll Options <span style="font-size:9px;color:var(--muted);text-transform:none">(optional · max 5 · community can vote)</span></label>
- <div id="poll-options-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
- <button type="button" onclick="addPollOption()" id="add-poll-btn" style="font-size:11px;padding:6px 14px;border-radius:8px;border:1px dashed rgba(84,147,247,0.4);background:rgba(84,147,247,0.06);color:var(--accent);cursor:pointer;font-family:'Exo 2',sans-serif;">+ Add option</button>
- <input type="hidden" id="poll-options-hidden" name="pollOptions">
- </div>
- <div class="form-group">
- <label>Evidence / Links <span style="font-size:9px;color:var(--muted);text-transform:none">(optional)</span></label>
- <input type="text" name="evidence" placeholder="https://finder.terra.money/classic/tx/...">
- </div>
- <div class="divider">Submit</div>
- <button type="submit" class="btn btn-primary btn-full" id="ask-btn">Transmit Question →</button>
- </form>
- </div>
- <div class="success-state" id="ask-success">
- <div class="success-icon">📡</div>
- <div class="success-title">Question Received</div>
- <p class="success-text">Your anonymous question has been submitted.<br>It will appear on the board within <strong style="color:var(--accent)">1–3 minutes</strong>.</p>
- <div class="success-ref" id="ask-ref">REF: loading...</div>
- </div>
- </div>
- <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--muted);line-height:1.8;">
- Send LUNC to the protocol wallet before submitting.<br>
- <span style="font-size:10px;font-family:monospace;color:var(--accent);word-break:break-all;">terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</span>
- </div>
-</div>
-<div class="page" id="page-chat" style="max-width:860px;padding:32px 24px 0;">
-
- <!-- Header -->
- <div style="text-align:center;margin-bottom:24px;">
-  <div class="tag">On-Chain Community</div>
-  <h1 style="margin-bottom:8px;">DAO <span>Chat</span></h1>
-  <p class="subtitle">Every message stored forever on Terra Classic · 5,000 LUNC per message</p>
- </div>
-
- <!-- Info bar -->
- <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-  <div style="display:flex;align-items:center;gap:6px;background:rgba(232,200,64,0.08);border:1px solid rgba(232,200,64,0.2);border-radius:20px;padding:7px 16px;">
-   <span style="font-size:13px;">🎰</span>
-   <span style="font-size:11px;color:var(--gold);">Every 10th message = <strong>+1 Weekly Draw entry</strong></span>
-  </div>
-  <div style="display:flex;align-items:center;gap:6px;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:20px;padding:7px 16px;">
-   <span style="font-size:13px;">🔗</span>
-   <span style="font-size:11px;color:var(--accent);">Verified on-chain · stored forever</span>
-  </div>
- </div>
-
- <!-- Messages -->
- <div id="chat-page-messages" style="padding:0 0 16px;display:flex;flex-direction:column;gap:0;">
-  <div style="text-align:center;padding:40px 20px;">
-   <div style="font-size:28px;margin-bottom:10px;">⏳</div>
-   <div style="color:var(--muted);font-size:12px;">Loading messages from blockchain...</div>
-  </div>
- </div>
-
- <!-- Input bar -->
- <div id="chat-input-bar" style="padding:16px 0 40px;">
-  <div id="chat-page-connect-prompt" style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
-   <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Connect your wallet to join the conversation</div>
-   <button class="btn btn-primary" onclick="openBagWalletPicker()" style="width:100%;padding:14px;">🔑 Connect Wallet</button>
-  </div>
-  <div id="chat-page-form" style="display:none;">
-   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(0,255,176,0.03);">
-     <div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
-     <span style="font-size:10px;color:var(--green);">Connected</span>
-     <span style="font-size:10px;font-family:monospace;color:var(--muted);" id="chat-page-addr"></span>
-    </div>
-    <div style="display:flex;align-items:flex-end;gap:0;">
-     <textarea id="chat-page-input"
-      placeholder="Write your message... (stored on Terra Classic forever)"
-      maxlength="256" rows="2"
-      style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:14px 16px;outline:none;resize:none;line-height:1.6;min-height:52px;max-height:120px;"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
-     ></textarea>
-     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 12px 10px 0;">
-      <span id="chat-page-count" style="font-size:10px;color:var(--muted);">256</span>
-      <button onclick="sendChatMessage()" id="chat-page-send-btn"
-       style="background:linear-gradient(135deg,var(--accent-dark),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:10px 16px;cursor:pointer;white-space:nowrap;">
-       SEND →
-      </button>
-     </div>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--border);background:rgba(255,255,255,0.02);">
-     <span style="font-size:10px;color:var(--muted);">Cost: <strong style="color:var(--text);">5,000 LUNC</strong> · Keplr will confirm</span>
-     <svg width="28" height="28" viewBox="0 0 36 36" style="transform:rotate(-90deg);">
-      <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
-      <circle id="chat-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
-       stroke-dasharray="87.96" stroke-dashoffset="87.96"
-       stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
-     </svg>
-    </div>
-   </div>
-   <div id="chat-tx-status" style="display:none;border-radius:10px;padding:12px 16px;font-size:12px;margin-top:10px;"></div>
-  </div>
- </div>
-
-</div>
-<div class="page" id="page-vote">
- <div class="page-header">
- <div class="tag">Governance</div>
- <h1>Community <span>Vote</span></h1>
- <p class="subtitle">Connect wallet · Vote on proposals · Shape Terra Classic's future</p>
- </div>
- <div class="vote-header">
- <div class="vote-tabs">
- <button class="vote-tab active" onclick="filterVotes('all')">All</button>
- <button class="vote-tab" onclick="filterVotes('weekly')">📅 Weekly</button>
- <button class="vote-tab" onclick="filterVotes('monthly')">🗓 Monthly</button>
- <button class="vote-tab" onclick="filterVotes('special')">⚡ Special</button>
- </div>
- <div style="font-size:11px;color:var(--muted);" id="vote-wallet-status">
- <button class="btn btn-primary" style="padding:8px 16px;font-size:10px;" onclick="connectWallet('keplr-ext')">🔑 Connect to Vote</button>
- </div>
- </div>
- <div id="admin-panel" style="display:none;margin-bottom:28px;">
- <div style="background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:24px;">
-
-  <!-- Header -->
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-   <span style="font-size:16px;">🛡️</span>
-   <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--gold);">Admin Control Panel</span>
-   <span style="font-size:9px;background:rgba(245,197,24,0.1);color:var(--gold);border:1px solid rgba(245,197,24,0.2);border-radius:10px;padding:2px 8px;letter-spacing:0.1em;">ADMIN ONLY</span>
-  </div>
-
-  <!-- Vote Builder -->
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-   <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:16px;">➕ Create New Vote</div>
-
-   <!-- Title -->
-   <div style="margin-bottom:12px;">
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">TITLE</div>
-    <input id="av-title" type="text" placeholder="Vote title..." maxlength="120"
-     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
-   </div>
-
-   <!-- Description -->
-   <div style="margin-bottom:12px;">
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">DESCRIPTION</div>
-    <textarea id="av-desc" placeholder="What is this vote about?" maxlength="300" rows="2"
-     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:vertical;"></textarea>
-   </div>
-
-   <!-- Type + Duration -->
-   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
-    <div>
-     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">TYPE</div>
-     <select id="av-type"
-      style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
-      <option value="weekly">📅 Weekly</option>
-      <option value="monthly">🗓 Monthly</option>
-      <option value="special">⚡ Special</option>
-     </select>
-    </div>
-    <div>
-     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">DURATION (DAYS)</div>
-     <input id="av-days" type="number" value="7" min="1" max="30"
-      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
-    </div>
-    <div>
-     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">QUORUM</div>
-     <input id="av-quorum" type="number" value="100" min="1" max="9999"
-      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
-    </div>
-   </div>
-
-   <!-- Source note -->
-   <div style="margin-bottom:12px;">
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em;">SOURCE / NOTE (optional)</div>
-    <input id="av-source" type="text" placeholder="e.g. Based on community discussion..." maxlength="150"
-     style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 12px;outline:none;">
-   </div>
-
-   <!-- Options -->
-   <div style="margin-bottom:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-     <div style="font-size:11px;color:var(--muted);letter-spacing:0.08em;">OPTIONS (min 2, max 8)</div>
-     <button onclick="adminAddOption()" style="background:rgba(123,92,255,0.1);border:1px solid rgba(123,92,255,0.3);border-radius:6px;color:#c8b0ff;font-size:11px;font-weight:600;padding:4px 12px;cursor:pointer;">+ Add option</button>
-    </div>
-    <div id="av-options-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-   </div>
-
-   <!-- Preview -->
-   <div id="av-preview" style="display:none;background:rgba(0,255,176,0.03);border:1px solid rgba(0,255,176,0.15);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);">
-    <div style="color:var(--green);font-weight:700;margin-bottom:6px;">Preview:</div>
-    <div id="av-preview-text"></div>
-   </div>
-
-   <!-- Buttons -->
-   <div style="display:flex;gap:10px;flex-wrap:wrap;">
-    <button onclick="adminPreviewVote()" style="background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.3);border-radius:8px;color:#7eb8ff;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;padding:10px 20px;cursor:pointer;letter-spacing:0.06em;">👁 PREVIEW</button>
-    <button onclick="adminCreateVote()" style="background:rgba(102,255,170,0.1);border:1px solid rgba(102,255,170,0.3);border-radius:8px;color:var(--green);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:0.06em;">✅ CREATE & START</button>
-    <button onclick="adminResetForm()" style="background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;padding:10px 16px;cursor:pointer;">✕ Clear</button>
-   </div>
-  </div>
-
-  <!-- Active votes management -->
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;">
-   <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">⚡ Manage Active Votes</div>
-   <div id="admin-other-votes"></div>
-  </div>
-
- </div>
-</div>
- <div id="votes-list"></div>
-</div>
-<div class="page" id="page-treasury" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;flex-grow:1;">
-
-  <!-- Header -->
-  <div style="text-align:center;margin-bottom:40px;">
-    <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;">Protocol Finance</div>
-    <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(28px,5vw,44px);margin:0 0 10px;">
-      Treasury <span style="color:var(--gold);">Dashboard</span>
-    </h1>
-    <p style="color:var(--muted);font-size:13px;margin:0;">Live on-chain balances · Terra Classic · columbus-5</p>
-  </div>
-
-  <!-- Total TVL + refresh -->
-  <div style="display:flex;align-items:center;justify-content:space-between;
-    background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.15);
-    border-radius:14px;padding:20px 24px;margin-bottom:24px;">
-    <div>
-      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Total Protocol TVL</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:800;color:var(--gold);line-height:1;" id="t-total-tvl">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="t-total-usd">-</div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;" id="t-last-updated">-</div>
-      <button onclick="loadTreasuryData()" id="t-refresh-btn"
-        style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);
-        color:var(--accent);border-radius:8px;padding:8px 18px;
-        font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;transition:all 0.2s;">
-        ↻ Refresh
-      </button>
-    </div>
-  </div>
-
-  <!-- 3 wallet cards -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px;">
-
-    <!-- Protocol Treasury -->
-    <div style="background:var(--surface);border:1px solid rgba(84,147,247,0.2);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#5493f7,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:16px;">🔮</span>
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">PROTOCOL TREASURY</span>
-        <span style="font-size:8px;background:rgba(84,147,247,0.1);color:var(--accent);border:1px solid rgba(84,147,247,0.15);border-radius:6px;padding:1px 7px;margin-left:auto;">Q&A · CHAT · DRAW</span>
-      </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-oracle-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-oracle-usd">Loading...</div>
-      <div style="font-size:9px;color:var(--muted);font-family:monospace;word-break:break-all;opacity:0.5;padding-top:12px;border-top:1px solid var(--border);">terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt</div>
-    </div>
-
-    <!-- Daily Draw Pool -->
-    <div style="background:var(--surface);border:1px solid rgba(244,208,63,0.18);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f4d03f,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:16px;">🌙</span>
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">DAILY DRAW POOL</span>
-        <span style="font-size:8px;background:rgba(244,208,63,0.08);color:#f4d03f;border:1px solid rgba(244,208,63,0.2);border-radius:6px;padding:1px 7px;margin-left:auto;" id="t-daily-countdown">-</span>
-      </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-draw-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-draw-usd">Loading...</div>
-      <div style="font-size:9px;color:var(--muted);font-family:monospace;word-break:break-all;opacity:0.5;padding-top:12px;border-top:1px solid var(--border);">terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px</div>
-    </div>
-
-    <!-- Weekly Draw Pool -->
-    <div style="background:var(--surface);border:1px solid rgba(167,139,250,0.18);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#a78bfa,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:16px;">📅</span>
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">WEEKLY DRAW POOL</span>
-        <span style="font-size:8px;background:rgba(167,139,250,0.08);color:#a78bfa;border:1px solid rgba(167,139,250,0.2);border-radius:6px;padding:1px 7px;margin-left:auto;" id="t-weekly-countdown">-</span>
-      </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-weekly-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-weekly-usd">Loading...</div>
-      <div style="font-size:9px;color:var(--muted);font-family:monospace;word-break:break-all;opacity:0.5;padding-top:12px;border-top:1px solid var(--border);">terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz</div>
-    </div>
-  </div>
-
-  <!-- Treasury Distribution -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:24px;">
-    <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">Treasury Distribution</div>
-    <div style="display:flex;height:8px;border-radius:6px;overflow:hidden;margin-bottom:10px;">
-      <div style="width:20%;background:#66ffaa;"></div>
-      <div style="width:20%;background:#5493f7;"></div>
-      <div style="width:50%;background:#ffd700;"></div>
-      <div style="width:10%;background:#c084fc;"></div>
-    </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:20px;">
-      <span><span style="color:#66ffaa;">■</span> REP Rewards 20%</span>
-      <span><span style="color:#5493f7;">■</span> Reserve 20%</span>
-      <span><span style="color:#ffd700;">■</span> Liquidity 50%</span>
-      <span><span style="color:#c084fc;">■</span> Dev 10%</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">
-      <div style="background:rgba(102,255,170,0.04);border:1px solid rgba(102,255,170,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#66ffaa;">REP REWARDS</span>
-          <span style="font-size:9px;background:rgba(102,255,170,0.1);color:#66ffaa;border-radius:4px;padding:1px 7px;">20%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-rewards-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-rewards-usd">-</div>
-        <div style="font-size:9px;color:var(--muted);font-family:monospace;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);opacity:0.5;word-break:break-all;">terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce</div>
-      </div>
-      <div style="background:rgba(84,147,247,0.04);border:1px solid rgba(84,147,247,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--accent);">RESERVE</span>
-          <span style="font-size:9px;background:rgba(84,147,247,0.1);color:var(--accent);border-radius:4px;padding:1px 7px;">20%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-reserve-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-reserve-usd">-</div>
-        <div style="font-size:9px;color:var(--muted);font-family:monospace;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);opacity:0.5;word-break:break-all;">terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz</div>
-      </div>
-      <div style="background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#ffd700;">LIQUIDITY</span>
-          <span style="font-size:9px;background:rgba(255,215,0,0.1);color:#ffd700;border-radius:4px;padding:1px 7px;">50%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-liquidity-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-liquidity-usd">-</div>
-        <div style="font-size:9px;color:var(--muted);font-family:monospace;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);opacity:0.5;word-break:break-all;">terra1gukarslv6c8n0s2259822l7059putpqxz405su</div>
-      </div>
-      <div style="background:rgba(192,132,252,0.04);border:1px solid rgba(192,132,252,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#c084fc;">DEVELOPMENT</span>
-          <span style="font-size:9px;background:rgba(192,132,252,0.1);color:#c084fc;border-radius:4px;padding:1px 7px;">10%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-dev-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-dev-usd">-</div>
-        <div style="font-size:9px;color:var(--muted);font-family:monospace;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);opacity:0.5;word-break:break-all;">terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent transactions -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);">Recent Transactions · Protocol Treasury</div>
-      <a href="https://finder.terraclassic.community/columbus-5/address/terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt"
-        target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;opacity:0.7;">View all →</a>
-    </div>
-    <div id="t-recent-txs" style="font-size:12px;color:var(--muted);text-align:center;padding:20px;">Loading...</div>
-  </div>
-
-</div>
-<div class="page" id="page-about">
-
-<!-- HERO -->
-<div style="text-align:center;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid rgba(30,51,88,0.6);">
-  <div class="tag">Terra Classic · columbus-5</div>
-  <h1>Terra <span>Oracle</span> Classic</h1>
-  <p style="font-size:13px;color:var(--muted);line-height:1.8;max-width:520px;margin:0 auto 12px;">
-    An on-chain Q&A and governance system where every action has economic weight.<br>
-    No login. Only wallet.
-  </p>
-  <p style="font-size:11px;color:rgba(107,130,168,0.6);">All transactions verifiable on Terra Classic blockchain</p>
-</div>
-
-<!-- WHAT IS A QUESTION -->
-<div style="margin-bottom:32px;">
-  <div class="divider">What is a question?</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      A question on Terra Oracle is not just text - it's an <strong style="color:var(--accent);">economic action on the blockchain</strong>. 
-      When you pay 200,000 LUNC to ask, that fee is split automatically:
-    </p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-      <div style="flex:1;min-width:160px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:14px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#a78bfa;">50%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">→ Weekly Prize Pool</div>
-      </div>
-      <div style="flex:1;min-width:160px;background:rgba(84,147,247,0.07);border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:14px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--accent);">50%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">→ Protocol Treasury</div>
-      </div>
-    </div>
-    <p style="font-size:12px;color:var(--muted);line-height:1.7;">
-      You also receive <span style="color:var(--green);">+40 REP</span> and <span style="color:#a78bfa;">+2 free Draw entries</span> - your contribution immediately returns value back to you. Oracle Draw entries also earn <span style="color:#ff8844;">+10 REP per entry</span>.
-    </p>
-  </div>
-</div>
-
-<!-- ANONYMITY -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Anonymity · Web3 native</div>
-  <div style="background:var(--surface);border:1px solid rgba(0,255,176,0.15);border-radius:14px;padding:24px;display:flex;gap:20px;align-items:flex-start;">
-    <div style="font-size:32px;flex-shrink:0;">🕶</div>
-    <div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">No login. No email. No account.</div>
-      <p style="font-size:12px;color:var(--muted);line-height:1.75;">
-        Your identity is your wallet address - and it's never shown publicly. The system uses an anonymous alias generated from your address. 
-        You participate fully without revealing who you are. This is a core Web3 principle: <span style="color:var(--green);">sovereignty over your own identity</span>.
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- REPUTATION = VALUE -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Reputation = real value</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      REP is not just points. It's <strong style="color:var(--gold);">your position in the protocol</strong> - and it directly affects how much LUNC you earn from the weekly pool.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.2);border-radius:10px;padding:14px;">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;">Fee discount</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Higher rank = lower cost per question. Up to <span style="color:var(--green);">−25%</span> at Ascended rank.</div>
-      </div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.2);border-radius:10px;padding:14px;">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;">Reward multiplier</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Your weekly pool share is multiplied by your rank. Up to <span style="color:var(--green);">×3.0</span> at Ascended.</div>
-      </div>
-    </div>
-    <div style="background:var(--surface2);border-radius:10px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);">
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">◈</div><div style="font-size:8px;color:#6b82a8;margin-top:3px;">INITIATE</div><div style="font-size:8px;color:var(--muted);">x1.0</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🌱</div><div style="font-size:8px;color:#66ffaa;margin-top:3px;">SEEKER</div><div style="font-size:8px;color:var(--muted);">x1.0</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔵</div><div style="font-size:8px;color:#7eb8ff;margin-top:3px;">ADEPT</div><div style="font-size:8px;color:var(--green);">x1.2</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔮</div><div style="font-size:8px;color:#c084fc;margin-top:3px;">ANALYST</div><div style="font-size:8px;color:var(--green);">x1.5</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">⚡</div><div style="font-size:8px;color:#ffd700;margin-top:3px;">ORACLE</div><div style="font-size:8px;color:var(--green);">x2.0</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔥</div><div style="font-size:8px;color:#ff8844;margin-top:3px;">ARCHON</div><div style="font-size:8px;color:var(--green);">x2.5</div></div>
-        <div style="text-align:center;padding:10px 4px;"><div style="font-size:14px;">✦</div><div style="font-size:8px;color:#00ffff;margin-top:3px;">ASCENDED</div><div style="font-size:8px;color:var(--green);">x3.0</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- TREASURY & REWARDS -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Treasury & rewards · where money flows</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      Every LUNC paid into the system has a clear destination - nothing disappears. The protocol is fully transparent and verifiable on-chain.
-    </p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;">❓</div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Question fee <span style="color:var(--text);">(200K LUNC)</span></div>
-        <div style="font-size:11px;color:var(--muted);">50% pool · 50% treasury</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;">💬</div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Chat message <span style="color:var(--text);">(5K LUNC)</span></div>
-        <div style="font-size:11px;color:var(--muted);">100% treasury</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;">🏛</div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Protocol Treasury</div>
-        <div style="font-size:11px;color:var(--gold);">20% → weekly rewards</div>
-      </div>
-    </div>
-    <p style="font-size:11px;color:var(--muted);line-height:1.7;">
-      Every Monday, 20% of the Protocol Treasury is distributed to the top 20% of contributors - ranked by weekly REP, multiplied by their rank.
-    </p>
-  </div>
-</div>
-
-<!-- ECOSYSTEM FLOW -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Ecosystem flow</div>
-  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
-    <div style="background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.25);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--accent);">ASK</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#00D4AA;">CHAT</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(232,200,64,0.08);border:1px solid rgba(232,200,64,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--gold);">REP</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#a78bfa;">DRAW</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.18);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--gold);">TREASURY</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--green);">YOU</div>
-  </div>
-  <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;">Every action feeds the system. Activity creates value that returns to users.</p>
-</div>
-
-</div>
-<!-- ─── PROFILE PAGE ─────────────────────────────────── -->
-<!-- Вставить перед <div class="site-footer"> -->
-<div class="page" id="page-profile">
-  <div class="page-header">
-    <div class="tag">Account</div>
-    <h1>My <span>Profile</span></h1>
-    <p class="subtitle">Your anonymous identity on Terra Oracle</p>
-  </div>
-
-  <!-- PROFILE CARD -->
-  <div class="card" style="margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-      <!-- Avatar -->
-      <div style="position:relative;flex-shrink:0;">
-        <div id="profile-avatar-wrap" onclick="triggerAvatarUpload()"
-          style="width:80px;height:80px;border-radius:50%;background:rgba(84,147,247,0.1);
-          border:2px solid rgba(84,147,247,0.3);cursor:pointer;overflow:hidden;
-          display:flex;align-items:center;justify-content:center;transition:border-color 0.2s;
-          position:relative;"
-          onmouseover="this.style.borderColor='rgba(84,147,247,0.7)'"
-          onmouseout="this.style.borderColor='rgba(84,147,247,0.3)'">
-          <img id="profile-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
-          <span id="profile-avatar-placeholder" style="font-size:28px;color:var(--muted);">👤</span>
-          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;
-            justify-content:center;opacity:0;transition:opacity 0.2s;border-radius:50%;"
-            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
-            <span style="font-size:11px;color:#fff;font-weight:600;">Edit</span>
-          </div>
-        </div>
-        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
-        <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);
-          border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;
-          font-size:11px;border:2px solid var(--bg);" onclick="triggerAvatarUpload()">✏️</div>
-      </div>
-
-      <!-- Name & Title -->
-      <div style="flex:1;min-width:200px;">
-        <div id="profile-display-name" style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">-</div>
-        <div id="profile-title-badge" style="font-size:12px;color:var(--gold);margin-bottom:6px;"></div>
-        <div style="font-size:10px;font-family:monospace;color:var(--muted);" id="profile-wallet-short"></div>
-      </div>
-
-      <!-- Edit button -->
-      <button onclick="toggleProfileEdit()" id="profile-edit-btn"
-        style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.25);
-        color:var(--accent);border-radius:8px;padding:9px 18px;font-family:'Exo 2',sans-serif;
-        font-size:11px;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;">
-        ✏️ Edit Profile
-      </button>
-    </div>
-
-    <!-- Edit form -->
-    <div id="profile-edit-form" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
-      <div class="form-group">
-        <label>Nickname <span style="font-size:9px;color:var(--muted);text-transform:none">(shown instead of Anonymous#xxxx)</span></label>
-        <input type="text" id="profile-nickname-input" placeholder="Enter your nickname..." maxlength="24"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-          color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:10px 14px;
-          outline:none;width:100%;box-sizing:border-box;transition:border-color 0.2s;"
-          onfocus="this.style.borderColor='rgba(84,147,247,0.5)'"
-          onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div style="display:flex;gap:10px;margin-top:4px;">
-        <button onclick="saveProfile()" class="btn btn-primary" style="padding:10px 20px;font-size:11px;">💾 Save</button>
-        <button onclick="toggleProfileEdit()" style="background:none;border:1px solid var(--border);color:var(--muted);
-          border-radius:8px;padding:10px 16px;font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;">Cancel</button>
-        <button onclick="removeAvatar()" style="background:rgba(255,60,60,0.06);border:1px solid rgba(255,60,60,0.2);
-          color:#ff6060;border-radius:8px;padding:10px 16px;font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;margin-left:auto;">🗑 Remove Avatar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--accent);" id="stat-questions">0</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Questions</div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--green);" id="stat-answers">0</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Answers</div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--gold);" id="stat-upvotes">0</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Upvotes</div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#ff6b6b;" id="stat-top-answers">0</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Top Answers</div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#4ade80;" id="stat-messages">0</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;">Messages</div>
-    </div>
-  </div>
-
-  <!-- MESSAGE MILESTONES -->
-  <div class="card" style="margin-bottom:20px;">
-    <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">💬 Chat Activity → Weekly Draw Entries</div>
-    <div id="message-milestone-section">
-      <!-- filled by JS -->
-    </div>
-  </div>
-
-  <!-- REPUTATION BLOCK -->
-  <div class="card" style="margin-bottom:20px;" id="reputation-block">
-    <!-- filled by JS -->
-  </div>
-
-  <!-- DAILY STREAK -->
-  <div class="card" style="margin-bottom:20px;" id="streak-block">
-    <!-- filled by JS -->
-  </div>
-
-  <!-- RANK PROGRESS -->
-  <div class="card" style="margin-bottom:20px;">
-    <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Oracle Ascension</div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:16px;">Earn REP through activity · Unlocks fee discounts &amp; rank multipliers</div>
-    <div style="display:flex;flex-direction:column;gap:10px;" id="title-progress-list">
-      <!-- filled by JS -->
-    </div>
-  </div>
-
-  <!-- HISTORY TABS -->
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-    <button class="vote-tab active" id="history-tab-answers" onclick="switchHistoryTab('answers')">💬 My Answers</button>
-    <button class="vote-tab" id="history-tab-questions" onclick="switchHistoryTab('questions')">🔮 My Questions</button>
-    <button class="vote-tab" id="history-tab-messages" onclick="switchHistoryTab('messages')">📨 My Messages</button>
-  </div>
-  <div id="profile-history-list">
-    <!-- filled by JS -->
-  </div>
-
-
-
-</div>
-<!-- ═══ MY BAG PAGE ═══ -->
-<div class="page" id="page-bag" style="padding:40px 20px 80px;max-width:900px;margin:0 auto;">
-
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
-    <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#f4d03f;letter-spacing:0.05em;">MY BAG</div>
-  </div>
-  <div style="height:1px;background:linear-gradient(90deg,rgba(244,208,63,0.4),transparent);margin-bottom:32px;"></div>
-
-  <!-- Not connected -->
-  <div id="bag-not-connected-oracle" style="text-align:center;padding:60px 20px;">
-    <div style="font-size:48px;margin-bottom:16px;">🔒</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#f4d03f;margin-bottom:8px;">Connect your wallet</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Connect to see your Oracle Mask NFTs and draw history</div>
-    <button onclick="openBagWalletPicker()"
-      style="padding:14px 36px;border-radius:12px;cursor:pointer;
-      font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.08em;
-      background:linear-gradient(135deg,#8b0000,#cc1100);border:1px solid rgba(255,100,0,0.4);
-      color:#f4d03f;box-shadow:0 4px 20px rgba(139,0,0,0.4);">
-      Connect Wallet
-    </button>
-  </div>
-
-  <!-- Connected -->
-  <div id="bag-connected-oracle" style="display:none;">
-
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px;">
-      <div style="background:rgba(244,208,63,0.06);border:1px solid rgba(244,208,63,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#f4d03f;" id="o-bag-stat-nfts">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">NFTs owned</div>
-      </div>
-      <div style="background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.15);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#66ffaa;" id="o-bag-stat-won">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Total won</div>
-      </div>
-      <div style="background:rgba(212,160,23,0.05);border:1px solid rgba(212,160,23,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#f4d03f;" id="o-bag-stat-daily">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Daily · this round</div>
-      </div>
-      <div style="background:rgba(74,144,217,0.05);border:1px solid rgba(74,144,217,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#7eb8ff;" id="o-bag-stat-weekly">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Weekly · this round</div>
-      </div>
-    </div>
-
-    <!-- NFT Grid header -->
-    <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;color:rgba(244,208,63,0.7);margin-bottom:12px;display:flex;align-items:center;gap:10px;">
-      ORACLE MASK NFTs
-      <span id="o-bag-count" style="background:rgba(244,208,63,0.15);color:#f4d03f;border-radius:20px;padding:2px 10px;font-size:12px;">0</span>
-    </div>
-
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-      <button onclick="filterOracleBagNFTs('all')" id="o-bag-filter-all"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(244,208,63,0.5);
-        background:rgba(244,208,63,0.12);color:#f4d03f;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;font-weight:700;transition:all 0.2s;">All</button>
-      <button onclick="filterOracleBagNFTs('common')" id="o-bag-filter-common"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(180,190,210,0.2);
-        background:transparent;color:#b0b8c8;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Common</button>
-      <button onclick="filterOracleBagNFTs('rare')" id="o-bag-filter-rare"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(96,165,250,0.2);
-        background:transparent;color:#60a5fa;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Rare</button>
-      <button onclick="filterOracleBagNFTs('legendary')" id="o-bag-filter-legendary"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(251,146,60,0.2);
-        background:transparent;color:#fb923c;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Legendary</button>
-      <button onclick="filterOracleBagNFTs('used')" id="o-bag-filter-used"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);
-        background:transparent;color:#9ca3af;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Round over</button>
-    </div>
-
-    <!-- Empty -->
-    <div id="o-bag-empty" style="text-align:center;padding:48px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;margin-bottom:32px;">
-      <div style="font-size:40px;margin-bottom:12px;">🎭</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">No Oracle Mask NFTs yet</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Visit Oracle Draw to mint your first NFT</div>
-      <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
-        style="padding:12px 28px;border-radius:10px;border:1px solid rgba(244,208,63,0.4);
-        background:rgba(244,208,63,0.08);color:#f4d03f;text-decoration:none;
-        font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;">
-        Go to Oracle Draw →
-      </a>
-    </div>
-
-    <!-- NFT Grid -->
-    <div id="o-bag-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:40px;"></div>
-
-    <!-- History -->
-    <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;color:rgba(244,208,63,0.7);margin-bottom:16px;margin-top:8px;">
-      PARTICIPATION HISTORY
-    </div>
-    <div id="o-bag-hist-empty" style="text-align:center;padding:32px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;">
-      <div style="font-size:13px;color:var(--muted);">No participation history yet</div>
-    </div>
-    <table id="o-bag-hist-table" style="display:none;width:100%;border-collapse:collapse;font-size:13px;">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Round</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Type</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">NFT</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Result</th>
-        </tr>
-      </thead>
-      <tbody id="o-bag-hist-body"></tbody>
-    </table>
-
-  </div>
-</div>
-<!-- ═══ END MY BAG PAGE ═══ -->
-
-<!-- ═══ GLOBAL FOOTER ═══ -->
-<!-- REPUTATION PAGE -->
-<div class="page" id="page-reputation" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;">
-  <!-- filled by reputation.js -->
-</div>
-
-<footer style="position:relative;z-index:2;border-top:1px solid rgba(255,255,255,0.06);background:rgba(4,10,20,0.85);backdrop-filter:blur(12px);padding:32px 24px 24px;margin-top:auto;flex-shrink:0;">
-  <div style="max-width:960px;margin:0 auto;">
-    <!-- Top row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:14px;">
-      <!-- Logo -->
-      <div style="display:flex;align-items:center;gap:4px;">
-        <img src="v1.gif" style="width:72px;height:72px;object-fit:contain;">
-        <div>
-          <div style="font-family:'Boldonse',sans-serif;font-size:16px;color:#fff;letter-spacing:0.04em;">Terra Oracle <span style="color:#7eb8ff;">Classic</span></div>
-          <div style="font-size:11px;color:var(--gold);letter-spacing:0.18em;margin-top:3px;">TCO · LUNC ECOSYSTEM</div>
-        </div>
-      </div>
-      <!-- Social links -->
-      <div style="display:flex;align-items:center;gap:10px;">
-        <!-- Telegram -->
-        <a href="https://t.me/terra_oracle" target="_blank" title="Telegram Community"
-          style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--muted);text-decoration:none;transition:all 0.2s;"
-          onmouseover="this.style.background='rgba(84,147,247,0.12)';this.style.borderColor='rgba(84,147,247,0.3)';this.style.color='#5493f7';"
-          onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--muted)';">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.032 9.571c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.16 14.896l-2.95-.924c-.64-.203-.654-.64.136-.948l11.543-4.453c.537-.194 1.006.131.833.677z"/></svg>
-        </a>
-        <!-- X (Twitter) -->
-        <a href="#" title="X (Twitter) - coming soon"
-          style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--muted);text-decoration:none;transition:all 0.2s;"
-          onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#fff';"
-          onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--muted)';">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>
-        <!-- Docs -->
-        <a href="https://baydashaaa.github.io/terra-oracle-docs/" title="Documentation"
-          style="display:flex;align-items:center;gap:7px;padding:0 14px;height:38px;border-radius:10px;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);color:var(--accent);text-decoration:none;font-size:11px;font-weight:600;letter-spacing:0.06em;transition:all 0.2s;white-space:nowrap;"
-          onmouseover="this.style.background='rgba(84,147,247,0.15)';this.style.borderColor='rgba(84,147,247,0.4)';"
-          onmouseout="this.style.background='rgba(84,147,247,0.08)';this.style.borderColor='rgba(84,147,247,0.2)';">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Docs
-        </a>
-        <!-- GitHub -->
-        <a href="https://github.com/Baydashaaa/terra-oracle" target="_blank" title="GitHub"
-          style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--muted);text-decoration:none;transition:all 0.2s;"
-          onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#fff';"
-          onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--muted)';">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
-        </a>
-      </div>
-    </div>
-    <!-- Bottom row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);">
-      <div style="font-size:10px;color:var(--muted);">© 2026 Terra Oracle Classic · Built on Terra Classic · columbus-5</div>
-      <div style="display:flex;gap:16px;">
-        <a href="https://finder.terraclassic.community/columbus-5" target="_blank" style="font-size:10px;color:var(--muted);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terra Finder →</a>
-        <a href="https://www.terra-classic.io" target="_blank" style="font-size:10px;color:var(--muted);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terra Classic →</a>
-      </div>
-    </div>
-  </div>
-</footer>
-<!-- ═══ END FOOTER ═══ -->
-
-  <!-- Логика -->
-  <script src="assets/js/treasury.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/profile.js"></script>
-  <script src="assets/js/reputation.js"></script>
-<script>
-// ── Mobile navigation ──
-function closeMobileMenu() {
-  const drawer = document.getElementById('nav-mobile-drawer');
-  const btn = document.getElementById('nav-hamburger');
-  if (drawer) drawer.classList.remove('open');
-  if (btn) btn.classList.remove('active');
-}
-
-function toggleMobileNav() {
-  const drawer = document.getElementById('nav-mobile-drawer');
-  const btn = document.getElementById('nav-hamburger');
-  const isOpen = drawer.classList.toggle('open');
-  btn.classList.toggle('open', isOpen);
-  document.body.style.overflow = isOpen ? 'hidden' : '';
-}
-
-function mobileNavGo(page) {
-  showPage(page);
-  toggleMobileNav();
-}
-
-function mobileNavGoFn(fn) {
-  toggleMobileNav();
-  setTimeout(function() {
-    if (fn === 'showPage_treasury' && typeof showPage_treasury === 'function') {
-      showPage_treasury({target: document.createElement('button')});
+window.addEventListener('load', () => { window.scrollTo(0, 0); });
+
+// ─── ADMIN KEY ───────────────────────────────────────────────
+const ADMIN_KEY = 'TerraOracle#9X4K-2025';
+
+// ─── DEMO QUESTIONS ───────────────────────────────────────────
+const DEMO_QUESTIONS = [
+  {
+    id: 'LUNC-A3F9K2B',
+    alias: 'Anonymous#4471',
+    isAdmin: false,
+    title: '🌱 Seeker',
+    category: '🗳️ Governance',
+    text: 'What is the plan for USTC re-peg after the SDK 0.53 upgrade? Has any formal proposal been submitted to the governance forum yet?',
+    tags: ['ustc','sdk053','governance'],
+    time: '34 min ago',
+    votes: 12,
+    answers: [
+      { alias: 'Anonymous#8821', isAdmin: false, title: '⚡ Oracle', text: 'No formal proposal yet, but several validators have discussed it in the bi-weekly call. The main blocker is liquidity depth - USTC needs at least $50M TVL before a peg mechanism is viable.', votes: 8, voted: false },
+      { alias: 'Admin', isAdmin: true, title: null, text: 'This is being tracked. A governance discussion thread will be opened within the next 2 weeks following the SDK upgrade completion. Stay tuned to the official Terra Classic channels.', votes: 24, voted: false },
+    ],
+    voted: false,
+    open: false,
+    formOpen: false,
+  },
+  {
+    id: 'LUNC-B7M2X1C',
+    alias: 'Anonymous#2209',
+    isAdmin: false,
+    title: null,
+    category: '⚙️ Validator Issue',
+    text: 'Is there a minimum self-delegation requirement for validators after MM 2.0 activates? Some validators seem to be running with very low self-stake.',
+    tags: ['validators','mm20','staking'],
+    time: '2 hrs ago',
+    votes: 7,
+    answers: [],
+    voted: false,
+    open: false,
+    formOpen: false,
+  },
+];
+
+// ─── QUESTIONS STORAGE ───────────────────────────────────────
+const WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+
+// ── Worker-based questions storage ───────────────────────────
+// questions[] is the in-memory cache, synced from worker on load
+let questions = [];
+let _questionsLoaded = false;
+
+async function loadQuestionsFromWorker() {
+  try {
+    const res = await fetch(`${WORKER_URL}/questions`);
+    if (!res.ok) throw new Error('Worker error');
+    const data = await res.json();
+    questions = (data.questions || []).map(q => ({
+      answers: [], votes: 0, voted: false, open: false, formOpen: false,
+      tags: [],
+      // Generate time from createdAt if not present
+      time: q.time || (q.createdAt ? (() => { const d = new Date(q.createdAt * 1000); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); })() : 'unknown'),
+      ...q,
+    }));
+    // Restore voted state - from worker data (wallet-based) + localStorage fallback
+    const votedQ  = JSON.parse(localStorage.getItem('voted_questions') || '{}');
+    const votedA  = JSON.parse(localStorage.getItem('voted_answers') || '{}');
+    for (const q of questions) {
+      // Check if wallet already voted this question (on-chain in voters array)
+      if (votedQ[q.id]) q.voted = true;
+      if ((globalWalletAddress || connectedAddress) && q.voters && q.voters.includes(globalWalletAddress || connectedAddress)) q.voted = true;
+      for (const a of q.answers) {
+        if (votedA[a.id]) a.voted = true;
+        if ((globalWalletAddress || connectedAddress) && a.voters && a.voters.includes(globalWalletAddress || connectedAddress)) a.voted = true;
+      }
+      // Restore poll vote
+      if (q.poll && q.pollVoters && globalWalletAddress && q.pollVoters.includes(globalWalletAddress)) {
+        const votedPollKey = 'poll_vote_' + q.id;
+        const savedOpt = localStorage.getItem(votedPollKey);
+        q.myPollVote = savedOpt !== null ? parseInt(savedOpt) : null;
+      }
     }
-  }, 50);
+    _questionsLoaded = true;
+    // Build score map for rank badges
+    if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
+    renderBoard();
+  } catch(e) {
+    console.warn('Failed to load questions from worker:', e.message);
+    questions = [];
+    _questionsLoaded = true;
+    renderBoard();
+  }
 }
 
-// Close drawer on outside click
-document.addEventListener('click', function(e) {
-  const drawer = document.getElementById('nav-mobile-drawer');
-  const btn = document.getElementById('nav-hamburger');
-  if (drawer && drawer.classList.contains('open')) {
-    if (!drawer.contains(e.target) && !btn.contains(e.target)) {
-      drawer.classList.remove('open');
-      btn.classList.remove('open');
-      document.body.style.overflow = '';
+// saveQuestions - no-op, worker handles persistence
+function saveQuestions(qs) { questions = qs; }
+let boardFilter = 'all';
+let boardSort = 'new';
+
+// Load questions from worker on startup
+loadQuestionsFromWorker();
+let boardSearch = '';
+
+// ─── WALLET SESSION RESTORE ───────────────────────────────────
+async function restoreWalletSession() {
+  const saved = loadWalletSession();
+  if (!saved) return;
+  let attempts = 0;
+  while (!window.keplr && attempts < 30) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+  }
+  if (!window.keplr) return;
+  try {
+    await window.keplr.enable('columbus-5');
+    const signer = window.keplr.getOfflineSigner('columbus-5');
+    const accounts = await signer.getAccounts();
+    if (accounts[0].address === saved) {
+      setWalletConnected(saved);
+    } else {
+      clearWalletSession();
     }
+  } catch(e) { clearWalletSession(); }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', restoreWalletSession);
+} else {
+  restoreWalletSession();
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────
+function showPage(name, e, skipHistory) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  if (e && e.target) e.target.classList.add('active');
+  if (name === 'board') { if (!_questionsLoaded) loadQuestionsFromWorker(); else renderBoard(); }
+  if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); loadVotesFromWorker(); }
+  if (name === 'chat') renderChatPage();
+  if (name === 'bag')  renderOracleBag();
+  if (!skipHistory && history.pushState) {
+    history.pushState({ page: name }, '', '#' + name);
+  }
+  try { sessionStorage.setItem('currentPage', name); } catch(e) {}
+  smoothScrollTop();
+}
+
+// Handle browser Back/Forward
+window.addEventListener('popstate', function(e) {
+  const name = (e.state && e.state.page) || (location.hash ? location.hash.slice(1) : 'home');
+  if (name === 'treasury') {
+    if (typeof showPage_treasury === 'function') showPage_treasury(null, null, true);
+  } else if (name && name.startsWith('reputation')) {
+    const tab = name.split(':')[1] || 'leaderboard';
+    if (typeof showRepPage === 'function') showRepPage(tab, true);
+  } else if (name === 'profile') {
+    if (typeof openProfile === 'function') openProfile(true);
+  } else {
+    showPage(name || 'home', null, true);
   }
 });
 
-// Sync mobile wallet label with desktop
-// Update mobile wallet UI when connected/disconnected
-function updateMobileWalletUI(address) {
-  const connectedInfo = document.getElementById('mobile-connected-info');
-  const addrEl = document.getElementById('mobile-wallet-addr');
-  const navBtn = document.getElementById('mobile-wallet-nav-btn');
-  const navLabel = document.getElementById('mobile-wallet-nav-label');
-  if (address) {
-    const short = address.slice(0,6)+'...'+address.slice(-4);
-    if (connectedInfo) connectedInfo.style.display = 'block';
-    if (addrEl) addrEl.textContent = address.slice(0,10)+'...'+address.slice(-6);
-    if (navLabel) navLabel.textContent = short;
-    if (navBtn) {
-      navBtn.style.background = 'rgba(0,200,150,0.12)';
-      navBtn.style.borderColor = 'rgba(0,200,150,0.35)';
-      navBtn.style.color = '#66ffaa';
-    }
+// ─── Treasury logic moved to assets/js/treasury.js ───────────
+
+// ─── HASHTAG LOGIC ────────────────────────────────────────────
+let currentTags = [];
+
+function renderTagPills() {
+  const pillsEl = document.getElementById('tag-pills');
+  if (!pillsEl) return;
+  pillsEl.innerHTML = currentTags.map(t =>
+    `<span class="tag-pill">#${t}<button onclick="removeTag('${t}')">✕</button></span>`
+  ).join('');
+  document.getElementById('tags-hidden').value = currentTags.join(',');
+}
+
+function addTag(raw) {
+  if (currentTags.length >= 5) return;
+  const tag = raw.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 20);
+  if (!tag || currentTags.includes(tag)) return;
+  currentTags.push(tag);
+  renderTagPills();
+}
+
+function addTagSuggestion(tag) {
+  addTag(tag);
+  document.getElementById('tag-raw-input').focus();
+}
+
+function removeTag(tag) {
+  currentTags = currentTags.filter(t => t !== tag);
+  renderTagPills();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore page from URL hash first, then sessionStorage
+  const hash = location.hash ? location.hash.slice(1) : null;
+  const savedPage = hash || (() => { try { return sessionStorage.getItem('currentPage'); } catch(e) { return null; } })();
+  // Set initial history entry so Back works from first page
+  if (history.replaceState) history.replaceState({ page: savedPage || 'home' }, '', location.href);
+  if (savedPage === 'treasury') {
+    if (typeof showPage_treasury === 'function') showPage_treasury(null, null, true);
+  } else if (savedPage && savedPage.startsWith('reputation')) {
+    const tab = savedPage.split(':')[1] || 'leaderboard';
+    if (typeof showRepPage === 'function') showRepPage(tab, true);
+  } else if (savedPage === 'profile') {
+    if (typeof openProfile === 'function') openProfile(true);
   } else {
-    if (connectedInfo) connectedInfo.style.display = 'none';
-    if (navLabel) navLabel.textContent = 'Connect';
-    if (navBtn) {
-      navBtn.style.background = 'rgba(84,147,247,0.15)';
-      navBtn.style.borderColor = 'rgba(84,147,247,0.4)';
-      navBtn.style.color = '#7eb8ff';
+    showPage(savedPage || 'home', null, true);
+  }
+  const input = document.getElementById('tag-raw-input');
+  if (!input) return;
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault();
+      addTag(this.value);
+      this.value = '';
+    } else if (e.key === 'Backspace' && this.value === '' && currentTags.length) {
+      currentTags.pop();
+      renderTagPills();
     }
-  }
+  });
+  input.addEventListener('input', function() {
+    if (this.value.endsWith(',') || this.value.endsWith(' ')) {
+      addTag(this.value);
+      this.value = '';
+    }
+  });
+});
+
+// ─── FILTER & SORT ──────────────────────────────────────────
+function setBoardSearch(val) {
+  boardSearch = val.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = boardSearch ? 'block' : 'none';
+  renderBoard();
 }
 
-const _origSetWalletConnectedMobile = window.setWalletConnected;
-setTimeout(() => {
-  if (typeof window.setWalletConnected === 'function') {
-    const _prev = window.setWalletConnected;
-    window.setWalletConnected = function(address) {
-      _prev(address);
-      updateMobileWalletUI(address);
-    };
-    // Restore session if saved
-    const saved = (() => { try { const s = JSON.parse(localStorage.getItem('wallet_session')||'null'); if(s&&s.address&&s.expires>Date.now()) return s.address; } catch(e){} return null; })();
-    if (saved) updateMobileWalletUI(saved);
-  }
-}, 300);
-
-// Also patch disconnectWallet to update mobile UI
-setTimeout(() => {
-  if (typeof window.disconnectWallet === 'function') {
-    const _prevDisc = window.disconnectWallet;
-    window.disconnectWallet = function() {
-      _prevDisc();
-      updateMobileWalletUI(null);
-    };
-  }
-}, 300);
-</script>
-
-<style>
-/* ── Animated orbs ─────────────────────────────── */
-@keyframes orbFloat1 {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(60px, -80px) scale(1.08); }
-  66%  { transform: translate(-40px, 40px) scale(0.95); }
-  100% { transform: translate(0, 0) scale(1); }
+function clearSearch() {
+  boardSearch = '';
+  document.getElementById('board-search').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderBoard();
 }
-@keyframes orbFloat2 {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(-70px, 60px) scale(1.05); }
-  66%  { transform: translate(50px, -30px) scale(0.92); }
-  100% { transform: translate(0, 0) scale(1); }
+
+function setBoardFilter(cat) {
+  boardFilter = cat;
+  document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
+  const map = {'all':'filter-all','Governance':'filter-gov','Technical':'filter-tech','Validator Issue':'filter-val','Market':'filter-market','Community':'filter-comm','Security / Vulnerability':'filter-gov','Protocol Bug':'filter-tech','Proposal / Idea':'filter-gov','Fraud / Manipulation':'filter-gov','Other':'filter-all'};
+  if (map[cat]) document.getElementById(map[cat])?.classList.add('active');
+  renderBoard();
 }
-.orb-1 { animation: orbFloat1 18s ease-in-out infinite; }
-.orb-2 { animation: orbFloat2 22s ease-in-out infinite; }
-</style>
 
-<script>
-/* ── Starfield canvas - optimized (20fps, paused when hidden) ── */
-(function() {
-  // Disable on mobile/touch devices
-  if (window.matchMedia('(hover: none)').matches) return;
-  const canvas = document.getElementById('bg-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W, H, stars, nebulas, rafId, lastTime = 0;
-  const FPS = 20, INTERVAL = 1000 / FPS;
-  // Fewer stars for better performance
-  const STAR_COUNT = 90;
+function setBoardSort(s) {
+  boardSort = s;
+  document.querySelectorAll('[id^="sort-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-' + s)?.classList.add('active');
+  renderBoard();
+}
 
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+// ─── RENDER BOARD ────────────────────────────────────────────
+function renderPoll(q, qi) {
+  const poll = q.poll;
+  const totalVotes = poll.reduce((s, o) => s + (o.votes || 0), 0);
+  const myVote = q.myPollVote !== undefined ? q.myPollVote : null;
+
+  let optionsHtml = '';
+  for (let oi = 0; oi < poll.length; oi++) {
+    const opt = poll[oi];
+    const pct = totalVotes > 0 ? Math.round((opt.votes || 0) / totalVotes * 100) : 0;
+    const voted = myVote === oi;
+    const border = voted ? 'rgba(84,147,247,0.6)' : 'rgba(255,255,255,0.08)';
+    const bg = voted ? 'rgba(84,147,247,0.12)' : 'rgba(255,255,255,0.03)';
+    const textColor = voted ? 'var(--accent)' : 'var(--text)';
+    optionsHtml += '<div style="margin-bottom:6px;">' +
+      '<button onclick="votePoll(' + qi + ',' + oi + ')" style="width:100%;text-align:left;padding:8px 12px;border-radius:8px;border:1px solid ' + border + ';background:' + bg + ';cursor:pointer;position:relative;overflow:hidden;">' +
+      '<div style="position:absolute;left:0;top:0;height:100%;width:' + pct + '%;background:rgba(84,147,247,0.08);border-radius:8px;transition:width 0.4s;"></div>' +
+      '<div style="position:relative;display:flex;justify-content:space-between;align-items:center;">' +
+      '<span style="font-size:12px;color:' + textColor + ';">' + opt.text + '</span>' +
+      '<span style="font-size:11px;color:var(--muted);">' + pct + '% · ' + (opt.votes || 0) + '</span>' +
+      '</div></button></div>';
   }
 
-  function initStars() {
-    stars = Array.from({ length: STAR_COUNT }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: Math.random() * 1.2 + 0.2,
-      speed: Math.random() * 0.12 + 0.02,
-      opacity: Math.random() * 0.6 + 0.2,
-      twinkleSpeed: Math.random() * 0.008 + 0.003,
-      twinkleDir: Math.random() > 0.5 ? 1 : -1,
-      hue: Math.random() < 0.15 ? 'gold' : Math.random() < 0.25 ? 'blue' : 'white',
-    }));
-    nebulas = Array.from({ length: 4 }, (_, i) => ({
-      x: [0.15, 0.85, 0.3, 0.7][i] * W,
-      y: [0.2, 0.15, 0.8, 0.75][i] * H,
-      r: Math.random() * 180 + 160,
-      color: i % 2 === 0 ? 'rgba(84,147,247,0.045)' : 'rgba(167,100,250,0.035)',
-      driftX: (Math.random() - 0.5) * 0.15,
-      driftY: (Math.random() - 0.5) * 0.10,
-    }));
-  }
+  return '<div class="poll-section" style="margin:10px 0;border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:12px;background:rgba(84,147,247,0.04);">' +
+    '<div style="font-size:10px;color:var(--accent);letter-spacing:0.08em;margin-bottom:8px;">COMMUNITY POLL</div>' +
+    optionsHtml +
+    '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + ' total</div>' +
+    '</div>';
+}
 
-  function draw(ts) {
-    rafId = requestAnimationFrame(draw);
-    if (ts - lastTime < INTERVAL) return;
-    lastTime = ts;
-    ctx.clearRect(0, 0, W, H);
-    nebulas.forEach(n => {
-      n.x += n.driftX; n.y += n.driftY;
-      if (n.x < -n.r || n.x > W + n.r) n.driftX *= -1;
-      if (n.y < -n.r || n.y > H + n.r) n.driftY *= -1;
-      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-      g.addColorStop(0, n.color); g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g; ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+
+async function votePoll(qi, optionIdx) {
+  if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  const q = questions[qi];
+  if (!q.poll) return;
+  if (q.myPollVote !== undefined && q.myPollVote !== null) return; // already voted
+
+  q.myPollVote = optionIdx;
+  q.poll[optionIdx].votes = (q.poll[optionIdx].votes || 0) + 1;
+  localStorage.setItem('poll_vote_' + q.id, String(optionIdx));
+  renderBoard();
+
+  try {
+    await fetch(`${WORKER_URL}/poll-vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: q.id, optionIdx, wallet: globalWalletAddress }),
     });
-    stars.forEach(s => {
-      s.y += s.speed;
-      if (s.y > H + 2) { s.y = -2; s.x = Math.random() * W; }
-      s.opacity += s.twinkleSpeed * s.twinkleDir;
-      if (s.opacity > 0.85 || s.opacity < 0.1) s.twinkleDir *= -1;
-      const c = s.hue === 'gold' ? `rgba(245,197,24,${s.opacity})`
-              : s.hue === 'blue' ? `rgba(130,180,255,${s.opacity})`
-              : `rgba(220,230,255,${s.opacity})`;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = c; ctx.fill();
-    });
+  } catch(e) { console.warn('Poll vote sync failed:', e.message); }
+}
+
+function renderBoard() {
+  const list = document.getElementById('questions-list');
+  const count = document.getElementById('board-count');
+
+  let filtered = boardFilter === 'all' ? [...questions] : questions.filter(q => q.category === boardFilter || q.category.includes(boardFilter.replace(/[🗳️⚙️📈🌍⚡]\s*/,'')));
+
+  if (boardSearch) {
+    const searchTag = boardSearch.startsWith('#') ? boardSearch.slice(1) : null;
+    filtered = filtered.filter(q =>
+      q.text.toLowerCase().includes(boardSearch) ||
+      q.category.toLowerCase().includes(boardSearch) ||
+      q.id.toLowerCase().includes(boardSearch) ||
+      (searchTag && q.tags && q.tags.some(t => t.toLowerCase() === searchTag.toLowerCase())) ||
+      (q.tags && q.tags.some(t => ('#'+t).includes(boardSearch) || t.includes(boardSearch))) ||
+      q.answers.some(a => a.text.toLowerCase().includes(boardSearch))
+    );
   }
 
-  // Pause when tab is hidden
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { cancelAnimationFrame(rafId); rafId = null; }
-    else if (!rafId) rafId = requestAnimationFrame(draw);
+  if (boardSort === 'hot') filtered.sort((a,b) => (b.votes + b.answers.length*2) - (a.votes + a.answers.length*2));
+  else if (boardSort === 'unanswered') filtered = filtered.filter(q => q.answers.length === 0);
+  else filtered.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  count.textContent = filtered.length + ' open question' + (filtered.length !== 1 ? 's' : '');
+
+  if (filtered.length === 0) {
+    list.innerHTML = boardSearch
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No questions match "<strong>${boardSearch}</strong>".<br><span style="font-size:11px;opacity:0.6;">Try different keywords</span></div></div>`
+      : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions here yet.<br>Be the first to ask!</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((q, qi) => {
+    const realQi = questions.indexOf(q);
+    return `
+    <div class="q-card" id="qcard-${qi}">
+      <div class="q-meta">
+        ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img src="${getProfileAvatar(q.wallet)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
+        ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : '')}
+        <span class="q-category">${q.category}</span>
+        <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
+      </div>
+      ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" onclick="setBoardSearch('#${t}')">#${t}</span>`).join('')}</div>` : ''}
+      <div class="q-text">${boardSearch ? q.text.replace(new RegExp('(' + boardSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>') : q.text}</div>
+      ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
+      <div class="q-footer">
+        <div class="q-votes">
+          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})">👍 ${q.votes}</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-answer" onclick="toggleAnswers(${realQi})">💬 ${q.answers.length} answer${q.answers.length !== 1 ? 's' : ''}</button>
+          <button class="btn btn-sm btn-answer" onclick="toggleAnswerForm(${realQi})">+ Answer</button>
+        </div>
+      </div>
+      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}">
+        ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet - be the first!</div>` : ''}
+        ${q.answers.map((a, ai) => `
+          <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
+            <div class="answer-meta">
+              ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(a.wallet, a.alias)}</span>`}
+              ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : '')}
+            </div>
+            <div class="answer-text">${a.text}</div>
+            <div class="answer-votes">
+              <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${realQi},${ai})">👍 ${a.votes}</button>
+            </div>
+          </div>
+        `).join('')}
+        <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${realQi}">
+          <div class="answer-form-title">Submit anonymous answer</div>
+          <div class="form-group">
+            <label>Your Answer</label>
+            <textarea id="atext-${realQi}" placeholder="Share your knowledge anonymously..." rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Admin Key <span style="font-size:9px;color:var(--muted);text-transform:none">(optional - leave blank to answer anonymously)</span></label>
+            <div class="admin-key-wrap" id="akwrap-${realQi}">
+              <input type="text" id="akey-${realQi}" placeholder="Enter key to post as Admin..." oninput="checkAdminKey(${realQi})" style="-webkit-text-security:disc;text-security:disc;">
+              <span class="admin-key-hint" id="akeyhint-${realQi}">optional</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+            <button class="btn btn-primary btn-sm" onclick="submitAnswer(${realQi})">Post Answer</button>
+            <span style="font-size:10px;color:var(--muted)" id="apreview-${realQi}">Will post as: Anonymous#????</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `; }).join('');
+}
+
+function checkAdminKey(qi) {
+  const key = document.getElementById('akey-' + qi).value;
+  const wrap = document.getElementById('akwrap-' + qi);
+  const hint = document.getElementById('akeyhint-' + qi);
+  const preview = document.getElementById('apreview-' + qi);
+  const isAdmin = key === ADMIN_KEY;
+  wrap.className = 'admin-key-wrap' + (key.length > 0 && isAdmin ? ' valid' : '');
+  hint.textContent = isAdmin ? '🛡️ Admin verified' : 'optional';
+  preview.innerHTML = isAdmin
+    ? 'Will post as: <span class="badge-admin" style="font-size:9px;padding:1px 7px;">🛡️ Admin</span>'
+    : 'Will post as: Anonymous#' + Math.floor(1000 + Math.random() * 9000);
+}
+
+function toggleAnswers(qi) { questions[qi].open = !questions[qi].open; renderBoard(); }
+function toggleAnswerForm(qi) { questions[qi].formOpen = !questions[qi].formOpen; questions[qi].open = true; renderBoard(); }
+
+async function submitAnswer(qi) {
+  const text = document.getElementById('atext-' + qi).value.trim();
+  const key  = document.getElementById('akey-' + qi)?.value || '';
+  if (!text) { alert('Please write your answer first.'); return; }
+  const isAdmin = key === ADMIN_KEY;
+  if (!isAdmin && !globalWalletAddress) { alert('Connect wallet to answer'); return; }
+  const wallet = isAdmin ? 'admin' : globalWalletAddress;
+  const q = questions[qi];
+  try {
+    const res = await fetch(`${WORKER_URL}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: q.id, text, wallet }),
+    });
+    if (!res.ok) throw new Error('Failed to post answer');
+    const data = await res.json();
+    questions[qi].answers.push({
+      id: data.answerId,
+      alias: isAdmin ? 'Admin' : 'Anonymous#' + wallet.slice(-4).toUpperCase(),
+      isAdmin, wallet, text, votes: 0, voted: false,
+    });
+    questions[qi].formOpen = false;
+    questions[qi].open = true;
+    renderBoard();
+  } catch(e) {
+    alert('Failed to post answer: ' + e.message);
+  }
+}
+
+async function voteQuestion(qi) {
+  const q = questions[qi];
+  if (q.voted) return;
+  const _wallet = globalWalletAddress || connectedAddress;
+  if (!_wallet) { alert('Connect wallet to vote'); return; }
+
+  // Optimistic update
+  q.votes++; q.voted = true;
+  const votedQ = JSON.parse(localStorage.getItem('voted_questions') || '{}');
+  votedQ[q.id] = true;
+  localStorage.setItem('voted_questions', JSON.stringify(votedQ));
+  renderBoard();
+
+  // Sync to worker
+  try {
+    const res = await fetch(`${WORKER_URL}/question-vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: q.id, wallet: _wallet }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      if (err.error === 'Already voted') return; // already counted
+      if (err.error === 'Cannot vote your own question') {
+        // Revert
+        q.votes--; q.voted = false;
+        delete votedQ[q.id];
+        localStorage.setItem('voted_questions', JSON.stringify(votedQ));
+        renderBoard();
+        alert('You cannot vote your own question');
+      }
+    }
+  } catch(e) { console.warn('Vote sync failed:', e.message); }
+}
+
+async function voteAnswer(qi, ai) {
+  const answer = questions[qi].answers[ai];
+  if (answer.voted) return;
+  if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  // Optimistic update
+  answer.votes++; answer.voted = true;
+  const votedA = JSON.parse(localStorage.getItem('voted_answers') || '{}');
+  votedA[answer.id] = true;
+  localStorage.setItem('voted_answers', JSON.stringify(votedA));
+  renderBoard();
+  // Persist to worker
+  try {
+    await fetch(`${WORKER_URL}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: questions[qi].id, answerId: answer.id, wallet: globalWalletAddress }),
+    });
+  } catch(e) { console.warn('Vote sync failed:', e.message); }
+}
+
+// ─── ASK FORM ────────────────────────────────────────────────
+document.getElementById('ask-message').addEventListener('input', function() {
+  const max = 2000, len = this.value.length, remaining = max - len;
+  const pct = len / max;
+  const ring = document.getElementById('ask-ring');
+  document.getElementById('ask-count').textContent = remaining;
+  ring.style.strokeDashoffset = 87.96 - pct * 87.96;
+  ring.style.stroke = remaining <= 100 ? '#ff4444' : remaining <= 300 ? '#f5c518' : 'var(--accent)';
+  document.getElementById('ask-count').style.color = remaining <= 100 ? '#ff4444' : remaining <= 300 ? '#f5c518' : 'var(--muted)';
+});
+
+document.getElementById('ask-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ask-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Transmitting<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+  const formData = new FormData(this);
+  const category = formData.get('category') || 'Other';
+  const text = formData.get('message') || '';
+  const txHash = document.getElementById('verified-tx-hidden').value;
+  const wallet = document.getElementById('verified-wallet-hidden').value;
+  const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
+  const tagsRaw = document.getElementById('tags-hidden').value;
+  const tags = tagsRaw ? tagsRaw.split(',').filter(Boolean) : [];
+  const _userTitle = (typeof getUserTitle === 'function' && wallet) ? getUserTitle(wallet) : null;
+  const _titleLabel = _userTitle ? _userTitle.name : 'Seeker';
+  // Poll options
+  const _pollRaw = document.getElementById('poll-options-hidden')?.value || '';
+  let pollOptions = [];
+  try { pollOptions = JSON.parse(_pollRaw).filter(o => o.trim()); } catch {}
+  const poll = pollOptions.length >= 2 ? pollOptions.map(o => ({ text: o, votes: 0, voters: [] })) : null;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, paymentAmount: 200000, poll }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to submit');
+    }
+    // Add optimistically to local cache
+    const newQ = { id: ref, alias: 'Anonymous#' + wallet.slice(-4).toUpperCase(), title: _titleLabel,
+      category, text, tags, wallet, txHash, createdAt: Date.now() / 1000,
+      poll, votes: 0, answers: [], voted: false, open: false, formOpen: false };
+    questions.unshift(newQ);
+    renderBoard();
+    document.getElementById('ask-form-section').style.display = 'none';
+    const success = document.getElementById('ask-success');
+    success.classList.add('visible');
+    document.getElementById('ask-ref').textContent = 'REF: ' + ref;
+    if (typeof resetPollOptions === 'function') resetPollOptions();
+  } catch(e) {
+    alert('Failed to submit question: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Transmit Question →';
+});
+
+// ─── PROTOCOL WALLETS ─────────────────────────────────────────
+const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
+const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
+const LOTTERY_WALLET  = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
+const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
+const PROTOCOL_WALLET = ADMIN_WALLET;
+const REQUIRED_LUNC   = 200000000000; // 200,000 LUNC in uLUNC
+let connectedAddress  = null;
+
+async function connectKeplr() {
+  const btn = document.getElementById('keplr-connect-btn');
+  if (!window.keplr) {
+    if (confirm('Keplr wallet not found. Install Keplr?')) window.open('https://www.keplr.app/', '_blank');
+    return;
+  }
+  try {
+    btn.textContent = 'Connecting...'; btn.disabled = true;
+    await window.keplr.enable('columbus-5');
+    const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
+    const accounts = await offlineSigner.getAccounts();
+    connectedAddress = accounts[0].address;
+    // Update Pay button - async fetch real title from worker
+    const _addr = accounts[0].address;
+    if (typeof fetchQuestionStats === 'function') {
+      fetchQuestionStats(_addr).then(async stats => {
+        const { myQuestions, totalUpvotes } = stats;
+        const _title = (typeof getUserTitleFromStats === 'function')
+          ? getUserTitleFromStats(myQuestions.length, totalUpvotes)
+          : null;
+        let _discPct = _title ? (_title.discount || 0) : 0;
+        // Check streak discount
+        try {
+          const _sr = await fetch(`${WORKER_URL}/streak?wallet=${_addr}`);
+          if (_sr.ok) {
+            const _sd = await _sr.json();
+            if ((_sd.currentStreak || 0) >= 7) _discPct = Math.max(_discPct, 25);
+          }
+        } catch(e) {}
+        const _discAmt = Math.round(200000 * (_discPct / 100));
+        const _price   = 200000 - _discAmt;
+        const _btnEl   = document.getElementById('verify-btn');
+        if (_btnEl) {
+          const _disc = _discPct > 0 ? ` (${_discPct}% off)` : '';
+          _btnEl.textContent = `Pay ${_price.toLocaleString()} LUNC & Unlock →${_disc}`;
+        }
+      });
+    } else {
+      // Fallback to local questions if profile.js not loaded
+      const _title = (typeof getUserTitle === 'function') ? getUserTitle(_addr) : null;
+      const _discPct  = _title ? (_title.discount || 0) : 0;
+      const _discAmt  = Math.round(200000 * (_discPct / 100));
+      const _price    = 200000 - _discAmt;
+      const _btnEl    = document.getElementById('verify-btn');
+      if (_btnEl) {
+        const _disc = _discPct > 0 ? ` (${_discPct}% off)` : '';
+        _btnEl.textContent = `Pay ${_price.toLocaleString()} LUNC & Unlock →${_disc}`;
+      }
+    }
+    document.getElementById('connected-addr').textContent = connectedAddress.slice(0,10)+'...'+connectedAddress.slice(-4);
+    document.getElementById('verified-wallet-hidden').value = connectedAddress;
+    // Refresh My Bag if open
+    if (document.getElementById('page-bag') &&
+        document.getElementById('page-bag').classList.contains('active')) {
+      renderOracleBag();
+    }
+    document.getElementById('keplr-disconnected').style.display = 'none';
+    document.getElementById('keplr-connected').style.display = 'block';
+    if (connectedAddress === ADMIN_WALLET) {
+      document.getElementById('verified-tx-hidden').value = 'ADMIN_BYPASS';
+      document.getElementById('keplr-connected').style.display = 'none';
+      document.getElementById('ask-form').style.display = 'block';
+      const notice = document.getElementById('tx-section');
+      notice.style.display = 'block';
+      notice.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected - payment bypassed</div>';
+    } else {
+      document.getElementById('tx-section').style.display = 'block';
+    }
+  } catch(e) {
+    btn.textContent = '🔑 Connect Keplr Wallet'; btn.disabled = false;
+    alert('Connection failed: ' + (e.message || e));
+  }
+}
+
+function disconnectKeplr() {
+  connectedAddress = null;
+  document.getElementById('keplr-disconnected').style.display = 'block';
+  document.getElementById('keplr-connected').style.display = 'none';
+  document.getElementById('tx-section').style.display = 'none';
+  document.getElementById('ask-form').style.display = 'none';
+  document.getElementById('tx-status').style.display = 'none';
+  document.getElementById('keplr-connect-btn').textContent = '🔑 Connect Keplr Wallet';
+  document.getElementById('keplr-connect-btn').disabled = false;
+}
+
+// ─── AMINO SIGNING HELPER (no cosmjs) ────────────────────────────────────────
+async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
+  const LCD   = 'https://terra-classic-lcd.publicnode.com';
+  const CHAIN = chainId || 'columbus-5';
+
+  // Get account info
+  const accRes  = await fetch(`${LCD}/cosmos/auth/v1beta1/accounts/${fromAddr}`);
+  const accData = await accRes.json();
+  const acct    = accData?.account || {};
+  const accountNumber = parseInt(acct.account_number || '0');
+  const sequence      = parseInt(acct.sequence || '0');
+
+  // Fee = gas + 0.5% tax
+  const gasLimit = 300000;
+  const gasFee   = Math.ceil(gasLimit * 28.325);
+  const taxFee   = Math.ceil(amountUluna * 0.005);
+  const totalFee = gasFee + taxFee;
+
+  // Protobuf helpers
+  function encodeVarint(n) { n=Number(n); const b=[]; while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return new Uint8Array(b); }
+  function encodeField(f,w,d){const t=encodeVarint((f<<3)|w);if(w===2){const l=encodeVarint(d.length);const o=new Uint8Array(t.length+l.length+d.length);o.set(t);o.set(l,t.length);o.set(d,t.length+l.length);return o;}return t;}
+  function concat(...a){const tot=a.reduce((s,x)=>s+x.length,0);const o=new Uint8Array(tot);let off=0;for(const x of a){o.set(x,off);off+=x.length;}return o;}
+  const enc = new TextEncoder();
+
+  // MsgSend
+  const coinP  = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(String(amountUluna))));
+  const msgSP  = concat(encodeField(1,2,enc.encode(fromAddr)), encodeField(2,2,enc.encode(toAddr)), encodeField(3,2,coinP));
+  const anyMsg = concat(encodeField(1,2,enc.encode('/cosmos.bank.v1beta1.MsgSend')), encodeField(2,2,msgSP));
+  const txBodyP = concat(encodeField(1,2,anyMsg), encodeField(2,2,enc.encode(memo)));
+
+  // Get pubkey from Keplr
+  const directSigner = window.keplr.getOfflineSigner(CHAIN);
+  const accounts = await directSigner.getAccounts();
+  const pubkeyB   = accounts[0].pubkey;
+  const pubkeyAny = concat(
+    encodeField(1,2,enc.encode('/cosmos.crypto.secp256k1.PubKey')),
+    encodeField(2,2,encodeField(1,2,pubkeyB))
+  );
+
+  // ModeInfo: SIGN_MODE_DIRECT = 1
+  const modeInfoP = encodeField(1,2,concat(encodeVarint((1<<3)|0), encodeVarint(1)));
+
+  // SignerInfo
+  const signerP = concat(
+    encodeField(1,2,pubkeyAny),
+    encodeField(2,2,modeInfoP),
+    encodeVarint((3<<3)|0), encodeVarint(sequence)
+  );
+
+  // Fee
+  const feeCoinP  = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(String(totalFee))));
+  const feeP      = concat(encodeField(1,2,feeCoinP), encodeVarint((2<<3)|0), encodeVarint(gasLimit));
+  const authInfoP = concat(encodeField(1,2,signerP), encodeField(2,2,feeP));
+
+  // Sign with signDirect
+  const { signed, signature } = await directSigner.signDirect(fromAddr, {
+    bodyBytes:     txBodyP,
+    authInfoBytes: authInfoP,
+    chainId:       CHAIN,
+    accountNumber: BigInt(accountNumber),
   });
 
-  window.addEventListener('resize', () => { resize(); initStars(); });
-  resize(); initStars();
-  rafId = requestAnimationFrame(draw);
-})();
+  // Use signed bytes (Keplr may have modified them)
+  const finalBody     = signed.bodyBytes     || txBodyP;
+  const finalAuthInfo = signed.authInfoBytes || authInfoP;
+  const sigB          = Uint8Array.from(atob(signature.signature), c=>c.charCodeAt(0));
+  const txRawP        = concat(encodeField(1,2,finalBody), encodeField(2,2,finalAuthInfo), encodeField(3,2,sigB));
+  const txBase64      = btoa(String.fromCharCode(...txRawP));
+
+  const res  = await fetch(`${LCD}/cosmos/tx/v1beta1/txs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tx_bytes: txBase64, mode: 'BROADCAST_MODE_SYNC' }),
+  });
+  const data   = await res.json();
+  const txHash = data?.tx_response?.txhash || data?.txhash;
+  const code   = data?.tx_response?.code ?? data?.code ?? 0;
+  if (code !== 0) throw new Error('TX failed: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
+
+  // Poll for confirmation - max 5 × 4s
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 4000));
+    try {
+      const chk = await fetch(`${LCD}/cosmos/tx/v1beta1/txs/${txHash}`);
+      if (chk.ok) {
+        const chkData = await chk.json();
+        if (chkData?.tx_response?.txhash) {
+          if ((chkData.tx_response.code ?? 0) !== 0) throw new Error('TX failed on-chain: ' + chkData.tx_response.raw_log);
+          return txHash;
+        }
+      }
+    } catch(e) { if (e.message?.includes('TX failed')) throw e; }
+  }
+
+  if (code !== 0) throw new Error('TX failed: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
+  return txHash;
+}
+
+// ─── FIX 1: Ask - исправлена fee (200,000 LUNC payment) ──────
+async function autoPayAndUnlock() {
+  if (!connectedAddress) { alert('Connect wallet first!'); return; }
+  const btn = document.getElementById('verify-btn');
+  btn.textContent = '⏳ Opening Keplr...'; btn.disabled = true;
+  try {
+    await window.keplr.enable('columbus-5');
+    const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
+    const sender = accounts[0].address;
+
+    // ── Apply title discount - fetch real stats from worker ──────
+    let discountPct = 0;
+    if (typeof fetchQuestionStats === 'function') {
+      try {
+        const _stats = await fetchQuestionStats(sender);
+        const _t = (typeof getUserTitleFromStats === 'function')
+          ? getUserTitleFromStats(_stats.myQuestions.length, _stats.totalUpvotes)
+          : null;
+        discountPct = _t ? (_t.discount || 0) : 0;
+      } catch(e) {}
+    }
+
+    // ── Apply streak discount (7+ days = 25% off) ────────────────
+    // Takes the higher of rank discount vs streak discount
+    try {
+      const _streakRes = await fetch(`${WORKER_URL}/streak?wallet=${sender}`);
+      if (_streakRes.ok) {
+        const _streakData = await _streakRes.json();
+        if ((_streakData.currentStreak || 0) >= 7) {
+          discountPct = Math.max(discountPct, 25);
+        }
+      }
+    } catch(e) {}
+
+    // Discount is % of total 200,000 LUNC, subtracted from Treasury portion
+    // Weekly Pool: always 100,000 LUNC (fixed)
+    // Treasury: 100,000 - (200,000 × discount%)
+    const toWeekly    = 100000 * 1e6;                                          // always fixed
+    const discountAmt = Math.round(200000 * (discountPct / 100));              // e.g. 5% → 10,000
+    const toTreasury  = Math.round((100000 - discountAmt) * 1e6);              // e.g. 90,000 LUNC
+    const totalLunc   = 100000 + (100000 - discountAmt);                       // e.g. 190,000
+
+    const discountLabel = discountPct > 0
+      ? ` (${discountPct}% off - saved ${discountAmt.toLocaleString()} LUNC)`
+      : '';
+
+    // Send to Weekly Draw Pool first
+    const txHash1 = await sendLuncDirect(
+      sender, LOTTERY_WALLET, toWeekly,
+      'Terra Oracle Q&A - Weekly Pool', 'columbus-5'
+    );
+
+    // Send to Treasury (discounted amount)
+    const txHash2 = await sendLuncDirect(
+      sender, TREASURY_WALLET, toTreasury,
+      'Terra Oracle Q&A - Treasury', 'columbus-5'
+    );
+
+    // Store primary tx hash (Weekly Pool tx) for question record
+    document.getElementById('verified-tx-hidden').value = txHash1;
+    document.getElementById('verified-wallet-hidden').value = sender;
+
+    const luncPaid = totalLunc.toLocaleString();
+    showTxStatus('success', `✅ Payment confirmed! ${luncPaid} LUNC sent${discountLabel}. Form unlocked.`);
+    setTimeout(() => {
+      document.getElementById('tx-section').style.display = 'none';
+      document.getElementById('keplr-connected').style.display = 'none';
+      document.getElementById('ask-form').style.display = 'block';
+    }, 1200);
+  } catch(e) {
+    btn.textContent = 'Pay 200,000 LUNC & Unlock'; btn.disabled = false;
+    showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
+  }
+}
+
+async function verifyTX() {
+  const txHash = document.getElementById('tx-input').value.trim();
+  const btn = document.getElementById('verify-btn');
+  if (!txHash) { alert('Please enter a TX hash'); return; }
+  btn.textContent = 'Checking...'; btn.disabled = true;
+  document.getElementById('tx-status').style.display = 'none';
+  let txData = null;
+  try {
+    const res = await fetch(`https://terra-classic-lcd.publicnode.com/cosmos/tx/v1beta1/txs/${txHash}`);
+    if (res.ok) { txData = await res.json(); }
+  } catch(e) {}
+  btn.textContent = 'Verify'; btn.disabled = false;
+  if (!txData || txData.error) { showTxStatus('error', '❌ Transaction not found. Check the hash and try again.'); return; }
+  if (txData.code && txData.code !== 0) { showTxStatus('error', '❌ Transaction failed on-chain.'); return; }
+  const msgs = txData.tx?.value?.msg || txData.tx?.body?.messages || [];
+  let valid = false, foundAmount = 0;
+  for (const msg of msgs) {
+    const type = msg.type || msg['@type'] || '';
+    const val = msg.value || msg;
+    if (type.includes('MsgSend') || type.includes('bank')) {
+      const toAddr = val.to_address || val.toAddress;
+      const coins = val.amount || [];
+      const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
+      // Accept payment to Treasury OR Weekly Pool (split payment - either tx is valid proof)
+      const MIN_ACCEPTED = 150000 * 1e6; // 150,000 LUNC minimum (max discount = 25%)
+      if ((toAddr === TREASURY_WALLET || toAddr === LOTTERY_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
+        foundAmount += parseInt(lunc.amount);
+      }
+    }
+  }
+  const MIN_ACCEPTED = 100000 * 1e6; // at least the Weekly Pool portion
+  if (foundAmount < MIN_ACCEPTED) { showTxStatus('error', `❌ Invalid payment. Expected 100,000+ LUNC to Oracle wallets. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
+  valid = true;
+  document.getElementById('verified-tx-hidden').value = txHash;
+  showTxStatus('success', '✅ Payment verified! 200,000 LUNC confirmed. Form unlocked.');
+  setTimeout(() => {
+    document.getElementById('tx-section').style.display = 'none';
+    document.getElementById('keplr-connected').style.display = 'none';
+    document.getElementById('ask-form').style.display = 'block';
+  }, 1200);
+}
+
+function showTxStatus(type, msg) {
+  const el = document.getElementById('tx-status');
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'rgba(102,255,170,0.06)' : 'rgba(255,60,60,0.06)';
+  el.style.border = type === 'success' ? '1px solid rgba(102,255,170,0.25)' : '1px solid rgba(255,60,60,0.25)';
+  el.style.color = type === 'success' ? 'var(--green)' : '#ff6060';
+  el.textContent = msg;
+}
+
+// ─── WALLET CONNECT ───────────────────────────────────────────
+let globalWalletAddress = null;
+
+function saveWalletSession(address) {
+  localStorage.setItem('wallet_session', JSON.stringify({ address, expires: Date.now() + 24 * 60 * 60 * 1000 }));
+}
+function loadWalletSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem('wallet_session') || 'null');
+    if (s && s.address && s.expires > Date.now()) return s.address;
+    localStorage.removeItem('wallet_session');
+  } catch(e) {}
+  return null;
+}
+function clearWalletSession() { localStorage.removeItem('wallet_session'); }
+
+window.toggleWalletDropdown = function() {
+  document.getElementById('wallet-dropdown').classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('wallet-wrap').contains(e.target)) {
+    document.getElementById('wallet-dropdown').classList.remove('open');
+  }
+});
+
+window.connectWallet = async function(type) {
+  if (type === 'keplr-ext') {
+    if (!window.keplr) {
+      if (confirm('Keplr extension not found. Install Keplr?')) window.open('https://www.keplr.app/download', '_blank');
+      return;
+    }
+    try {
+      document.getElementById('wallet-btn-label').textContent = 'Connecting...';
+      await window.keplr.enable('columbus-5');
+      const signer = window.keplr.getOfflineSigner('columbus-5');
+      const accounts = await signer.getAccounts();
+      setWalletConnected(accounts[0].address);
+    } catch(e) {
+      document.getElementById('wallet-btn-label').textContent = 'Connect';
+      alert('Connection failed: ' + (e.message || e));
+    }
+  } else if (type === 'galaxy' || type === 'galaxy-mobile') {
+    const galaxy = window.galaxyStation || window.station;
+    if (!galaxy) {
+      if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
+      return;
+    }
+    try {
+      document.getElementById('wallet-btn-label').textContent = 'Connecting...';
+      const conn = await galaxy.connect();
+      const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
+      if (address) {
+        setWalletConnected(address);
+      } else {
+        throw new Error('No address returned');
+      }
+    } catch(e) {
+      document.getElementById('wallet-btn-label').textContent = 'Connect';
+      alert('Galaxy Station connection failed: ' + (e.message || e));
+    }
+  } else if (type === 'luncdash') {
+    const addr = prompt('Enter your Terra Classic wallet address (terra1...):');
+    if (addr && addr.startsWith('terra1') && addr.length > 20) {
+      setWalletConnected(addr.trim());
+    } else if (addr !== null) {
+      alert('Invalid Terra Classic address.');
+    }
+  } else if (type === 'keplr-mobile') {
+    alert('Keplr Mobile (WalletConnect) coming soon! Use Keplr Extension for now.');
+  }
+}
+
+function setWalletConnected(address) {
+  globalWalletAddress = address;
+  connectedAddress = address;
+  saveWalletSession(address);
+  const short = address.slice(0,8) + '...' + address.slice(-4);
+  document.getElementById('wallet-btn-label').textContent = short;
+  document.getElementById('wallet-main-btn').classList.add('connected');
+  document.getElementById('wallet-connected-addr').textContent = address;
+  document.getElementById('wallet-not-connected').style.display = 'none';
+  document.getElementById('wallet-connected-panel').style.display = 'block';
+  document.getElementById('wallet-dropdown').classList.remove('open');
+
+  // Синхронизируем CHAT страницу
+  const chatPrompt = document.getElementById('chat-page-connect-prompt');
+  const chatForm   = document.getElementById('chat-page-form');
+  const chatAddr   = document.getElementById('chat-page-addr');
+  if (chatPrompt) chatPrompt.style.display = 'none';
+  if (chatForm)   chatForm.style.display   = 'block';
+  if (chatAddr)   chatAddr.textContent     = address.slice(0,10)+'...'+address.slice(-4);
+
+  // Синхронизируем ASK страницу
+  const connAddrEl  = document.getElementById('connected-addr');
+  const verifiedWallet = document.getElementById('verified-wallet-hidden');
+  const keplrDisc   = document.getElementById('keplr-disconnected');
+  const keplrConn   = document.getElementById('keplr-connected');
+  if (connAddrEl)     connAddrEl.textContent  = address.slice(0,10)+'...'+address.slice(-4);
+  if (verifiedWallet) verifiedWallet.value    = address;
+  if (keplrDisc)      keplrDisc.style.display = 'none';
+  if (keplrConn)      keplrConn.style.display = 'block';
+  if (address !== ADMIN_WALLET) {
+    const txSection = document.getElementById('tx-section');
+    if (txSection) txSection.style.display = 'block';
+  } else {
+    const verifiedTx = document.getElementById('verified-tx-hidden');
+    const txSection  = document.getElementById('tx-section');
+    const askForm    = document.getElementById('ask-form');
+    if (verifiedTx) verifiedTx.value = 'ADMIN_BYPASS';
+    if (txSection)  { txSection.style.display = 'block'; txSection.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected - payment bypassed</div>'; }
+    if (askForm)    askForm.style.display = 'block';
+  }
+
+  if (window.keplrChatAddress !== undefined) {
+    keplrChatAddress = address;
+    const addrShort = address.slice(0,8) + '...' + address.slice(-4);
+    document.getElementById('keplr-chat-addr').textContent = addrShort;
+    document.getElementById('keplr-verified-bar').style.display = 'flex';
+    document.getElementById('mode-keplr').textContent = '🔑 ' + addrShort;
+    setMode('keplr');
+  }
+  // Обновляем My Bag при подключении кошелька
+  renderOracleBag();
+
+  // Load profile from Worker (profile.js loads after app.js)
+  setTimeout(() => {
+    if (typeof loadProfileFromWorker === 'function') {
+      loadProfileFromWorker(address).then(() => {
+        if (typeof renderBoard === 'function') renderBoard();
+        if (typeof renderProfilePage === 'function' && document.getElementById('page-profile')?.classList.contains('active')) {
+          renderProfilePage();
+        }
+      });
+    }
+  }, 300);
+}
 
 window.openBagWalletPicker = function() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2022,686 +1053,852 @@ window.openBagWalletPicker = function() {
     const dropdown = document.getElementById('wallet-dropdown');
     if (dropdown) dropdown.classList.add('open');
   }, 350);
-};
-
-/* ── NAV CONNECTOR LINES ─────────────────────────────────── */
-function drawNavLines() {
-  // Lines handled via CSS ::before pseudo-elements
 }
 
-// Mark active nav node
-function _wrapShowPage() {
-  if (typeof window.showPage !== 'function') return;
-  const _orig = window.showPage;
-  window.showPage = function(name, e, skipHistory) {
-    _orig(name, e, skipHistory);
-    document.querySelectorAll('.nav-node').forEach(function(n) {
-      n.classList.toggle('active', n.dataset.page === name);
-    });
-  };
+window.disconnectWallet = function() {
+  globalWalletAddress = null;
+  connectedAddress = null;
+  clearWalletSession();
+  document.getElementById('wallet-btn-label').textContent = 'Connect';
+  document.getElementById('wallet-main-btn').classList.remove('connected');
+  document.getElementById('wallet-not-connected').style.display = 'block';
+  document.getElementById('wallet-connected-panel').style.display = 'none';
+  document.getElementById('wallet-dropdown').classList.remove('open');
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) adminPanel.style.display = 'none';
+
+  // Сбрасываем ASK страницу
+  const keplrDisc = document.getElementById('keplr-disconnected');
+  const keplrConn = document.getElementById('keplr-connected');
+  const txSection = document.getElementById('tx-section');
+  const askForm   = document.getElementById('ask-form');
+  if (keplrDisc) keplrDisc.style.display = 'block';
+  if (keplrConn) keplrConn.style.display = 'none';
+  if (txSection) txSection.style.display = 'none';
+  if (askForm)   askForm.style.display   = 'none';
+
+  // Сбрасываем CHAT страницу
+  const chatPrompt = document.getElementById('chat-page-connect-prompt');
+  const chatForm   = document.getElementById('chat-page-form');
+  if (chatPrompt) chatPrompt.style.display = 'block';
+  if (chatForm)   chatForm.style.display   = 'none';
+
+  try { disconnectChatKeplr(); } catch(e) {}
+  renderOracleBag();
 }
-// Try immediately, fallback to DOMContentLoaded and load
-_wrapShowPage();
-document.addEventListener('DOMContentLoaded', _wrapShowPage);
-window.addEventListener('load', _wrapShowPage);
 
-window.addEventListener('load', () => { setTimeout(drawNavLines, 100); });
-window.addEventListener('resize', drawNavLines);
-</script>
-
-<script>
-/* ══════════════════════════════════════════════════════════
-   PARALLAX + CURSOR ENERGY - optimized (disabled on mobile)
-   ══════════════════════════════════════════════════════════ */
-(function() {
-  if (window.matchMedia('(hover: none)').matches) return;
-  const cursorEnergy = document.getElementById('cursor-energy');
-  const energyField  = document.getElementById('energy-field');
-  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-  let cx = mx, cy = my;
-  let rafId = null, moved = false;
-
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY; moved = true;
-  });
-
-  function tick() {
-    rafId = requestAnimationFrame(tick);
-    if (!moved) return;
-    moved = false;
-    cx += (mx - cx) * 0.07;
-    cy += (my - cy) * 0.07;
-    if (cursorEnergy) {
-      cursorEnergy.style.left = cx + 'px';
-      cursorEnergy.style.top  = cy + 'px';
-    }
-    if (energyField) {
-      const ox = (mx / window.innerWidth  - 0.5) * 18;
-      const oy = (my / window.innerHeight - 0.5) * 12;
-      energyField.style.transform = `translate(${ox}px,${oy}px)`;
-    }
-    const orb1 = document.querySelector('.orb-1');
-    const orb2 = document.querySelector('.orb-2');
-    if (orb1) {
-      const ox1 = (mx / window.innerWidth  - 0.5) * 30;
-      const oy1 = (my / window.innerHeight - 0.5) * 20;
-      orb1.style.transform = `translate(${ox1}px,${oy1}px)`;
-    }
-    if (orb2) {
-      const ox2 = (mx / window.innerWidth  - 0.5) * -20;
-      const oy2 = (my / window.innerHeight - 0.5) * -14;
-      orb2.style.transform = `translate(${ox2}px,${oy2}px)`;
-    }
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { cancelAnimationFrame(rafId); rafId = null; }
-    else if (!rafId) { rafId = requestAnimationFrame(tick); }
-  });
-
-  rafId = requestAnimationFrame(tick);
-})();
-
-/* ══════════════════════════════════════════════════════════
-   ENERGY CAPSULE BUTTONS - hover sweep
-   ══════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.btn-primary, .lottery-btn, .treasury-btn').forEach(btn => {
-    btn.addEventListener('mouseenter', () => {
-      btn.style.setProperty('--sweep', '0');
-    });
-  });
+// ─── CHAT PAGE ────────────────────────────────────────────────
+document.getElementById('chat-page-input').addEventListener('input', function() {
+  const max = 256, len = this.value.length, remaining = max - len;
+  const pct = len / max;
+  const ring = document.getElementById('chat-ring');
+  const counter = document.getElementById('chat-page-count');
+  ring.style.strokeDashoffset = 87.96 - (pct * 87.96);
+  if (remaining <= 20) { ring.style.stroke = '#ff4444'; counter.style.color = '#ff4444'; }
+  else if (remaining <= 50) { ring.style.stroke = '#f5c518'; counter.style.color = '#f5c518'; }
+  else { ring.style.stroke = 'var(--accent)'; counter.style.color = 'var(--muted)'; }
+  counter.textContent = remaining;
 });
-</script>
 
+// ─── FIX 2: Chat - исправлена fee (5,000 LUNC payment) ───────
+window.sendChatMessage = async function() {
+  const text = document.getElementById('chat-page-input').value.trim();
+  const statusEl = document.getElementById('chat-tx-status');
+  const btn = document.getElementById('chat-page-send-btn');
+  if (!text) { alert('Write a message first!'); return; }
+  if (!globalWalletAddress) { alert('Connect Keplr first!'); return; }
+  if (!window.keplr) { alert('Keplr not found!'); return; }
+  btn.textContent = '⏳ Waiting for Keplr...'; btn.disabled = true;
+  statusEl.style.display = 'none';
+  try {
+    await window.keplr.enable('columbus-5');
+    const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
+    const sender = accounts[0].address;
+    const txHash = await sendLuncDirect(sender, TREASURY_WALLET, 5000000000, text.slice(0, 256), 'columbus-5');
+    const result = { transactionHash: txHash };
+    const short = sender.slice(0,8)+'...'+sender.slice(-4);
 
+    // ✅ Streak: Chat - платное действие (5,000 LUNC)
+    fetch(`${WORKER_URL}/streak/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: sender, action: 'chat' }),
+    }).catch(() => {});
+    const stored = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]');
+    stored.push({ text, author: short, fullAddr: sender, txHash: result.transactionHash, isVerified: true, timestamp: Date.now() });
+    localStorage.setItem('dao_chat_pending', JSON.stringify(stored));
 
+    // ── Track message count via Worker (server-side, tamper-proof) ──
+    fetch(`${WORKER_URL}/chat/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: sender, txHash: result.transactionHash }),
+    }).then(r => r.json()).then(data => {
+      if (data.milestoneEntry && data.newCount) {
+        setTimeout(() => {
+          statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.3);color:#a78bfa;margin-top:10px;';
+          statusEl.innerHTML = '🎉 Milestone reached! <strong>' + data.newCount + ' messages</strong> - you earned a free Weekly Draw entry! Total entries earned: <strong>' + data.entriesEarned + '</strong>';
+          setTimeout(() => { statusEl.style.display = 'none'; }, 8000);
+        }, 3000);
+      }
+    }).catch(() => {});
+    // ─────────────────────────────────────────────────────────────
 
-
-<script>
-// ── POLL OPTIONS ──────────────────────────────────────────────
-let pollOptions = [];
-
-function addPollOption() {
-  if (pollOptions.length >= 5) return;
-  const idx = pollOptions.length;
-  pollOptions.push('');
-  renderPollOptions();
-  // Focus new input
-  setTimeout(() => {
-    const inp = document.getElementById('poll-opt-' + idx);
-    if (inp) inp.focus();
-  }, 50);
-}
-
-function removePollOption(idx) {
-  pollOptions.splice(idx, 1);
-  renderPollOptions();
-}
-
-function renderPollOptions() {
-  const list = document.getElementById('poll-options-list');
-  const btn  = document.getElementById('add-poll-btn');
-  if (!list) return;
-  list.innerHTML = pollOptions.map((opt, i) => `
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="text" id="poll-opt-${i}" value="${opt.replace(/"/g,'&quot;')}"
-        placeholder="Option ${i+1}"
-        maxlength="100"
-        oninput="pollOptions[${i}]=this.value;updatePollHidden()"
-        style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'Exo 2',sans-serif;">
-      <button type="button" onclick="removePollOption(${i})"
-        style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,60,60,0.3);background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-size:14px;flex-shrink:0;">×</button>
-    </div>
-  `).join('');
-  if (btn) btn.style.display = pollOptions.length >= 5 ? 'none' : 'inline-block';
-  updatePollHidden();
-}
-
-function updatePollHidden() {
-  const hidden = document.getElementById('poll-options-hidden');
-  if (hidden) hidden.value = JSON.stringify(pollOptions.filter(o => o.trim()));
-}
-
-// Reset poll when form resets
-function resetPollOptions() {
-  pollOptions = [];
-  renderPollOptions();
-}
-</script>
-
-<script>
-/* ── ACCORDION ── */
-function toggleAccordion(id) {
-  const item = document.getElementById(id);
-  if (!item) return;
-  const isOpen = item.classList.contains('open');
-  document.querySelectorAll('.mobile-accordion-item.open').forEach(function(el) { el.classList.remove('open'); });
-  if (!isOpen) item.classList.add('open');
-}
-
-/* ── STICKY BAR: show only on home page ── */
-(function() {
-  function updateStickyBar() {
-    const bar = document.getElementById('sticky-bottom-bar');
-    if (!bar) return;
-    const homePage = document.getElementById('page-home');
-    const isHome = homePage && homePage.classList.contains('active');
-    bar.style.display = isHome ? 'flex' : 'none';
+    document.getElementById('chat-page-input').value = '';
+    document.getElementById('chat-page-count').textContent = '256';
+    document.getElementById('chat-ring').style.strokeDashoffset = '87.96';
+    document.getElementById('chat-ring').style.stroke = 'var(--accent)';
+    btn.textContent = 'Send Message →'; btn.disabled = false;
+    statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
+    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraclassic.community/columbus-5/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
+    setTimeout(() => { loadChatFromChain(); }, 8000);
+    setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
+  } catch(e) {
+    btn.textContent = 'Send Message →'; btn.disabled = false;
+    statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(255,60,60,0.06);border:1px solid rgba(255,60,60,0.25);color:#ff6060;margin-top:10px;';
+    statusEl.textContent = '❌ ' + (e.message || 'Transaction cancelled or failed.');
   }
-  document.addEventListener('DOMContentLoaded', function() {
-    updateStickyBar();
-    const observer = new MutationObserver(updateStickyBar);
-    document.querySelectorAll('.page').forEach(function(p) {
-      observer.observe(p, { attributes: true, attributeFilter: ['class'] });
-    });
-  });
-})();
-</script>
+}
 
-<!-- MOBILE CONNECTED MODAL -->
-<div id="mobile-connected-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center;">
-  <div style="background:#0d1117;border:1px solid rgba(0,200,150,0.2);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;">Wallet</div>
-      <button onclick="closeMobileConnectedModal()" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;padding:4px 10px;">✕</button>
-    </div>
-    <div style="background:rgba(0,200,150,0.06);border:1px solid rgba(0,200,150,0.2);border-radius:12px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">CONNECTED</div>
-      <div id="mcm-address" style="font-size:12px;color:#66ffaa;font-weight:600;word-break:break-all;"></div>
-    </div>
-    <button onclick="openProfile();closeMobileConnectedModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.3);border-radius:12px;padding:13px;color:#7eb8ff;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px;">
-      👤 My Profile
-    </button>
-    <button onclick="disconnectWallet();closeMobileConnectedModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.25);border-radius:12px;padding:13px;color:#ff8080;font-size:14px;font-weight:600;cursor:pointer;">
-      ✕ Disconnect
-    </button>
-  </div>
-</div>
+// ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
+const CHAT_WALLET = TREASURY_WALLET;
+const CHAT_HISTORY_WALLET = TREASURY_WALLET;
+const CHAT_MIN_ULUNA = 5000000000;
+// FIX 4: два разных FCD узла для настоящего fallback
+const FCD_NODES = [
+  'https://terra-classic-lcd.publicnode.com',
+  'https://terra-classic-lcd.publicnode.com',
+];
 
-<!-- ═══ WALLET QR MODAL ═══ -->
-<div id="wallet-qr-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;">
-  <div style="background:#0d1117;border:1px solid rgba(123,92,255,0.25);border-radius:20px;padding:28px 24px 24px;width:calc(100% - 32px);max-width:340px;position:relative;box-shadow:0 0 40px rgba(123,92,255,0.15);">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div id="wqr-icon" style="width:36px;height:36px;border-radius:10px;overflow:hidden;flex-shrink:0;"></div>
-        <div>
-          <div id="wqr-title" style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#fff;"></div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.08em;margin-top:1px;">MOBILE WALLET</div>
+const CHAT_REACTIONS = ['🔥','👍','🚀','💎','❤️'];
+
+function getChatReactions() { try { return JSON.parse(localStorage.getItem('chat_reactions') || '{}'); } catch(e) { return {}; } }
+function saveChatReactions(r) { localStorage.setItem('chat_reactions', JSON.stringify(r)); }
+
+function toggleReaction(txHash, emoji) {
+  const all = getChatReactions();
+  const key = txHash + '_' + emoji;
+  const myReactions = JSON.parse(localStorage.getItem('my_chat_reactions') || '{}');
+  if (myReactions[key]) { all[key] = Math.max(0, (all[key] || 1) - 1); delete myReactions[key]; }
+  else { all[key] = (all[key] || 0) + 1; myReactions[key] = true; }
+  saveChatReactions(all);
+  localStorage.setItem('my_chat_reactions', JSON.stringify(myReactions));
+  const row = document.getElementById('reactions-' + txHash);
+  if (row) row.outerHTML = buildReactionsRow(txHash, all, myReactions);
+}
+
+function buildReactionsRow(txHash, all, myReactions) {
+  const counts = CHAT_REACTIONS.map(e => { const key = txHash+'_'+e; return { e, count: all[key]||0, mine: myReactions[key], key }; });
+  const active = counts.filter(r => r.count > 0);
+  return `<div id="reactions-${txHash}" class="chat-reactions-row">
+    ${active.map(r => `<button class="chat-reaction ${r.mine?'my-reaction':''}" onclick="toggleReaction('${txHash}','${r.e}')">${r.e} <span>${r.count}</span></button>`).join('')}
+    <div class="reaction-picker-wrap">
+      <button class="chat-reaction add-reaction-btn" title="Add reaction">＋</button>
+      <div class="reaction-picker">${CHAT_REACTIONS.map(e => `<button onclick="toggleReaction('${txHash}','${e}')">${e}</button>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+let cachedMsgs = [];
+
+function renderChatMessages(msgs) {
+  cachedMsgs = msgs;
+  const container = document.getElementById('chat-page-messages');
+  if (!msgs || msgs.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:60px 20px;"><div style="font-size:32px;margin-bottom:12px;">💬</div>No messages yet - be the first to speak!</div>';
+    return;
+  }
+  const all = getChatReactions();
+  const myReactions = JSON.parse(localStorage.getItem('my_chat_reactions') || '{}');
+
+  container.innerHTML = msgs.map(m => {
+    const displayName = _getDisplayName(m.fullAddr, m.author);
+    const avatar = _getProfileAvatar(m.fullAddr);
+    const initials = displayName.slice(0,2).toUpperCase();
+
+    // System message - protocol announcement
+    if (m.isSystem) {
+      const isPool = m.text.includes('Weekly Pool') || m.text.includes('Daily');
+      const icon = isPool ? '🎰' : '🏛';
+      const label = m.text.includes('Q&A') ? 'New Question Asked' : 'Oracle Draw Entry';
+      const color = isPool ? 'rgba(123,92,255,0.18)' : 'rgba(245,197,24,0.08)';
+      const borderColor = isPool ? 'rgba(123,92,255,0.25)' : 'rgba(245,197,24,0.2)';
+      const labelColor = isPool ? 'var(--accent)' : 'var(--gold)';
+      return `<div id="msg-${m.txHash}" style="padding:8px 0;border-bottom:1px solid rgba(30,51,88,0.3);">
+        <div style="display:flex;align-items:center;gap:10px;background:${color};border:1px solid ${borderColor};border-radius:10px;padding:11px 14px;">
+          <div style="font-size:20px;flex-shrink:0;">${icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:9px;color:${labelColor};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2px;">${label}</div>
+            <div style="font-size:12px;color:var(--muted);">${m.amount} LUNC → Protocol Treasury</div>
+          </div>
+          <a href="https://finder.terraclassic.community/columbus-5/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
+        </div>
+      </div>`;
+    }
+
+    // Avatar: profile image or colored initials
+    const avatarHtml = avatar
+      ? `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : `<span style="font-size:12px;font-weight:700;color:var(--accent);">${initials}</span>`;
+
+    const rankBadge = m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function'
+      ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : '';
+
+    return `
+    <div class="chat-page-msg" id="msg-${m.txHash}" style="padding:14px 0;border-bottom:1px solid rgba(30,51,88,0.35);">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <!-- Avatar -->
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.2),rgba(123,92,255,0.25));border:1px solid rgba(84,147,247,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+          ${avatarHtml}
+        </div>
+        <!-- Content -->
+        <div style="flex:1;min-width:0;">
+          <!-- Header row -->
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:700;color:var(--text);">${displayName}</span>
+            ${rankBadge}
+            <span style="font-size:9px;background:rgba(102,255,170,0.12);color:var(--green);padding:1px 7px;border-radius:4px;letter-spacing:0.05em;">✓ ON-CHAIN</span>
+            ${m.amount ? `<span style="font-size:9px;color:var(--gold);background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.2);padding:1px 7px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
+            <a href="https://finder.terraclassic.community/columbus-5/tx/${m.txHash}" target="_blank"
+              style="font-size:9px;color:var(--muted);text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0;"
+              onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
+              🔗 ${m.time}
+            </a>
+          </div>
+          <!-- Message text -->
+          <div style="font-size:14px;line-height:1.65;color:rgba(232,240,255,0.92);word-break:break-word;">${m.text}</div>
+          <!-- Reactions -->
+          ${buildReactionsRow(m.txHash, all, myReactions)}
         </div>
       </div>
-      <button onclick="closeWalletQRModal()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
-    </div>
-
-    <!-- Subtitle -->
-    <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:18px;padding-left:46px;">Scan with your mobile wallet app</div>
-
-    <!-- QR area -->
-    <div style="background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:240px;">
-      <canvas id="wqr-canvas"></canvas>
-    </div>
-
-    <!-- Deep link button (mobile only) -->
-    <a id="wqr-deeplink" href="#" style="display:none;margin-top:14px;width:100%;text-align:center;background:rgba(123,92,255,0.12);border:1px solid rgba(123,92,255,0.3);border-radius:12px;padding:12px;color:#c8b0ff;font-size:13px;font-weight:600;text-decoration:none;box-sizing:border-box;">
-      Open in App →
-    </a>
-
-    <!-- Status -->
-    <div id="wqr-status" style="margin-top:14px;text-align:center;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.06em;">
-      Waiting for connection...
-    </div>
-  </div>
-</div>
-
-<script>
-/* ═══ WALLET QR / CONNECT MODAL ═══ */
-
-const WQR_CONFIGS = {
-  'keplr-mobile': {
-    title: 'Keplr',
-    icon: `<img src="data:image/png;base64,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" style="width:36px;height:36px;border-radius:10px;display:block;">`,
-    deeplink: (uri) => `keplr://wc?uri=${encodeURIComponent(uri)}`,
-  },
-  'galaxy-mobile': {
-    title: 'Galaxy Station',
-    icon: `<img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" style="width:36px;height:36px;border-radius:10px;display:block;">`,
-    deeplink: (uri) => `galaxystation://wc?uri=${encodeURIComponent(uri)}`,
-  },
-  'luncdash': {
-    title: 'Luncdash',
-    icon: `<svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;">
-  <rect width="52" height="52" rx="14" fill="#1a0e00"/>
-  <circle cx="26" cy="26" r="18" stroke="url(#lg_to2)" stroke-width="2.5" fill="none"/>
-  <circle cx="26" cy="26" r="13" fill="#0d0800"/>
-  <circle cx="26" cy="26" r="9" fill="#d4a017"/>
-  <circle cx="30" cy="23" r="7.5" fill="#1a0e00"/>
-  <circle cx="16" cy="16" r="1" fill="#f4c842" opacity="0.7"/>
-  <circle cx="38" cy="14" r="0.7" fill="#f4c842" opacity="0.5"/>
-  <circle cx="40" cy="36" r="0.8" fill="#f4c842" opacity="0.4"/>
-  <defs><linearGradient id="lg_to2" x1="8" y1="8" x2="44" y2="44"><stop stop-color="#f4c842"/><stop offset="1" stop-color="#c47d00"/></linearGradient></defs>
-  </svg>`,
-    deeplink: (uri) => `luncdash://wc?uri=${encodeURIComponent(uri)}`,
-  }
-};
-const _isMobile = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.matchMedia('(hover:none)').matches;
-let _wqrClient = null;
-let _wqrActive = false;
-window._wqrClient = null;
-
-function openWalletQRModal(walletType) {
-  const cfg = WQR_CONFIGS[walletType];
-  if (!cfg) return;
-
-  // MOBILE: сразу deep link без QR
-  if (_isMobile()) {
-    if (typeof closeMobileWalletModal === 'function') closeMobileWalletModal();
-    window.location.href = cfg.deeplink('');
-    return;
-  }
-
-  // DESKTOP: показываем QR модалку
-  if (_wqrActive) closeWalletQRModal();
-  document.getElementById('wqr-icon').innerHTML = cfg.icon;
-  document.getElementById('wqr-title').textContent = cfg.title;
-  document.getElementById('wqr-status').textContent = 'Connecting...';
-  document.getElementById('wqr-deeplink').style.display = 'none';
-  const canvas = document.getElementById('wqr-canvas');
-  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-  document.getElementById('wallet-qr-modal').style.display = 'flex';
-  _wqrActive = true;
-  _startWC(walletType, cfg);
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
 
-async function _startWC(walletType, cfg) {
-  const statusEl = document.getElementById('wqr-status');
+async function loadChatFromChain() {
+  const container = document.getElementById('chat-page-messages');
+  if (!cachedMsgs.length) {
+    container.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div style="font-size:22px;margin-bottom:10px;">⏳</div><div style="color:var(--muted);font-size:12px;">Loading messages from blockchain...</div></div>`;
+  }
+  let txList = null;
   try {
-    const SignClient = await new Promise((resolve, reject) => {
-      if (window._WCSignClient) return resolve(window._WCSignClient);
-      const t = setTimeout(() => reject(new Error('timeout')), 20000);
-      window.addEventListener('wc-ready', () => { clearTimeout(t); resolve(window._WCSignClient); }, { once: true });
-    });
-    if (!_wqrActive) return;
-    statusEl.textContent = 'Generating QR...';
-
-    _wqrClient = window._wqrClient = await SignClient.init({
-      projectId: window._wcProjectId,
-      metadata: {
-        name: 'Terra Oracle Classic',
-        description: 'Oracle Q&A on Terra Classic',
-        url: 'https://baydashaaa.github.io/terra-oracle',
-        icons: ['https://baydashaaa.github.io/terra-oracle/v1.gif']
-      }
-    });
-    if (!_wqrActive) return;
-
-    const { uri, approval } = await _wqrClient.connect({
-      requiredNamespaces: {
-        cosmos: {
-          methods: ['cosmos_signAmino', 'cosmos_signDirect', 'cosmos_getAccounts'],
-          chains: ['cosmos:columbus-5'],
-          events: ['chainChanged', 'accountsChanged']
+    const res = await fetch(`https://terra-classic-lcd.publicnode.com/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${CHAT_HISTORY_WALLET}%27&pagination.limit=50&order_by=2`);
+    if (res.ok) { txList = await res.json(); }
+  } catch(e) {}
+  if (!txList) {
+    if (!cachedMsgs.length) {
+      container.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div style="font-size:22px;margin-bottom:10px;">⚠️</div><div style="color:var(--muted);font-size:12px;">Could not reach blockchain nodes</div><button onclick="loadChatFromChain()" style="margin-top:14px;background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.25);color:var(--accent);border-radius:8px;padding:7px 16px;font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;">↻ Retry now</button></div>`;
+    }
+    return;
+  }
+  // LCD v1beta1: txs[] = tx bodies, tx_responses[] = metadata (hash, timestamp)
+  // They are parallel arrays - same index = same transaction
+  const txBodies    = txList.txs || [];
+  const txResponses = txList.tx_responses || [];
+  if (!txBodies.length && !txResponses.length) {
+    if (!cachedMsgs.length) container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:40px;">No messages yet - be the first!</div>';
+    return;
+  }
+  const msgs = [];
+  const count = Math.max(txBodies.length, txResponses.length);
+  for (let i = 0; i < count; i++) {
+    try {
+      const txBody = txBodies[i];        // has body.messages, body.memo
+      const txMeta = txResponses[i];     // has txhash, timestamp
+      const memo   = txBody?.body?.memo || '';
+      if (!memo || memo.trim() === '') continue;
+      const txMsgs = txBody?.body?.messages || [];
+      let sender = null, luncAmount = 0;
+      for (const msg of txMsgs) {
+        const type = msg['@type'] || msg.type || '';
+        const val  = msg.value || msg;
+        if (type.includes('MsgSend')) {
+          const to = val.to_address || '';
+          if (to === CHAT_WALLET) {
+            sender = val.from_address || null;
+            const coins = val.amount || [];
+            const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
+            luncAmount = lunc ? parseInt(lunc.amount) : 0;
+          }
         }
       }
-    });
-    if (!uri || !_wqrActive) return;
-
-    _renderQRSafe(uri);
-    statusEl.textContent = 'Scan with ' + cfg.title;
-
-    const session = await approval();
-    if (!_wqrActive) return;
-    closeWalletQRModal();
-
-    const accounts = session?.namespaces?.cosmos?.accounts || [];
-    if (accounts.length > 0) {
-      const addr = accounts[0].split(':')[2];
-      if (addr) _onWCConnected(addr, walletType);
-    }
-  } catch(e) {
-    console.warn('[WC]', e.message);
-    if (!_wqrActive) return;
-    statusEl.textContent = e.message === 'timeout' ? 'SDK load timeout' : 'Connection error';
+      if (!sender || luncAmount < CHAT_MIN_ULUNA) continue;
+      const short = sender.slice(0, 10) + '...' + sender.slice(-4);
+      const luncFormatted = (luncAmount / 1000000).toLocaleString(undefined, {maximumFractionDigits: 0});
+      const ts = txMeta?.timestamp ? new Date(txMeta.timestamp) : null;
+      const timeStr = ts ? ts.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+      msgs.push({ author: short, fullAddr: sender, text: memo.slice(0, 256), amount: luncFormatted, txHash: txMeta?.txhash || '', time: timeStr, ts: ts ? ts.getTime() : 0,
+        isSystem: ['Terra Oracle Q&A - Weekly Pool','Terra Oracle Q&A - Treasury','Oracle Draw - Daily','Oracle Draw - Weekly'].includes(memo.trim())
+      });
+    } catch(e) { continue; }
   }
+  msgs.sort((a, b) => a.ts - b.ts);
+  renderChatMessages(msgs);
 }
 
-function _renderQRSafe(text) {
-  const canvas = document.getElementById('wqr-canvas');
-  if (!canvas) return;
-  const attempt = () => {
-    if (typeof qrcode !== 'undefined' && window.renderQRToCanvas) window.renderQRToCanvas(text, canvas);
-    else setTimeout(attempt, 150);
-  };
-  attempt();
+
+// ── POOL MILESTONE BANNER ─────────────────────────────────────────────────
+const DAILY_POOL_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';
+const WEEKLY_POOL_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
+
+const POOL_MILESTONES = [
+  { min: 5000000,    label: '💎 JACKPOT TERRITORY', color: '#00ffff', glow: 'rgba(0,255,255,0.3)',   bg: 'rgba(0,255,255,0.06)',   border: 'rgba(0,255,255,0.25)'  },
+  { min: 1000000,    label: '⚡ ON FIRE',           color: '#ffd700', glow: 'rgba(255,215,0,0.3)',   bg: 'rgba(255,215,0,0.06)',   border: 'rgba(255,215,0,0.25)'  },
+  { min: 500000,     label: '🔥 HEATING UP',        color: '#ff8844', glow: 'rgba(255,136,68,0.3)',  bg: 'rgba(255,136,68,0.06)',  border: 'rgba(255,136,68,0.25)' },
+  { min: 100000,     label: '🌱 GROWING',           color: '#66ffaa', glow: 'rgba(102,255,170,0.3)', bg: 'rgba(102,255,170,0.05)', border: 'rgba(102,255,170,0.2)' },
+  { min: 0,          label: '🌑 JUST STARTED',      color: '#6b82a8', glow: 'rgba(107,130,168,0.2)', bg: 'rgba(107,130,168,0.04)', border: 'rgba(107,130,168,0.15)' },
+];
+
+function getPoolMilestone(lunc) {
+  return POOL_MILESTONES.find(m => lunc >= m.min) || POOL_MILESTONES[POOL_MILESTONES.length - 1];
 }
 
-function _onWCConnected(address, walletType) {
-  if (typeof window.setWalletConnected === 'function') window.setWalletConnected(address);
-  if (typeof window.updateMobileWalletUI === 'function') window.updateMobileWalletUI(address);
-  try { localStorage.setItem('wallet_session', JSON.stringify({ address, type: walletType, expires: Date.now() + 7*24*60*60*1000 })); } catch(e) {}
+async function fetchPoolBalance(walletAddr) {
+  try {
+    const res = await fetch(`https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/balances/${walletAddr}`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const uluna = data.balances?.find(b => b.denom === 'uluna');
+    return uluna ? parseInt(uluna.amount) / 1000000 : 0;
+  } catch(e) { return 0; }
 }
 
-function closeWalletQRModal() {
-  _wqrActive = false;
-  const modal = document.getElementById('wallet-qr-modal');
-  if (modal) modal.style.display = 'none';
-  const canvas = document.getElementById('wqr-canvas');
-  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-}
+async function renderPoolMilestoneBanner() {
+  const container = document.getElementById('chat-pool-milestone');
+  if (!container) return;
 
-document.getElementById('wallet-qr-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeWalletQRModal();
-});
+  const [daily, weekly] = await Promise.all([
+    fetchPoolBalance(DAILY_POOL_WALLET),
+    fetchPoolBalance(WEEKLY_POOL_WALLET),
+  ]);
 
-(function() {
-  const mobileTypes = ['keplr-mobile', 'galaxy-mobile', 'luncdash'];
-  function tryPatch() {
-    if (typeof window.connectWallet === 'function') {
-      const _orig = window.connectWallet;
-      window.connectWallet = function(type) {
-        if (mobileTypes.includes(type)) {
-          if (typeof closeMobileWalletModal === 'function') closeMobileWalletModal();
-          const dd = document.getElementById('wallet-dropdown');
-          if (dd?.classList.contains('open') && typeof toggleWalletDropdown === 'function') toggleWalletDropdown();
-          openWalletQRModal(type);
-          return;
-        }
-        return _orig.apply(this, arguments);
-      };
-      return true;
-    }
-    return false;
-  }
-  if (!tryPatch()) {
-    const iv = setInterval(() => { if (tryPatch()) clearInterval(iv); }, 100);
-    setTimeout(() => clearInterval(iv), 8000);
-  }
-})();
+  const pools = [
+    { name: 'DAILY POOL',  amount: daily,  icon: '☀️' },
+    { name: 'WEEKLY POOL', amount: weekly, icon: '📅' },
+  ];
 
-/* ─── Patch disconnectWallet to also close WC session ─── */
-(function() {
-  function tryPatchDisconnect() {
-    if (typeof window.disconnectWallet === 'function') {
-      const _orig = window.disconnectWallet;
-      window.disconnectWallet = async function() {
-        if (window._wqrClient) {
-          try {
-            const sessions = window._wqrClient.session?.getAll() || [];
-            for (const s of sessions) {
-              await window._wqrClient.disconnect({
-                topic: s.topic,
-                reason: { code: 6000, message: 'User disconnected' }
-              });
-            }
-          } catch(e) { console.warn('[WC disconnect]', e.message); }
-          window._wqrClient = null;
-        }
-        return _orig.apply(this, arguments);
-      };
-      return true;
-    }
-    return false;
-  }
-  if (!tryPatchDisconnect()) {
-    const iv = setInterval(() => { if (tryPatchDisconnect()) clearInterval(iv); }, 100);
-    setTimeout(() => clearInterval(iv), 8000);
-  }
-})();
-</script>
+  container.innerHTML = pools.map(pool => {
+    const ms = getPoolMilestone(pool.amount);
+    const formatted = pool.amount >= 1000000
+      ? (pool.amount / 1000000).toFixed(2) + 'M'
+      : pool.amount >= 1000
+      ? Math.round(pool.amount / 1000) + 'K'
+      : Math.round(pool.amount).toString();
 
-<!-- MOBILE WALLET MODAL -->
-<div id="mobile-wallet-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:flex-end;justify-content:center;">
-  <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;">Connect Wallet</div>
-      <button onclick="closeMobileWalletModal()" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;padding:4px 10px;">✕</button>
-    </div>
+    // Progress to next milestone
+    const nextMs = POOL_MILESTONES.find(m => m.min > pool.amount);
+    const pct = nextMs
+      ? Math.min(100, (pool.amount / nextMs.min) * 100)
+      : 100;
 
-    <!-- Extension Wallets - только если есть window.keplr или window.station -->
-    <div id="mob-ext-section" style="display:none;">
-      <div style="font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:10px;">EXTENSION WALLETS</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-        <button id="mob-keplr-ext-btn" onclick="connectWallet('keplr-ext');closeMobileWalletModal()" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;cursor:pointer;color:#fff;font-size:14px;font-weight:600;">
-          <img src="data:image/png;base64,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" style="width:28px;height:28px;border-radius:8px;flex-shrink:0;"> Keplr
-        </button>
-        <button id="mob-galaxy-ext-btn" onclick="connectWallet('galaxy');closeMobileWalletModal()" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;cursor:pointer;color:#fff;font-size:14px;font-weight:600;">
-          <img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" style="width:28px;height:28px;border-radius:8px;flex-shrink:0;"> Galaxy
-        </button>
+    return `
+    <div style="flex:1;min-width:200px;background:${ms.bg};border:1px solid ${ms.border};border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -20%,${ms.glow},transparent 70%);pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:16px;">${pool.icon}</span>
+        <div>
+          <div style="font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">${pool.name}</div>
+          <div style="font-size:9px;color:${ms.color};font-weight:700;letter-spacing:0.1em;">${ms.label}</div>
+        </div>
       </div>
-    </div>
-
-    <div style="font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:10px;">MOBILE WALLETS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-      <button onclick="closeMobileWalletModal();mobileConnectWallet('keplr-mobile')" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <img src="data:image/png;base64,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" style="width:40px;height:40px;border-radius:12px;"> Keplr
-      </button>
-      <button onclick="closeMobileWalletModal();mobileConnectWallet('galaxy-mobile')" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" style="width:40px;height:40px;border-radius:12px;"> Galaxy
-      </button>
-      <button onclick="closeMobileWalletModal();mobileConnectWallet('luncdash')" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;">
-  <rect width="52" height="52" rx="14" fill="#1a0e00"/>
-  <circle cx="26" cy="26" r="18" stroke="url(#lg_to2)" stroke-width="2.5" fill="none"/>
-  <circle cx="26" cy="26" r="13" fill="#0d0800"/>
-  <circle cx="26" cy="26" r="9" fill="#d4a017"/>
-  <circle cx="30" cy="23" r="7.5" fill="#1a0e00"/>
-  <circle cx="16" cy="16" r="1" fill="#f4c842" opacity="0.7"/>
-  <circle cx="38" cy="14" r="0.7" fill="#f4c842" opacity="0.5"/>
-  <circle cx="40" cy="36" r="0.8" fill="#f4c842" opacity="0.4"/>
-  <defs><linearGradient id="lg_to2" x1="8" y1="8" x2="44" y2="44"><stop stop-color="#f4c842"/><stop offset="1" stop-color="#c47d00"/></linearGradient></defs>
-  </svg> Luncdash
-      </button>
-    </div>
-
-    <button onclick="closeMobileWalletModal()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;">
-      Cancel
-    </button>
-  </div>
-</div>
-<!-- MOBILE WALLET MODAL -->
-<div id="mobile-wallet-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center;">
-  <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;">Connect Wallet</div>
-      <button onclick="closeMobileWalletModal()" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;padding:4px 10px;">✕</button>
-    </div>
-
-    <div style="font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:10px;">EXTENSION WALLETS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-      <button onclick="connectWallet('keplr-ext');closeMobileWalletModal()" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;cursor:pointer;color:#fff;font-size:14px;font-weight:600;">
-        <span style="font-size:22px;">🔑</span> Keplr
-      </button>
-      <button onclick="connectWallet('galaxy');closeMobileWalletModal()" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;cursor:pointer;color:#fff;font-size:14px;font-weight:600;">
-        <span style="font-size:22px;">🌌</span> Galaxy
-      </button>
-    </div>
-
-    <div style="font-size:10px;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:10px;">MOBILE WALLETS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-      <button onclick="closeMobileWalletModal();openWalletQRModal('keplr-mobile')" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <span style="font-size:26px;">🔑</span> Keplr
-      </button>
-      <button onclick="closeMobileWalletModal();openWalletQRModal('galaxy-mobile')" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <span style="font-size:26px;">🌌</span> Galaxy
-      </button>
-      <button onclick="closeMobileWalletModal();openWalletQRModal('luncdash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 8px;cursor:pointer;color:#fff;font-size:12px;font-weight:600;">
-        <span style="font-size:26px;">🌙</span> Luncdash
-      </button>
-    </div>
-
-    <button onclick="closeMobileWalletModal()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;">
-      Cancel
-    </button>
-  </div>
-</div>
-
-<script>
-function toggleMobileRepMenu() {
-  const menu = document.getElementById('mobile-rep-menu');
-  const arrow = document.getElementById('rep-menu-arrow');
-  if (!menu) return;
-  const open = menu.style.display === 'none';
-  menu.style.display = open ? 'block' : 'none';
-  if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
+      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:${ms.color};line-height:1;margin-bottom:8px;text-shadow:0 0 20px ${ms.glow};">
+        ${formatted} <span style="font-size:13px;opacity:0.7;">LUNC</span>
+      </div>
+      ${nextMs ? `
+      <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:3px;margin-bottom:4px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${ms.color};border-radius:4px;transition:width 1s ease;opacity:0.8;"></div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);">
+        ${(nextMs.min - pool.amount).toLocaleString(undefined,{maximumFractionDigits:0})} LUNC to next level
+      </div>` : `<div style="font-size:9px;color:${ms.color};">🏆 Maximum level reached!</div>`}
+    </div>`;
+  }).join('');
 }
 
-function openMobileWalletModal() {
-  const modal = document.getElementById('mobile-wallet-modal');
-  if (modal) { modal.style.display='flex'; }
+function renderChatPage() {
+  if (cachedMsgs.length) renderChatMessages(cachedMsgs);
+  loadChatFromChain();
+  renderPoolMilestoneBanner();
+}
+// Wait for all scripts to load before initializing
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { renderChatPage(); });
+} else {
+  renderChatPage();
+}
+setInterval(loadChatFromChain, 60000); // 60s poll - reduced from 30s for performance
+
+const _origSetWallet = window.setWalletConnected;
+window.setWalletConnected = function(address) {
+  _origSetWallet(address);
+  document.getElementById('chat-page-connect-prompt').style.display = 'none';
+  document.getElementById('chat-page-form').style.display = 'block';
+  document.getElementById('chat-page-addr').textContent = address.slice(0,10)+'...'+address.slice(-4);
+  document.getElementById('vote-wallet-status').innerHTML = '<span style="font-size:11px;color:var(--green);">✓ ' + address.slice(0,8)+'...'+address.slice(-4) + '</span>';
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) {
+    adminPanel.style.display = address === ADMIN_WALLET ? 'block' : 'none';
+    if (address === ADMIN_WALLET) { applyVoteStates(); updateAdminPanel(); setTimeout(_adminInitOptions, 100); }
+  }
+  applyStoredVotes(); applyVoteStates(); renderVotes();
 }
 
-function handleMobileNavWalletBtn() {
-  if (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) {
-    openMobileConnectedModal();
-  } else {
-    openMobileWalletModal();
+// ─── VOTE PAGE ────────────────────────────────────────────────
+
+
+
+/* ═══ WORKER VOTES ═══ */
+
+// Load community votes from Cloudflare Worker (visible to ALL users)
+async function loadVotesFromWorker() {
+  try {
+    const res = await fetch(`${WORKER_URL}/votes`, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return;
+    const workerVotes = await res.json();
+    if (!Array.isArray(workerVotes)) return;
+    const deleted = getDeletedVotes();
+    // Merge: worker votes take priority, skip deleted
+    for (const wv of workerVotes) {
+      if (deleted.includes(wv.id)) continue; // skip deleted
+      const existingIdx = VOTES_DATA.findIndex(v => v.id === wv.id);
+      if (existingIdx > -1) {
+        VOTES_DATA[existingIdx] = { ...VOTES_DATA[existingIdx], ...wv, userVoted: VOTES_DATA[existingIdx].userVoted };
+      } else {
+        VOTES_DATA.unshift(wv);
+      }
+    }
+    applyStoredVotes();
+    renderVotes();
+    if (typeof updateAdminPanel === 'function') updateAdminPanel();
+  } catch(e) {
+    console.warn('Could not load votes from worker:', e.message);
   }
 }
 
-function openMobileConnectedModal() {
-  const modal = document.getElementById('mobile-connected-modal');
-  if (!modal) return;
-  // Fill address
-  const addr = globalWalletAddress;
-  const addrEl = document.getElementById('mcm-address');
-  if (addrEl) addrEl.textContent = addr.slice(0,12)+'...'+addr.slice(-6);
-  modal.style.display = 'flex';
+const VOTES_DATA = [
+  { id: 'v1', type: 'weekly', status: 'active', title: 'Protocol Development Priority - Week 11', desc: 'What should the development team focus on this week?', source: 'Based on community chat discussions', timer: '3d 14h remaining', totalVotes: 234, quorum: 100, options: [{ label: 'SDK 0.53 upgrade testing & QA', votes: 112 }, { label: 'MM 2.0 activation preparation', votes: 78 }, { label: 'USTC re-peg research', votes: 44 }], userVoted: null },
+  { id: 'v3', type: 'special', status: 'active', title: 'Terra Oracle - Reward Distribution Model', desc: 'Should we switch from "winner takes all" to top-3 distribution for Q&A rewards?', source: 'Proposal by community member · Terra Oracle governance', timer: '6d 2h remaining', totalVotes: 156, quorum: 100, options: [{ label: '70% winner + 30% voters', votes: 89 }, { label: 'Top-3 split (60/25/15)', votes: 41 }, { label: 'Keep current model', votes: 26 }], userVoted: null }
+];
+
+// Filter out locally deleted static votes
+const DELETED_VOTES_KEY = 'admin_deleted_votes';
+function getDeletedVotes() { try { return JSON.parse(localStorage.getItem(DELETED_VOTES_KEY)||'[]'); } catch(e) { return []; } }
+function markVoteDeleted(id) { const d=getDeletedVotes(); if(!d.includes(id)){d.push(id);localStorage.setItem(DELETED_VOTES_KEY,JSON.stringify(d));} }
+(function pruneDeletedVotes() {
+  const deleted = getDeletedVotes();
+  if (!deleted.length) return;
+  for (let i = VOTES_DATA.length - 1; i >= 0; i--) {
+    if (deleted.includes(VOTES_DATA[i].id)) VOTES_DATA.splice(i, 1);
+  }
+})();
+
+let currentVoteFilter = 'all';
+function filterVotes(type) { currentVoteFilter = type; document.querySelectorAll('.vote-tab').forEach(t => t.classList.remove('active')); event.target.classList.add('active'); renderVotes(); }
+
+function renderVotes() {
+  const list = document.getElementById('votes-list');
+  const filtered = currentVoteFilter === 'all' ? VOTES_DATA : VOTES_DATA.filter(v => v.type === currentVoteFilter);
+  if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">No votes in this category yet.</div>'; return; }
+  list.innerHTML = filtered.map(v => {
+    const maxVotes = Math.max(...v.options.map(o => o.votes));
+    const pct = o => v.totalVotes > 0 ? Math.round((o.votes / v.totalVotes) * 100) : 0;
+    const quorumPct = Math.min(100, Math.round((v.totalVotes / v.quorum) * 100));
+    const typeClass = { weekly: 'vote-type-weekly', monthly: 'vote-type-monthly', special: 'vote-type-special' }[v.type];
+    const typeLabel = { weekly: '📅 Weekly', monthly: '🗓 Monthly', special: '⚡ Special' }[v.type];
+    return `<div class="vote-card" id="vcard-${v.id}">
+      <div class="vote-card-meta"><span class="vote-type-badge ${typeClass}">${typeLabel}</span><span class="vote-timer">⏱ ${v.timer}</span></div>
+      <div class="vote-card-title">${v.title}</div>
+      <div class="vote-desc" style="margin-top:8px;">${v.desc}</div>
+      <div class="vote-progress-wrap"><div class="vote-progress-bar-bg"><div class="vote-progress-bar-fill" style="width:${quorumPct}%"></div></div><div class="vote-progress-info"><span>Quorum: ${v.totalVotes} / ${v.quorum} votes</span><span>${quorumPct}%</span></div></div>
+      <div class="vote-options">${v.options.map((o, oi) => { const p = pct(o); const isWinner = o.votes === maxVotes && v.totalVotes > 0; const isSelected = v.userVoted === oi; return `<div class="vote-option ${isSelected?'selected':''} ${isWinner&&v.userVoted!==null?'winner':''}" onclick="castVote('${v.id}', ${oi})"><div class="vote-option-bar ${isWinner&&v.userVoted!==null?'winner-bar':''}" style="width:${v.userVoted!==null?p:0}%"></div><div class="vote-option-content"><div class="vote-option-radio"></div><div class="vote-option-label">${o.label}</div>${v.userVoted!==null?`<div class="vote-option-pct">${p}%</div>`:''}</div></div>`; }).join('')}</div>
+      <div class="vote-btn-row">${v.userVoted !== null ? `<span style="font-size:12px;color:var(--green);">✅ You voted</span>` : v.status === 'upcoming' ? `<span style="font-size:12px;color:var(--gold);">🗓 Voting opens on the 20th</span>` : `<button class="btn btn-primary" onclick="castVote('${v.id}', -1)" style="padding:10px 24px;font-size:11px;" ${!globalWalletAddress?'disabled':''}}>${globalWalletAddress?'Cast Vote':'🔑 Connect to Vote'}</button>`}<span style="font-size:11px;color:var(--muted);">${v.totalVotes} votes total</span></div>
+      <div class="vote-source">💬 ${v.source}</div>
+    </div>`;
+  }).join('');
 }
 
-function closeMobileConnectedModal() {
-  const modal = document.getElementById('mobile-connected-modal');
-  if (modal) modal.style.display = 'none';
-}
-function closeMobileWalletModal() {
-  const modal = document.getElementById('mobile-wallet-modal');
-  if (modal) { modal.style.display='none'; }
-}
-// Close on backdrop click
-document.getElementById('mobile-wallet-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeMobileWalletModal();
-});
-document.getElementById('mobile-connected-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeMobileConnectedModal();
-});
-</script>
+const VOTE_STATE_KEY = 'admin_vote_states';
+function getVoteStates() { try { return JSON.parse(localStorage.getItem(VOTE_STATE_KEY) || '{}'); } catch(e) { return {}; } }
+function saveVoteState(voteId, state) { const states = getVoteStates(); states[voteId] = { ...states[voteId], ...state, updatedAt: Date.now() }; localStorage.setItem(VOTE_STATE_KEY, JSON.stringify(states)); }
 
-<script>
-/* ── MOBILE WALLET SMART CONNECT ── */
-
-// Показываем Extension секцию только если кошелёк инжектирован
-function updateMobileExtSection() {
-  const section = document.getElementById('mob-ext-section');
-  if (!section) return;
-  const hasKeplr = !!(window.keplr || window.getOfflineSigner);
-  const hasGalaxy = !!(window.station || window.cosmostation);
-  section.style.display = (hasKeplr || hasGalaxy) ? 'block' : 'none';
-  const keplrBtn = document.getElementById('mob-keplr-ext-btn');
-  const galaxyBtn = document.getElementById('mob-galaxy-ext-btn');
-  if (keplrBtn) keplrBtn.style.display = hasKeplr ? 'flex' : 'none';
-  if (galaxyBtn) galaxyBtn.style.display = hasGalaxy ? 'flex' : 'none';
+function applyVoteStates() {
+  const states = getVoteStates();
+  for (const vote of VOTES_DATA) {
+    const s = states[vote.id];
+    if (!s) continue;
+    if (s.status) vote.status = s.status;
+    if (s.startedAt) vote.startedAt = s.startedAt;
+    if (s.stoppedAt) vote.stoppedAt = s.stoppedAt;
+    if (s.pairs && vote.isMonthlyLiquidity) vote.options = s.pairs.map(p => ({ label: p, votes: vote.options.find(o => o.label === p)?.votes || 0 }));
+    if (s.status === 'active' && s.startedAt) {
+      const msLeft = (s.startedAt + 5*24*60*60*1000) - Date.now();
+      if (msLeft <= 0) { vote.status = 'closed'; vote.timer = 'Voting closed'; }
+      else { const d=Math.floor(msLeft/86400000),h=Math.floor((msLeft%86400000)/3600000),m=Math.floor((msLeft%3600000)/60000); vote.timer = d>0?`${d}d ${h}h remaining`:`${h}h ${m}m remaining`; }
+    } else if (s.status === 'stopped' || s.status === 'closed') { vote.timer = 'Voting closed'; }
+    else if (s.status === 'upcoming') { vote.timer = 'Not started yet'; }
+  }
 }
 
-// Вызываем при открытии мобильной модалки
-const _origOpenMobileWalletModal = window.openMobileWalletModal;
-window.openMobileWalletModal = function() {
-  updateMobileExtSection();
-  if (typeof _origOpenMobileWalletModal === 'function') return _origOpenMobileWalletModal();
-  const modal = document.getElementById('mobile-wallet-modal');
-  if (modal) modal.style.display = 'flex';
+window.adminStartVote = async function(voteId) {
+  try {
+    await fetch(`${WORKER_URL}/votes/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId, action: 'start' }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadVotesFromWorker();
+    showAdminToast('▶ Vote started!', 'green');
+  } catch(e) {
+    const vote = VOTES_DATA.find(v => v.id === voteId); if (!vote) return;
+    saveVoteState(voteId, { status: 'active', startedAt: Date.now() });
+    applyVoteStates(); updateAdminPanel(); renderVotes();
+    showAdminToast('▶ Started (offline)', 'green');
+  }
+}
+window.adminStopVote = async function(voteId) {
+  try {
+    await fetch(`${WORKER_URL}/votes/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId, action: 'stop' }),
+      signal: AbortSignal.timeout(6000),
+    });
+    await loadVotesFromWorker();
+    showAdminToast('■ Vote stopped', 'red');
+  } catch(e) {
+    saveVoteState(voteId, { status: 'stopped', stoppedAt: Date.now() });
+    applyVoteStates(); updateAdminPanel(); renderVotes();
+    showAdminToast('■ Stopped (offline)', 'red');
+  }
+}
+window.adminToggleVote = function(voteId, newStatus) { if (newStatus === 'active') adminStartVote(voteId); else adminStopVote(voteId); }
+
+function updateAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  if (!panel || panel.style.display === 'none') return;
+  const otherEl = document.getElementById('admin-other-votes');
+  if (!otherEl) return;
+  if (!VOTES_DATA.length) {
+    otherEl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No votes yet. Create one above.</div>';
+    return;
+  }
+  const statusColors = { active: '#66ffaa', stopped: '#ff6464', upcoming: '#ffc840', closed: '#888' };
+  const statusIcons  = { active: '●', stopped: '■', upcoming: '◎', closed: '○' };
+  otherEl.innerHTML = VOTES_DATA.map(v => {
+    const s = v.status || 'unknown';
+    const col = statusColors[s] || '#888';
+    const icon = statusIcons[s] || '○';
+    const startBtn = s !== 'active'
+      ? `<button onclick="adminStartVote('${v.id}')" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">▶</button>`
+      : '';
+    const stopBtn = s === 'active'
+      ? `<button onclick="adminStopVote('${v.id}')" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,60,60,0.25);background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">■</button>`
+      : '';
+    const delBtn = `<button onclick="adminDeleteVote('${v.id}')" style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,60,60,0.2);background:rgba(255,60,60,0.05);color:#ff6464;cursor:pointer;" title="Delete vote">🗑</button>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title}</div>
+        <div style="font-size:10px;margin-top:3px;color:${col};letter-spacing:0.06em;">${icon} ${s.toUpperCase()} · ${v.timer || ''} · ${v.totalVotes || 0} votes</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">${startBtn}${stopBtn}${delBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+
+// ── Admin form helpers ────────────────────────────────────────
+function _getAdminOptions() {
+  const list = document.getElementById('av-options-list');
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('input[type="text"]'))
+    .map(inp => inp.value.trim()).filter(v => v.length > 0);
+}
+
+function _adminResetForm() {
+  ['av-title','av-desc','av-source'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const d=document.getElementById('av-days'); if(d) d.value='7';
+  const q=document.getElementById('av-quorum'); if(q) q.value='100';
+  const p=document.getElementById('av-preview'); if(p) p.style.display='none';
+  // Re-init options
+  const list=document.getElementById('av-options-list');
+  if(list) { list.innerHTML=''; _addAdminOption(); _addAdminOption(); }
+}
+
+window.adminAddOption = function() {
+  const list = document.getElementById('av-options-list');
+  if (!list) return;
+  if (list.children.length >= 8) { showAdminToast('Max 8 options', 'red'); return; }
+  const idx = list.children.length;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  row.innerHTML = `<input type="text" placeholder="Option ${idx+1}..." maxlength="100"
+    style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;padding:9px 12px;outline:none;">
+    <button onclick="this.parentElement.remove()" style="background:rgba(255,60,60,0.08);border:1px solid rgba(255,60,60,0.2);border-radius:6px;color:#ff6464;font-size:16px;width:32px;height:32px;cursor:pointer;flex-shrink:0;line-height:1;">×</button>`;
+  list.appendChild(row);
+};
+function _addAdminOption() { window.adminAddOption(); }
+
+window.adminPreviewVote = function() {
+  const title = document.getElementById('av-title')?.value.trim();
+  const type  = document.getElementById('av-type')?.value;
+  const days  = document.getElementById('av-days')?.value;
+  const opts  = _getAdminOptions();
+  if (!title || opts.length < 2) { showAdminToast('Fill title and at least 2 options', 'red'); return; }
+  const preview = document.getElementById('av-preview');
+  const previewText = document.getElementById('av-preview-text');
+  if (preview && previewText) {
+    previewText.innerHTML = `<b>${title}</b><br>Type: ${type} · Duration: ${days}d<br>Options:${opts.map((o,i)=>`<br>${i+1}. ${o}`).join('')}`;
+    preview.style.display = 'block';
+  }
 };
 
-// Также при handleMobileNavWalletBtn
-const _origHandleMobileNav = window.handleMobileNavWalletBtn;
-window.handleMobileNavWalletBtn = function() {
-  if (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) {
-    if (typeof openMobileConnectedModal === 'function') openMobileConnectedModal();
-  } else {
-    updateMobileExtSection();
-    const modal = document.getElementById('mobile-wallet-modal');
-    if (modal) modal.style.display = 'flex';
+window.adminResetForm = function() { _adminResetForm(); };
+
+// Init options on panel show
+function _adminInitOptions() {
+  const list = document.getElementById('av-options-list');
+  if (!list || list.children.length > 0) return;
+  _addAdminOption(); _addAdminOption();
+}
+
+window.adminCreateVote = async function() {
+  const title = document.getElementById('av-title')?.value.trim();
+  const desc  = document.getElementById('av-desc')?.value.trim();
+  const type  = document.getElementById('av-type')?.value || 'weekly';
+  const days  = parseInt(document.getElementById('av-days')?.value || '7');
+  const quorum= parseInt(document.getElementById('av-quorum')?.value || '100');
+  const source= document.getElementById('av-source')?.value.trim() || 'Admin proposal';
+  const opts  = _getAdminOptions();
+
+  if (!title)          { showAdminToast('Enter a title', 'red'); return; }
+  if (opts.length < 2) { showAdminToast('Add at least 2 options', 'red'); return; }
+  if (!globalWalletAddress || globalWalletAddress !== ADMIN_WALLET) {
+    showAdminToast('Admin wallet not connected', 'red'); return;
+  }
+
+  const durationMs = days * 24 * 60 * 60 * 1000;
+  const btn = document.querySelector('[onclick="adminCreateVote()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+
+  try {
+    const res = await fetch(`${WORKER_URL}/votes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ title, desc, type, durationMs, quorum, source, options: opts }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAdminToast('❌ ' + (data.error || 'Error'), 'red'); return; }
+    _adminResetForm();
+    showAdminToast('✅ Vote created for all users!', 'green');
+    await loadVotesFromWorker();
+  } catch(e) {
+    showAdminToast('❌ ' + (e.message || 'Network error'), 'red');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ CREATE & START'; }
   }
 };
 
-// mobileConnectWallet - умный коннект для мобильных кнопок
-function mobileConnectWallet(type) {
-  if (type === 'keplr-mobile') {
-    if (window.keplr) {
-      if (typeof connectWallet === 'function') connectWallet('keplr-ext');
-      return;
-    }
-    if (window.galaxyStation || window.station) {
-      setTimeout(function(){ alert('Please open this site in Keplr browser to connect with Keplr wallet.'); }, 300);
-      return;
-    }
-    window.location.href = 'keplr://';
+window.adminDeleteVote = async function(voteId) {
+  if (!confirm('Delete this vote permanently?')) return;
+  // Mark as deleted in localStorage (survives page refresh for static votes)
+  markVoteDeleted(voteId);
+  // Remove from local VOTES_DATA immediately
+  const idx = VOTES_DATA.findIndex(v => v.id === voteId);
+  if (idx > -1) VOTES_DATA.splice(idx, 1);
+  updateAdminPanel(); renderVotes();
+  // Also remove from Worker
+  try {
+    await fetch(`${WORKER_URL}/votes`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      body: JSON.stringify({ id: voteId }),
+      signal: AbortSignal.timeout(6000),
+    });
+    showAdminToast('🗑 Vote deleted', 'red');
+  } catch(e) {
+    showAdminToast('🗑 Removed locally', 'red');
+  }
+};
+
+function showAdminToast(msg, color) {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `position:fixed;top:80px;right:20px;z-index:9999;padding:10px 18px;border-radius:8px;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;background:${color==='green'?'rgba(102,255,170,0.15)':'rgba(255,60,60,0.12)'};border:1px solid ${color==='green'?'rgba(102,255,170,0.4)':'rgba(255,60,60,0.3)'};color:${color==='green'?'var(--green)':'#ff6464'};`;
+  document.body.appendChild(toast); setTimeout(() => toast.remove(), 2500);
+}
+
+function getVoteStorageKey() { return globalWalletAddress ? 'votes_' + globalWalletAddress : null; }
+function loadVotesFromStorage() { const key = getVoteStorageKey(); if (!key) return {}; try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { return {}; } }
+function saveVoteToStorage(voteId, optionIdx) { const key = getVoteStorageKey(); if (!key) return; const votes = loadVotesFromStorage(); votes[voteId] = optionIdx; localStorage.setItem(key, JSON.stringify(votes)); }
+function applyStoredVotes() { const votes = loadVotesFromStorage(); for (const vote of VOTES_DATA) { vote.userVoted = votes[vote.id] !== undefined ? votes[vote.id] : null; } }
+
+function castVote(voteId, optionIdx) {
+  if (!globalWalletAddress) { alert('Connect Keplr wallet to vote!'); return; }
+  if (optionIdx === -1) return;
+  const vote = VOTES_DATA.find(v => v.id === voteId);
+  if (!vote || vote.userVoted !== null) return;
+  if (vote.status === 'upcoming') { alert('Voting is not open yet! Check back on the 20th.'); return; }
+  // Optimistic update
+  vote.options[optionIdx].votes++; vote.totalVotes++; vote.userVoted = optionIdx;
+  saveVoteToStorage(voteId, optionIdx);
+  if (vote.isMonthlyLiquidity && vote.voteKey) { try { localStorage.setItem(vote.voteKey, JSON.stringify({ totalVotes: vote.totalVotes, options: vote.options.map(o => o.votes) })); } catch(e) {} }
+  renderVotes();
+  // Persist to Worker for server-side count
+  fetch(`${WORKER_URL}/votes/cast`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voteId, optionIdx, wallet: globalWalletAddress }),
+    signal: AbortSignal.timeout(6000),
+  }).catch(() => {});
+}
+
+
+// ── MY BAG (Terra Oracle) ─────────────────────────────────────────────────────
+function renderOracleBag() {
+  const wallet = globalWalletAddress || connectedAddress;
+  const notConn = document.getElementById('bag-not-connected-oracle');
+  const conn    = document.getElementById('bag-connected-oracle');
+  if (!notConn || !conn) return;
+
+  if (!wallet) {
+    notConn.style.display = 'block';
+    conn.style.display    = 'none';
     return;
   }
-  if (type === 'galaxy-mobile') {
-    if (window.galaxyStation || window.station) {
-      if (typeof connectWallet === 'function') connectWallet('galaxy');
-      return;
+  notConn.style.display = 'none';
+  conn.style.display    = 'block';
+
+  // Mock data - replace with real API from Paco later
+  const mockNFTs = [
+    { id: 47,  type: 'common',    entries: 1,  pool: 'daily',  inCurrentRound: true  },
+    { id: 12,  type: 'rare',      entries: 5,  pool: 'weekly', inCurrentRound: true  },
+    { id: 3,   type: 'legendary', entries: 10, pool: 'weekly', inCurrentRound: false },
+    { id: 88,  type: 'common',    entries: 1,  pool: 'daily',  inCurrentRound: false },
+  ];
+  const mockHistory = [
+    { round: 15, type: 'Daily',  nft: 'Common #31',    result: 'lost', prize: null },
+    { round: 13, type: 'Weekly', nft: 'Rare #08',      result: 'won',  prize: '45,000 LUNC' },
+    { round: 10, type: 'Daily',  nft: 'Common #22',    result: 'lost', prize: null },
+  ];
+
+  const el = id => document.getElementById(id);
+  const totalWon      = mockHistory.filter(h => h.result === 'won').length;
+  const dailyEntries  = mockNFTs.filter(n => n.inCurrentRound && n.pool === 'daily').reduce((s,n) => s + n.entries, 0);
+  const weeklyEntries = mockNFTs.filter(n => n.inCurrentRound && n.pool === 'weekly').reduce((s,n) => s + n.entries, 0);
+
+  if (el('o-bag-stat-nfts'))    el('o-bag-stat-nfts').textContent    = mockNFTs.length;
+  if (el('o-bag-stat-won'))     el('o-bag-stat-won').textContent     = totalWon;
+  if (el('o-bag-stat-daily'))   el('o-bag-stat-daily').textContent   = dailyEntries;
+  if (el('o-bag-stat-weekly'))  el('o-bag-stat-weekly').textContent  = weeklyEntries;
+  if (el('o-bag-count'))        el('o-bag-count').textContent        = mockNFTs.length;
+
+  window._oBagNFTs = mockNFTs;
+  const grid  = el('o-bag-grid');
+  const empty = el('o-bag-empty');
+  if (grid) {
+    if (!mockNFTs.length) {
+      if (empty) empty.style.display = 'block';
+      grid.style.display = 'none';
+    } else {
+      if (empty) empty.style.display = 'none';
+      grid.style.display = 'grid';
+      setTimeout(() => filterOracleBagNFTs('all'), 0);
     }
-    if (window.keplr) {
-      setTimeout(function(){ alert('Please open this site in Galaxy Station browser to connect with Galaxy wallet.'); }, 300);
-      return;
-    }
-    window.location.href = 'galaxystation://';
-    return;
   }
-  if (type === 'luncdash') {
-    setTimeout(function() { openLuncdashInput(); }, 300);
-    return;
+
+  const histTable = el('o-bag-hist-table');
+  const histEmpty = el('o-bag-hist-empty');
+  const histBody  = el('o-bag-hist-body');
+  if (histBody) {
+    if (!mockHistory.length) {
+      if (histTable) histTable.style.display = 'none';
+      if (histEmpty) histEmpty.style.display = 'block';
+    } else {
+      if (histEmpty) histEmpty.style.display = 'none';
+      if (histTable) histTable.style.display = 'table';
+      histBody.innerHTML = mockHistory.map(h => `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:12px 14px;color:var(--muted);">#${h.round}</td>
+          <td style="padding:12px 14px;">
+            <span style="font-size:9px;padding:2px 8px;border-radius:4px;
+              background:${h.type==='Daily'?'rgba(244,208,63,0.1)':'rgba(74,144,217,0.1)'};
+              color:${h.type==='Daily'?'#f4d03f':'#7eb8ff'};
+              border:1px solid ${h.type==='Daily'?'rgba(244,208,63,0.2)':'rgba(74,144,217,0.2)'};">
+              ${h.type}
+            </span>
+          </td>
+          <td style="padding:12px 14px;font-family:monospace;font-size:11px;color:#f4d03f;">${h.nft}</td>
+          <td style="padding:12px 14px;">
+            ${h.result==='won'
+              ? `<span style="color:#66ffaa;font-weight:700;">🏆 ${h.prize}</span>`
+              : `<span style="color:var(--muted);">-</span>`}
+          </td>
+        </tr>`).join('');
+    }
   }
 }
 
-// Запускаем проверку после загрузки
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(updateMobileExtSection, 500);
-});
-</script>
+function filterOracleBagNFTs(filter) {
+  const nfts = window._oBagNFTs || [];
+  const el = id => document.getElementById(id);
 
-<!-- LUNCDASH INPUT MODAL -->
-<div id="luncdash-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;">
-  <div style="background:#0d1117;border:1px solid rgba(232,200,64,0.25);border-radius:20px;padding:28px 24px;width:calc(100% - 32px);max-width:360px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#f4c842;">Luncdash</div>
-      <button onclick="closeLuncdashModal()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">✕</button>
-    </div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;">Enter your Terra Classic wallet address</div>
-    <input id="luncdash-addr-input" type="text" placeholder="terra1..." style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(232,200,64,0.3);border-radius:12px;padding:12px 14px;color:#fff;font-size:13px;font-family:monospace;margin-bottom:12px;outline:none;">
-    <button onclick="confirmLuncdashAddr()" style="width:100%;background:rgba(232,200,64,0.15);border:1px solid rgba(232,200,64,0.4);border-radius:12px;padding:13px;color:#f4c842;font-size:14px;font-weight:600;cursor:pointer;">Connect</button>
-  </div>
-</div>
+  ['all','common','rare','legendary','used'].forEach(f => {
+    const btn = el('o-bag-filter-' + f);
+    if (!btn) return;
+    const colors = {
+      all:       { active: 'rgba(244,208,63,0.12)', border: 'rgba(244,208,63,0.6)',   text: '#f4d03f'   },
+      common:    { active: 'rgba(180,190,210,0.1)', border: 'rgba(180,190,210,0.5)',  text: '#b0b8c8'   },
+      rare:      { active: 'rgba(96,165,250,0.1)',  border: 'rgba(96,165,250,0.5)',   text: '#60a5fa'   },
+      legendary: { active: 'rgba(251,146,60,0.1)',  border: 'rgba(251,146,60,0.5)',   text: '#fb923c'   },
+      used:      { active: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.35)', text: '#e2e8f0'  },
+    };
+    const c = colors[f];
+    btn.style.background  = f === filter ? c.active : 'transparent';
+    btn.style.borderColor = f === filter ? c.border.replace('0.5','0.8') : c.border.replace('0.5','0.2');
+    btn.style.color       = c.text;
+    btn.style.opacity     = f === filter ? '1' : '0.6';
+    btn.style.fontWeight  = f === filter ? '700' : '400';
+  });
 
-<script>
-function openLuncdashInput() {
-  const modal = document.getElementById('luncdash-modal');
-  const input = document.getElementById('luncdash-addr-input');
-  if (modal) modal.style.display = 'flex';
-  if (input) { input.value = ''; setTimeout(function(){ input.focus(); }, 100); }
+  let filtered = nfts;
+  if (filter === 'used')      filtered = nfts.filter(n => !n.inCurrentRound);
+  else if (filter !== 'all')  filtered = nfts.filter(n => n.type === filter);
+
+  filtered = filtered.slice().sort((a, b) => {
+    if (a.inCurrentRound && !b.inCurrentRound) return -1;
+    if (!a.inCurrentRound && b.inCurrentRound) return 1;
+    return 0;
+  });
+
+  const grid = el('o-bag-grid');
+  if (!grid) return;
+
+  const cfgs = {
+    common:    { color:'#b0b8c8', glow:'rgba(180,190,210,0.3)', bg:'rgba(180,190,210,0.05)', label:'COMMON'    },
+    rare:      { color:'#60a5fa', glow:'rgba(96,165,250,0.35)', bg:'rgba(96,165,250,0.06)',  label:'RARE'       },
+    legendary: { color:'#fb923c', glow:'rgba(251,146,60,0.4)',  bg:'rgba(251,146,60,0.07)',  label:'LEGENDARY'  },
+  };
+
+  grid.innerHTML = filtered.map(nft => {
+    const c = cfgs[nft.type];
+    const pool = nft.pool === 'daily' ? 'Daily Pool' : 'Weekly Pool';
+    const opacity = nft.inCurrentRound ? '1' : '0.55';
+    const statusHtml = nft.inCurrentRound
+      ? `<div style="padding:8px;border-radius:8px;background:rgba(102,255,170,0.08);border:1px solid rgba(102,255,170,0.25);color:#66ffaa;font-size:11px;font-weight:600;text-align:center;">✅ In this round</div>`
+      : `<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);color:var(--muted);font-size:11px;text-align:center;">✔ Round over</div>`;
+    return `<div style="background:${c.bg};border:1px solid ${c.glow};border-radius:16px;padding:22px 18px;text-align:center;
+        opacity:${opacity};box-shadow:0 0 18px ${c.glow};transition:transform 0.2s;"
+        onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="font-size:9px;letter-spacing:0.2em;color:${c.color};font-weight:700;margin-bottom:4px;">${c.label}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;">#${nft.id}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${nft.entries} ${nft.entries===1?'entry':'entries'}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">${pool}</div>
+      ${statusHtml}
+    </div>`;
+  }).join('');
 }
-function closeLuncdashModal() {
-  const modal = document.getElementById('luncdash-modal');
-  if (modal) modal.style.display = 'none';
-}
-function confirmLuncdashAddr() {
-  const input = document.getElementById('luncdash-addr-input');
-  const addr = input ? input.value.trim() : '';
-  if (addr.startsWith('terra1') && addr.length >= 40) {
-    closeLuncdashModal();
-    if (typeof window.setWalletConnected === 'function') {
-      window.setWalletConnected(addr);
-    } else if (typeof connectWallet === 'function') {
-      connectWallet('luncdash');
-    }
-  } else {
-    input.style.borderColor = 'rgba(255,80,80,0.6)';
-    setTimeout(function(){ input.style.borderColor = 'rgba(232,200,64,0.3)'; }, 1500);
-  }
-}
-document.getElementById('luncdash-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeLuncdashModal();
-});
-</script>
-</body>
-</html>
+
+
