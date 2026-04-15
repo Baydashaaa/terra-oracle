@@ -232,21 +232,11 @@
   </script>
 
 <style>body{min-height:100vh;display:flex;flex-direction:column;}footer,.site-footer{margin-top:auto;flex-shrink:0;}nav{flex-shrink:0;}.page{width:100%;}.page.active{display:block;}.page#page-reputation.active,.page#page-treasury.active{flex:1;min-height:calc(100vh - 80px);}
-/* Chat desktop: fixed height, internal scroll */
-@media(min-width:768px){
-  .page#page-chat.active{display:flex;flex-direction:column;height:calc(100vh - 80px);}
-  #chat-page-messages{flex:1;overflow-y:auto;min-height:0;}
-  #chat-page-messages .chat-page-msg:first-child{margin-top:auto;}
-  #chat-input-bar{flex-shrink:0;}
-  #chat-page-messages::-webkit-scrollbar{width:4px;}
-  #chat-page-messages::-webkit-scrollbar-track{background:transparent;}
-  #chat-page-messages::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(123,92,255,0.6),rgba(0,212,255,0.4));border-radius:4px;}
-  #chat-page-messages::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(123,92,255,0.9),rgba(0,212,255,0.7));}
-}
-/* Chat mobile: normal page scroll */
-@media(max-width:767px){
-  #chat-page-messages{min-height:300px;}
-}
+/* Chat scrollbar */
+#chat-page-messages::-webkit-scrollbar{width:4px;}
+#chat-page-messages::-webkit-scrollbar-track{background:transparent;}
+#chat-page-messages::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(123,92,255,0.6),rgba(0,212,255,0.4));border-radius:4px;}
+#chat-page-messages::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(123,92,255,0.9),rgba(0,212,255,0.7));}
 </style>
 <style>
 @media (max-width: 768px), (hover: none) {
@@ -1083,7 +1073,7 @@
  </div>
 
  <!-- Input bar -->
- <div id="chat-input-bar" style="padding:16px 0 40px;">
+ <div id="chat-input-bar" style="position:sticky;bottom:0;padding:12px 0 32px;background:linear-gradient(to bottom,transparent,var(--bg) 28%);">
   <div id="chat-page-connect-prompt" style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Connect your wallet to join the conversation</div>
    <button class="btn btn-primary" onclick="openBagWalletPicker()" style="width:100%;padding:14px;">🔑 Connect Wallet</button>
