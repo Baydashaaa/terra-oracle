@@ -181,13 +181,16 @@ function showPage(name, e, skipHistory) {
     if (name === 'chat') {
       if (footer) footer.style.display = 'none';
       document.body.style.overflow = 'auto';
+      document.body.style.paddingBottom = '0';
+      document.documentElement.style.paddingBottom = '0';
       const chatPage = document.getElementById('page-chat');
       if (chatPage) {
         chatPage.style.padding = '8px 12px 0';
+        chatPage.style.paddingBottom = '0';
+        chatPage.style.marginBottom = '0';
       }
       const msgs = document.getElementById('chat-page-messages');
       if (msgs) {
-        // Set messages height to fill available screen space
         const nav = document.querySelector('nav');
         const navH = nav ? nav.offsetHeight : 60;
         const inputBar = document.getElementById('chat-input-bar');
@@ -199,10 +202,12 @@ function showPage(name, e, skipHistory) {
         msgs.style.overflowY = 'auto';
       }
       const inputBar = document.getElementById('chat-input-bar');
-      if (inputBar) { inputBar.style.padding = '8px 0 16px'; }
+      if (inputBar) { inputBar.style.padding = '8px 0 0'; inputBar.style.marginBottom = '0'; }
     } else {
       if (footer) footer.style.display = '';
       document.body.style.overflow = '';
+      document.body.style.paddingBottom = '';
+      document.documentElement.style.paddingBottom = '';
       const chatPage = document.getElementById('page-chat');
       if (chatPage) chatPage.removeAttribute('style');
       const msgs = document.getElementById('chat-page-messages');
