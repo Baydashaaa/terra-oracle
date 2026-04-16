@@ -165,7 +165,7 @@ async function loadLeaderboard() {
 
     // Calculate REP score for each
     const ranked = Object.values(wallets).map(w => {
-      const score = w.questions * 40 + w.answers * 15 + w.upvotes * 10;
+      const score = w.questions * 40 + w.answers * 5 + w.upvotes * 15;
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
       return { ...w, score, rank };
     }).sort((a, b) => b.score - a.score).slice(0, 50);
@@ -314,9 +314,9 @@ async function loadStatsData() {
 
     // All-time REP
     const repQuestions = myQuestions.length * 40;
-    const repAnswers   = myAnswers.length   * 15;
-    const repUpvotes   = totalUpvotes       * 10;
-    const repChat      = Math.min(msgCount, 20) * 2 + Math.max(0, msgCount - 20) * 0.4;
+    const repAnswers   = myAnswers.length   * 5;
+    const repUpvotes   = totalUpvotes       * 15;
+    const repChat      = msgCount * 5;
     const totalRep     = Math.round(repQuestions + repAnswers + repUpvotes + repChat);
 
     // Update activity grid
@@ -380,17 +380,17 @@ async function loadStatsData() {
     for (const q of allQuestions) {
       if (!q.wallet || (q.createdAt || 0) < cutoff7d) continue;
       if (!weeklyScores[q.wallet]) weeklyScores[q.wallet] = 0;
-      weeklyScores[q.wallet] += 40 + (q.votes || 0) * 10;
+      weeklyScores[q.wallet] += 40 + (q.votes || 0) * 15;
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
         if (!weeklyScores[a.wallet]) weeklyScores[a.wallet] = 0;
-        weeklyScores[a.wallet] += 15 + (a.votes || 0) * 10;
+        weeklyScores[a.wallet] += 5 + (a.votes || 0) * 15;
       }
     }
     // Include current user's 7d score
     const myWeeklyScore = weeklyScores[wallet] || Math.round(
       myQuestions.filter(q => (q.createdAt||0) >= cutoff7d).length * 40 +
-      myAnswers.filter(a => (a.createdAt||0) >= cutoff7d).length * 15
+      myAnswers.filter(a => (a.createdAt||0) >= cutoff7d).length * 5
     );
     if (!weeklyScores[wallet]) weeklyScores[wallet] = myWeeklyScore;
 
@@ -535,9 +535,9 @@ function renderHowItWorksHTML() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
         ${[
           ['Ask a question',    '+40 REP per question', 'var(--accent)'],
-          ['Answer a question', '+15 REP per answer',   '#66ffaa'      ],
-          ['Upvote received',   '+10 REP per upvote',   '#ffd700'      ],
-          ['Chat message',      '+2 REP - first 20/day','#c084fc'      ],
+          ['Answer a question', '+5 REP per answer',    '#66ffaa'      ],
+          ['Upvote received',   '+15 REP per upvote',   '#ffd700'      ],
+          ['Chat message',      '+5 REP per message',   '#c084fc'      ],
           ['Oracle Draw entry', '+10 REP per entry',    '#ff8844'      ],
         ].map(([label, rep, color]) => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
@@ -550,7 +550,7 @@ function renderHowItWorksHTML() {
           Anti-abuse limits
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);line-height:1.6;">
-          <div>Chat messages beyond the first 20 per day earn 20% of the standard reward.</div>
+          <div>Answers are limited to 3 per question per day to prevent spam.</div>
           <div>Voting is capped at 20 votes per day per wallet.</div>
           <div>Self-votes on questions and answers are blocked.</div>
         </div>
