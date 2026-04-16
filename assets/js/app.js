@@ -1160,6 +1160,27 @@ document.getElementById('chat-page-input').addEventListener('input', function() 
 });
 
 // ─── FIX 2: Chat - исправлена fee (5,000 LUNC payment) ───────
+// ─── CHAT REPLY ───────────────────────────────────────────────
+window._chatReplyTo = null; // { txHash, author, text }
+
+window.setChatReply = function(txHash, author, text) {
+  window._chatReplyTo = { txHash, author, text };
+  const block = document.getElementById('chat-reply-block');
+  const nameEl = document.getElementById('chat-reply-author');
+  const textEl = document.getElementById('chat-reply-text');
+  if (block) block.style.display = 'flex';
+  if (nameEl) nameEl.textContent = author;
+  if (textEl) textEl.textContent = text.slice(0, 80) + (text.length > 80 ? '...' : '');
+  const input = document.getElementById('chat-page-input');
+  if (input) input.focus();
+};
+
+window.clearChatReply = function() {
+  window._chatReplyTo = null;
+  const block = document.getElementById('chat-reply-block');
+  if (block) block.style.display = 'none';
+};
+
 window.sendChatMessage = async function() {
   const text = document.getElementById('chat-page-input').value.trim();
   const statusEl = document.getElementById('chat-tx-status');
@@ -1173,7 +1194,10 @@ window.sendChatMessage = async function() {
     await window.keplr.enable('columbus-5');
     const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
-    const txHash = await sendLuncDirect(sender, TREASURY_WALLET, 5000000000, text.slice(0, 256), 'columbus-5');
+    // Build memo with optional reply prefix: ">txHash|text"
+    const replyPrefix = window._chatReplyTo ? `>${window._chatReplyTo.txHash.slice(0,16)}|` : '';
+    const fullMemo = (replyPrefix + text).slice(0, 256);
+    const txHash = await sendLuncDirect(sender, TREASURY_WALLET, 5000000000, fullMemo, 'columbus-5');
     const result = { transactionHash: txHash };
     const short = sender.slice(0,8)+'...'+sender.slice(-4);
 
@@ -1207,6 +1231,7 @@ window.sendChatMessage = async function() {
     document.getElementById('chat-page-count').textContent = '256';
     document.getElementById('chat-ring').style.strokeDashoffset = '87.96';
     document.getElementById('chat-ring').style.stroke = 'var(--accent)';
+    window.clearChatReply();
     btn.textContent = 'Send Message →'; btn.disabled = false;
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
     statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraclassic.community/columbus-5/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
@@ -1324,10 +1349,25 @@ function renderChatMessages(msgs) {
               🔗 ${m.time}
             </a>
           </div>
+          <!-- Reply quote -->
+          ${m.replyTo ? (() => {
+            const orig = cachedMsgs.find(x => x.txHash && x.txHash.startsWith(m.replyTo));
+            if (!orig) return '';
+            return `<div style="margin-bottom:8px;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;cursor:pointer;" onclick="document.getElementById('msg-${orig.txHash}')?.scrollIntoView({behavior:'smooth'})">
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;">↩ ${_getDisplayName(orig.fullAddr, orig.author)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${orig.text.slice(0,80)}</div>
+            </div>`;
+          })() : ''}
           <!-- Message text -->
           <div style="font-size:14px;line-height:1.65;color:rgba(232,240,255,0.92);word-break:break-word;">${m.text}</div>
           <!-- Reactions -->
           ${buildReactionsRow(m.txHash, all, myReactions)}
+          <!-- Reply button -->
+          <button onclick="setChatReply('${m.txHash}','${(m.fullAddr ? _getDisplayName(m.fullAddr, m.author) : m.author).replace(/'/g,"\\'")}','${m.text.replace(/'/g,"\\'").replace(/\n/g,' ').slice(0,80)}')"
+            style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;letter-spacing:0.03em;"
+            onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
+            ↩ Reply
+          </button>
         </div>
       </div>
     </div>`;
@@ -1387,7 +1427,15 @@ async function loadChatFromChain() {
       const luncFormatted = (luncAmount / 1000000).toLocaleString(undefined, {maximumFractionDigits: 0});
       const ts = txMeta?.timestamp ? new Date(txMeta.timestamp) : null;
       const timeStr = ts ? ts.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      msgs.push({ author: short, fullAddr: sender, text: memo.slice(0, 256), amount: luncFormatted, txHash: txMeta?.txhash || '', time: timeStr, ts: ts ? ts.getTime() : 0,
+      // Parse reply prefix: ">txHashPrefix|actual text"
+      let replyTo = null;
+      let displayText = memo.slice(0, 256);
+      const replyMatch = memo.match(/^>([A-Fa-f0-9]{16})\|(.*)$/s);
+      if (replyMatch) {
+        replyTo = replyMatch[1];
+        displayText = replyMatch[2];
+      }
+      msgs.push({ author: short, fullAddr: sender, text: displayText, replyTo, amount: luncFormatted, txHash: txMeta?.txhash || '', time: timeStr, ts: ts ? ts.getTime() : 0,
         isSystem: ['Terra Oracle Q&A - Weekly Pool','Terra Oracle Q&A - Treasury','Oracle Draw - Daily','Oracle Draw - Weekly'].includes(memo.trim())
       });
     } catch(e) { continue; }
