@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-04-16T14:43:57.344Z",
+  "_updated": "2026-04-16T14:44:03.604Z",
   "questions": [
     {
       "id": "LUNC-NBIRAHX",
@@ -28,16 +28,6 @@
           "alias": "Joker",
           "text": "+",
           "createdAt": 1775929938,
-          "votes": 0,
-          "voters": []
-        },
-        {
-          "id": "ANS-MO1HLQTJ",
-          "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
-          "walletHash": "sha256:m4x75c2l",
-          "alias": "Joker",
-          "text": "😌",
-          "createdAt": 1776344420,
           "votes": 0,
           "voters": []
         },
