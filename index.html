@@ -1126,9 +1126,12 @@
      <span style="font-size:10px;font-family:monospace;color:var(--muted);" id="chat-page-addr"></span>
     </div>
     <!-- Reply quote block -->
-    <div id="chat-reply-block" style="display:none;align-items:flex-start;gap:8px;padding:8px 16px 0;border-bottom:1px solid var(--border);">
+    <div id="chat-reply-block" style="display:none;align-items:flex-start;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:rgba(84,147,247,0.03);">
      <div style="flex:1;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;">
-      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;">↩ <span id="chat-reply-author"></span></div>
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;">
+       <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M10 2H5C3.3 2 2 3.3 2 5v1M2 6l3-3M2 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+       <span id="chat-reply-author"></span>
+      </div>
       <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="chat-reply-text"></div>
      </div>
      <button onclick="clearChatReply()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;" title="Cancel reply">✕</button>
