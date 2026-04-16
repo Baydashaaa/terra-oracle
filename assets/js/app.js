@@ -115,7 +115,17 @@ async function loadQuestionsFromWorker() {
     _questionsLoaded = true;
     // Build score map for rank badges
     if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
-    renderBoard();
+    // Prefetch profiles for all question/answer authors
+    if (typeof prefetchProfiles === 'function') {
+      const addrs = [];
+      for (const q of questions) {
+        if (q.wallet) addrs.push(q.wallet);
+        for (const a of q.answers || []) { if (a.wallet) addrs.push(a.wallet); }
+      }
+      prefetchProfiles(addrs).then(() => renderBoard());
+    } else {
+      renderBoard();
+    }
   } catch(e) {
     console.warn('Failed to load questions from worker:', e.message);
     questions = [];
@@ -1257,6 +1267,13 @@ function renderChatMessages(msgs) {
   if (!msgs || msgs.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:60px 20px;"><div style="font-size:32px;margin-bottom:12px;">💬</div>No messages yet - be the first to speak!</div>';
     return;
+  }
+  // Prefetch profiles for all authors, re-render after
+  if (typeof prefetchProfiles === 'function') {
+    const addrs = [...new Set(msgs.map(m => m.fullAddr).filter(Boolean))];
+    prefetchProfiles(addrs).then(() => {
+      if (cachedMsgs === msgs) renderChatMessages(msgs);
+    });
   }
   const all = getChatReactions();
   const myReactions = JSON.parse(localStorage.getItem('my_chat_reactions') || '{}');
