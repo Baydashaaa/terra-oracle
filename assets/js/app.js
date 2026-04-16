@@ -116,6 +116,15 @@ async function loadQuestionsFromWorker() {
     // Build score map for rank badges
     if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
     renderBoard();
+    // Prefetch profiles for question/answer authors (background, no re-render)
+    if (typeof prefetchProfiles === 'function') {
+      const addrs = [];
+      for (const q of questions) {
+        if (q.wallet) addrs.push(q.wallet);
+        for (const a of q.answers || []) { if (a.wallet) addrs.push(a.wallet); }
+      }
+      prefetchProfiles(addrs); // fire-and-forget, no .then()
+    }
   } catch(e) {
     console.warn('Failed to load questions from worker:', e.message);
     questions = [];
@@ -1385,6 +1394,11 @@ async function loadChatFromChain() {
   }
   msgs.sort((a, b) => a.ts - b.ts);
   renderChatMessages(msgs);
+  // Prefetch profiles for chat authors (background, no re-render)
+  if (typeof prefetchProfiles === 'function') {
+    const addrs = [...new Set(msgs.map(m => m.fullAddr).filter(Boolean))];
+    prefetchProfiles(addrs); // fire-and-forget
+  }
 }
 
 
