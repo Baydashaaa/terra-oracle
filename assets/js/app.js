@@ -1160,35 +1160,27 @@ document.getElementById('chat-page-input').addEventListener('input', function() 
 });
 
 // ─── FIX 2: Chat - исправлена fee (5,000 LUNC payment) ───────
-// ─── CHAT REPLY ───────────────────────────────────────────────
 window._chatReplyTo = null;
-
 window.setChatReply = function(txHash, author, text) {
   window._chatReplyTo = { txHash, author, text };
   const block = document.getElementById('chat-reply-block');
-  const nameEl = document.getElementById('chat-reply-author');
-  const textEl = document.getElementById('chat-reply-text');
   if (block) block.style.display = 'flex';
+  const nameEl = document.getElementById('chat-reply-author');
   if (nameEl) nameEl.textContent = author;
-  if (textEl) textEl.textContent = text.slice(0, 80) + (text.length > 80 ? '...' : '');
+  const textEl = document.getElementById('chat-reply-text');
+  if (textEl) textEl.textContent = text.slice(0,80) + (text.length > 80 ? '...' : '');
   const input = document.getElementById('chat-page-input');
   if (input) input.focus();
 };
-
 window.clearChatReply = function() {
   window._chatReplyTo = null;
   const block = document.getElementById('chat-reply-block');
   if (block) block.style.display = 'none';
 };
-
-// Event delegation for reply buttons (avoids inline onclick issues on mobile)
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-reply-txhash]');
   if (!btn) return;
-  const txHash = btn.getAttribute('data-reply-txhash');
-  const author = btn.getAttribute('data-reply-author');
-  const text = btn.getAttribute('data-reply-text');
-  window.setChatReply(txHash, author, text);
+  window.setChatReply(btn.getAttribute('data-reply-txhash'), btn.getAttribute('data-reply-author'), btn.getAttribute('data-reply-text'));
 });
 
 window.sendChatMessage = async function() {
@@ -1358,13 +1350,14 @@ function renderChatMessages(msgs) {
               🔗 ${m.time}
             </a>
           </div>
+          <!-- Message text -->
           <!-- Reply quote -->
           ${m.replyTo ? (() => {
             const orig = cachedMsgs.find(x => x.txHash && x.txHash.startsWith(m.replyTo));
             if (!orig) return '';
             const origName = _getDisplayName(orig.fullAddr, orig.author);
             return `<div style="margin-bottom:8px;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;cursor:pointer;" onclick="document.getElementById('msg-${orig.txHash}')?.scrollIntoView({behavior:'smooth'})">
-              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;">↩ ${origName}</div>
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M10 2H5C3.3 2 2 3.3 2 5v1M2 6l3-3M2 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${origName}</div>
               <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${orig.text.slice(0,80)}</div>
             </div>`;
           })() : ''}
@@ -1377,9 +1370,10 @@ function renderChatMessages(msgs) {
             data-reply-txhash="${m.txHash}"
             data-reply-author="${(_getDisplayName(m.fullAddr, m.author)).replace(/"/g,'&quot;')}"
             data-reply-text="${m.text.replace(/"/g,'&quot;').replace(/\n/g,' ').slice(0,80)}"
-            style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;letter-spacing:0.03em;"
+            style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;letter-spacing:0.03em;display:inline-flex;align-items:center;gap:4px;"
             onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
-            ↩ Reply
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M10 2H5C3.3 2 2 3.3 2 5v1M2 6l3-3M2 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Reply
           </button>
         </div>
       </div>
