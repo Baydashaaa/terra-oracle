@@ -90,106 +90,46 @@ async function tLoadRecentTxs(retries = 5) {
   }
   el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Loading transactions...</div>';
 
-  // Helper: fetch txs for one wallet and parse into unified rows
+  // Helper: fetch txs for one wallet via Worker proxy (bypasses CORS/DNS issues)
   async function fetchTxsFor(wallet, limit) {
-    // Try all LCD nodes with timeout fallback
-    // Strategy: try FCD first (more reliable for tx history),
-    // then fallback to LCD nodes with tx indexer support.
-    // publicnode LCD returns 500 (no tx indexer), hexxagon DNS may fail in some regions.
-    let data = null;
-
-    // ── Step 1: Try FCD (primary — reliable, simple /v1/txs?account= API) ──
-    for (const fcd of T_FCD) {
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 8000);
-        const url = `${fcd}/v1/txs?account=${wallet}&limit=${limit}`;
-        const r = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!r.ok) { console.warn(`Treasury txs: FCD ${fcd} returned ${r.status}`); continue; }
+    const WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
+    let rawTxs = null;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 12000);
+      const r = await fetch(`${WORKER}/proxy-txs?wallet=${wallet}&limit=${limit}`, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (r.ok) {
         const body = await r.json();
-        if (!body.txs) continue;
-        // Convert FCD format → LCD-style format for unified parsing below
-        data = {
-          txs: body.txs.map(tx => ({
-            body: {
-              memo: tx.tx?.value?.memo || '',
-              messages: (tx.tx?.value?.msg || []).map(m => ({
-                '@type': m.type === 'bank/MsgSend' ? '/cosmos.bank.v1beta1.MsgSend' : m.type,
-                from_address: m.value?.from_address || '',
-                to_address:   m.value?.to_address   || '',
-                amount:       m.value?.amount        || [],
-              })),
-            }
-          })),
-          tx_responses: body.txs.map(tx => ({
-            txhash:    tx.txhash || tx.id || '',
-            timestamp: tx.timestamp || '',
-            code:      tx.code || 0,
-          })),
-        };
-        console.log(`Treasury txs: FCD ${fcd} success`);
-        break;
-      } catch(e) {
-        console.warn(`Treasury txs: FCD ${fcd} failed:`, e.message);
+        rawTxs = body.txs || null;
       }
+    } catch(e) {
+      console.warn('Treasury txs: Worker proxy failed:', e.message);
     }
+    if (!rawTxs) return [];
 
-    // ── Step 2: LCD fallback (if FCD failed) ──
-    if (!data) {
-      const paramVariants = [
-        `events=transfer.recipient%3D%27${wallet}%27`,  // SDK <0.47
-        `query=transfer.recipient%3D%27${wallet}%27`,   // SDK >=0.47
-      ];
-      outer: for (const lcd of T_LCD_TX) {
-        for (const params of paramVariants) {
-          try {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 8000);
-            const url = `${lcd}/cosmos/tx/v1beta1/txs?${params}&pagination.limit=${limit}&order_by=2`;
-            const r = await fetch(url, { signal: ctrl.signal });
-            clearTimeout(timer);
-            if (!r.ok) { console.warn(`Treasury txs: LCD ${lcd} returned ${r.status}`); continue; }
-            const body = await r.json();
-            if (body.code || body.message) { console.warn(`Treasury txs: LCD ${lcd} error:`, body.message || body.code); continue; }
-            data = body;
-            break outer;
-          } catch(e) {
-            console.warn(`Treasury txs: LCD ${lcd} failed:`, e.message);
-            continue;
-          }
-        }
-      }
-    }
-    if (!data) return [];
-    const txBodies    = data.txs || [];
-    const txResponses = data.tx_responses || [];
     const results = [];
-    const count = Math.max(txBodies.length, txResponses.length);
-
     const CHAT_AMT = 5000 * 1e6;
-    const QA_WEEKLY_AMT = 100000 * 1e6; // Q&A → Weekly Pool
-    const QA_TREASURY_AMT = 100000 * 1e6; // Q&A → Treasury
-    const DRAW_NFT_MIN = 24750 * 1e6; // ~25k LUNC (Common NFT with tax)
+    const QA_WEEKLY_AMT = 100000 * 1e6;
+    const QA_TREASURY_AMT = 100000 * 1e6;
+    const DRAW_NFT_MIN = 24750 * 1e6;
     const TOL = 0.05;
 
-    for (let i = 0; i < count; i++) {
-      const txBody = txBodies[i];
-      const txMeta = txResponses[i];
-      if (!txMeta) continue;
-
-      const tsRaw = txMeta.timestamp ? new Date(txMeta.timestamp) : null;
+    for (const tx of rawTxs) {
+      const tsRaw = tx.timestamp ? new Date(tx.timestamp) : null;
       const ts = tsRaw
         ? tsRaw.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + tsRaw.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
         : '';
       const tsMs = tsRaw ? tsRaw.getTime() : 0;
-      const hash = txMeta.txhash || '';
-      const memo = txBody?.body?.memo || '';
-      const msgs = txBody?.body?.messages || [];
+      const hash = tx.txhash || '';
+      const memo = tx.tx?.value?.memo || '';
+      const msgs = tx.tx?.value?.msg  || [];
 
       let rawUluna = 0;
       for (const msg of msgs) {
-        const coins = msg.amount || [];
+        const val = msg.value || {};
+        if ((val.to_address || '') !== wallet) continue;
+        const coins = val.amount || [];
         const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
         if (lunc) { rawUluna = parseInt(lunc.amount); break; }
       }
