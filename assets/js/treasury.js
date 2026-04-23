@@ -18,6 +18,7 @@ const T_LCD = [
 // publicnode returns 500 on /cosmos/tx/v1beta1/txs?events=... so excluded
 const T_LCD_TX = [
   'https://terra-classic-lcd.hexxagon.io',
+  'https://terra-classic.rpc.thirdweb.com',
   'https://rest.cosmos.directory/terra',
   'https://lcd.terraclassic.community',
 ];
@@ -92,71 +93,71 @@ async function tLoadRecentTxs(retries = 5) {
   // Helper: fetch txs for one wallet and parse into unified rows
   async function fetchTxsFor(wallet, limit) {
     // Try all LCD nodes with timeout fallback
-    // Also try both old (events=) and new (query=) parameter formats
-    // for SDK 0.47+ compatibility
+    // Strategy: try FCD first (more reliable for tx history),
+    // then fallback to LCD nodes with tx indexer support.
+    // publicnode LCD returns 500 (no tx indexer), hexxagon DNS may fail in some regions.
     let data = null;
-    const paramVariants = [
-      `events=transfer.recipient%3D%27${wallet}%27`,  // SDK <0.47
-      `query=transfer.recipient%3D%27${wallet}%27`,   // SDK >=0.47
-    ];
-    outer: for (const lcd of T_LCD_TX) {
-      for (const params of paramVariants) {
-        try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 8000);
-          const url = `${lcd}/cosmos/tx/v1beta1/txs?${params}&pagination.limit=${limit}&order_by=2`;
-          const r = await fetch(url, { signal: ctrl.signal });
-          clearTimeout(timer);
-          if (!r.ok) {
-            console.warn(`Treasury txs: ${lcd} returned ${r.status} for params=${params.slice(0,6)}`);
-            continue;
-          }
-          const body = await r.json();
-          // If the API rejected the query format, body will have error field or be empty
-          if (body.code || body.message) {
-            console.warn(`Treasury txs: ${lcd} error:`, body.message || body.code);
-            continue;
-          }
-          data = body;
-          break outer; // success — stop trying
-        } catch(e) {
-          console.warn(`Treasury txs: ${lcd} failed:`, e.message);
-          continue;
-        }
-      }
-    }
-    if (!data) {
-      // Fallback to FCD — different API format but more reliable for tx history
-      for (const fcd of T_FCD) {
-        try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 8000);
-          const url = `${fcd}/v1/txs?account=${wallet}&limit=${limit}`;
-          const r = await fetch(url, { signal: ctrl.signal });
-          clearTimeout(timer);
-          if (!r.ok) continue;
-          const body = await r.json();
-          if (!body.txs) continue;
-          // Convert FCD format to LCD format
-          data = {
-            txs: body.txs.map(tx => ({
-              body: { memo: tx.tx?.value?.memo || '', messages: (tx.tx?.value?.msg || []).map(m => ({
+
+    // ── Step 1: Try FCD (primary — reliable, simple /v1/txs?account= API) ──
+    for (const fcd of T_FCD) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 8000);
+        const url = `${fcd}/v1/txs?account=${wallet}&limit=${limit}`;
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) { console.warn(`Treasury txs: FCD ${fcd} returned ${r.status}`); continue; }
+        const body = await r.json();
+        if (!body.txs) continue;
+        // Convert FCD format → LCD-style format for unified parsing below
+        data = {
+          txs: body.txs.map(tx => ({
+            body: {
+              memo: tx.tx?.value?.memo || '',
+              messages: (tx.tx?.value?.msg || []).map(m => ({
                 '@type': m.type === 'bank/MsgSend' ? '/cosmos.bank.v1beta1.MsgSend' : m.type,
                 from_address: m.value?.from_address || '',
-                to_address: m.value?.to_address || '',
-                amount: m.value?.amount || [],
-              })) }
-            })),
-            tx_responses: body.txs.map(tx => ({
-              txhash: tx.txhash || tx.id || '',
-              timestamp: tx.timestamp || '',
-              code: tx.code || 0,
-            })),
-          };
-          console.log(`Treasury txs: FCD fallback ${fcd} success`);
-          break;
-        } catch(e) {
-          console.warn(`Treasury txs: FCD ${fcd} failed:`, e.message);
+                to_address:   m.value?.to_address   || '',
+                amount:       m.value?.amount        || [],
+              })),
+            }
+          })),
+          tx_responses: body.txs.map(tx => ({
+            txhash:    tx.txhash || tx.id || '',
+            timestamp: tx.timestamp || '',
+            code:      tx.code || 0,
+          })),
+        };
+        console.log(`Treasury txs: FCD ${fcd} success`);
+        break;
+      } catch(e) {
+        console.warn(`Treasury txs: FCD ${fcd} failed:`, e.message);
+      }
+    }
+
+    // ── Step 2: LCD fallback (if FCD failed) ──
+    if (!data) {
+      const paramVariants = [
+        `events=transfer.recipient%3D%27${wallet}%27`,  // SDK <0.47
+        `query=transfer.recipient%3D%27${wallet}%27`,   // SDK >=0.47
+      ];
+      outer: for (const lcd of T_LCD_TX) {
+        for (const params of paramVariants) {
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
+            const url = `${lcd}/cosmos/tx/v1beta1/txs?${params}&pagination.limit=${limit}&order_by=2`;
+            const r = await fetch(url, { signal: ctrl.signal });
+            clearTimeout(timer);
+            if (!r.ok) { console.warn(`Treasury txs: LCD ${lcd} returned ${r.status}`); continue; }
+            const body = await r.json();
+            if (body.code || body.message) { console.warn(`Treasury txs: LCD ${lcd} error:`, body.message || body.code); continue; }
+            data = body;
+            break outer;
+          } catch(e) {
+            console.warn(`Treasury txs: LCD ${lcd} failed:`, e.message);
+            continue;
+          }
         }
       }
     }
