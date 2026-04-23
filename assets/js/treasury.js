@@ -11,6 +11,15 @@ const T_WALLETS = {
 const T_LCD = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terraclassic.community',
+  'https://rest.cosmos.directory/terra',
+  'https://terra-classic-lcd.hexxagon.io',
+];
+// Nodes that support tx search by events (tx indexer enabled)
+// publicnode returns 500 on /cosmos/tx/v1beta1/txs?events=... so excluded
+const T_LCD_TX = [
+  'https://terra-classic-lcd.hexxagon.io',
+  'https://rest.cosmos.directory/terra',
+  'https://lcd.terraclassic.community',
 ];
 function tFmt(uluna) {
   const n = uluna / 1_000_000;
@@ -78,20 +87,37 @@ async function tLoadRecentTxs(retries = 5) {
   // Helper: fetch txs for one wallet and parse into unified rows
   async function fetchTxsFor(wallet, limit) {
     // Try all LCD nodes with timeout fallback
+    // Also try both old (events=) and new (query=) parameter formats
+    // for SDK 0.47+ compatibility
     let data = null;
-    for (const lcd of T_LCD) {
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 8000);
-        const url = `${lcd}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${wallet}%27&pagination.limit=${limit}&order_by=2`;
-        const r = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!r.ok) continue;
-        data = await r.json();
-        break; // success — stop trying
-      } catch(e) {
-        console.warn(`Treasury txs: LCD ${lcd} failed:`, e.message);
-        continue;
+    const paramVariants = [
+      `events=transfer.recipient%3D%27${wallet}%27`,  // SDK <0.47
+      `query=transfer.recipient%3D%27${wallet}%27`,   // SDK >=0.47
+    ];
+    outer: for (const lcd of T_LCD_TX) {
+      for (const params of paramVariants) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 8000);
+          const url = `${lcd}/cosmos/tx/v1beta1/txs?${params}&pagination.limit=${limit}&order_by=2`;
+          const r = await fetch(url, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!r.ok) {
+            console.warn(`Treasury txs: ${lcd} returned ${r.status} for params=${params.slice(0,6)}`);
+            continue;
+          }
+          const body = await r.json();
+          // If the API rejected the query format, body will have error field or be empty
+          if (body.code || body.message) {
+            console.warn(`Treasury txs: ${lcd} error:`, body.message || body.code);
+            continue;
+          }
+          data = body;
+          break outer; // success — stop trying
+        } catch(e) {
+          console.warn(`Treasury txs: ${lcd} failed:`, e.message);
+          continue;
+        }
       }
     }
     if (!data) return [];
