@@ -653,3 +653,22 @@ function renderHowItWorksHTML() {
     </div>
   `;
 }
+
+// ── fetchChatStats ─────────────────────────────────────────────
+// Fetches the total number of chat messages a wallet has sent.
+// Used by Your Stats (reputation:stats) to compute Chat REP (msgCount × 5).
+async function fetchChatStats(wallet) {
+  try {
+    const WORKER_URL = typeof window.WORKER_URL !== 'undefined'
+      ? window.WORKER_URL
+      : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+    const res = await fetch(`${WORKER_URL}/chat/count?wallet=${wallet}`);
+    if (!res.ok) return { msgCount: 0 };
+    const data = await res.json();
+    return { msgCount: data.msgCount || data.total || 0 };
+  } catch (e) {
+    console.warn('fetchChatStats failed:', e);
+    return { msgCount: 0 };
+  }
+}
+window.fetchChatStats = fetchChatStats;
