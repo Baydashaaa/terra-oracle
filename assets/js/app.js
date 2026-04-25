@@ -1530,6 +1530,11 @@ async function loadChatFromChain() {
         const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
         if (decoded !== rawMemo) memo = decoded;
       } catch(e) { /* keep original if not valid UTF-8 sequence */ }
+      // Try base64 decode — system memos are sometimes base64-encoded
+      try {
+        const b64decoded = decodeURIComponent(escape(atob(memo.trim())));
+        if (b64decoded && b64decoded.length > 0) memo = b64decoded;
+      } catch(e) { /* not base64 — keep as-is */ }
       const txMsgs = txBody?.body?.messages || [];
       let sender = null, luncAmount = 0;
       for (const msg of txMsgs) {
@@ -1546,6 +1551,17 @@ async function loadChatFromChain() {
         }
       }
       if (!sender || luncAmount < CHAT_MIN_ULUNA) continue;
+      // Filter out system/admin wallets — their transfers are not chat messages
+      const SYSTEM_WALLETS = [
+        'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
+        'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
+        'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px',  // DAILY
+        'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz',  // WEEKLY
+        'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION
+      ];
+      if (SYSTEM_WALLETS.includes(sender)) continue;
+      // Block amounts far above 5,000 LUNC (±2% tolerance for tax) — not chat payments
+      if (luncAmount > 5200000000) continue;
       const short = sender.slice(0, 10) + '...' + sender.slice(-4);
       const luncFormatted = (luncAmount / 1000000).toLocaleString(undefined, {maximumFractionDigits: 0});
       const ts = txMeta?.timestamp ? new Date(txMeta.timestamp) : null;
