@@ -522,6 +522,8 @@ canvas {
   animation: starShimmer 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
+  /* Isolate repaint to this layer */
+  will-change: background-position;
 }
 @keyframes starShimmer {
   0%   { background-position: -100% center; opacity: 0.5; }
@@ -844,21 +846,22 @@ canvas {
   position: relative;
 }
 
-/* Псевдоэлемент — бегущий импульс по границе */
+/* Псевдоэлемент — бегущий импульс по границе
+   FIXED: replaced CSS custom property in @keyframes (broken on Android Chrome)
+   with standard conic-gradient + rotate animation (universal support) */
 .zk-module::before {
   content: '';
   position: absolute;
   inset: -1px;
-  border-radius: 14px;
-  padding: 1px;
-  background: linear-gradient(
-    var(--pulse-angle, 0deg),
+  border-radius: 15px;
+  background: conic-gradient(
+    from 0deg,
     transparent 0%,
-    transparent 35%,
-    rgba(123,92,255,0.9) 45%,
+    transparent 30%,
+    rgba(123,92,255,0.8) 42%,
     rgba(0,212,255,1) 50%,
-    rgba(123,92,255,0.9) 55%,
-    transparent 65%,
+    rgba(123,92,255,0.8) 58%,
+    transparent 70%,
     transparent 100%
   );
   -webkit-mask:
@@ -866,20 +869,21 @@ canvas {
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  opacity: 0.6;
-  animation: perimeterPulse var(--pulse-dur, 4s) linear infinite;
+  padding: 1px;
+  opacity: 0;
+  animation: perimeterPulse var(--pulse-dur, 3.8s) linear infinite;
   animation-delay: var(--pulse-delay, 0s);
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes perimeterPulse {
-  0%   { --pulse-angle: 0deg;   opacity: 0; }
+  0%   { transform: rotate(0deg);   opacity: 0; }
   5%   { opacity: 0.7; }
   45%  { opacity: 0.5; }
   90%  { opacity: 0.6; }
   95%  { opacity: 0; }
-  100% { --pulse-angle: 360deg; opacity: 0; }
+  100% { transform: rotate(360deg); opacity: 0; }
 }
 
 /* Разные задержки для каждой карточки — эффект "обходит по кругу" */
@@ -890,17 +894,17 @@ canvas {
 
 /* Oracle Draw star — cyan импульс */
 .zk-module-star::before {
-  background: linear-gradient(
-    var(--pulse-angle, 0deg),
+  background: conic-gradient(
+    from 0deg,
     transparent 0%,
-    transparent 35%,
-    rgba(0,212,255,0.9) 45%,
+    transparent 30%,
+    rgba(0,212,255,0.8) 42%,
     rgba(168,85,247,1) 50%,
-    rgba(0,212,255,0.9) 55%,
-    transparent 65%,
+    rgba(0,212,255,0.8) 58%,
+    transparent 70%,
     transparent 100%
   );
-  opacity: 0.8;
+  opacity: 0;
 }
 
 /* Hover: импульс ярче и быстрее */
@@ -1230,3 +1234,64 @@ canvas {
   }
 
 } /* end @media 900px */
+
+
+/* ═══════════════════════════════════════════════════════
+   ANDROID / MOBILE FIX — scroll jank + card visibility
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 768px), (hover: none) {
+
+  /* Stop all border pulse animations on mobile — causes scroll jank */
+  .zk-module::before,
+  .zk-module-star::before {
+    animation: none !important;
+    opacity: 0 !important;
+    display: none !important;
+  }
+
+  /* Stop shimmer — causes blank card on Android */
+  .zk-star-shimmer {
+    animation: none !important;
+    display: none !important;
+  }
+
+  /* Stop module bar animation — causes repaint during scroll */
+  .zk-module-bar,
+  .zk-module-bar-fast {
+    animation: none !important;
+    background: linear-gradient(90deg, rgba(123,92,255,0.6), rgba(0,212,255,0.8), rgba(123,92,255,0.6)) !important;
+    background-size: 100% !important;
+  }
+
+  /* Ensure Oracle Draw card is fully visible */
+  .zk-module-star,
+  .mobile-primary-card {
+    background: linear-gradient(135deg, #070d1a 0%, #0a1020 100%) !important;
+    border-color: rgba(0,212,255,0.35) !important;
+    min-height: 160px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    /* Prevent mask from covering content */
+    -webkit-mask: none !important;
+    mask: none !important;
+  }
+
+  /* Contain repaints to prevent scroll jank */
+  .zk-module,
+  .mobile-card-row,
+  .mobile-secondary-cards {
+    contain: layout style !important;
+    transform: none !important;
+    transition: opacity 0.15s !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+  }
+
+  /* Remove hover transforms — touch devices trigger them and cause jank */
+  .zk-module:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
