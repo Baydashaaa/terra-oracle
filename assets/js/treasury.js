@@ -9,8 +9,9 @@ const T_WALLETS = {
   dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr', // Development 10%
 };
 const T_LCD = [
-  'https://terra-classic-lcd.publicnode.com',
+  'https://terra-classic.publicnode.com',
   'https://lcd.terraclassic.community',
+  'https://terra-classic-lcd.publicnode.com',
 ];
 function tFmt(uluna) {
   const n = uluna / 1_000_000;
@@ -27,7 +28,9 @@ function tSet(id, val) { const e=document.getElementById(id); if(e) e.textConten
 async function tFetchBal(addr) {
   for (const lcd of T_LCD) {
     try {
-      const r = await fetch(`${lcd}/cosmos/bank/v1beta1/balances/${addr}`);
+      const r = await fetch(`${lcd}/cosmos/bank/v1beta1/balances/${addr}`, {
+        signal: AbortSignal.timeout(6000),
+      });
       if (!r.ok) continue;
       const d = await r.json();
       const amt = d.balances?.find(b=>b.denom==='uluna')?.amount||'0';
@@ -79,6 +82,7 @@ async function tLoadRecentTxs(retries = 5) {
   const T_FCD = [
     'https://fcd.terra-classic.hexxagon.io',
     'https://terra-classic-fcd.publicnode.com',
+    'https://columbus-fcd.terra.dev',
   ];
 
   async function fetchTxsFor(wallet, limit) {
@@ -103,7 +107,7 @@ async function tLoadRecentTxs(retries = 5) {
     if (!txs.length) {
       for (const lcd of T_LCD) {
         try {
-          const url = `${lcd}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${wallet}%27&pagination.limit=${limit}&order_by=ORDER_BY_DESC`;
+          const url = `${lcd}/cosmos/tx/v1beta1/txs?events=transfer.recipient%3D%27${wallet}%27&pagination.limit=${limit}&order_by=2`;
           const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
           if (!r.ok) continue;
           const data = await r.json();
