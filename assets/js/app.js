@@ -1312,7 +1312,7 @@ window.sendChatMessage = async function() {
     window.clearChatReply();
     btn.textContent = 'Send Message →'; btn.disabled = false;
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
-    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraclassic.community/columbus-5/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
+    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraport.finance/classic/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
     setTimeout(() => { loadChatFromChain(); }, 8000);
     setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
   } catch(e) {
@@ -1393,7 +1393,7 @@ function renderChatMessages(msgs) {
             <div style="font-size:9px;color:${labelColor};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2px;">${label}</div>
             <div style="font-size:12px;color:var(--muted);">${m.amount} LUNC → Protocol Treasury</div>
           </div>
-          <a href="https://finder.terraclassic.community/columbus-5/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
+          <a href="https://finder.terraport.finance/classic/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
         </div>
       </div>`;
     }
@@ -1421,7 +1421,7 @@ function renderChatMessages(msgs) {
             ${rankBadge}
             <span style="font-size:9px;background:rgba(102,255,170,0.12);color:var(--green);padding:1px 7px;border-radius:4px;letter-spacing:0.05em;">✓ ON-CHAIN</span>
             ${m.amount ? `<span style="font-size:9px;color:var(--gold);background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.2);padding:1px 7px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
-            <a href="https://finder.terraclassic.community/columbus-5/tx/${m.txHash}" target="_blank"
+            <a href="https://finder.terraport.finance/classic/tx/${m.txHash}" target="_blank"
               style="font-size:9px;color:var(--muted);text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0;"
               onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
               🔗 ${m.time}
