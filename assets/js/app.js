@@ -2038,12 +2038,19 @@ function oTierEntries(tier) {
   return tier === 'legendary' ? 10 : tier === 'rare' ? 5 : 1;
 }
 function oExtractTokenId(n) {
-  // Prefer numeric token_id / id fields
-  const raw = n.token_id || n.id || n.tokenId || n.nft_id || '';
-  const str = String(raw);
-  // If it's a name like "Common_0925..." extract last numeric segment
-  const match = str.match(/(\d+)(?:[^0-9]*)?$/);
-  return match ? match[1] : str;
+  return String(n.token_id || n.id || n.tokenId || n.nft_id || '');
+}
+// Format: "Common_09528042026_ETME5" → "ETME5"
+// or numeric token_id → "#5"
+function oFormatNFTLabel(tokenId) {
+  if (!tokenId) return '—';
+  // If it's a structured name like Common_timestamp_CODE → show CODE
+  const parts = tokenId.split('_');
+  if (parts.length >= 3) {
+    return parts[parts.length - 1]; // last segment = unique code e.g. "ETME5"
+  }
+  // Pure numeric or short string
+  return '#' + tokenId;
 }
 function oSaveBagCache(wallet, nftsRaw) {
   try { sessionStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
@@ -2357,7 +2364,7 @@ function filterOracleBagNFTs(filter) {
       onmouseout="this.style.transform='translateY(0)'">
       ${imgHtml}
       <div style="font-size:9px;letter-spacing:0.2em;color:${cfg.color};font-weight:700;margin-bottom:4px;">${cfg.label}</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;">#${nft.id}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;">${oFormatNFTLabel(nft.id)}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${nft.entries} ${nft.entries===1?'entry':'entries'}</div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">${nft.pool ? (nft.pool.charAt(0).toUpperCase()+nft.pool.slice(1))+' Pool' : 'Oracle Draw'}</div>
       ${statusHtml}
