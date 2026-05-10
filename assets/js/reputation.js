@@ -163,9 +163,9 @@ async function loadLeaderboard() {
       }
     }
 
-    // Calculate REP score for each
+    // Calculate REP score for each (Q&A only — draw REP not available in bulk)
     const ranked = Object.values(wallets).map(w => {
-      const score = w.questions * 40 + w.answers * 5 + w.upvotes * 15;
+      const score = w.questions * 40 + w.answers * 15 + w.upvotes * 10;
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
       return { ...w, score, rank };
     }).sort((a, b) => b.score - a.score).slice(0, 50);
@@ -257,11 +257,28 @@ function renderStatsHTML(isConnected) {
               id="stats-rep-${k}">…</div>
           </div>`).join('')}
       </div>
+      <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
+        border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
+        ❓ Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
+        💬 Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
+        👍 Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
+        🗨️ Chat: <strong style="color:var(--text);">+2 REP</strong> (first 20), then +0.4
+      </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:12px;color:var(--muted);">Total Reputation</span>
         <span style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:800;color:var(--accent);"
           id="stats-total-rep">…</span>
+      </div>
+    </div>
+
+    <!-- Oracle Draw REP -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
+        🎭 Oracle Draw Activity
+      </div>
+      <div id="stats-draw-block">
+        <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Loading...</div>
       </div>
     </div>
 
@@ -304,20 +321,28 @@ async function loadStatsData() {
   const MIN_CONTRIBUTORS = 10;
 
   try {
-    const [qStats, chatStats] = await Promise.all([
+    const WORKER_URL_LOCAL = typeof window.WORKER_URL !== 'undefined'
+      ? window.WORKER_URL
+      : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+
+    const [qStats, chatStats, drawRepData] = await Promise.all([
       typeof fetchQuestionStats === 'function' ? fetchQuestionStats(wallet) : Promise.resolve({ myQuestions: [], myAnswers: [], totalUpvotes: 0 }),
       typeof fetchChatStats     === 'function' ? fetchChatStats(wallet)     : Promise.resolve({ msgCount: 0 }),
+      fetch(`${WORKER_URL_LOCAL}/rep/draw?wallet=${wallet}`).then(r => r.ok ? r.json() : { total: 0, history: [] }).catch(() => ({ total: 0, history: [] })),
     ]);
 
     const { myQuestions = [], myAnswers = [], totalUpvotes = 0 } = qStats;
-    const msgCount = chatStats?.msgCount || 0;
+    const msgCount       = chatStats?.msgCount   || 0;
+    const drawRepTotal   = drawRepData?.total     || 0;
+    const drawRepHistory = drawRepData?.history   || [];
 
-    // All-time REP
+    // All-time REP (unified formula — same as calcReputation in profile.js)
     const repQuestions = myQuestions.length * 40;
-    const repAnswers   = myAnswers.length   * 5;
-    const repUpvotes   = totalUpvotes       * 15;
-    const repChat      = msgCount * 5;
-    const totalRep     = Math.round(repQuestions + repAnswers + repUpvotes + repChat);
+    const repAnswers   = myAnswers.length   * 15;
+    const repUpvotes   = totalUpvotes       * 10;
+    const repChat      = Math.min(msgCount, 20) * 2 + Math.max(0, msgCount - 20) * Math.round(2 * 0.2);
+    const repDraw      = drawRepTotal;
+    const totalRep     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
 
     // Update activity grid
     const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
@@ -330,6 +355,64 @@ async function loadStatsData() {
     set('stats-rep-upvotes',     '+' + repUpvotes.toLocaleString()   + ' REP');
     set('stats-rep-chat',        '+' + Math.round(repChat) + ' REP');
     set('stats-total-rep',       totalRep.toLocaleString() + ' REP');
+
+    // Draw REP section
+    const drawEl = document.getElementById('stats-draw-block');
+    if (drawEl) {
+      if (drawRepTotal === 0 && drawRepHistory.length === 0) {
+        drawEl.innerHTML = `<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px;">
+          No Oracle Draw activity yet · <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
+          style="color:var(--accent);text-decoration:none;">Mint your first NFT →</a></div>`;
+      } else {
+        // Count mints per tier
+        const tierCounts = { common: 0, rare: 0, legendary: 0 };
+        const tierRep    = { common: 25, rare: 125, legendary: 250 };
+        for (const h of drawRepHistory) {
+          const src = (h.source || '').toLowerCase();
+          if (src.includes('common'))    tierCounts.common++;
+          else if (src.includes('rare')) tierCounts.rare++;
+          else if (src.includes('legendary')) tierCounts.legendary++;
+        }
+        const totalMints = tierCounts.common + tierCounts.rare + tierCounts.legendary;
+
+        drawEl.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px;">
+            ${[['common','#8aaccc',25],['rare','#a78bfa',125],['legendary','#ffd700',250]].map(([tier, color, pts]) => `
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">${tier}</div>
+                <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:${color};">${tierCounts[tier]}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">mints · +${(tierCounts[tier]*pts).toLocaleString()} REP</div>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+            background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+            <span style="font-size:12px;color:var(--muted);">${totalMints} total mints</span>
+            <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;color:#ff8844;">+${drawRepTotal.toLocaleString()} REP</span>
+          </div>
+          ${drawRepHistory.length > 0 ? `
+          <div style="margin-top:10px;">
+            <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Recent activity</div>
+            ${drawRepHistory.slice(0, 5).map(h => {
+              const src = h.source || '';
+              const tier = src.includes('legendary') ? 'Legendary' : src.includes('rare') ? 'Rare' : 'Common';
+              const pool = src.includes('weekly') ? 'Weekly' : 'Daily';
+              const pts  = h.points || 0;
+              const color = tier === 'Legendary' ? '#ffd700' : tier === 'Rare' ? '#a78bfa' : '#8aaccc';
+              const date  = h.ts ? new Date(h.ts * 1000).toLocaleDateString([], {month:'short',day:'numeric'}) : '';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;
+                padding:8px 12px;background:var(--surface2);border:1px solid var(--border);
+                border-radius:8px;margin-bottom:6px;">
+                <div>
+                  <span style="font-size:11px;font-weight:700;color:${color};">🎭 ${tier}</span>
+                  <span style="font-size:10px;color:var(--muted);margin-left:8px;">${pool} Draw</span>
+                  ${date ? `<span style="font-size:10px;color:var(--muted);margin-left:8px;">${date}</span>` : ''}
+                </div>
+                <span style="font-size:11px;font-weight:700;color:#ff8844;">+${pts} REP</span>
+              </div>`;
+            }).join('')}
+          </div>` : ''}`;
+      }
+    }
 
     // Rank block
     const rank     = typeof getRank     === 'function' ? getRank(totalRep)     : null;
@@ -534,11 +617,13 @@ function renderHowItWorksHTML() {
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
         ${[
-          ['Ask a question',    '+40 REP per question', 'var(--accent)'],
-          ['Answer a question', '+5 REP per answer',    '#66ffaa'      ],
-          ['Upvote received',   '+15 REP per upvote',   '#ffd700'      ],
-          ['Chat message',      '+5 REP per message',   '#c084fc'      ],
-          ['Oracle Draw entry', '+10 REP per entry',    '#ff8844'      ],
+          ['Ask a question',      '+40 REP per question',              'var(--accent)'],
+          ['Answer a question',   '+15 REP per answer',                '#66ffaa'      ],
+          ['Upvote received',     '+10 REP per upvote',                '#ffd700'      ],
+          ['Chat message',        '+2 REP (first 20), +0.4 after',     '#c084fc'      ],
+          ['Mint Common NFT',     '+25 REP per mint',                  '#8aaccc'      ],
+          ['Mint Rare NFT',       '+125 REP per mint',                 '#a78bfa'      ],
+          ['Mint Legendary NFT',  '+250 REP per mint',                 '#ff8844'      ],
         ].map(([label, rep, color]) => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${label}</div>
