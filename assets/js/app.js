@@ -2021,7 +2021,50 @@ function castVote(voteId, optionIdx) {
 }
 
 
-// ── MY BAG (Terra Oracle) ─────────────────────────────────────────────────────
+// ── MY BAG (Terra Oracle) — реальные данные с Oracle Draw ──────────────────────
+
+const O_NFT_API_BASE = 'https://nft.lunc.tools/api';
+const O_DRAW_WORKER  = 'https://oracle-draw.vladislav-baydan.workers.dev';
+const O_BAG_CACHE_KEY = 'oracle_bag_cache_v1';
+const O_BAG_CACHE_TTL = 5 * 60 * 1000;
+
+function oDetectNFTTier(nft) {
+  const name = (nft.name || nft.nft_name || '').toLowerCase();
+  if (name.includes('legendary')) return 'legendary';
+  if (name.includes('rare'))      return 'rare';
+  return 'common';
+}
+function oTierEntries(tier) {
+  return tier === 'legendary' ? 10 : tier === 'rare' ? 5 : 1;
+}
+function oSaveBagCache(wallet, nftsRaw) {
+  try { sessionStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
+}
+function oLoadBagCache(wallet) {
+  try {
+    const raw = sessionStorage.getItem(O_BAG_CACHE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (d.wallet !== wallet || Date.now() - d.ts > O_BAG_CACHE_TTL) return null;
+    return d.nftsRaw;
+  } catch(e) { return null; }
+}
+async function oFetch(url, opts = {}, attempts = 2) {
+  let err;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok || res.status < 500) return res;
+      err = new Error('HTTP ' + res.status);
+    } catch(e) { err = e; }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1000));
+  }
+  throw err;
+}
+
 function renderOracleBag() {
   const wallet = globalWalletAddress || connectedAddress;
   const notConn = document.getElementById('bag-not-connected-oracle');
@@ -2036,37 +2079,131 @@ function renderOracleBag() {
   notConn.style.display = 'none';
   conn.style.display    = 'block';
 
-  // Mock data - replace with real API from Paco later
-  const mockNFTs = [
-    { id: 47,  type: 'common',    entries: 1,  pool: 'daily',  inCurrentRound: true  },
-    { id: 12,  type: 'rare',      entries: 5,  pool: 'weekly', inCurrentRound: true  },
-    { id: 3,   type: 'legendary', entries: 10, pool: 'weekly', inCurrentRound: false },
-    { id: 88,  type: 'common',    entries: 1,  pool: 'daily',  inCurrentRound: false },
-  ];
-  const mockHistory = [
-    { round: 15, type: 'Daily',  nft: 'Common #31',    result: 'lost', prize: null },
-    { round: 13, type: 'Weekly', nft: 'Rare #08',      result: 'won',  prize: '45,000 LUNC' },
-    { round: 10, type: 'Daily',  nft: 'Common #22',    result: 'lost', prize: null },
-  ];
-
   const el = id => document.getElementById(id);
-  const totalWon      = mockHistory.filter(h => h.result === 'won').length;
-  const dailyEntries  = mockNFTs.filter(n => n.inCurrentRound && n.pool === 'daily').reduce((s,n) => s + n.entries, 0);
-  const weeklyEntries = mockNFTs.filter(n => n.inCurrentRound && n.pool === 'weekly').reduce((s,n) => s + n.entries, 0);
+  if (el('o-bag-stat-nfts'))   el('o-bag-stat-nfts').textContent   = '…';
+  if (el('o-bag-stat-won'))    el('o-bag-stat-won').textContent    = '-';
+  if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = '…';
+  if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = '…';
+  if (el('o-bag-count'))       el('o-bag-count').textContent       = '…';
 
-  if (el('o-bag-stat-nfts'))    el('o-bag-stat-nfts').textContent    = mockNFTs.length;
-  if (el('o-bag-stat-won'))     el('o-bag-stat-won').textContent     = totalWon;
-  if (el('o-bag-stat-daily'))   el('o-bag-stat-daily').textContent   = dailyEntries;
-  if (el('o-bag-stat-weekly'))  el('o-bag-stat-weekly').textContent  = weeklyEntries;
-  if (el('o-bag-count'))        el('o-bag-count').textContent        = mockNFTs.length;
+  loadOracleBagNFTs(wallet);
+}
 
-  window._oBagNFTs = mockNFTs;
-  const grid  = el('o-bag-grid');
-  const empty = el('o-bag-empty');
+async function loadOracleBagNFTs(wallet) {
+  const el = id => document.getElementById(id);
+
+  const [nftResult, usedResult] = await Promise.allSettled([
+    oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 3),
+    oFetch(`${O_DRAW_WORKER}/used-nfts`, {}, 2),
+  ]);
+
+  let allNFTs = null, usedIds = new Set(), pacoError = null;
+
+  if (nftResult.status === 'fulfilled' && nftResult.value.ok) {
+    try {
+      const data = await nftResult.value.json();
+      allNFTs = Array.isArray(data) ? data : data.nfts || data.data || data.tokens || [];
+      oSaveBagCache(wallet, allNFTs);
+    } catch(e) { pacoError = 'Invalid response'; }
+  } else {
+    pacoError = nftResult.reason?.message || 'API error';
+  }
+
+  if (usedResult.status === 'fulfilled' && usedResult.value.ok) {
+    try {
+      const d = await usedResult.value.json();
+      usedIds = new Set((d.used || []).map(i => typeof i === 'string' ? i : String(i?.tokenId || '')).filter(Boolean));
+    } catch(e) {}
+  }
+
+  if (allNFTs === null) {
+    const cached = oLoadBagCache(wallet);
+    if (cached) {
+      allNFTs = cached;
+    } else {
+      const grid = el('o-bag-grid'), empty = el('o-bag-empty');
+      if (el('o-bag-stat-nfts')) el('o-bag-stat-nfts').textContent = '-';
+      if (el('o-bag-stat-daily')) el('o-bag-stat-daily').textContent = '-';
+      if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = '-';
+      if (el('o-bag-count')) el('o-bag-count').textContent = '-';
+      if (grid) grid.style.display = 'none';
+      if (empty) {
+        empty.style.display = 'block';
+        const msg = empty.querySelector('div');
+        if (msg) msg.innerHTML = `⚠ NFT API unavailable<br><button onclick="loadOracleBagNFTs('${wallet}')"
+          style="margin-top:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(244,208,63,0.4);
+          background:rgba(244,208,63,0.08);color:#f4d03f;cursor:pointer;font-size:11px;">🔄 Retry</button>`;
+      }
+      return;
+    }
+  }
+
+  // Filter Oracle Mask NFTs only
+  const masks = allNFTs.filter(n => {
+    const slug = (n.slug || '').toLowerCase();
+    if (slug === 'oracle-mask-daily' || slug === 'oracle-mask-weekly' || slug === 'oracle-mask') return true;
+    const col = (n.collection_name || n.collection || '').toLowerCase();
+    return col.includes('oracle') && col.includes('mask');
+  });
+
+  const nfts = masks.map(n => {
+    const tokenId = String(n.token_id || n.id || n.tokenId || '');
+    const tier    = oDetectNFTTier(n);
+    const slug    = (n.slug || '').toLowerCase();
+    let pool = null;
+    if (slug === 'oracle-mask-daily')  pool = 'daily';
+    if (slug === 'oracle-mask-weekly') pool = 'weekly';
+    const isNewArch = pool !== null;
+    const used = usedIds.has(tokenId);
+    const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+    return {
+      id: tokenId, type: tier, pool, isNewArch,
+      entries: oTierEntries(tier),
+      name: n.name || n.nft_name || `Oracle Mask ${tierLabel}`,
+      used,
+      inCurrentRound: !used,
+    };
+  });
+
+  window._oBagNFTs = nfts;
+
+  // Fetch entries from Draw Worker
+  let dailyEntries = 0, weeklyEntries = 0;
+  try {
+    const [dr, wr] = await Promise.allSettled([
+      oFetch(`${O_DRAW_WORKER}/my-entries?pool=daily&wallet=${wallet}`, {}, 2),
+      oFetch(`${O_DRAW_WORKER}/my-entries?pool=weekly&wallet=${wallet}`, {}, 2),
+    ]);
+    if (dr.status === 'fulfilled' && dr.value.ok) dailyEntries = (await dr.value.json()).myEntries || 0;
+    if (wr.status === 'fulfilled' && wr.value.ok) weeklyEntries = (await wr.value.json()).myEntries || 0;
+  } catch(e) {}
+
+  // Fetch wins from Draw Worker
+  let totalWon = 0;
+  try {
+    const wr = await oFetch(`${O_DRAW_WORKER}/my-wins?wallet=${wallet}`, {}, 2);
+    if (wr.ok) { const d = await wr.json(); totalWon = d.totalWins || d.wins?.length || 0; }
+  } catch(e) {}
+
+  if (el('o-bag-stat-nfts'))   el('o-bag-stat-nfts').textContent   = nfts.length;
+  if (el('o-bag-stat-won'))    el('o-bag-stat-won').textContent    = totalWon;
+  if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = dailyEntries;
+  if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = weeklyEntries;
+  if (el('o-bag-count'))       el('o-bag-count').textContent       = nfts.length;
+
+  const grid = el('o-bag-grid'), empty = el('o-bag-empty');
   if (grid) {
-    if (!mockNFTs.length) {
-      if (empty) empty.style.display = 'block';
+    if (!nfts.length) {
       grid.style.display = 'none';
+      if (empty) {
+        empty.style.display = 'block';
+        const msg = empty.querySelector('div');
+        if (msg) msg.innerHTML = `No Oracle Mask NFTs in your wallet<br>
+          <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
+            style="display:inline-block;margin-top:12px;padding:8px 20px;border-radius:8px;
+            border:1px solid rgba(244,208,63,0.4);background:rgba(244,208,63,0.08);
+            color:#f4d03f;text-decoration:none;font-size:11px;">Mint on Oracle Draw →</a>`;
+      }
     } else {
       if (empty) empty.style.display = 'none';
       grid.style.display = 'grid';
@@ -2074,39 +2211,47 @@ function renderOracleBag() {
     }
   }
 
-  const histTable = el('o-bag-hist-table');
-  const histEmpty = el('o-bag-hist-empty');
-  const histBody  = el('o-bag-hist-body');
-  if (histBody) {
-    if (!mockHistory.length) {
-      if (histTable) histTable.style.display = 'none';
-      if (histEmpty) histEmpty.style.display = 'block';
-    } else {
-      if (histEmpty) histEmpty.style.display = 'none';
-      if (histTable) histTable.style.display = 'table';
-      histBody.innerHTML = mockHistory.map(h => `
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:12px 14px;color:var(--muted);">#${h.round}</td>
-          <td style="padding:12px 14px;">
-            <span style="font-size:9px;padding:2px 8px;border-radius:4px;
-              background:${h.type==='Daily'?'rgba(244,208,63,0.1)':'rgba(74,144,217,0.1)'};
-              color:${h.type==='Daily'?'#f4d03f':'#7eb8ff'};
-              border:1px solid ${h.type==='Daily'?'rgba(244,208,63,0.2)':'rgba(74,144,217,0.2)'};">
-              ${h.type}
-            </span>
-          </td>
-          <td style="padding:12px 14px;font-family:monospace;font-size:11px;color:#f4d03f;">${h.nft}</td>
-          <td style="padding:12px 14px;">
-            ${h.result==='won'
-              ? `<span style="color:#66ffaa;font-weight:700;">🏆 ${h.prize}</span>`
-              : `<span style="color:var(--muted);">-</span>`}
-          </td>
-        </tr>`).join('');
+  // History
+  try {
+    const hr = await oFetch(`${O_DRAW_WORKER}/my-history?wallet=${wallet}`, {}, 2);
+    if (hr.ok) {
+      const hdata = await hr.json();
+      const history = hdata.history || hdata.rounds || [];
+      const histTable = el('o-bag-hist-table');
+      const histEmpty = el('o-bag-hist-empty');
+      const histBody  = el('o-bag-hist-body');
+      if (histBody && history.length) {
+        if (histEmpty) histEmpty.style.display = 'none';
+        if (histTable) histTable.style.display = 'table';
+        histBody.innerHTML = history.map(h => `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:12px 14px;color:var(--muted);">#${h.round || h.roundId || '-'}</td>
+            <td style="padding:12px 14px;">
+              <span style="font-size:9px;padding:2px 8px;border-radius:4px;
+                background:${(h.type||h.pool)==='daily'?'rgba(244,208,63,0.1)':'rgba(74,144,217,0.1)'};
+                color:${(h.type||h.pool)==='daily'?'#f4d03f':'#7eb8ff'};
+                border:1px solid ${(h.type||h.pool)==='daily'?'rgba(244,208,63,0.2)':'rgba(74,144,217,0.2)'};">
+                ${((h.type||h.pool||'').charAt(0).toUpperCase()+(h.type||h.pool||'').slice(1))}
+              </span>
+            </td>
+            <td style="padding:12px 14px;font-family:monospace;font-size:11px;color:#f4d03f;">
+              ${h.nft || h.nftId ? ((h.nftTier||'NFT')+' #'+(h.nft||h.nftId)) : '-'}
+            </td>
+            <td style="padding:12px 14px;">
+              ${h.won || h.result === 'won'
+                ? `<span style="color:#66ffaa;font-weight:700;">🏆 ${h.prize || h.amount || ''}</span>`
+                : `<span style="color:var(--muted);">-</span>`}
+            </td>
+          </tr>`).join('');
+      }
     }
-  }
+  } catch(e) {}
 }
 
+let _oBagCurrentFilter = 'all';
+
 function filterOracleBagNFTs(filter) {
+  _oBagCurrentFilter = filter;
   const nfts = window._oBagNFTs || [];
   const el = id => document.getElementById(id);
 
@@ -2114,11 +2259,11 @@ function filterOracleBagNFTs(filter) {
     const btn = el('o-bag-filter-' + f);
     if (!btn) return;
     const colors = {
-      all:       { active: 'rgba(244,208,63,0.12)', border: 'rgba(244,208,63,0.6)',   text: '#f4d03f'   },
-      common:    { active: 'rgba(180,190,210,0.1)', border: 'rgba(180,190,210,0.5)',  text: '#b0b8c8'   },
-      rare:      { active: 'rgba(96,165,250,0.1)',  border: 'rgba(96,165,250,0.5)',   text: '#60a5fa'   },
-      legendary: { active: 'rgba(251,146,60,0.1)',  border: 'rgba(251,146,60,0.5)',   text: '#fb923c'   },
-      used:      { active: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.35)', text: '#e2e8f0'  },
+      all:       { active:'rgba(244,208,63,0.12)', border:'rgba(244,208,63,0.5)',   text:'#f4d03f'  },
+      common:    { active:'rgba(180,190,210,0.1)', border:'rgba(180,190,210,0.5)',  text:'#b0b8c8'  },
+      rare:      { active:'rgba(96,165,250,0.1)',  border:'rgba(96,165,250,0.5)',   text:'#60a5fa'  },
+      legendary: { active:'rgba(251,146,60,0.1)',  border:'rgba(251,146,60,0.5)',   text:'#fb923c'  },
+      used:      { active:'rgba(255,255,255,0.08)',border:'rgba(255,255,255,0.35)', text:'#e2e8f0'  },
     };
     const c = colors[f];
     btn.style.background  = f === filter ? c.active : 'transparent';
@@ -2142,25 +2287,55 @@ function filterOracleBagNFTs(filter) {
   if (!grid) return;
 
   const cfgs = {
-    common:    { color:'#b0b8c8', glow:'rgba(180,190,210,0.3)', bg:'rgba(180,190,210,0.05)', label:'COMMON'    },
-    rare:      { color:'#60a5fa', glow:'rgba(96,165,250,0.35)', bg:'rgba(96,165,250,0.06)',  label:'RARE'       },
-    legendary: { color:'#fb923c', glow:'rgba(251,146,60,0.4)',  bg:'rgba(251,146,60,0.07)',  label:'LEGENDARY'  },
+    common:    { color:'#b0b8c8', glow:'rgba(180,190,210,0.3)', bg:'rgba(180,190,210,0.05)', icon:'🎭', label:'COMMON'   },
+    rare:      { color:'#60a5fa', glow:'rgba(96,165,250,0.35)', bg:'rgba(96,165,250,0.06)',  icon:'🔮', label:'RARE'      },
+    legendary: { color:'#fb923c', glow:'rgba(251,146,60,0.4)',  bg:'rgba(251,146,60,0.07)',  icon:'👁',  label:'LEGENDARY' },
   };
 
+  if (!filtered.length) {
+    grid.style.display = 'none';
+    const empty = document.getElementById('o-bag-empty');
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  const empty2 = document.getElementById('o-bag-empty');
+  if (empty2) empty2.style.display = 'none';
+  grid.style.display = 'grid';
+
   grid.innerHTML = filtered.map(nft => {
-    const c = cfgs[nft.type];
-    const pool = nft.pool === 'daily' ? 'Daily Pool' : 'Weekly Pool';
-    const opacity = nft.inCurrentRound ? '1' : '0.55';
-    const statusHtml = nft.inCurrentRound
-      ? `<div style="padding:8px;border-radius:8px;background:rgba(102,255,170,0.08);border:1px solid rgba(102,255,170,0.25);color:#66ffaa;font-size:11px;font-weight:600;text-align:center;">✅ In this round</div>`
-      : `<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);color:var(--muted);font-size:11px;text-align:center;">✔ Round over</div>`;
-    return `<div style="background:${c.bg};border:1px solid ${c.glow};border-radius:16px;padding:22px 18px;text-align:center;
-        opacity:${opacity};box-shadow:0 0 18px ${c.glow};transition:transform 0.2s;"
-        onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
-      <div style="font-size:9px;letter-spacing:0.2em;color:${c.color};font-weight:700;margin-bottom:4px;">${c.label}</div>
+    const cfg = cfgs[nft.type] || cfgs.common;
+    const used = nft.used || !nft.inCurrentRound;
+    const opacity = !used ? '1' : '0.5';
+
+    let statusHtml;
+    if (nft.isNewArch && !used) {
+      const poolLabel = (nft.pool || 'daily').toUpperCase();
+      const poolColor = nft.pool === 'weekly' ? 'rgba(96,165,250,0.5)'   : 'rgba(102,255,170,0.5)';
+      const poolBg    = nft.pool === 'weekly' ? 'rgba(96,165,250,0.08)'  : 'rgba(102,255,170,0.08)';
+      const poolText  = nft.pool === 'weekly' ? '#60a5fa'                : '#66ffaa';
+      statusHtml = `<div style="padding:8px 10px;border-radius:8px;background:${poolBg};
+        border:1px solid ${poolColor};color:${poolText};font-size:11px;font-weight:600;text-align:center;">
+        ✓ ACTIVE IN ${poolLabel}</div>`;
+    } else if (!used) {
+      statusHtml = `<div style="padding:8px 10px;border-radius:8px;background:rgba(244,208,63,0.06);
+        border:1px solid rgba(244,208,63,0.25);color:#f4d03f;font-size:11px;text-align:center;">
+        🎭 In Draw</div>`;
+    } else {
+      statusHtml = `<div style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);
+        border:1px solid rgba(255,255,255,0.07);color:var(--muted);font-size:11px;text-align:center;">
+        ✔ Round over</div>`;
+    }
+
+    return `<div style="background:${cfg.bg};border:1px solid ${cfg.glow};border-radius:16px;
+      padding:20px 18px;text-align:center;box-shadow:0 0 18px ${cfg.glow};
+      transition:transform 0.2s;opacity:${opacity};"
+      onmouseover="this.style.transform='translateY(-3px)'"
+      onmouseout="this.style.transform='translateY(0)'">
+      <div style="font-size:32px;margin-bottom:8px;">${cfg.icon}</div>
+      <div style="font-size:9px;letter-spacing:0.2em;color:${cfg.color};font-weight:700;margin-bottom:4px;">${cfg.label}</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;">#${nft.id}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${nft.entries} ${nft.entries===1?'entry':'entries'}</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">${pool}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">${nft.pool ? (nft.pool.charAt(0).toUpperCase()+nft.pool.slice(1))+' Pool' : 'Oracle Draw'}</div>
       ${statusHtml}
     </div>`;
   }).join('');
