@@ -256,13 +256,24 @@ function renderStatsHTML(isConnected) {
               color:${{questions:'var(--accent)',answers:'#66ffaa',upvotes:'#ffd700',chat:'#c084fc'}[k]};"
               id="stats-rep-${k}">…</div>
           </div>`).join('')}
+        <!-- Oracle Draw card -->
+        <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
+          display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🎭 Oracle Draw mints</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-draw">…</div>
+          </div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#ff8844;"
+            id="stats-rep-draw">…</div>
+        </div>
       </div>
       <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
         ❓ Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
         💬 Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
         👍 Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
-        🗨️ Chat: <strong style="color:var(--text);">+2 REP</strong> (first 20), then +0.4
+        🗨️ Chat: <strong style="color:var(--text);">+2 REP</strong> (first 20), then +0.4 ·
+        🎭 Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
@@ -346,14 +357,17 @@ async function loadStatsData() {
 
     // Update activity grid
     const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    const totalDrawMints = drawRepHistory.length;
     set('stats-count-questions', myQuestions.length);
     set('stats-count-answers',   myAnswers.length);
     set('stats-count-upvotes',   totalUpvotes);
     set('stats-count-chat',      msgCount);
+    set('stats-count-draw',      totalDrawMints);
     set('stats-rep-questions',   '+' + repQuestions.toLocaleString() + ' REP');
     set('stats-rep-answers',     '+' + repAnswers.toLocaleString()   + ' REP');
     set('stats-rep-upvotes',     '+' + repUpvotes.toLocaleString()   + ' REP');
     set('stats-rep-chat',        '+' + Math.round(repChat) + ' REP');
+    set('stats-rep-draw',        drawRepTotal > 0 ? '+' + drawRepTotal.toLocaleString() + ' REP' : '+0 REP');
     set('stats-total-rep',       totalRep.toLocaleString() + ' REP');
 
     // Draw REP section
