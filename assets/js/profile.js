@@ -100,13 +100,13 @@ function calcReputation(qStats, chatStats) {
 
   // Action Score
   const actionScore =
-    myQuestions.length * 40 +   // Ask question
-    myAnswers.length  * 15 +    // Answer (proxy for vote action)
-    Math.min(msgCount, 20) * 2 + // Chat - first 20 msgs full reward
-    Math.max(0, msgCount - 20) * Math.round(2 * 0.2); // rest 20%
+    myQuestions.length * 40 +   // Ask question: +40 REP
+    myAnswers.length   * 15 +   // Answer: +15 REP
+    Math.min(msgCount, 20) * 2 + // Chat first 20 msgs: +2 REP each
+    Math.max(0, msgCount - 20) * Math.round(2 * 0.2); // rest: +0.4 REP each
 
   // Quality Score
-  const qualityScore = totalUpvotes * 10;
+  const qualityScore = totalUpvotes * 10; // Upvote received: +10 REP
 
   return actionScore + qualityScore;
 }
@@ -765,8 +765,14 @@ function switchHistoryTab(tab) {
   document.getElementById('history-tab-questions').classList.toggle('active', tab === 'questions');
   const msgTabEl = document.getElementById('history-tab-messages');
   if (msgTabEl) msgTabEl.classList.toggle('active', tab === 'messages');
+  const drawTabEl = document.getElementById('history-tab-draw');
+  if (drawTabEl) drawTabEl.classList.toggle('active', tab === 'draw');
 
   const address = globalWalletAddress;
+  if (tab === 'draw') {
+    renderHistoryTab('draw', [], []);
+    return;
+  }
   fetchQuestionStats(address).then(({ myQuestions, myAnswers }) => {
     renderHistoryTab(tab, myAnswers, myQuestions);
   });
@@ -774,6 +780,60 @@ function switchHistoryTab(tab) {
 
 function renderHistoryTab(tab, myAnswers, myQuestions) {
   const el = document.getElementById('profile-history-list');
+  if (tab === 'draw') {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Loading Draw activity...</div>`;
+    const WORKER_URL_LOCAL = typeof window.WORKER_URL !== 'undefined'
+      ? window.WORKER_URL
+      : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+    fetch(`${WORKER_URL_LOCAL}/rep/draw?wallet=${globalWalletAddress}`)
+      .then(r => r.ok ? r.json() : { total: 0, history: [] })
+      .catch(() => ({ total: 0, history: [] }))
+      .then(data => {
+        const history = data.history || [];
+        const total   = data.total   || 0;
+        if (!history.length) {
+          el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">
+            No Oracle Draw activity yet ·
+            <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
+              style="color:var(--accent);text-decoration:none;">Mint your first NFT →</a>
+          </div>`;
+          return;
+        }
+        el.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;
+            padding:12px 16px;background:var(--surface2);border:1px solid var(--border);
+            border-radius:10px;margin-bottom:12px;">
+            <span style="font-size:12px;color:var(--muted);">Total Draw REP earned</span>
+            <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;color:#ff8844;">
+              +${total.toLocaleString()} REP
+            </span>
+          </div>
+          ${history.map(h => {
+            const src   = h.source || '';
+            const tier  = src.includes('legendary') ? 'Legendary' : src.includes('rare') ? 'Rare' : 'Common';
+            const pool  = src.toLowerCase().includes('weekly') ? 'Weekly' : 'Daily';
+            const pts   = h.points || 0;
+            const color = tier === 'Legendary' ? '#ffd700' : tier === 'Rare' ? '#a78bfa' : '#8aaccc';
+            const date  = h.ts ? new Date(h.ts * 1000).toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'}) : '';
+            const tokenId = src.split('_').pop() || '';
+            return `<div class="history-item">
+              <div class="history-item-meta">
+                <span style="color:${color};">🎭 ${tier} NFT</span>
+                <span style="color:var(--muted);">${pool} Draw</span>
+                ${date ? `<span style="color:var(--muted);">${date}</span>` : ''}
+                ${tokenId ? `<span class="q-ref" style="font-family:monospace;">#${tokenId}</span>` : ''}
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+                <span style="font-size:12px;color:var(--muted);">
+                  Minted · entered ${pool} Draw pool
+                </span>
+                <span style="font-size:13px;font-weight:700;color:#ff8844;">+${pts} REP</span>
+              </div>
+            </div>`;
+          }).join('')}`;
+      });
+    return;
+  }
   if (tab === 'messages') {
     el.innerHTML = `
       <div class="history-item">
