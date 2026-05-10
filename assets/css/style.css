@@ -796,79 +796,7 @@ canvas {
   position: relative;
 }
 
-/* Псевдоэлемент — бегущий импульс по границе
-   FIXED: replaced CSS custom property in @keyframes (broken on Android Chrome)
-   with standard conic-gradient + rotate animation (universal support) */
-.zk-module::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 15px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(123,92,255,0.8) 42%,
-    rgba(0,212,255,1) 50%,
-    rgba(123,92,255,0.8) 58%,
-    transparent 70%,
-    transparent 100%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  padding: 1px;
-  opacity: 0;
-  animation: perimeterPulse var(--pulse-dur, 3.8s) linear infinite;
-  animation-delay: var(--pulse-delay, 0s);
-  pointer-events: none;
-  z-index: 0;
-}
-
-@keyframes perimeterPulse {
-  0%   { transform: rotate(0deg);   opacity: 0; }
-  5%   { opacity: 0.7; }
-  45%  { opacity: 0.5; }
-  90%  { opacity: 0.6; }
-  95%  { opacity: 0; }
-  100% { transform: rotate(360deg); opacity: 0; }
-}
-
-/* Разные задержки для каждой карточки — эффект "обходит по кругу" */
-.zk-module:nth-child(1) { --pulse-delay: 0s;    --pulse-dur: 3.8s; }
-.zk-module:nth-child(2) { --pulse-delay: 0.95s; --pulse-dur: 3.8s; }
-.zk-module:nth-child(3) { --pulse-delay: 1.9s;  --pulse-dur: 3.8s; }
-.zk-module:nth-child(4) { --pulse-delay: 2.85s; --pulse-dur: 3.8s; }
-
-/* Oracle Draw star — cyan импульс */
-.zk-module-star::before {
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(0,212,255,0.8) 42%,
-    rgba(168,85,247,1) 50%,
-    rgba(0,212,255,0.8) 58%,
-    transparent 70%,
-    transparent 100%
-  );
-  opacity: 0;
-}
-
-/* Hover: импульс ярче и быстрее */
-.zk-module:hover::before {
-  opacity: 1;
-  animation-duration: 1.8s !important;
-}
-
-/* @property для анимации CSS custom property (угол) */
-@property --pulse-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
+/* Perimeter pulse — удалён */
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -1074,7 +1002,6 @@ canvas {
   .mobile-tco-bar {
     height: 2px;
     background: linear-gradient(90deg,#E8C840,#7B5CFF,#E8C840);
-    background-size: 200% 100%; animation: moduleBar 3.5s linear infinite;
   }
   .mobile-tco-inner { padding: 16px; }
   .mobile-tco-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -1115,7 +1042,6 @@ canvas {
   .mobile-flow-bar {
     height: 2px;
     background: linear-gradient(90deg,#7B5CFF,#00D4FF,#7B5CFF);
-    background-size: 200% 100%; animation: moduleBar 3.5s linear infinite;
   }
   .mobile-flow-header {
     padding: 14px 16px; font-size: 9px; letter-spacing: 0.22em;
@@ -1191,13 +1117,7 @@ canvas {
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px), (hover: none) {
 
-  /* Stop all border pulse animations on mobile — causes scroll jank */
-  .zk-module::before,
-  .zk-module-star::before {
-    animation: none !important;
-    opacity: 0 !important;
-    display: none !important;
-  }
+  /* Perimeter pulse — удалён глобально */
 
   /* Shimmer and module bar already removed globally */
 
