@@ -1105,6 +1105,26 @@ window.connectWallet = async function(type) {
       document.getElementById('wallet-btn-label').textContent = 'Connect';
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
+  } else if (type === 'station' || type === 'station-mobile') {
+    // Terra Station — uses window.station (same API as Galaxy Station)
+    const stationWallet = window.station;
+    if (!stationWallet) {
+      if (confirm('Terra Station not found. Install Terra Station?')) window.open('https://chrome.google.com/webstore/detail/terra-station/aiifbnbfobpmeekipheeijimdpnlpgpp', '_blank');
+      return;
+    }
+    try {
+      document.getElementById('wallet-btn-label').textContent = 'Connecting...';
+      const conn = await stationWallet.connect();
+      const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
+      if (address) {
+        setWalletConnected(address);
+      } else {
+        throw new Error('No address returned');
+      }
+    } catch(e) {
+      document.getElementById('wallet-btn-label').textContent = 'Connect';
+      alert('Terra Station connection failed: ' + (e.message || e));
+    }
   } else if (type === 'luncdash') {
     const addr = prompt('Enter your Terra Classic wallet address (terra1...):');
     if (addr && addr.startsWith('terra1') && addr.length > 20) {
