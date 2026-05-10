@@ -2037,6 +2037,14 @@ function oDetectNFTTier(nft) {
 function oTierEntries(tier) {
   return tier === 'legendary' ? 10 : tier === 'rare' ? 5 : 1;
 }
+function oExtractTokenId(n) {
+  // Prefer numeric token_id / id fields
+  const raw = n.token_id || n.id || n.tokenId || n.nft_id || '';
+  const str = String(raw);
+  // If it's a name like "Common_0925..." extract last numeric segment
+  const match = str.match(/(\d+)(?:[^0-9]*)?$/);
+  return match ? match[1] : str;
+}
 function oSaveBagCache(wallet, nftsRaw) {
   try { sessionStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
 }
@@ -2147,7 +2155,7 @@ async function loadOracleBagNFTs(wallet) {
   });
 
   const nfts = masks.map(n => {
-    const tokenId = String(n.token_id || n.id || n.tokenId || '');
+    const tokenId = oExtractTokenId(n);
     const tier    = oDetectNFTTier(n);
     const slug    = (n.slug || '').toLowerCase();
     let pool = null;
@@ -2248,6 +2256,12 @@ async function loadOracleBagNFTs(wallet) {
   } catch(e) {}
 }
 
+const O_TIER_IMAGES = {
+  common:    { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/common-sm.webp',    fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/common-sm.png'    },
+  rare:      { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/rare-sm.webp',      fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/rare-sm.png'      },
+  legendary: { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/legendary-sm.webp', fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/legendary-sm.png' },
+};
+
 let _oBagCurrentFilter = 'all';
 
 function filterOracleBagNFTs(filter) {
@@ -2326,12 +2340,22 @@ function filterOracleBagNFTs(filter) {
         ✔ Round over</div>`;
     }
 
+    const img = O_TIER_IMAGES[nft.type] || O_TIER_IMAGES.common;
+    const imgHtml = `
+      <picture>
+        <source srcset="${img.sm}" type="image/webp">
+        <img src="${img.fallback}"
+          style="width:100px;height:150px;border-radius:10px;object-fit:cover;margin-bottom:12px;background:rgba(255,255,255,0.03);"
+          onerror="this.style.display='none';this.previousElementSibling.style.display='none';this.nextElementSibling.style.display='block';">
+      </picture>
+      <div style="font-size:32px;margin-bottom:8px;display:none;">${cfg.icon}</div>`;
+
     return `<div style="background:${cfg.bg};border:1px solid ${cfg.glow};border-radius:16px;
       padding:20px 18px;text-align:center;box-shadow:0 0 18px ${cfg.glow};
       transition:transform 0.2s;opacity:${opacity};"
       onmouseover="this.style.transform='translateY(-3px)'"
       onmouseout="this.style.transform='translateY(0)'">
-      <div style="font-size:32px;margin-bottom:8px;">${cfg.icon}</div>
+      ${imgHtml}
       <div style="font-size:9px;letter-spacing:0.2em;color:${cfg.color};font-weight:700;margin-bottom:4px;">${cfg.label}</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;">#${nft.id}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${nft.entries} ${nft.entries===1?'entry':'entries'}</div>
