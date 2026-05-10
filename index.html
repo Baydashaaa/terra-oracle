@@ -383,6 +383,10 @@
   <div class="wicon"><img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" width="52" height="52" style="border-radius:14px;display:block;"></div>
   <div class="wallet-option-name">Galaxy</div>
  </button>
+ <button class="wallet-option" onclick="connectWallet('station')">
+  <div class="wicon"><img src="https://classic-docs.terra.money/_images/wallets_station.png" width="52" height="52" style="border-radius:14px;object-fit:cover;"></div>
+  <div class="wallet-option-name">Station</div>
+ </button>
  </div>
  <div class="wallet-picker-sep"></div>
  <div class="wallet-picker-section-title">Mobile Wallets</div>
@@ -394,6 +398,10 @@
  <button class="wallet-option" onclick="openWalletQRModal('galaxy-mobile')">
   <div class="wicon"><img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" width="52" height="52" style="border-radius:14px;display:block;"></div>
   <div class="wallet-option-name">Galaxy</div>
+ </button>
+ <button class="wallet-option" onclick="openWalletQRModal('station-mobile')">
+  <div class="wicon"><img src="https://classic-docs.terra.money/_images/wallets_station.png" width="52" height="52" style="border-radius:14px;object-fit:cover;"></div>
+  <div class="wallet-option-name">Station</div>
  </button>
  <button class="wallet-option" onclick="openWalletQRModal('luncdash')">
   <div class="wicon">
@@ -2265,6 +2273,11 @@ const WQR_CONFIGS = {
     icon: `<img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" style="width:36px;height:36px;border-radius:10px;display:block;">`,
     deeplink: (uri) => `galaxystation://wc?uri=${encodeURIComponent(uri)}`,
   },
+  'station-mobile': {
+    title: 'Terra Station',
+    icon: `<img src="https://classic-docs.terra.money/_images/wallets_station.png" style="width:36px;height:36px;border-radius:10px;display:block;object-fit:cover;">`,
+    deeplink: (uri) => `station://wc?uri=${encodeURIComponent(uri)}`,
+  },
   'luncdash': {
     title: 'Luncdash',
     icon: `<svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;">
@@ -2391,7 +2404,7 @@ document.getElementById('wallet-qr-modal').addEventListener('click', function(e)
 });
 
 (function() {
-  const mobileTypes = ['keplr-mobile', 'galaxy-mobile', 'luncdash'];
+  const mobileTypes = ['keplr-mobile', 'galaxy-mobile', 'station-mobile', 'luncdash'];
   function tryPatch() {
     if (typeof window.connectWallet === 'function') {
       const _orig = window.connectWallet;
