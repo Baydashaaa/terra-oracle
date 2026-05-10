@@ -1654,7 +1654,6 @@
     <button class="vote-tab active" id="history-tab-answers" onclick="switchHistoryTab('answers')">💬 My Answers</button>
     <button class="vote-tab" id="history-tab-questions" onclick="switchHistoryTab('questions')">🔮 My Questions</button>
     <button class="vote-tab" id="history-tab-messages" onclick="switchHistoryTab('messages')">📨 My Messages</button>
-    <button class="vote-tab" id="history-tab-draw" onclick="switchHistoryTab('draw')">🎭 Oracle Draw</button>
   </div>
   <div id="profile-history-list">
     <!-- filled by JS -->
@@ -1841,6 +1840,10 @@
 <!-- ═══ END FOOTER ═══ -->
 
   <!-- Логика -->
+  <script>
+    // Global Worker URL — used by profile.js, reputation.js, treasury.js
+    window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+  </script>
   <script src="assets/js/treasury.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/profile.js"></script>
