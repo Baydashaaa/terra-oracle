@@ -188,11 +188,6 @@ async function loadLeaderboard() {
       return { ...w, score, drawRep, chatRep, rank };
     }).sort((a, b) => b.score - a.score).slice(0, 50);
 
-    if (!ranked.length) {
-      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">No contributors yet - be the first!</div>';
-      return;
-    }
-
     const myWallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
     window._lbRanked   = ranked;
     window._lbMyWallet = myWallet;
@@ -210,16 +205,39 @@ function renderLeaderboardPage(page) {
   const ranked    = window._lbRanked   || [];
   const myWallet  = window._lbMyWallet || null;
   const PAGE_SIZE = 20;
-  const totalPages = Math.ceil(ranked.length / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   page = Math.max(0, Math.min(page, totalPages - 1));
   window._lbPage = page;
 
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const rows = slice.map((w, i) => {
+  // Always render 20 slots — fill empty ones with placeholder
+  const slots = Array.from({ length: PAGE_SIZE }, (_, i) => {
     const globalIdx = page * PAGE_SIZE + i;
-    const isMe  = myWallet && w.wallet === myWallet;
+    const w = slice[i] || null;
     const medal = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : `#${globalIdx + 1}`;
+    const medalColor = globalIdx < 3 ? '#fff' : 'var(--muted)';
+
+    if (!w) {
+      // Empty slot
+      return `
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+          background:var(--surface);border:1px solid var(--border);
+          border-radius:10px;margin-bottom:8px;opacity:0.35;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
+            color:${medalColor};min-width:32px;text-align:center;">${medal}</div>
+          <div style="flex:1;">
+            <div style="width:140px;height:12px;background:var(--border);border-radius:4px;margin-bottom:6px;"></div>
+            <div style="width:200px;height:9px;background:var(--border);border-radius:4px;opacity:0.5;"></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="width:48px;height:18px;background:var(--border);border-radius:4px;margin-bottom:3px;"></div>
+            <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
+          </div>
+        </div>`;
+    }
+
+    const isMe = myWallet && w.wallet === myWallet;
     return `
       <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
         background:${isMe ? 'rgba(84,147,247,0.07)' : 'var(--surface)'};
@@ -228,9 +246,7 @@ function renderLeaderboardPage(page) {
         onmouseover="this.style.borderColor='rgba(84,147,247,0.25)'"
         onmouseout="this.style.borderColor='${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'}'">
         <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
-          color:${globalIdx < 3 ? '#fff' : 'var(--muted)'};min-width:32px;text-align:center;">
-          ${medal}
-        </div>
+          color:${medalColor};min-width:32px;text-align:center;">${medal}</div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
             <span style="font-size:12px;font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
@@ -267,9 +283,7 @@ function renderLeaderboardPage(page) {
           background:${page === 0 ? 'transparent' : 'var(--surface2)'};
           color:${page === 0 ? 'var(--muted)' : 'var(--text)'};
           cursor:${page === 0 ? 'default' : 'pointer'};font-size:12px;font-weight:600;
-          transition:all 0.2s;">
-        ← Prev
-      </button>
+          transition:all 0.2s;">← Prev</button>
       <span style="font-size:11px;color:var(--muted);">
         Page ${page + 1} / ${totalPages}
         &nbsp;·&nbsp;
@@ -281,12 +295,10 @@ function renderLeaderboardPage(page) {
           background:${page >= totalPages - 1 ? 'transparent' : 'var(--surface2)'};
           color:${page >= totalPages - 1 ? 'var(--muted)' : 'var(--text)'};
           cursor:${page >= totalPages - 1 ? 'default' : 'pointer'};font-size:12px;font-weight:600;
-          transition:all 0.2s;">
-        Next →
-      </button>
+          transition:all 0.2s;">Next →</button>
     </div>` : '';
 
-  el.innerHTML = rows + pagination;
+  el.innerHTML = slots + pagination;
 }
 
 // ── YOUR STATS ────────────────────────────────────────────────
