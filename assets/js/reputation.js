@@ -272,7 +272,7 @@ function renderStatsHTML(isConnected) {
         ❓ Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
         💬 Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
         👍 Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
-        🗨️ Chat: <strong style="color:var(--text);">+2 REP</strong> (first 20), then +0.4 ·
+        🗨️ Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
         🎭 Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
@@ -351,7 +351,7 @@ async function loadStatsData() {
     const repQuestions = myQuestions.length * 40;
     const repAnswers   = myAnswers.length   * 15;
     const repUpvotes   = totalUpvotes       * 10;
-    const repChat      = Math.min(msgCount, 20) * 2 + Math.max(0, msgCount - 20) * Math.round(2 * 0.2);
+    const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
     const totalRep     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
 
@@ -634,7 +634,7 @@ function renderHowItWorksHTML() {
           ['Ask a question',      '+40 REP per question',              'var(--accent)'],
           ['Answer a question',   '+15 REP per answer',                '#66ffaa'      ],
           ['Upvote received',     '+10 REP per upvote',                '#ffd700'      ],
-          ['Chat message',        '+2 REP (first 20), +0.4 after',     '#c084fc'      ],
+          ['Chat message',        '+5 REP per message',                '#c084fc'      ],
           ['Mint Common NFT',     '+25 REP per mint',                  '#8aaccc'      ],
           ['Mint Rare NFT',       '+125 REP per mint',                 '#a78bfa'      ],
           ['Mint Legendary NFT',  '+250 REP per mint',                 '#ff8844'      ],
