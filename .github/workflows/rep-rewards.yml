@@ -17,6 +17,7 @@ jobs:
       - name: Install deps
         run: |
           cd scripts
+          rm -rf node_modules package.json package-lock.json
           npm init -y
           npm pkg set type="module"
           npm install @cosmjs/stargate @cosmjs/proto-signing node-fetch
