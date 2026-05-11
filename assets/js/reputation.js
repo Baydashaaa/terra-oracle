@@ -39,8 +39,8 @@ function renderRepPage(tab) {
       <div style="display:inline-block;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
         color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
         background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
-      <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;">
-        ${tab === 'leaderboard' ? '🏆 Leaderboard' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="assets/icons/Stats.png" style="width:60px;height:60px;"> Your Stats</span>' : '📖 How it Works'}
+      <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;">
+        ${tab === 'leaderboard' ? '🏆 Leaderboard' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="assets/icons/Stats.png" style="width:60px;height:60px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">Your Stats</span></span>' : '📖 How it Works'}
       </h1>
       <p style="font-size:12px;color:var(--muted);">
         ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
