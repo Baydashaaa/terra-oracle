@@ -40,7 +40,7 @@ function renderRepPage(tab) {
         color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
         background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
       <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;">
-        ${tab === 'leaderboard' ? '🏆 Leaderboard' : tab === 'stats' ? '📊 Your Stats' : '📖 How it Works'}
+        ${tab === 'leaderboard' ? '🏆 Leaderboard' : tab === 'stats' ? '<img src="assets/icons/Stats.png" style="width:28px;height:28px;vertical-align:middle;margin-right:6px;"> Your Stats' : '📖 How it Works'}
       </h1>
       <p style="font-size:12px;color:var(--muted);">
         ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
@@ -65,7 +65,7 @@ function renderRepPage(tab) {
         color:${tab==='stats' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        📊 Your Stats
+        <img src="assets/icons/Stats.png" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"> Your Stats
       </button>
       <button onclick="showRepPage('how')" style="
         background:${tab==='how' ? 'rgba(84,147,247,0.12)' : 'transparent'};
