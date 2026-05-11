@@ -19,7 +19,7 @@ jobs:
           cd scripts
           npm init -y
           npm pkg set type="module"
-          npm install @terra-money/feather.js @terra-money/terra.proto node-fetch
+          npm install @cosmjs/stargate @cosmjs/proto-signing node-fetch
 
       - name: Process streak payouts
         env:
