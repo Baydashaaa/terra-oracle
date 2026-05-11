@@ -1,8 +1,7 @@
 name: Streak Milestone Payouts
-
 on:
   schedule:
-    - cron: '0 * * * *'   # every hour
+    - cron: '0 * * * *'   # every hour — checks for pending payouts
   workflow_dispatch:
 
 jobs:
@@ -16,7 +15,11 @@ jobs:
           node-version: '20'
 
       - name: Install deps
-        run: npm install @terra-money/terra.js
+        run: |
+          cd scripts
+          npm init -y
+          npm pkg set type="module"
+          npm install @terra-money/feather.js node-fetch
 
       - name: Process streak payouts
         env:
