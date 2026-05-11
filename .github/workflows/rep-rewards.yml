@@ -1,5 +1,4 @@
 name: REP Rewards Payout
-
 on:
   schedule:
     - cron: '0 20 * * 2'   # every Tuesday at 20:00 UTC
@@ -13,10 +12,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Install deps
-        run: npm install @terra-money/terra.js
+        run: |
+          cd scripts
+          npm init -y
+          npm pkg set type="module"
+          npm install @terra-money/feather.js node-fetch
 
       - name: Run REP rewards payout
         env:
