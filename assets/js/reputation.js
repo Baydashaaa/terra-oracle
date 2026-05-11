@@ -163,11 +163,29 @@ async function loadLeaderboard() {
       }
     }
 
-    // Calculate REP score for each (Q&A only — draw REP not available in bulk)
+    // Fetch draw REP and chat REP for all wallets in parallel (max 20)
+    const walletList = Object.values(wallets);
+    const drawRepMap = {}, chatRepMap = {};
+    try {
+      const fetches = walletList.slice(0, 20).flatMap(w => [
+        fetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`)
+          .then(r => r.ok ? r.json() : { total: 0 })
+          .then(d => { drawRepMap[w.wallet] = d.total || 0; })
+          .catch(() => { drawRepMap[w.wallet] = 0; }),
+        fetch(`${WORKER_URL}/chat/count?wallet=${w.wallet}`)
+          .then(r => r.ok ? r.json() : { msgCount: 0 })
+          .then(d => { chatRepMap[w.wallet] = (d.msgCount || 0) * 5; })
+          .catch(() => { chatRepMap[w.wallet] = 0; }),
+      ]);
+      await Promise.all(fetches);
+    } catch(e) {}
+
     const ranked = Object.values(wallets).map(w => {
-      const score = w.questions * 40 + w.answers * 15 + w.upvotes * 10;
+      const drawRep = drawRepMap[w.wallet] || 0;
+      const chatRep = chatRepMap[w.wallet] || 0;
+      const score = w.questions * 40 + w.answers * 15 + w.upvotes * 10 + chatRep + drawRep;
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
-      return { ...w, score, rank };
+      return { ...w, score, drawRep, chatRep, rank };
     }).sort((a, b) => b.score - a.score).slice(0, 50);
 
     if (!ranked.length) {
