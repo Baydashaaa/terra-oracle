@@ -194,52 +194,99 @@ async function loadLeaderboard() {
     }
 
     const myWallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
-
-    el.innerHTML = ranked.map((w, i) => {
-      const isMe = myWallet && w.wallet === myWallet;
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-      return `
-        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-          background:${isMe ? 'rgba(84,147,247,0.07)' : 'var(--surface)'};
-          border:1px solid ${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'};
-          border-radius:10px;margin-bottom:8px;transition:all 0.2s;"
-          onmouseover="this.style.borderColor='rgba(84,147,247,0.25)'"
-          onmouseout="this.style.borderColor='${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'}'">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
-            color:${i < 3 ? '#fff' : 'var(--muted)'};min-width:32px;text-align:center;">
-            ${medal}
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-              <span style="font-size:12px;font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
-                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${w.alias}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
-              </span>
-              <span style="font-size:10px;font-weight:700;color:${w.rank.color};
-                text-shadow:0 0 8px ${w.rank.glow};white-space:nowrap;">
-                ${w.rank.icon} ${w.rank.name}
-              </span>
-            </div>
-            <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);">
-              <span>❓ ${w.questions} questions</span>
-              <span>💬 ${w.answers} answers</span>
-              <span>👍 ${w.upvotes} upvotes</span>
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;
-              color:${w.rank.color};text-shadow:0 0 10px ${w.rank.glow};">
-              ${w.score.toLocaleString()}
-            </div>
-            <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
-          </div>
-        </div>`;
-    }).join('');
+    window._lbRanked   = ranked;
+    window._lbMyWallet = myWallet;
+    renderLeaderboardPage(0);
 
   } catch(e) {
     const el2 = document.getElementById('leaderboard-list');
     if (el2) el2.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">Could not load leaderboard</div>';
   }
+}
+
+function renderLeaderboardPage(page) {
+  const el = document.getElementById('leaderboard-list');
+  if (!el) return;
+  const ranked    = window._lbRanked   || [];
+  const myWallet  = window._lbMyWallet || null;
+  const PAGE_SIZE = 20;
+  const totalPages = Math.ceil(ranked.length / PAGE_SIZE);
+  page = Math.max(0, Math.min(page, totalPages - 1));
+  window._lbPage = page;
+
+  const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  const rows = slice.map((w, i) => {
+    const globalIdx = page * PAGE_SIZE + i;
+    const isMe  = myWallet && w.wallet === myWallet;
+    const medal = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : `#${globalIdx + 1}`;
+    return `
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+        background:${isMe ? 'rgba(84,147,247,0.07)' : 'var(--surface)'};
+        border:1px solid ${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'};
+        border-radius:10px;margin-bottom:8px;transition:all 0.2s;"
+        onmouseover="this.style.borderColor='rgba(84,147,247,0.25)'"
+        onmouseout="this.style.borderColor='${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'}'">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
+          color:${globalIdx < 3 ? '#fff' : 'var(--muted)'};min-width:32px;text-align:center;">
+          ${medal}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span style="font-size:12px;font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${w.alias}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
+            </span>
+            <span style="font-size:10px;font-weight:700;color:${w.rank.color};
+              text-shadow:0 0 8px ${w.rank.glow};white-space:nowrap;">
+              ${w.rank.icon} ${w.rank.name}
+            </span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
+            <span>❓ ${w.questions} questions</span>
+            <span>💬 ${w.answers} answers</span>
+            <span>👍 ${w.upvotes} upvotes</span>
+            ${w.drawRep ? `<span>🎭 +${w.drawRep} draw</span>` : ''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;
+            color:${w.rank.color};text-shadow:0 0 10px ${w.rank.glow};">
+            ${w.score.toLocaleString()}
+          </div>
+          <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const pagination = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
+      <button onclick="renderLeaderboardPage(${page - 1})"
+        ${page === 0 ? 'disabled' : ''}
+        style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);
+          background:${page === 0 ? 'transparent' : 'var(--surface2)'};
+          color:${page === 0 ? 'var(--muted)' : 'var(--text)'};
+          cursor:${page === 0 ? 'default' : 'pointer'};font-size:12px;font-weight:600;
+          transition:all 0.2s;">
+        ← Prev
+      </button>
+      <span style="font-size:11px;color:var(--muted);">
+        Page ${page + 1} / ${totalPages}
+        &nbsp;·&nbsp;
+        <span style="color:var(--text);">${ranked.length} contributors</span>
+      </span>
+      <button onclick="renderLeaderboardPage(${page + 1})"
+        ${page >= totalPages - 1 ? 'disabled' : ''}
+        style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);
+          background:${page >= totalPages - 1 ? 'transparent' : 'var(--surface2)'};
+          color:${page >= totalPages - 1 ? 'var(--muted)' : 'var(--text)'};
+          cursor:${page >= totalPages - 1 ? 'default' : 'pointer'};font-size:12px;font-weight:600;
+          transition:all 0.2s;">
+        Next →
+      </button>
+    </div>` : '';
+
+  el.innerHTML = rows + pagination;
 }
 
 // ── YOUR STATS ────────────────────────────────────────────────
