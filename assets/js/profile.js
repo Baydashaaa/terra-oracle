@@ -102,8 +102,7 @@ function calcReputation(qStats, chatStats) {
   const actionScore =
     myQuestions.length * 40 +   // Ask question: +40 REP
     myAnswers.length   * 15 +   // Answer: +15 REP
-    Math.min(msgCount, 20) * 2 + // Chat first 20 msgs: +2 REP each
-    Math.max(0, msgCount - 20) * Math.round(2 * 0.2); // rest: +0.4 REP each
+    msgCount * 5;               // Chat: +5 REP per message, no limit
 
   // Quality Score
   const qualityScore = totalUpvotes * 10; // Upvote received: +10 REP
