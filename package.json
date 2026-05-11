@@ -7,9 +7,9 @@
     "distribute": "node scripts/treasury-distribute.js"
   },
   "dependencies": {
-    "@cosmjs/proto-signing": "^0.32.4",
-    "@cosmjs/stargate": "^0.32.4",
-    "@cosmjs/crypto": "^0.32.4",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "bip39": "^3.1.0",
+    "bip32": "^4.0.0",
+    "tiny-secp256k1": "^2.2.3"
   }
 }
