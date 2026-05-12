@@ -325,7 +325,7 @@ function renderStatsHTML(isConnected) {
             display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
-                ${{questions:'<img src="assets/icons/questions.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'👍 Upvotes received',chat:'🗨️ Chat messages'}[k]}
+                ${{questions:'<img src="assets/icons/questions.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="assets/icons/upvotes.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'🗨️ Chat messages'}[k]}
               </div>
               <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
             </div>
@@ -348,7 +348,7 @@ function renderStatsHTML(isConnected) {
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
         <img src="assets/icons/questions.png" style="width:25px;height:25px;vertical-align:middle;"> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
         <img src="assets/icons/answers.png" style="width:25px;height:25px;vertical-align:middle;"> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
-        👍 Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
+        <img src="assets/icons/upvotes.png" style="width:25px;height:25px;vertical-align:middle;"> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
         🗨️ Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
         🎭 Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
