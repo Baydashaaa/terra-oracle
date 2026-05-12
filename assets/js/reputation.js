@@ -469,8 +469,11 @@ async function loadStatsData() {
         drawEl.innerHTML = `
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px;">
             ${[['common','#9ca3af',25],['rare','#60a5fa',125],['legendary','#fb923c',250]].map(([tier, color, pts]) => `
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
-                <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">${tier}</div>
+              <div style="background:${tier==='common'?'rgba(156,163,175,0.06)':tier==='rare'?'rgba(96,165,250,0.06)':'rgba(251,146,60,0.06)'};
+                border:1px solid ${tier==='common'?'rgba(156,163,175,0.35)':tier==='rare'?'rgba(96,165,250,0.35)':'rgba(251,146,60,0.35)'};
+                border-radius:10px;padding:12px;text-align:center;
+                box-shadow:0 0 12px ${tier==='common'?'rgba(156,163,175,0.08)':tier==='rare'?'rgba(96,165,250,0.08)':'rgba(251,146,60,0.08)'};">
+                <div style="font-size:10px;color:${color};margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">${tier}</div>
                 <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:${color};">${tierCounts[tier]}</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:2px;">mints · +${(tierCounts[tier]*pts).toLocaleString()} REP</div>
               </div>`).join('')}
