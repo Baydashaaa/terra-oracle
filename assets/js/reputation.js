@@ -325,7 +325,7 @@ function renderStatsHTML(isConnected) {
             display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
-                ${{questions:'❓ Questions',answers:'💬 Answers',upvotes:'👍 Upvotes received',chat:'🗨️ Chat messages'}[k]}
+                ${{questions:'<img src="assets/icons/questions.png" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'👍 Upvotes received',chat:'🗨️ Chat messages'}[k]}
               </div>
               <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
             </div>
@@ -346,8 +346,8 @@ function renderStatsHTML(isConnected) {
       </div>
       <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
-        ❓ Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
-        💬 Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
+        <img src="assets/icons/questions.png" style="width:14px;height:14px;vertical-align:middle;"> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
+        <img src="assets/icons/answers.png" style="width:14px;height:14px;vertical-align:middle;"> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
         👍 Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
         🗨️ Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
         🎭 Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
