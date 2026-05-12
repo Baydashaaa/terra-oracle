@@ -325,7 +325,7 @@ function renderStatsHTML(isConnected) {
             display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
-                ${{questions:'<img src="assets/icons/questions.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="assets/icons/upvotes.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'<img src="assets/icons/chat-message.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Chat messages'}[k]}
+                ${{questions:'<img src="assets/icons/questions.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="assets/icons/upvotes.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'<img src="assets/icons/chat-message.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Chat messages'}[k]}
               </div>
               <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
             </div>
@@ -337,7 +337,7 @@ function renderStatsHTML(isConnected) {
         <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
           display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img src="assets/icons/oracle-draw-mints.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Oracle Draw mints</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img src="assets/icons/oracle-draw-mints.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Oracle Draw mints</div>
             <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-draw">…</div>
           </div>
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#ff8844;"
