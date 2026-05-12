@@ -468,7 +468,7 @@ async function loadStatsData() {
 
         drawEl.innerHTML = `
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px;">
-            ${[['common','#c0c0c0',25],['rare','#3b82f6',125],['legendary','#ff6b00',250]].map(([tier, color, pts]) => `
+            ${[['common','#9ca3af',25],['rare','#60a5fa',125],['legendary','#fb923c',250]].map(([tier, color, pts]) => `
               <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
                 <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">${tier}</div>
                 <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:${color};">${tierCounts[tier]}</div>
@@ -488,7 +488,7 @@ async function loadStatsData() {
               const tier = src.includes('legendary') ? 'Legendary' : src.includes('rare') ? 'Rare' : 'Common';
               const pool = src.includes('weekly') ? 'Weekly' : 'Daily';
               const pts  = h.points || 0;
-              const color = tier === 'Legendary' ? '#ff6b00' : tier === 'Rare' ? '#3b82f6' : '#c0c0c0';
+              const color = tier === 'Legendary' ? '#fb923c' : tier === 'Rare' ? '#60a5fa' : '#9ca3af';
               const date  = h.ts ? new Date(h.ts * 1000).toLocaleDateString([], {month:'short',day:'numeric'}) : '';
               return `<div style="display:flex;align-items:center;justify-content:space-between;
                 padding:8px 12px;background:var(--surface2);border:1px solid var(--border);
