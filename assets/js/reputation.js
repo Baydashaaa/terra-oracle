@@ -363,7 +363,7 @@ function renderStatsHTML(isConnected) {
     <!-- Oracle Draw REP -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;">
       <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">
-        <img src="assets/icons/oracle-draw-activity.png" style="width:41px;height:41px;vertical-align:middle;margin-right:6px;"> ORACLE DRAW ACTIVITY
+        ORACLE DRAW ACTIVITY
       </div>
       <div id="stats-draw-block">
         <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Loading...</div>
