@@ -86,25 +86,10 @@ function renderRepPage(tab) {
 
   if (tab === 'leaderboard') loadLeaderboard();
   if (tab === 'stats') {
-    if (isConnected) {
-      loadStatsData();
-    } else {
-      // Wallet may still be initializing — retry up to 3s
-      let attempts = 0;
-      const waitForWallet = setInterval(() => {
-        attempts++;
-        const addr = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
-        if (addr) {
-          clearInterval(waitForWallet);
-          loadStatsData();
-        } else if (attempts >= 6) {
-          clearInterval(waitForWallet);
-          // Still not connected after 3s — show connect prompt
-          const pg = document.getElementById('page-reputation');
-          if (pg && pg.classList.contains('active')) renderRepPage(tab);
-        }
-      }, 500);
-    }
+    setTimeout(() => {
+      const addr = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
+      if (addr) loadStatsData();
+    }, 300);
   }
 }
 
