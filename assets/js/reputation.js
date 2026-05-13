@@ -86,10 +86,18 @@ function renderRepPage(tab) {
 
   if (tab === 'leaderboard') loadLeaderboard();
   if (tab === 'stats') {
-    setTimeout(() => {
+    // Poll until wallet is ready (session restore can take up to 3s)
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
       const addr = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
-      if (addr) loadStatsData();
-    }, 1500);
+      if (addr) {
+        clearInterval(poll);
+        loadStatsData();
+      } else if (attempts >= 20) {
+        clearInterval(poll); // give up after 4s — show connect prompt
+      }
+    }, 200);
   }
 }
 
