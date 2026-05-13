@@ -1190,12 +1190,16 @@ function setWalletConnected(address) {
   renderOracleBag();
 
   // Если открыта вкладка Your Stats — загружаем данные
-  if (typeof loadStatsData === 'function') {
-    const repPage = document.getElementById('page-reputation');
-    if (repPage && repPage.classList.contains('active')) {
-      loadStatsData();
+  setTimeout(() => {
+    if (typeof loadStatsData === 'function') {
+      const repPage = document.getElementById('page-reputation');
+      const isRepActive = repPage && repPage.classList.contains('active');
+      const isStatsTab = typeof _repCurrentTab !== 'undefined' && _repCurrentTab === 'stats';
+      if (isRepActive && isStatsTab) {
+        loadStatsData();
+      }
     }
-  }
+  }, 200);
 
   // Load profile from Worker (profile.js loads after app.js)
   setTimeout(() => {
