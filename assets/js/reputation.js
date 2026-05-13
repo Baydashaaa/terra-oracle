@@ -419,6 +419,12 @@ async function loadStatsData() {
   const wallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
   if (!wallet) return;
 
+  // Re-render stats HTML if it's showing the "connect wallet" prompt
+  const tabContent = document.getElementById('rep-tab-content');
+  if (tabContent && tabContent.innerHTML.includes('Connect your wallet') && typeof renderStatsHTML === 'function') {
+    tabContent.innerHTML = renderStatsHTML(true);
+  }
+
   const MIN_CONTRIBUTORS = 10;
 
   try {
