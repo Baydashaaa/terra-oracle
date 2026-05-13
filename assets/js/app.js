@@ -1189,6 +1189,14 @@ function setWalletConnected(address) {
   // Обновляем My Bag при подключении кошелька
   renderOracleBag();
 
+  // Если открыта вкладка Your Stats — загружаем данные
+  if (typeof loadStatsData === 'function') {
+    const repPage = document.getElementById('page-reputation');
+    if (repPage && repPage.classList.contains('active')) {
+      loadStatsData();
+    }
+  }
+
   // Load profile from Worker (profile.js loads after app.js)
   setTimeout(() => {
     if (typeof loadProfileFromWorker === 'function') {
