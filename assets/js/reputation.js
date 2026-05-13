@@ -89,7 +89,7 @@ function renderRepPage(tab) {
     setTimeout(() => {
       const addr = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
       if (addr) loadStatsData();
-    }, 300);
+    }, 1500);
   }
 }
 
