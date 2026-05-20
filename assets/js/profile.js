@@ -155,7 +155,7 @@ function buildScoreMap(allQuestions) {
   // Convert to score
   const scores = {};
   for (const [w, s] of Object.entries(map)) {
-    scores[w] = s.questions * 40 + s.answers * 5 + s.upvotes * 15;
+    scores[w] = s.questions * 40 + s.answers * 15 + s.upvotes * 10;
   }
   return scores;
 }
