@@ -734,9 +734,9 @@ function renderHowItWorksHTML() {
           ['Answer a question',   '+15 REP per answer',                '#66ffaa'      ],
           ['Upvote received',     '+10 REP per upvote',                '#ffd700'      ],
           ['Chat message',        '+5 REP per message',                '#c084fc'      ],
-          ['Mint Common NFT',     '+25 REP per mint',                  '#8aaccc'      ],
-          ['Mint Rare NFT',       '+125 REP per mint',                 '#a78bfa'      ],
-          ['Mint Legendary NFT',  '+250 REP per mint',                 '#ff8844'      ],
+          ['Mint Common NFT',     '+25 REP per mint',                  '#9ca3af'      ],
+          ['Mint Rare NFT',       '+125 REP per mint',                 '#60a5fa'      ],
+          ['Mint Legendary NFT',  '+250 REP per mint',                 '#fb923c'      ],
         ].map(([label, rep, color]) => `
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${label}</div>
