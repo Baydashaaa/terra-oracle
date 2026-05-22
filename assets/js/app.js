@@ -723,7 +723,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 // ─── PROTOCOL WALLETS ─────────────────────────────────────────
 const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
 const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
-const LOTTERY_WALLET  = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
+const WEEKLY_DRAW_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
 const REQUIRED_LUNC   = 200000000000; // 200,000 LUNC in uLUNC
@@ -919,6 +919,100 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
 }
 
 // ─── FIX 1: Ask - исправлена fee (200,000 LUNC payment) ──────
+// ─── Send two MsgSend in one TX (one signature) ───────────────
+async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, chainId) {
+  const LCD   = 'https://terra-classic-lcd.publicnode.com';
+  const CHAIN = chainId || 'columbus-5';
+
+  const accRes  = await fetch(`${LCD}/cosmos/auth/v1beta1/accounts/${fromAddr}`);
+  const accData = await accRes.json();
+  const acct    = accData?.account || {};
+  const accountNumber = parseInt(acct.account_number || '0');
+  const sequence      = parseInt(acct.sequence || '0');
+
+  const totalAmount = amount1 + amount2;
+  const gasLimit = 400000;
+  const gasFee   = Math.ceil(gasLimit * 28.325);
+  const taxFee   = Math.ceil(totalAmount * 0.005);
+  const totalFee = gasFee + taxFee;
+
+  function encodeVarint(n) { n=Number(n); const b=[]; while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return new Uint8Array(b); }
+  function encodeField(f,w,d){const t=encodeVarint((f<<3)|w);if(w===2){const l=encodeVarint(d.length);const o=new Uint8Array(t.length+l.length+d.length);o.set(t);o.set(l,t.length);o.set(d,t.length+l.length);return o;}return t;}
+  function concat(...a){const tot=a.reduce((s,x)=>s+x.length,0);const o=new Uint8Array(tot);let off=0;for(const x of a){o.set(x,off);off+=x.length;}return o;}
+  const enc = new TextEncoder();
+
+  function buildMsgSend(from, to, amount) {
+    const coinP = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(String(amount))));
+    const msgSP = concat(encodeField(1,2,enc.encode(from)), encodeField(2,2,enc.encode(to)), encodeField(3,2,coinP));
+    return concat(encodeField(1,2,enc.encode('/cosmos.bank.v1beta1.MsgSend')), encodeField(2,2,msgSP));
+  }
+
+  const anyMsg1 = buildMsgSend(fromAddr, to1, amount1);
+  const anyMsg2 = buildMsgSend(fromAddr, to2, amount2);
+  const txBodyP = concat(encodeField(1,2,anyMsg1), encodeField(1,2,anyMsg2), encodeField(2,2,enc.encode(memo)));
+
+  const directSigner = window.keplr.getOfflineSigner(CHAIN);
+  const accounts = await directSigner.getAccounts();
+  const pubkeyB  = accounts[0].pubkey;
+  const pubkeyAny = concat(
+    encodeField(1,2,enc.encode('/cosmos.crypto.secp256k1.PubKey')),
+    encodeField(2,2,encodeField(1,2,pubkeyB))
+  );
+  const modeInfoP = encodeField(1,2,concat(encodeVarint((1<<3)|0), encodeVarint(1)));
+  const signerP   = concat(
+    encodeField(1,2,pubkeyAny),
+    encodeField(2,2,modeInfoP),
+    encodeVarint((3<<3)|0), encodeVarint(sequence)
+  );
+  const feeCoinP  = concat(encodeField(1,2,enc.encode('uluna')), encodeField(2,2,enc.encode(String(totalFee))));
+  const feeP      = concat(encodeField(1,2,feeCoinP), encodeVarint((2<<3)|0), encodeVarint(gasLimit));
+  const authInfoP = concat(encodeField(1,2,signerP), encodeField(2,2,feeP));
+
+  const { signed, signature } = await directSigner.signDirect(fromAddr, {
+    bodyBytes:     txBodyP,
+    authInfoBytes: authInfoP,
+    chainId:       CHAIN,
+    accountNumber: BigInt(accountNumber),
+  });
+
+  const finalBody     = signed.bodyBytes     || txBodyP;
+  const finalAuthInfo = signed.authInfoBytes || authInfoP;
+  const sigB          = Uint8Array.from(atob(signature.signature), c=>c.charCodeAt(0));
+  const txRawP        = concat(encodeField(1,2,finalBody), encodeField(2,2,finalAuthInfo), encodeField(3,2,sigB));
+
+  let txBase64 = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < txRawP.length; i += chunkSize) {
+    txBase64 += String.fromCharCode(...txRawP.subarray(i, i + chunkSize));
+  }
+  txBase64 = btoa(txBase64);
+
+  const res  = await fetch(`${LCD}/cosmos/tx/v1beta1/txs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tx_bytes: txBase64, mode: 'BROADCAST_MODE_SYNC' }),
+  });
+  const data   = await res.json();
+  const txHash = data?.tx_response?.txhash || data?.txhash;
+  const code   = data?.tx_response?.code ?? data?.code ?? 0;
+  if (code !== 0) throw new Error('TX failed: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
+
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setTimeout(r, 4000));
+    try {
+      const chk = await fetch(`${LCD}/cosmos/tx/v1beta1/txs/${txHash}`);
+      if (chk.ok) {
+        const chkData = await chk.json();
+        if (chkData?.tx_response?.txhash) {
+          if ((chkData.tx_response.code ?? 0) !== 0) throw new Error('TX failed on-chain: ' + chkData.tx_response.raw_log);
+          return txHash;
+        }
+      }
+    } catch(e) { if (e.message?.includes('TX failed')) throw e; }
+  }
+  return txHash;
+}
+
 async function autoPayAndUnlock() {
   if (!connectedAddress) { alert('Connect wallet first!'); return; }
   const btn = document.getElementById('verify-btn');
@@ -964,20 +1058,16 @@ async function autoPayAndUnlock() {
       ? ` (${discountPct}% off - saved ${discountAmt.toLocaleString()} LUNC)`
       : '';
 
-    // Send to Weekly Draw Pool first
-    const txHash1 = await sendLuncDirect(
-      sender, LOTTERY_WALLET, toWeekly,
-      'Terra Oracle Q&A - Weekly Pool', 'columbus-5'
+    // Single TX with two MsgSend — one signature
+    const txHash = await sendTwoMsgsDirect(
+      sender,
+      WEEKLY_DRAW_WALLET, toWeekly,
+      TREASURY_WALLET, toTreasury,
+      'Terra Oracle Q&A - Weekly Pool + Treasury', 'columbus-5'
     );
 
-    // Send to Treasury (discounted amount)
-    const txHash2 = await sendLuncDirect(
-      sender, TREASURY_WALLET, toTreasury,
-      'Terra Oracle Q&A - Treasury', 'columbus-5'
-    );
-
-    // Store primary tx hash (Weekly Pool tx) for question record
-    document.getElementById('verified-tx-hidden').value = txHash1;
+    // Store tx hash for question record
+    document.getElementById('verified-tx-hidden').value = txHash;
     document.getElementById('verified-wallet-hidden').value = sender;
 
     const luncPaid = totalLunc.toLocaleString();
@@ -1018,7 +1108,7 @@ async function verifyTX() {
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
       // Accept payment to Treasury OR Weekly Pool (split payment - either tx is valid proof)
       const MIN_ACCEPTED = 150000 * 1e6; // 150,000 LUNC minimum (max discount = 25%)
-      if ((toAddr === TREASURY_WALLET || toAddr === LOTTERY_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
+      if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount += parseInt(lunc.amount);
       }
     }
