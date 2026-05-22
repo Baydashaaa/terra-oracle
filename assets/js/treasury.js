@@ -118,10 +118,16 @@ async function tLoadRecentTxs(retries = 5) {
     }
 
     const results = [];
-    const CHAT_AMT      = 5000   * 1e6;
-    const QA_AMT        = 100000 * 1e6;
-    const DRAW_NFT_MIN  = 24750  * 1e6;
-    const TOL = 0.05;
+    const CHAT_AMT     = 5_000_000_000;     // 5,000 LUNC
+    const QA_AMT       = 100_000_000_000;   // 100,000 LUNC
+    const TOL          = 0.08;
+
+    // NFT tier thresholds — full price paid by user
+    const NFT_TIERS = [
+      { label: 'Legendary', min: 240_000_000_000, max: 260_000_000_000 },
+      { label: 'Rare',      min:  120_000_000_000, max: 130_000_000_000 },
+      { label: 'Common',    min:   23_000_000_000, max:  27_000_000_000 },
+    ];
 
     for (const tx of txs) {
       const tsRaw = tx.timestamp ? new Date(tx.timestamp) : null;
@@ -133,25 +139,31 @@ async function tLoadRecentTxs(retries = 5) {
       const memo = tx.tx?.value?.memo || tx.tx?.body?.memo || '';
       const msgs = tx.tx?.value?.msg  || tx.tx?.body?.messages || [];
 
+      // Sum ALL uluna sent TO this wallet across all messages
       let rawUluna = 0;
       for (const msg of msgs) {
-        // FCD format
+        const to    = msg.value?.to_address || msg.to_address || '';
         const coins = msg.value?.coins || msg.value?.amount || msg.amount || [];
-        const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
-        if (lunc) { rawUluna = parseInt(lunc.amount); break; }
+        const lunc  = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
+        if (lunc && to === wallet) rawUluna += parseInt(lunc.amount);
       }
       if (!rawUluna) continue;
 
-      const QA_WEEKLY_AMT   = QA_AMT;
-      const QA_TREASURY_AMT = QA_AMT;
+      // Detect NFT tier by amount
+      function detectNFTTier(amt) {
+        for (const t of NFT_TIERS) {
+          if (amt >= t.min && amt <= t.max) return t.label;
+        }
+        return null;
+      }
 
       // Classify by destination wallet + amount
       let label;
       if (wallet === T_WALLETS.treasury) {
         if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
-          label = 'Chat';
-        else if (rawUluna >= QA_TREASURY_AMT*(1-TOL) && rawUluna <= QA_TREASURY_AMT*(1+TOL))
-          label = 'Q&A — Treasury';
+          label = 'DAO Chat message';
+        else if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL))
+          label = 'Q&A — Treasury (50%)';
         else if (memo && memo.toLowerCase().includes('daily'))
           label = 'Oracle Draw — Daily (10%)';
         else if (memo && memo.toLowerCase().includes('weekly'))
@@ -159,17 +171,19 @@ async function tLoadRecentTxs(retries = 5) {
         else
           label = memo || 'Transfer';
       } else if (wallet === T_WALLETS.weekly) {
-        if (rawUluna >= QA_WEEKLY_AMT*(1-TOL) && rawUluna <= QA_WEEKLY_AMT*(1+TOL))
-          label = 'Q&A — Weekly Pool';
-        else if (rawUluna >= DRAW_NFT_MIN)
-          label = 'Oracle Draw — Weekly NFT';
-        else
-          label = memo || 'Transfer';
+        if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL)) {
+          label = 'Q&A — Weekly Pool (50%)';
+        } else {
+          const nftTier = detectNFTTier(rawUluna);
+          label = nftTier
+            ? `Oracle Draw — Weekly NFT | ${nftTier}`
+            : (memo || 'Transfer');
+        }
       } else if (wallet === T_WALLETS.daily) {
-        if (rawUluna >= DRAW_NFT_MIN)
-          label = 'Oracle Draw — Daily NFT';
-        else
-          label = memo || 'Transfer';
+        const nftTier = detectNFTTier(rawUluna);
+        label = nftTier
+          ? `Oracle Draw — Daily NFT | ${nftTier}`
+          : (memo || 'Transfer');
       } else {
         label = memo || 'Transfer';
       }
@@ -205,7 +219,7 @@ async function tLoadRecentTxs(retries = 5) {
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
           <span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:Rajdhani,sans-serif;">+${tx.amount}</span>
-          <a href="https://finder.terraport.finance/classic/tx/${tx.hash}" target="_blank"
+          <a href="https://finder.terraport.finance/mainnet/tx/${tx.hash}" target="_blank"
             style="font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
             🔗 ${tx.hash.slice(0,8)}...</a>
         </div>
