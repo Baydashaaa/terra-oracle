@@ -1796,6 +1796,27 @@ if (document.readyState === 'loading') {
 }
 setInterval(loadChatFromChain, 60000); // 60s poll - reduced from 30s for performance
 
+// ── Auto-refresh: pool balance + questions every 30s ──────────────────────────
+(function startAutoRefresh() {
+  setInterval(() => {
+    // Refresh pool balance silently
+    if (typeof fetchPoolBalance === 'function') {
+      fetchPoolBalance('terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz').catch(() => {});
+    }
+    // Refresh questions if on home/ask page
+    if (typeof loadQuestionsFromWorker === 'function') {
+      loadQuestionsFromWorker().catch(() => {});
+    }
+    // Refresh vote counts if on vote page
+    if (typeof loadVotesFromWorker === 'function') {
+      const votePage = document.getElementById('vote-page');
+      if (votePage && votePage.style.display !== 'none') {
+        loadVotesFromWorker().catch(() => {});
+      }
+    }
+  }, 30000);
+})();
+
 const _origSetWallet = window.setWalletConnected;
 window.setWalletConnected = function(address) {
   _origSetWallet(address);
