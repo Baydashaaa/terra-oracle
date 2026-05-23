@@ -2900,6 +2900,15 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
       <button class="fb-type-btn" onclick="selectFbType(this,'other')" data-type="other">Other</button>
     </div>
     <textarea id="feedback-text" placeholder="Describe the issue or idea..."></textarea>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:12px;">
+      <input type="file" id="feedback-img" accept="image/*" style="display:none;" onchange="previewFbImg(this)">
+      <span style="font-size:11px;color:rgba(255,255,255,0.35);padding:7px 12px;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;transition:all 0.2s;flex:1;text-align:center;"
+        id="fb-img-label">+ Attach screenshot (optional)</span>
+    </label>
+    <div id="fb-img-preview" style="display:none;margin-bottom:12px;position:relative;">
+      <img id="fb-img-thumb" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+      <button onclick="removeFbImg()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1;">×</button>
+    </div>
     <div class="fb-footer-row">
       <button id="fb-cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
       <button id="fb-send-btn" onclick="submitFeedback()">Send →</button>
@@ -2921,6 +2930,7 @@ function closeFeedbackModal() {
   document.getElementById('fb-status').textContent = '';
   document.querySelectorAll('.fb-type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   _fbType = 'bug';
+  removeFbImg();
 }
 function selectFbType(btn, type) {
   _fbType = type;
@@ -2937,17 +2947,23 @@ async function submitFeedback() {
   status.textContent = '';
   try {
     const wallet = typeof connectedAddress !== 'undefined' ? connectedAddress : 'anonymous';
-    const typeEmoji = { bug: '[bug]', idea: '[idea]', other: '[other]' }[_fbType] || '[other]';
-    const msg = `${typeEmoji} *Oracle Feedback · ${_fbType.toUpperCase()}*
+    const typeLabel = { bug: '[bug]', idea: '[idea]', other: '[other]' }[_fbType] || '[other]';
+    const msg = `${typeLabel} *Oracle Feedback · ${_fbType.toUpperCase()}*\n\n${text}\n\n${wallet.slice(0,20)}...\nterraoracle.io`;
 
-${text}
+    const imgFile = document.getElementById('feedback-img').files[0];
+    let imageBase64 = null;
+    if (imgFile) {
+      imageBase64 = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.readAsDataURL(imgFile);
+      });
+    }
 
-${wallet.slice(0,20)}...
-terraoracle.io`;
     const res = await fetch('https://oracle-eye.vladislav-baydan.workers.dev/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg }),
+      body: JSON.stringify({ message: msg, image: imageBase64, imageType: imgFile?.type }),
     });
     if (res.ok) {
       status.style.color = '#66ffaa';
