@@ -2337,7 +2337,7 @@ async function loadOracleBagNFTs(wallet) {
         empty.style.display = 'block';
         const msg = empty.querySelector('div');
         if (msg) msg.innerHTML = `No Oracle Mask NFTs in your wallet<br>
-          <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
+          <a href="https://draw.terraoracle.io/" target="_blank"
             style="display:inline-block;margin-top:12px;padding:8px 20px;border-radius:8px;
             border:1px solid rgba(244,208,63,0.4);background:rgba(244,208,63,0.08);
             color:#f4d03f;text-decoration:none;font-size:11px;">Mint on Oracle Draw →</a>`;
@@ -2387,9 +2387,9 @@ async function loadOracleBagNFTs(wallet) {
 }
 
 const O_TIER_IMAGES = {
-  common:    { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/common-sm.webp',    fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/common-sm.png'    },
-  rare:      { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/rare-sm.webp',      fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/rare-sm.png'      },
-  legendary: { sm: 'https://baydashaaa.github.io/oracle-draw/nfts/legendary-sm.webp', fallback: 'https://baydashaaa.github.io/oracle-draw/nfts/legendary-sm.png' },
+  common:    { sm: 'https://draw.terraoracle.io/nfts/common-sm.webp',    fallback: 'https://draw.terraoracle.io/nfts/common-sm.png'    },
+  rare:      { sm: 'https://draw.terraoracle.io/nfts/rare-sm.webp',      fallback: 'https://draw.terraoracle.io/nfts/rare-sm.png'      },
+  legendary: { sm: 'https://draw.terraoracle.io/nfts/legendary-sm.webp', fallback: 'https://draw.terraoracle.io/nfts/legendary-sm.png' },
 };
 
 let _oBagCurrentFilter = 'all';
