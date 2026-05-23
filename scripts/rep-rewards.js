@@ -13,6 +13,22 @@ const CHAIN_ID       = 'columbus-5';
 const GAS_LIMIT      = 300000;
 const GAS_PRICE      = 28.325;
 
+// Rank multipliers (based on all-time REP)
+const RANKS = [
+  { name: 'INITIATE',  minScore: 0,     multiplier: 1.0 },
+  { name: 'SEEKER',    minScore: 500,   multiplier: 1.0 },
+  { name: 'ADEPT',     minScore: 1500,  multiplier: 1.2 },
+  { name: 'ANALYST',   minScore: 4000,  multiplier: 1.5 },
+  { name: 'ORACLE',    minScore: 8000,  multiplier: 2.0 },
+  { name: 'ARCHON',    minScore: 15000, multiplier: 2.5 },
+  { name: 'ASCENDED',  minScore: 30000, multiplier: 3.0 },
+];
+function getRankMultiplier(allTimeRep) {
+  let mult = 1.0;
+  for (const r of RANKS) { if (allTimeRep >= r.minScore) mult = r.multiplier; }
+  return mult;
+}
+
 async function safeFetch(url, opts = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 15000);
@@ -133,15 +149,39 @@ async function main() {
   console.log(`💰 Payout pool: ${(poolUluna/1e6).toFixed(3)} LUNC`);
   if (poolUluna<1_000_000) { console.log('⚠️ Pool too small.'); return; }
 
-  const totalRep = data.topWallets.reduce((s,w)=>s+w.rep,0);
-  const payouts  = data.topWallets.map(w=>({
-    wallet: w.wallet, rep: w.rep,
-    share:  w.rep/totalRep,
-    uluna:  Math.floor((w.rep/totalRep)*poolUluna),
-  })).filter(p=>p.uluna>=1_000_000);
+  // Fetch all-time REP for each wallet to determine rank multiplier
+  console.log('\n📊 Fetching all-time REP for rank multipliers...');
+  const allTimeRepMap = {};
+  await Promise.all(data.topWallets.map(async w => {
+    try {
+      const r = await safeFetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`);
+      const d = r.ok ? await r.json() : { total: 0 };
+      // all-time draw REP (total from draw)
+      allTimeRepMap[w.wallet] = d.total || 0;
+    } catch(e) { allTimeRepMap[w.wallet] = 0; }
+  }));
+
+  // Weighted REP = weekly REP × rank multiplier (rank based on all-time REP)
+  const weighted = data.topWallets.map(w => {
+    const allTimeRep = allTimeRepMap[w.wallet] || 0;
+    const mult = getRankMultiplier(allTimeRep);
+    return { ...w, multiplier: mult, weightedRep: w.rep * mult };
+  });
+
+  const totalWeighted = weighted.reduce((s, w) => s + w.weightedRep, 0);
+  const payouts = weighted.map(w => ({
+    wallet: w.wallet,
+    rep: w.rep,
+    multiplier: w.multiplier,
+    weightedRep: w.weightedRep,
+    share: w.weightedRep / totalWeighted,
+    uluna: Math.floor((w.weightedRep / totalWeighted) * poolUluna),
+  })).filter(p => p.uluna >= 1_000_000);
 
   console.log(`\n📤 Sending to ${payouts.length} wallets:`);
-  payouts.forEach(p=>console.log(`  ${p.wallet.slice(0,20)}... | ${p.rep} REP (${(p.share*100).toFixed(1)}%) → ${(p.uluna/1e6).toFixed(3)} LUNC`));
+  payouts.forEach(p => console.log(
+    `  ${p.wallet.slice(0,20)}... | ${p.rep} REP x${p.multiplier} = ${p.weightedRep} weighted (${(p.share*100).toFixed(1)}%) → ${(p.uluna/1e6).toFixed(3)} LUNC`
+  ));
 
   let successCount=0, failCount=0;
   const week = new Date().toISOString().slice(0,10);
