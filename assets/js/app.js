@@ -2373,7 +2373,7 @@ async function loadOracleBagNFTs(wallet) {
               </span>
             </td>
             <td style="padding:12px 14px;font-family:monospace;font-size:11px;color:#f4d03f;">
-              ${h.nft || h.nftId ? ((h.nftTier||'NFT')+' #'+(h.nft||h.nftId)) : '-'}
+              ${h.nft || h.nftId ? ((h.nftTier||'NFT')+' #'+((h.nft||h.nftId||'').toString().slice(-5))) : '-'}
             </td>
             <td style="padding:12px 14px;">
               ${h.won || h.result === 'won'
