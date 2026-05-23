@@ -2733,5 +2733,239 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
   if (e.target === this) closeLuncdashModal();
 });
 </script>
+
+<!-- ═══ FEEDBACK BUTTON + MODAL ═══ -->
+<style>
+#feedback-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(84,147,247,0.15), rgba(160,100,255,0.15));
+  border: 1px solid rgba(84,147,247,0.4);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 0 20px rgba(84,147,247,0.2), 0 4px 16px rgba(0,0,0,0.4);
+  transition: all 0.25s ease;
+  animation: fb-pulse 3s ease-in-out infinite;
+}
+#feedback-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(84,147,247,0.4), 0 4px 20px rgba(0,0,0,0.5);
+  border-color: rgba(84,147,247,0.7);
+}
+@keyframes fb-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(84,147,247,0.2), 0 4px 16px rgba(0,0,0,0.4); }
+  50% { box-shadow: 0 0 30px rgba(84,147,247,0.35), 0 4px 16px rgba(0,0,0,0.4); }
+}
+#feedback-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 24px;
+}
+#feedback-modal-overlay.open {
+  display: flex;
+}
+#feedback-modal {
+  width: 340px;
+  background: linear-gradient(145deg, rgba(8,16,36,0.98), rgba(4,10,24,0.98));
+  border: 1px solid rgba(84,147,247,0.25);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 0 40px rgba(84,147,247,0.15), 0 20px 60px rgba(0,0,0,0.6);
+  animation: fb-slide-up 0.25s ease;
+}
+@keyframes fb-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#feedback-modal h3 {
+  margin: 0 0 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#feedback-modal .fb-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 16px;
+}
+.fb-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.fb-type-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.fb-type-btn.active {
+  border-color: rgba(84,147,247,0.6);
+  background: rgba(84,147,247,0.12);
+  color: #7eb8ff;
+}
+.fb-type-btn:hover { border-color: rgba(84,147,247,0.4); color: #aad4ff; }
+#feedback-text {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 12px;
+  padding: 12px;
+  resize: none;
+  height: 100px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+#feedback-text:focus { border-color: rgba(84,147,247,0.5); }
+#feedback-text::placeholder { color: rgba(255,255,255,0.25); }
+.fb-footer-row {
+  display: flex;
+  gap: 8px;
+}
+#fb-cancel-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#fb-cancel-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+#fb-send-btn {
+  flex: 2;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, rgba(84,147,247,0.8), rgba(120,80,220,0.8));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+}
+#fb-send-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+#fb-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+#fb-status {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 8px;
+  min-height: 16px;
+  color: rgba(255,255,255,0.5);
+}
+</style>
+
+<button id="feedback-btn" onclick="openFeedbackModal()" title="Feedback & Bug Report">👁</button>
+
+<div id="feedback-modal-overlay" onclick="if(event.target===this)closeFeedbackModal()">
+  <div id="feedback-modal">
+    <h3>👁 Oracle Eye</h3>
+    <div class="fb-sub">Send feedback · report a bug · share an idea</div>
+    <div class="fb-type-row">
+      <button class="fb-type-btn active" onclick="selectFbType(this,'bug')" data-type="bug">Bug</button>
+      <button class="fb-type-btn" onclick="selectFbType(this,'idea')" data-type="idea">Idea</button>
+      <button class="fb-type-btn" onclick="selectFbType(this,'other')" data-type="other">Other</button>
+    </div>
+    <textarea id="feedback-text" placeholder="Describe the issue or idea..."></textarea>
+    <div class="fb-footer-row">
+      <button id="fb-cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
+      <button id="fb-send-btn" onclick="submitFeedback()">Send →</button>
+    </div>
+    <div id="fb-status"></div>
+  </div>
+</div>
+
+<script>
+let _fbType = 'bug';
+
+function openFeedbackModal() {
+  document.getElementById('feedback-modal-overlay').classList.add('open');
+  document.getElementById('feedback-text').focus();
+}
+function closeFeedbackModal() {
+  document.getElementById('feedback-modal-overlay').classList.remove('open');
+  document.getElementById('feedback-text').value = '';
+  document.getElementById('fb-status').textContent = '';
+  document.querySelectorAll('.fb-type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  _fbType = 'bug';
+}
+function selectFbType(btn, type) {
+  _fbType = type;
+  document.querySelectorAll('.fb-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+async function submitFeedback() {
+  const text = document.getElementById('feedback-text').value.trim();
+  if (!text) { document.getElementById('fb-status').textContent = 'Please write something first.'; return; }
+  const btn = document.getElementById('fb-send-btn');
+  const status = document.getElementById('fb-status');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  status.textContent = '';
+  try {
+    const wallet = typeof connectedAddress !== 'undefined' ? connectedAddress : 'anonymous';
+    const typeEmoji = { bug: '[bug]', idea: '[idea]', other: '[other]' }[_fbType] || '[other]';
+    const msg = `${typeEmoji} *Oracle Feedback · ${_fbType.toUpperCase()}*
+
+${text}
+
+${wallet.slice(0,20)}...
+terraoracle.io`;
+    const res = await fetch('https://oracle-eye.vladislav-baydan.workers.dev/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+    });
+    if (res.ok) {
+      status.style.color = '#66ffaa';
+      status.textContent = '✓ Sent! Thank you for your feedback.';
+      btn.textContent = '✓ Sent';
+      setTimeout(() => closeFeedbackModal(), 2000);
+    } else {
+      throw new Error('Server error');
+    }
+  } catch(e) {
+    status.style.color = '#ff6b6b';
+    status.textContent = '✗ Failed to send. Try again.';
+    btn.disabled = false;
+    btn.textContent = 'Send →';
+  }
+}
+</script>
+<!-- ═══ END FEEDBACK ═══ -->
+
 </body>
 </html>
