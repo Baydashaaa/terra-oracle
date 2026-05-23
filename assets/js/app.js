@@ -2230,12 +2230,14 @@ function renderOracleBag() {
 async function loadOracleBagNFTs(wallet) {
   const el = id => document.getElementById(id);
 
-  const [nftResult, usedResult] = await Promise.allSettled([
+  const [nftResult, dailyStatsResult, weeklyStatsResult] = await Promise.allSettled([
     oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 3),
-    oFetch(`${O_DRAW_WORKER}/used-nfts`, {}, 2),
+    oFetch(`${O_DRAW_WORKER}/round-stats?pool=daily`, {}, 2),
+    oFetch(`${O_DRAW_WORKER}/round-stats?pool=weekly`, {}, 2),
   ]);
 
-  let allNFTs = null, usedIds = new Set(), pacoError = null;
+  let allNFTs = null, pacoError = null;
+  let dailyActiveWallets = new Set(), weeklyActiveWallets = new Set();
 
   if (nftResult.status === 'fulfilled' && nftResult.value.ok) {
     try {
@@ -2247,10 +2249,16 @@ async function loadOracleBagNFTs(wallet) {
     pacoError = nftResult.reason?.message || 'API error';
   }
 
-  if (usedResult.status === 'fulfilled' && usedResult.value.ok) {
+  if (dailyStatsResult.status === 'fulfilled' && dailyStatsResult.value.ok) {
     try {
-      const d = await usedResult.value.json();
-      usedIds = new Set((d.used || []).map(i => typeof i === 'string' ? i : String(i?.tokenId || '')).filter(Boolean));
+      const d = await dailyStatsResult.value.json();
+      dailyActiveWallets = new Set(Object.keys(d.byWallet || {}));
+    } catch(e) {}
+  }
+  if (weeklyStatsResult.status === 'fulfilled' && weeklyStatsResult.value.ok) {
+    try {
+      const d = await weeklyStatsResult.value.json();
+      weeklyActiveWallets = new Set(Object.keys(d.byWallet || {}));
     } catch(e) {}
   }
 
@@ -2292,7 +2300,10 @@ async function loadOracleBagNFTs(wallet) {
     if (slug === 'oracle-mask-daily')  pool = 'daily';
     if (slug === 'oracle-mask-weekly') pool = 'weekly';
     const isNewArch = pool !== null;
-    const used = usedIds.has(tokenId);
+    let used = false;
+    if (isNewArch) {
+      used = pool === 'daily' ? !dailyActiveWallets.has(wallet) : !weeklyActiveWallets.has(wallet);
+    }
     const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
     return {
       id: tokenId, type: tier, pool, isNewArch,
