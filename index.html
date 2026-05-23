@@ -2903,7 +2903,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:12px;">
       <input type="file" id="feedback-img" accept="image/*" style="display:none;" onchange="previewFbImg(this)">
       <span style="font-size:11px;color:rgba(255,255,255,0.35);padding:7px 12px;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;transition:all 0.2s;flex:1;text-align:center;"
-        id="fb-img-label">+ Attach screenshot (optional)</span>
+        id="fb-img-label">+ Attach or paste screenshot (Ctrl+V)</span>
     </label>
     <div id="fb-img-preview" style="display:none;margin-bottom:12px;position:relative;">
       <img id="fb-img-thumb" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
@@ -2937,6 +2937,36 @@ function selectFbType(btn, type) {
   document.querySelectorAll('.fb-type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
+function previewFbImg(input) {
+  const file = input.files[0];
+  if (file) attachFbImage(file, file.name);
+}
+function attachFbImage(file, name) {
+  document.getElementById('fb-img-label').textContent = (name || 'screenshot').slice(0, 30);
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('fb-img-thumb').src = e.target.result;
+    document.getElementById('fb-img-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  try { const dt = new DataTransfer(); dt.items.add(file); document.getElementById('feedback-img').files = dt.files; } catch(e) {}
+}
+function removeFbImg() {
+  document.getElementById('feedback-img').value = '';
+  document.getElementById('fb-img-preview').style.display = 'none';
+  document.getElementById('fb-img-label').textContent = '+ Attach screenshot (optional)';
+}
+// Paste image with Ctrl+V
+document.addEventListener('paste', function(e) {
+  if (!document.getElementById('feedback-modal-overlay')?.classList.contains('open')) return;
+  for (const item of (e.clipboardData?.items || [])) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) { attachFbImage(file, 'screenshot.png'); document.getElementById('fb-img-label').textContent = 'Screenshot pasted ✓'; e.preventDefault(); break; }
+    }
+  }
+});
+
 async function submitFeedback() {
   const text = document.getElementById('feedback-text').value.trim();
   if (!text) { document.getElementById('fb-status').textContent = 'Please write something first.'; return; }
