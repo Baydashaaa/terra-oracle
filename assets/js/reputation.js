@@ -318,7 +318,7 @@ function renderLeaderboardPage(page) {
           <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
             <span>❓ ${w.questions} questions</span>
             <span>💬 ${w.answers} answers</span>
-            <span>👍 ${w.upvotes} upvotes</span>
+            <span>👍 ${w.upvotesReceived || 0} upvotes</span>
             ${w.drawRep ? `<span>🎭 +${w.drawRep} draw</span>` : ''}
           </div>
         </div>
