@@ -160,46 +160,90 @@ async function loadLeaderboard() {
     const cutoff = _lbPeriod === 'weekly'
       ? Math.floor(Date.now() / 1000) - 7 * 86400
       : 0;
+    const cutoffDate = new Date(cutoff * 1000).toISOString().slice(0, 10);
 
     for (const q of allQuestions) {
-      if (q.createdAt < cutoff) continue;
       if (!q.wallet) continue;
-      if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotes: 0 };
+      const qThisWeek = q.createdAt >= cutoff;
+
+      // For weekly: only count questions asked this week
+      if (_lbPeriod === 'weekly' && !qThisWeek) {
+        // Still check answers for this week
+        for (const a of q.answers || []) {
+          if (!a.wallet) continue;
+          const aThisWeek = (a.createdAt || 0) >= cutoff;
+          if (!aThisWeek) continue;
+          if (!wallets[a.wallet]) wallets[a.wallet] = { wallet: a.wallet, alias: a.alias || ('Anonymous#' + a.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
+          wallets[a.wallet].answers++;
+          wallets[a.wallet].upvotesReceived += a.votes || 0;
+        }
+        continue;
+      }
+
+      if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
       wallets[q.wallet].questions++;
-      wallets[q.wallet].upvotes += q.votes || 0;
 
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
-        if (!wallets[a.wallet]) wallets[a.wallet] = { wallet: a.wallet, alias: a.alias || ('Anonymous#' + a.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotes: 0 };
+        const aThisWeek = _lbPeriod !== 'weekly' || (a.createdAt || 0) >= cutoff;
+        if (!aThisWeek) continue;
+        if (!wallets[a.wallet]) wallets[a.wallet] = { wallet: a.wallet, alias: a.alias || ('Anonymous#' + a.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
         wallets[a.wallet].answers++;
-        wallets[a.wallet].upvotes += a.votes || 0;
+        wallets[a.wallet].upvotesReceived += a.votes || 0;
       }
     }
 
-    // Fetch draw REP and chat REP for all wallets in parallel (max 20)
+    // Always include connected wallet
+    const connWallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
+    if (connWallet && !wallets[connWallet]) {
+      wallets[connWallet] = { wallet: connWallet, alias: 'Anonymous#' + connWallet.slice(-4).toUpperCase(), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
+    }
+
+    // Fetch draw REP, chat REP and streak for all wallets in parallel
     const walletList = Object.values(wallets);
-    const drawRepMap = {}, chatRepMap = {};
+    const drawRepMap = {}, chatRepMap = {}, streakMap = {};
     try {
       const fetches = walletList.slice(0, 20).flatMap(w => [
         fetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`)
-          .then(r => r.ok ? r.json() : { total: 0 })
-          .then(d => { drawRepMap[w.wallet] = d.total || 0; })
+          .then(r => r.ok ? r.json() : { total: 0, history: [] })
+          .then(d => {
+            if (_lbPeriod === 'weekly') {
+              drawRepMap[w.wallet] = (d.history || [])
+                .filter(h => (h.date || '') >= cutoffDate)
+                .reduce((s, h) => s + (h.points || 0), 0);
+            } else {
+              drawRepMap[w.wallet] = d.total || 0;
+            }
+          })
           .catch(() => { drawRepMap[w.wallet] = 0; }),
         fetch(`${WORKER_URL}/chat/count?wallet=${w.wallet}`)
-          .then(r => r.ok ? r.json() : { msgCount: 0 })
-          .then(d => { chatRepMap[w.wallet] = (d.msgCount || 0) * 5; })
+          .then(r => r.ok ? r.json() : { msgCount: 0, history: [] })
+          .then(d => {
+            if (_lbPeriod === 'weekly') {
+              const weekMsgs = (d.history || []).filter(h => (h.date || '') >= cutoffDate).length;
+              chatRepMap[w.wallet] = weekMsgs * 5;
+            } else {
+              chatRepMap[w.wallet] = (d.msgCount || 0) * 5;
+            }
+          })
           .catch(() => { chatRepMap[w.wallet] = 0; }),
+        fetch(`${WORKER_URL}/streak?wallet=${w.wallet}`)
+          .then(r => r.ok ? r.json() : { multiplier: 1.0 })
+          .then(d => { streakMap[w.wallet] = d.multiplier || 1.0; })
+          .catch(() => { streakMap[w.wallet] = 1.0; }),
       ]);
       await Promise.all(fetches);
     } catch(e) {}
 
     const ranked = Object.values(wallets).map(w => {
-      const drawRep = drawRepMap[w.wallet] || 0;
-      const chatRep = chatRepMap[w.wallet] || 0;
-      const score = w.questions * 40 + w.answers * 15 + w.upvotes * 10 + chatRep + drawRep;
+      const drawRep  = drawRepMap[w.wallet] || 0;
+      const chatRep  = chatRepMap[w.wallet] || 0;
+      const multiplier = streakMap[w.wallet] || 1.0;
+      const baseScore = w.questions * 40 + w.answers * 15 + (w.upvotesReceived || 0) * 10 + chatRep + drawRep;
+      const score = Math.round(baseScore * multiplier);
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
-      return { ...w, score, drawRep, chatRep, rank };
-    }).sort((a, b) => b.score - a.score).slice(0, 50);
+      return { ...w, score, drawRep, chatRep, multiplier, rank };
+    }).filter(w => w.score > 0).sort((a, b) => b.score - a.score).slice(0, 50);
 
     const myWallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
     window._lbRanked   = ranked;
