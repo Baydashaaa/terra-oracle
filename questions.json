@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-05-22T17:47:35.563Z",
+  "_updated": "2026-05-23T21:26:26.873Z",
   "questions": [
     {
       "id": "LUNC-PH7PRXG",
@@ -17,7 +17,18 @@
       "createdAt": 1779472055,
       "expiresAt": 1780076855,
       "votes": 0,
-      "answers": [],
+      "answers": [
+        {
+          "id": "ANS-MPIUZ4FT",
+          "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+          "walletHash": "sha256:m4x75c2l",
+          "alias": "Joker",
+          "text": "kh",
+          "createdAt": 1779571586,
+          "votes": 0,
+          "voters": []
+        }
+      ],
       "status": "open",
       "chosenAnswerId": null
     },
