@@ -3064,7 +3064,9 @@ async function submitFeedback() {
     if (!isDragging) return;
     isDragging = false;
     btn.style.cursor = 'grab'; btn.style.transition = '';
-    if (hasMoved) {
+    var _moved = hasMoved;
+    hasMoved = false;
+    if (_moved) {
       try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
       btn.addEventListener('click', function stopClick(ev) {
         ev.preventDefault(); ev.stopPropagation();
