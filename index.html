@@ -3062,9 +3062,12 @@ async function submitFeedback() {
     btn.style.cursor = 'grab'; btn.style.transition = '';
     if (hasMoved) {
       try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
-      e.preventDefault(); e.stopPropagation();
+      // Block the subsequent click event
+      btn.addEventListener('click', function stopClick(ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        btn.removeEventListener('click', stopClick);
+      }, true);
     }
-    // if !hasMoved — onclick fires normally
   });
 
   // Touch support
