@@ -1,8 +1,8 @@
 // ─── TREASURY DISTRIBUTION SCRIPT ───────────────────────────
 // Pure HTTP + bip39/bip32/tiny-secp256k1 — no cosmjs, no feather.js
 // Distributes Protocol Treasury balance to 4 wallets:
-//   20% → REWARDS_WALLET   (REP weekly rewards)
-//   20% → RESERVE_WALLET   (protocol stability buffer)
+//   25% → REWARDS_WALLET   (REP weekly rewards)
+//   15% → RESERVE_WALLET   (protocol stability buffer)
 //   50% → LIQUIDITY_WALLET (manual liquidity provision)
 //   10% → DEV_WALLET        (development & operations)
 
@@ -16,7 +16,7 @@ const WALLETS = {
   liquidity: 'terra1gukarslv6c8n0s2259822l7059putpqxz405su',
   dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr',
 };
-const DISTRIBUTION = { rewards: 0.20, reserve: 0.20, liquidity: 0.50, dev: 0.10 };
+const DISTRIBUTION = { rewards: 0.25, reserve: 0.15, liquidity: 0.50, dev: 0.10 };
 const LCD_URL     = 'https://terra-classic-lcd.publicnode.com';
 const CHAIN_ID    = 'columbus-5';
 const GAS_LIMIT   = 300000;
