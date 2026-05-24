@@ -641,7 +641,7 @@ async function loadStatsData() {
     const inTop20           = myPosition > 0 && myPosition <= top20pct;
     const poolActive        = totalContributors >= MIN_CONTRIBUTORS;
 
-    // Fetch REP Rewards wallet balance directly (already 20% of treasury)
+    // Fetch REP Rewards wallet balance directly (already 25% of treasury)
     const REP_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
     let poolLunc = 0;
     try {
@@ -831,7 +831,7 @@ function renderHowItWorksHTML() {
         Weekly Reward Pool
       </div>
       <p style="font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:20px;">
-        Each week, <strong style="color:var(--text);">20% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet - and the full balance is paid out to top contributors.
+        Each week, <strong style="color:var(--text);">25% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet - and the full balance is paid out to top contributors.
         This pool is distributed to the <strong style="color:var(--text);">top 20% of contributors</strong>
         ranked by their REP earned in the last 7 days. Your share is proportional to your weekly REP
         multiplied by your rank multiplier.
