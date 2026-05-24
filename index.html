@@ -2889,7 +2889,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 
 </style>
 
-<button id="feedback-btn" onclick="openFeedbackModal()" title="Feedback & Bug Report">👁</button>
+<button id="feedback-btn" title="Feedback & Bug Report">👁</button>
 
 <div id="feedback-modal-overlay" onclick="if(event.target===this)closeFeedbackModal()">
   <div id="feedback-modal">
@@ -3024,7 +3024,7 @@ async function submitFeedback() {
   var btn = document.getElementById('feedback-btn');
   if (!btn) { setTimeout(initFbDrag, 500); return; }
 
-  var isDragging = false, hasMoved = false;
+  var isDragging = false, justDragged = false;
   var startX = 0, startY = 0, startLeft = 0, startTop = 0;
   btn.style.cursor = 'grab';
 
@@ -3037,47 +3037,41 @@ async function submitFeedback() {
     }
   } catch(e) {}
 
-
   btn.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return;
-    isDragging = true; hasMoved = false;
+    isDragging = true; justDragged = false;
     var rect = btn.getBoundingClientRect();
     startLeft = rect.left; startTop = rect.top;
     startX = e.clientX; startY = e.clientY;
     btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
     btn.style.bottom = 'auto'; btn.style.right = 'auto';
     btn.style.transition = 'none'; btn.style.cursor = 'grabbing';
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
   });
 
   window.addEventListener('mousemove', function(e) {
     if (!isDragging) return;
     var dx = e.clientX - startX, dy = e.clientY - startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
-    var nx = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx));
-    var ny = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy));
-    btn.style.left = nx + 'px';
-    btn.style.top  = ny + 'px';
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
+    btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
+    btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
   });
 
-  window.addEventListener('mouseup', function(e) {
+  window.addEventListener('mouseup', function() {
     if (!isDragging) return;
     isDragging = false;
     btn.style.cursor = 'grab'; btn.style.transition = '';
-    var _moved = hasMoved;
-    hasMoved = false;
-    if (_moved) {
+    if (justDragged) {
       try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
-      btn.addEventListener('click', function stopClick(ev) {
-        ev.preventDefault(); ev.stopPropagation();
-        btn.removeEventListener('click', stopClick);
-      }, true);
+    } else {
+      openFeedbackModal();
     }
+    justDragged = false;
   });
 
-  // Touch support
+  // Touch
   btn.addEventListener('touchstart', function(e) {
-    isDragging = true; hasMoved = false;
+    isDragging = true; justDragged = false;
     var t = e.touches[0];
     var rect = btn.getBoundingClientRect();
     startLeft = rect.left; startTop = rect.top;
@@ -3091,21 +3085,22 @@ async function submitFeedback() {
     if (!isDragging) return;
     var t = e.touches[0];
     var dx = t.clientX - startX, dy = t.clientY - startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
     btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
     btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
-    if (hasMoved) e.preventDefault();
+    if (justDragged) e.preventDefault();
   }, {passive: false});
 
   window.addEventListener('touchend', function() {
     if (!isDragging) return;
     isDragging = false;
     btn.style.transition = '';
-    if (hasMoved) {
+    if (justDragged) {
       try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
     } else {
       openFeedbackModal();
     }
+    justDragged = false;
   });
 })();
 </script>
