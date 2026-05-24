@@ -16,7 +16,7 @@ function showRepPage(tab, skipHistory) {
   pg.classList.add('active');
   const repTab = document.querySelector('.nav-node');
   if (repTab) repTab.classList.add('active');
-  if (!skipHistory && history.pushState) history.pushState({ page: 'reputation:' + tab }, '', '#reputation:' + tab);
+  if (!skipHistory && history.pushState) history.pushState({ page: 'reputation:' + tab }, '', '/reputation/' + tab);
   try { sessionStorage.setItem('currentPage', 'reputation:' + tab); } catch(e) {}
 
   window.scrollTo(0, 0);
