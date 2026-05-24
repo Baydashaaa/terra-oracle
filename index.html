@@ -3021,30 +3021,39 @@ async function submitFeedback() {
 (function() {
   const btn = document.getElementById('feedback-btn');
   if (!btn) return;
+
+  // Remove onclick attribute — we handle click via drag logic
+  btn.removeAttribute('onclick');
+
   let dragging = false, startX, startY, origX, origY, moved = false;
 
   // Restore saved position
   try {
     const saved = JSON.parse(localStorage.getItem('fb-btn-pos') || 'null');
-    if (saved) { btn.style.left = saved.left; btn.style.top = saved.top; btn.style.bottom = 'auto'; btn.style.right = 'auto'; }
+    if (saved) {
+      btn.style.left = saved.left; btn.style.top = saved.top;
+      btn.style.bottom = 'auto'; btn.style.right = 'auto';
+    }
   } catch(e) {}
 
+  function getClient(e) { return e.touches ? e.touches[0] : e; }
+
   function onStart(e) {
-    const touch = e.touches ? e.touches[0] : e;
-    startX = touch.clientX; startY = touch.clientY;
+    const c = getClient(e);
+    startX = c.clientX; startY = c.clientY;
     const rect = btn.getBoundingClientRect();
     origX = rect.left; origY = rect.top;
-    dragging = true; moved = false;
-    btn.style.transition = 'none';
     btn.style.left = origX + 'px'; btn.style.top = origY + 'px';
     btn.style.bottom = 'auto'; btn.style.right = 'auto';
+    btn.style.transition = 'none';
+    dragging = true; moved = false;
     e.preventDefault();
   }
   function onMove(e) {
     if (!dragging) return;
-    const touch = e.touches ? e.touches[0] : e;
-    const dx = touch.clientX - startX, dy = touch.clientY - startY;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    const c = getClient(e);
+    const dx = c.clientX - startX, dy = c.clientY - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
     const nx = Math.max(0, Math.min(window.innerWidth - 56, origX + dx));
     const ny = Math.max(0, Math.min(window.innerHeight - 56, origY + dy));
     btn.style.left = nx + 'px'; btn.style.top = ny + 'px';
@@ -3056,19 +3065,17 @@ async function submitFeedback() {
     btn.style.transition = '';
     if (moved) {
       try { localStorage.setItem('fb-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch(e) {}
-      e.preventDefault();
     } else {
       openFeedbackModal();
     }
   }
-  btn.addEventListener('mousedown', onStart);
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onEnd);
+
+  btn.addEventListener('mousedown', onStart, { passive: false });
+  window.addEventListener('mousemove', onMove, { passive: false });
+  window.addEventListener('mouseup', onEnd);
   btn.addEventListener('touchstart', onStart, { passive: false });
-  document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('touchend', onEnd);
-  // Remove old onclick
-  btn.removeAttribute('onclick');
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
 })();
 
 <!-- ═══ END FEEDBACK ═══ -->
