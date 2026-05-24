@@ -2888,7 +2888,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 }
 </style>
 
-<button id="feedback-btn" title="Feedback & Bug Report">👁</button>
+<button id="feedback-btn" onclick="openFeedbackModal()" title="Feedback & Bug Report">👁</button>
 
 <div id="feedback-modal-overlay" onclick="if(event.target===this)closeFeedbackModal()">
   <div id="feedback-modal">
@@ -3016,53 +3016,6 @@ async function submitFeedback() {
   }
 }
 </script>
-
-// ── Draggable feedback button ──────────────────────────────
-window.addEventListener('load', function() {
-  var btn = document.getElementById('feedback-btn');
-  if (!btn) { console.error('feedback-btn not found'); return; }
-
-  var isDragging = false, hasMoved = false;
-  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
-
-  btn.style.cursor = 'grab';
-
-  btn.onmousedown = function(e) {
-    isDragging = true; hasMoved = false;
-    var rect = btn.getBoundingClientRect();
-    startLeft = rect.left; startTop = rect.top;
-    startX = e.clientX; startY = e.clientY;
-    btn.style.left = startLeft + 'px';
-    btn.style.top = startTop + 'px';
-    btn.style.bottom = 'auto';
-    btn.style.right = 'auto';
-    btn.style.transition = 'none';
-    btn.style.cursor = 'grabbing';
-    e.preventDefault();
-  };
-
-  document.onmousemove = function(e) {
-    if (!isDragging) return;
-    var dx = e.clientX - startX, dy = e.clientY - startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
-    var nx = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx));
-    var ny = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy));
-    btn.style.left = nx + 'px';
-    btn.style.top = ny + 'px';
-  };
-
-  document.onmouseup = function() {
-    if (!isDragging) return;
-    isDragging = false;
-    btn.style.cursor = 'grab';
-    btn.style.transition = '';
-    if (!hasMoved) {
-      openFeedbackModal();
-    } else {
-      try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e){}
-    }
-  };
-});
 
 <!-- ═══ END FEEDBACK ═══ -->
 
