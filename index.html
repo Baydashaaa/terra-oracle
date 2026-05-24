@@ -3018,12 +3018,9 @@ async function submitFeedback() {
 </script>
 
 // ── Draggable feedback button ──────────────────────────────
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   const btn = document.getElementById('feedback-btn');
   if (!btn) return;
-
-  // Remove onclick attribute — we handle click via drag logic
-  btn.removeAttribute('onclick');
 
   let dragging = false, startX, startY, origX, origY, moved = false;
 
@@ -3059,7 +3056,7 @@ async function submitFeedback() {
     btn.style.left = nx + 'px'; btn.style.top = ny + 'px';
     e.preventDefault();
   }
-  function onEnd(e) {
+  function onEnd() {
     if (!dragging) return;
     dragging = false;
     btn.style.transition = '';
@@ -3076,7 +3073,7 @@ async function submitFeedback() {
   btn.addEventListener('touchstart', onStart, { passive: false });
   window.addEventListener('touchmove', onMove, { passive: false });
   window.addEventListener('touchend', onEnd);
-})();
+});
 
 <!-- ═══ END FEEDBACK ═══ -->
 
