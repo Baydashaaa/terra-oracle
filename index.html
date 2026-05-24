@@ -3017,6 +3017,90 @@ async function submitFeedback() {
 }
 </script>
 
+<script>
+// ── Draggable feedback button ──────────────────────────────
+(function initFbDrag() {
+  var btn = document.getElementById('feedback-btn');
+  if (!btn) { setTimeout(initFbDrag, 500); return; }
+
+  var isDragging = false, hasMoved = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+  btn.style.cursor = 'grab';
+
+  // Restore saved position
+  try {
+    var saved = JSON.parse(localStorage.getItem('fb-btn-pos') || 'null');
+    if (saved && saved.left && saved.top) {
+      btn.style.left = saved.left; btn.style.top = saved.top;
+      btn.style.bottom = 'auto'; btn.style.right = 'auto';
+    }
+  } catch(e) {}
+
+  btn.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    isDragging = true; hasMoved = false;
+    var rect = btn.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    startX = e.clientX; startY = e.clientY;
+    btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
+    btn.style.bottom = 'auto'; btn.style.right = 'auto';
+    btn.style.transition = 'none'; btn.style.cursor = 'grabbing';
+    e.preventDefault(); e.stopPropagation();
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+    btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
+    btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
+  });
+
+  window.addEventListener('mouseup', function(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    btn.style.cursor = 'grab'; btn.style.transition = '';
+    if (hasMoved) {
+      try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
+      e.preventDefault(); e.stopPropagation();
+    }
+    // if !hasMoved — onclick fires normally
+  });
+
+  // Touch support
+  btn.addEventListener('touchstart', function(e) {
+    isDragging = true; hasMoved = false;
+    var t = e.touches[0];
+    var rect = btn.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    startX = t.clientX; startY = t.clientY;
+    btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
+    btn.style.bottom = 'auto'; btn.style.right = 'auto';
+    btn.style.transition = 'none';
+  }, {passive: true});
+
+  window.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    var t = e.touches[0];
+    var dx = t.clientX - startX, dy = t.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+    btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
+    btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
+    if (hasMoved) e.preventDefault();
+  }, {passive: false});
+
+  window.addEventListener('touchend', function() {
+    if (!isDragging) return;
+    isDragging = false;
+    btn.style.transition = '';
+    if (hasMoved) {
+      try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e) {}
+    } else {
+      openFeedbackModal();
+    }
+  });
+})();
+</script>
 <!-- ═══ END FEEDBACK ═══ -->
 
 </body>
