@@ -3018,61 +3018,50 @@ async function submitFeedback() {
 </script>
 
 // ── Draggable feedback button ──────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  const btn = document.getElementById('feedback-btn');
-  if (!btn) return;
+window.addEventListener('load', function() {
+  var btn = document.getElementById('feedback-btn');
+  if (!btn) { console.error('feedback-btn not found'); return; }
 
-  let dragging = false, startX, startY, origX, origY, moved = false;
+  var isDragging = false, hasMoved = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
 
-  // Restore saved position
-  try {
-    const saved = JSON.parse(localStorage.getItem('fb-btn-pos') || 'null');
-    if (saved) {
-      btn.style.left = saved.left; btn.style.top = saved.top;
-      btn.style.bottom = 'auto'; btn.style.right = 'auto';
-    }
-  } catch(e) {}
+  btn.style.cursor = 'grab';
 
-  function getClient(e) { return e.touches ? e.touches[0] : e; }
-
-  function onStart(e) {
-    const c = getClient(e);
-    startX = c.clientX; startY = c.clientY;
-    const rect = btn.getBoundingClientRect();
-    origX = rect.left; origY = rect.top;
-    btn.style.left = origX + 'px'; btn.style.top = origY + 'px';
-    btn.style.bottom = 'auto'; btn.style.right = 'auto';
+  btn.onmousedown = function(e) {
+    isDragging = true; hasMoved = false;
+    var rect = btn.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    startX = e.clientX; startY = e.clientY;
+    btn.style.left = startLeft + 'px';
+    btn.style.top = startTop + 'px';
+    btn.style.bottom = 'auto';
+    btn.style.right = 'auto';
     btn.style.transition = 'none';
-    dragging = true; moved = false;
+    btn.style.cursor = 'grabbing';
     e.preventDefault();
-  }
-  function onMove(e) {
-    if (!dragging) return;
-    const c = getClient(e);
-    const dx = c.clientX - startX, dy = c.clientY - startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
-    const nx = Math.max(0, Math.min(window.innerWidth - 56, origX + dx));
-    const ny = Math.max(0, Math.min(window.innerHeight - 56, origY + dy));
-    btn.style.left = nx + 'px'; btn.style.top = ny + 'px';
-    e.preventDefault();
-  }
-  function onEnd() {
-    if (!dragging) return;
-    dragging = false;
-    btn.style.transition = '';
-    if (moved) {
-      try { localStorage.setItem('fb-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch(e) {}
-    } else {
-      openFeedbackModal();
-    }
-  }
+  };
 
-  btn.addEventListener('mousedown', onStart, { passive: false });
-  window.addEventListener('mousemove', onMove, { passive: false });
-  window.addEventListener('mouseup', onEnd);
-  btn.addEventListener('touchstart', onStart, { passive: false });
-  window.addEventListener('touchmove', onMove, { passive: false });
-  window.addEventListener('touchend', onEnd);
+  document.onmousemove = function(e) {
+    if (!isDragging) return;
+    var dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+    var nx = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx));
+    var ny = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy));
+    btn.style.left = nx + 'px';
+    btn.style.top = ny + 'px';
+  };
+
+  document.onmouseup = function() {
+    if (!isDragging) return;
+    isDragging = false;
+    btn.style.cursor = 'grab';
+    btn.style.transition = '';
+    if (!hasMoved) {
+      openFeedbackModal();
+    } else {
+      try { localStorage.setItem('fb-btn-pos', JSON.stringify({left: btn.style.left, top: btn.style.top})); } catch(e){}
+    }
+  };
 });
 
 <!-- ═══ END FEEDBACK ═══ -->
