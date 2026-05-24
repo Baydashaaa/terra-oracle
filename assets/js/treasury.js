@@ -269,7 +269,7 @@ function showPage_treasury(e, _unused, skipHistory) {
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   const pg = document.getElementById('page-treasury');
   if (pg) pg.classList.add('active');
-  if (!skipHistory && history.pushState) history.pushState({ page: 'treasury' }, '', '#treasury');
+  if (!skipHistory && history.pushState) history.pushState({ page: 'treasury' }, '', '/treasury');
   try { sessionStorage.setItem('currentPage', 'treasury'); } catch(e) {}
   if (typeof smoothScrollTop==='function') smoothScrollTop();
   loadTreasuryData();
