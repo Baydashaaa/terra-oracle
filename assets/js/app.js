@@ -230,7 +230,7 @@ function showPage(name, e, skipHistory) {
     }
   }
   if (!skipHistory && history.pushState) {
-    history.pushState({ page: name }, '', '#' + name);
+    history.pushState({ page: name }, '', '/' + name.replace(/:/g, '/'));
   }
   try { sessionStorage.setItem('currentPage', name); } catch(e) {}
   smoothScrollTop();
@@ -238,7 +238,8 @@ function showPage(name, e, skipHistory) {
 
 // Handle browser Back/Forward
 window.addEventListener('popstate', function(e) {
-  const name = (e.state && e.state.page) || (location.hash ? location.hash.slice(1) : 'home');
+  const pathParts = location.pathname.replace(/^\//, '').split('/');
+  const name = (e.state && e.state.page) || (pathParts[0] === 'reputation' ? 'reputation:' + (pathParts[1] || 'leaderboard') : pathParts[0]) || 'home';
   if (name === 'treasury') {
     if (typeof showPage_treasury === 'function') showPage_treasury(null, null, true);
   } else if (name && name.startsWith('reputation')) {
@@ -284,11 +285,19 @@ function removeTag(tag) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Restore page from URL hash first, then sessionStorage
-  const hash = location.hash ? location.hash.slice(1) : null;
-  const savedPage = hash || (() => { try { return sessionStorage.getItem('currentPage'); } catch(e) { return null; } })();
-  // Set initial history entry so Back works from first page
-  if (history.replaceState) history.replaceState({ page: savedPage || 'home' }, '', location.href);
+  // Restore page from pathname or hash (404.html redirect)
+  const pathParts = location.pathname.replace(/^\//, '').split('/');
+  const hashPart = location.hash.replace(/^#/, '');
+  let savedPage = null;
+  if (pathParts[0] && pathParts[0] !== '') {
+    savedPage = pathParts[0] === 'reputation' ? 'reputation:' + (pathParts[1] || 'leaderboard') : pathParts[0];
+  } else if (hashPart) {
+    savedPage = hashPart.replace(/\//, ':'); // convert hash/tab to page:tab format
+  }
+  if (!savedPage) { try { savedPage = sessionStorage.getItem('currentPage'); } catch(e) {} }
+  // Clean URL
+  const cleanUrl = savedPage ? '/' + savedPage.replace(/:/g, '/') : '/home';
+  if (history.replaceState) history.replaceState({ page: savedPage || 'home' }, '', cleanUrl);
   if (savedPage === 'treasury') {
     if (typeof showPage_treasury === 'function') showPage_treasury(null, null, true);
   } else if (savedPage && savedPage.startsWith('reputation')) {
