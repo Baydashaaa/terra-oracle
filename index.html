@@ -2984,30 +2984,60 @@ async function submitFeedback() {
     const wallet = typeof connectedAddress !== 'undefined' ? connectedAddress : 'anonymous';
     const customLabel = (document.getElementById('fb-other-input')?.value?.trim()) || '';
     const typeLabel = _fbType === 'other' && customLabel ? `[${customLabel}]` : ({ bug: '[bug]', idea: '[idea]', other: '[other]' }[_fbType] || '[other]');
-    const msg = `${typeLabel} *Oracle Feedback · ${_fbType.toUpperCase()}*\n\n${text}\n\n${wallet.slice(0,20)}...\nterraoracle.io`;
+    const msg = `${typeLabel} *Oracle Feedback · ${_fbType.toUpperCase()}*\n\n${text}\n\n${wallet}\nterraoracle.io`;
 
     const imgFile = document.getElementById('feedback-img').files[0];
     let imageBase64 = null;
+    let imageType = imgFile?.type || 'image/jpeg';
     if (imgFile) {
+      // Compress image to max 1200px JPEG before sending
       imageBase64 = await new Promise(resolve => {
         const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 1200;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            imageType = 'image/jpeg';
+            resolve(dataUrl.split(',')[1]);
+          };
+          img.src = e.target.result;
+        };
         reader.readAsDataURL(imgFile);
       });
     }
 
-    const res = await fetch('https://oracle-eye.vladislav-baydan.workers.dev/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, image: imageBase64, imageType: imgFile?.type }),
-    });
-    if (res.ok) {
+    // Try JSON first, fallback to FormData for mobile browsers (Keplr etc)
+    let res;
+    try {
+      res = await fetch('https://oracle-eye.vladislav-baydan.workers.dev/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, image: imageBase64, imageType: imageType }),
+      });
+    } catch(fetchErr) {
+      const fd = new FormData();
+      fd.append('message', msg);
+      if (imageBase64) { fd.append('image', imageBase64); fd.append('imageType', imageType); }
+      res = await fetch('https://oracle-eye.vladislav-baydan.workers.dev/feedback', {
+        method: 'POST', body: fd,
+      });
+    }
+    if (res && res.ok) {
       status.style.color = '#66ffaa';
       status.textContent = '✓ Sent! Thank you for your feedback.';
       btn.textContent = '✓ Sent';
       setTimeout(() => closeFeedbackModal(), 2000);
     } else {
-      throw new Error('Server error');
+      throw new Error('Server error ' + (res?.status || ''));
     }
   } catch(e) {
     status.style.color = '#ff6b6b';
