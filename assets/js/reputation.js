@@ -40,7 +40,7 @@ function renderRepPage(tab) {
         color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
         background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
       <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;">
-        ${tab === 'leaderboard' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="assets/icons/Leaderboard.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Leaderboard</span></span>' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="assets/icons/Stats.png" style="width:80px;height:80px;flex-shrink:0;display:block;mix-blend-mode:screen;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Your Stats</span></span>' : '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="assets/icons/How-it-works.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">How it Works</span></span>'}
+        ${tab === 'leaderboard' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/Leaderboard.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Leaderboard</span></span>' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/Stats.png" style="width:80px;height:80px;flex-shrink:0;display:block;mix-blend-mode:screen;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Your Stats</span></span>' : '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/How-it-works.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">How it Works</span></span>'}
       </h1>
       <p style="font-size:12px;color:var(--muted);">
         ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
@@ -57,7 +57,7 @@ function renderRepPage(tab) {
         color:${tab==='leaderboard' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="assets/icons/Leaderboard.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Leaderboard
+        <img src="/assets/icons/Leaderboard.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Leaderboard
       </button>
       <button onclick="showRepPage('stats')" style="
         background:${tab==='stats' ? 'rgba(84,147,247,0.12)' : 'transparent'};
@@ -65,7 +65,7 @@ function renderRepPage(tab) {
         color:${tab==='stats' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="assets/icons/Stats.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;mix-blend-mode:screen;"> Your Stats
+        <img src="/assets/icons/Stats.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;mix-blend-mode:screen;"> Your Stats
       </button>
       <button onclick="showRepPage('how')" style="
         background:${tab==='how' ? 'rgba(84,147,247,0.12)' : 'transparent'};
@@ -73,7 +73,7 @@ function renderRepPage(tab) {
         color:${tab==='how' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="assets/icons/How-it-works.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> How it Works
+        <img src="/assets/icons/How-it-works.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> How it Works
       </button>
     </div>
 
@@ -382,7 +382,7 @@ function renderStatsHTML(isConnected) {
             display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
-                ${{questions:'<img src="assets/icons/questions.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="assets/icons/answers.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="assets/icons/upvotes.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'<img src="assets/icons/chat-message.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Chat messages'}[k]}
+                ${{questions:'<img src="/assets/icons/questions.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="/assets/icons/answers.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="/assets/icons/upvotes.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'<img src="/assets/icons/chat-message.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Chat messages'}[k]}
               </div>
               <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
             </div>
@@ -394,7 +394,7 @@ function renderStatsHTML(isConnected) {
         <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
           display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img src="assets/icons/oracle-draw-mints.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Oracle Draw mints</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img src="/assets/icons/oracle-draw-mints.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Oracle Draw mints</div>
             <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-draw">…</div>
           </div>
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#ff8844;"
@@ -403,11 +403,11 @@ function renderStatsHTML(isConnected) {
       </div>
       <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
-        <img src="assets/icons/questions.png" style="width:25px;height:25px;vertical-align:middle;"> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
-        <img src="assets/icons/answers.png" style="width:25px;height:25px;vertical-align:middle;"> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
-        <img src="assets/icons/upvotes.png" style="width:25px;height:25px;vertical-align:middle;"> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
-        <img src="assets/icons/chat-message.png" style="width:25px;height:25px;vertical-align:middle;"> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
-        <img src="assets/icons/oracle-draw-mints.png" style="width:25px;height:25px;vertical-align:middle;"> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
+        <img src="/assets/icons/questions.png" style="width:25px;height:25px;vertical-align:middle;"> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
+        <img src="/assets/icons/answers.png" style="width:25px;height:25px;vertical-align:middle;"> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
+        <img src="/assets/icons/upvotes.png" style="width:25px;height:25px;vertical-align:middle;"> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
+        <img src="/assets/icons/chat-message.png" style="width:25px;height:25px;vertical-align:middle;"> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
+        <img src="/assets/icons/oracle-draw-mints.png" style="width:25px;height:25px;vertical-align:middle;"> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
