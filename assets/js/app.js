@@ -2311,7 +2311,10 @@ async function loadOracleBagNFTs(wallet) {
     const isNewArch = pool !== null;
     let used = false;
     if (isNewArch) {
-      used = pool === 'daily' ? !dailyActiveWallets.has(wallet) : !weeklyActiveWallets.has(wallet);
+      // Check by specific tokenId (not wallet) so only active NFTs show as active
+      const dailyIds  = window._oDailyActiveTokenIds  || new Set();
+      const weeklyIds = window._oWeeklyActiveTokenIds || new Set();
+      used = pool === 'daily' ? !dailyIds.has(String(tokenId)) : !weeklyIds.has(String(tokenId));
     }
     const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
     return {
@@ -2325,6 +2328,22 @@ async function loadOracleBagNFTs(wallet) {
 
   window._oBagNFTs = nfts;
 
+  // Fetch active tokenIds for this wallet
+  try {
+    const [dailyR, weeklyR] = await Promise.all([
+      oFetch(`${O_DRAW_WORKER}/my-entries?pool=daily&wallet=${wallet}`, {}, 2),
+      oFetch(`${O_DRAW_WORKER}/my-entries?pool=weekly&wallet=${wallet}`, {}, 2),
+    ]);
+    if (dailyR.ok) {
+      const dd = await dailyR.json();
+      window._oDailyActiveTokenIds = new Set((dd.activations || []).map(a => String(a.tokenId)));
+    }
+    if (weeklyR.ok) {
+      const wd = await weeklyR.json();
+      window._oWeeklyActiveTokenIds = new Set((wd.activations || []).map(a => String(a.tokenId)));
+    }
+  } catch(e) {}
+
   // Fetch entries from Draw Worker
   let dailyEntries = 0, weeklyEntries = 0;
   try {
@@ -2336,15 +2355,25 @@ async function loadOracleBagNFTs(wallet) {
     if (wr.status === 'fulfilled' && wr.value.ok) weeklyEntries = (await wr.value.json()).myEntries || 0;
   } catch(e) {}
 
-  // Fetch wins from Draw Worker
-  let totalWon = 0;
+  // Fetch wins from Draw Worker — count unique rounds
+  let totalWon = 0, wonDaily = 0, wonWeekly = 0;
   try {
     const wr = await oFetch(`${O_DRAW_WORKER}/my-wins?wallet=${wallet}`, {}, 2);
-    if (wr.ok) { const d = await wr.json(); totalWon = d.totalWins || d.wins?.length || 0; }
+    if (wr.ok) {
+      const d = await wr.json();
+      const wins = d.wins || [];
+      const dailyRounds  = new Set(wins.filter(w => w.pool === 'daily').map(w => w.roundId));
+      const weeklyRounds = new Set(wins.filter(w => w.pool === 'weekly').map(w => w.roundId));
+      wonDaily   = dailyRounds.size;
+      wonWeekly  = weeklyRounds.size;
+      totalWon   = wonDaily + wonWeekly;
+    }
   } catch(e) {}
 
   if (el('o-bag-stat-nfts'))   el('o-bag-stat-nfts').textContent   = nfts.length;
   if (el('o-bag-stat-won'))    el('o-bag-stat-won').textContent    = totalWon;
+  if (el('o-won-daily'))       el('o-won-daily').textContent       = wonDaily;
+  if (el('o-won-weekly'))      el('o-won-weekly').textContent      = wonWeekly;
   if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = dailyEntries;
   if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = weeklyEntries;
   if (el('o-bag-count'))       el('o-bag-count').textContent       = nfts.length;
@@ -2374,31 +2403,45 @@ async function loadOracleBagNFTs(wallet) {
     const hr = await oFetch(`${O_DRAW_WORKER}/my-history?wallet=${wallet}`, {}, 2);
     if (hr.ok) {
       const hdata = await hr.json();
-      const history = hdata.history || hdata.rounds || [];
+      const rawHistory = hdata.history || hdata.rounds || [];
+      // Filter admin resets, group by round
+      const filtered = rawHistory.filter(h => !(h.roundId||'').startsWith('admin_reset'));
+      const roundMap = new Map();
+      for (const h of filtered) {
+        const key = (h.pool||h.type) + ':' + (h.roundId||h.round);
+        if (!roundMap.has(key)) {
+          roundMap.set(key, { roundId: h.roundId||h.round, pool: h.pool||h.type, entries: 0, won: false, consumedAt: h.consumedAt });
+        }
+        const r = roundMap.get(key);
+        r.entries += (h.entries || 1);
+        if (h.won || h.result === 'won') r.won = true;
+      }
+      const history = Array.from(roundMap.values()).sort((a,b) => new Date(b.consumedAt) - new Date(a.consumedAt));
       const histTable = el('o-bag-hist-table');
       const histEmpty = el('o-bag-hist-empty');
       const histBody  = el('o-bag-hist-body');
       if (histBody && history.length) {
         if (histEmpty) histEmpty.style.display = 'none';
         if (histTable) histTable.style.display = 'table';
-        histBody.innerHTML = history.map(h => `
+        histBody.innerHTML = history.map(h => {
+          const date = h.consumedAt ? new Date(h.consumedAt).toLocaleDateString() : (h.roundId || '-');
+          const pool = (h.pool||'daily');
+          return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-            <td style="padding:12px 14px;color:var(--muted);">#${h.round || h.roundId || '-'}</td>
+            <td style="padding:12px 14px;color:var(--muted);font-size:12px;">${date}</td>
             <td style="padding:12px 14px;">
               <span style="font-size:9px;padding:2px 8px;border-radius:4px;
-                background:${(h.type||h.pool)==='daily'?'rgba(244,208,63,0.1)':'rgba(74,144,217,0.1)'};
-                color:${(h.type||h.pool)==='daily'?'#f4d03f':'#7eb8ff'};
-                border:1px solid ${(h.type||h.pool)==='daily'?'rgba(244,208,63,0.2)':'rgba(74,144,217,0.2)'};">
-                ${((h.type||h.pool||'').charAt(0).toUpperCase()+(h.type||h.pool||'').slice(1))}
+                background:${pool==='daily'?'rgba(244,208,63,0.1)':'rgba(74,144,217,0.1)'};
+                color:${pool==='daily'?'#f4d03f':'#7eb8ff'};
+                border:1px solid ${pool==='daily'?'rgba(244,208,63,0.2)':'rgba(74,144,217,0.2)'};">
+                ${pool.charAt(0).toUpperCase()+pool.slice(1)}
               </span>
             </td>
-            <td style="padding:12px 14px;font-family:monospace;font-size:11px;color:#f4d03f;">
-              ${h.nft || h.nftId ? ((h.nftTier||'NFT')+' #'+((h.nft||h.nftId||'').toString().slice(-5))) : '-'}
-            </td>
+            <td style="padding:12px 14px;text-align:center;font-size:12px;">${h.entries}</td>
             <td style="padding:12px 14px;">
-              ${h.won || h.result === 'won'
-                ? `<span style="color:#66ffaa;font-weight:700;">🏆 ${h.prize || h.amount || ''}</span>`
-                : `<span style="color:var(--muted);">-</span>`}
+              ${h.won
+                ? `<span style="color:#66ffaa;font-weight:700;">Won</span>`
+                : `<span style="color:var(--muted);">—</span>`}
             </td>
           </tr>`).join('');
       }
