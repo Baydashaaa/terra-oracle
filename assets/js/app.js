@@ -2426,8 +2426,10 @@ async function loadOracleBagNFTs(wallet) {
         histBody.innerHTML = history.map(h => {
           const date = h.consumedAt ? new Date(h.consumedAt).toLocaleDateString() : (h.roundId || '-');
           const pool = (h.pool||'daily');
-          return `
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          const won  = h.won
+            ? '<span style="color:#66ffaa;font-weight:700;">Won</span>'
+            : '<span style="color:var(--muted);">—</span>';
+          return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
             <td style="padding:12px 14px;color:var(--muted);font-size:12px;">${date}</td>
             <td style="padding:12px 14px;">
               <span style="font-size:9px;padding:2px 8px;border-radius:4px;
@@ -2438,12 +2440,9 @@ async function loadOracleBagNFTs(wallet) {
               </span>
             </td>
             <td style="padding:12px 14px;text-align:center;font-size:12px;">${h.entries}</td>
-            <td style="padding:12px 14px;">
-              ${h.won
-                ? `<span style="color:#66ffaa;font-weight:700;">Won</span>`
-                : `<span style="color:var(--muted);">—</span>`}
-            </td>
-          </tr>`).join('');
+            <td style="padding:12px 14px;">${won}</td>
+          </tr>`;
+        }).join('');
       }
     }
   } catch(e) {}
