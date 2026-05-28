@@ -428,7 +428,7 @@ function openProfile(skipHistory) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-profile').classList.add('active');
-  if (!skipHistory && history.pushState) history.pushState({ page: 'profile' }, '', '#profile');
+  if (!skipHistory && history.pushState) history.pushState({ page: 'profile' }, '', '/profile');
   try { sessionStorage.setItem('currentPage', 'profile'); } catch(e) {}
   smoothScrollTop();
   const addr = globalWalletAddress;
