@@ -3,15 +3,24 @@
 <head>
   <meta charset="utf-8">
   <script>
+    // GitHub Pages SPA redirect — сохраняем путь в sessionStorage, редиректим на /
     var path = window.location.pathname.replace(/^\//, '');
     var parts = path.split('/');
-    var validPages = ['home','board','ask','chat','vote','about','bag','treasury','reputation'];
+
+    var validPages = [
+      'home', 'board', 'ask', 'chat', 'vote', 'about',
+      'bag', 'treasury', 'reputation', 'profile'
+    ];
+
     var page = validPages.includes(parts[0]) ? parts[0] : 'home';
-    var hash = page;
+
+    // reputation/leaderboard, reputation/stats, reputation/profile etc.
     if (page === 'reputation' && parts[1]) {
-      hash = page + '/' + parts[1];
+      page = page + ':' + parts[1];
     }
-    window.location.replace('/#' + hash);
+
+    try { sessionStorage.setItem('currentPage', page); } catch(e) {}
+    window.location.replace('/');
   </script>
 </head>
 <body></body>
