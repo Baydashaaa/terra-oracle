@@ -304,7 +304,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const tab = savedPage.split(':')[1] || 'leaderboard';
     if (typeof showRepPage === 'function') showRepPage(tab, true);
   } else if (savedPage === 'profile') {
-    if (typeof openProfile === 'function') openProfile(true);
+    // profile.js loads after app.js — wait for openProfile to be defined
+    if (typeof openProfile === 'function') {
+      openProfile(true);
+    } else {
+      const t = setInterval(() => {
+        if (typeof openProfile === 'function') { clearInterval(t); openProfile(true); }
+      }, 50);
+      setTimeout(() => clearInterval(t), 3000); // safety timeout
+    }
   } else {
     showPage(savedPage || 'home', null, true);
   }
