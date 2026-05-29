@@ -76,7 +76,8 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
   const authInfoP = Buffer.concat([encodeField(1,2,signerP),encodeField(2,2,feeP)]);
   const signDocP  = Buffer.concat([encodeField(1,2,txBodyP),encodeField(2,2,authInfoP),encodeField(3,2,enc(CHAIN_ID)),encodeVarint((4<<3)|0),encodeVarint(accountNumber),encodeVarint((5<<3)|0),encodeVarint(sequence)]);
 
-  const { default: secp256k1 } = await import('tiny-secp256k1');
+  const eccMod = await import('tiny-secp256k1');
+  const secp256k1 = eccMod.default || eccMod;
   const sig = Buffer.from(secp256k1.sign(createHash('sha256').update(signDocP).digest(), privateKey));
   const txRawP = Buffer.concat([encodeField(1,2,txBodyP),encodeField(2,2,authInfoP),encodeField(3,2,sig)]);
 
