@@ -948,7 +948,9 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
   const sequence      = parseInt(acct.sequence || '0');
 
   const totalAmount = amount1 + amount2;
-  const gasLimit = 400000;
+  // Gas scales with memo length (WritePerByte). 400k was too tight — long
+  // questions hit out-of-gas at ~403k. 600k gives comfortable headroom.
+  const gasLimit = 600000;
   const gasFee   = Math.ceil(gasLimit * 28.325);
   const taxFee   = Math.ceil(totalAmount * 0.005);
   const totalFee = gasFee + taxFee;
