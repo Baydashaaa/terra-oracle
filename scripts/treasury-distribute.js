@@ -51,7 +51,7 @@ function bech32encode(prefix, words) {
   return prefix+'1'+[...words,...cs].map(x=>CHARSET[x]).join('');
 }
 function convertbits(data,fb,tb,pad=true){let a=0,b=0;const r=[],m=(1<<tb)-1;for(const v of data){a=((a<<fb)|v)&0xffffffff;b+=fb;while(b>=tb){b-=tb;r.push((a>>b)&m);}}if(pad&&b>0)r.push((a<<(tb-b))&m);return r;}
-function pubkeyToAddress(pk) { const s=createHash('sha256').update(pk).digest(),r=createHash('ripemd160').update(s).digest(); return bech32encode('terra',[0,...convertbits(r,8,5)]); }
+function pubkeyToAddress(pk) { const s=createHash('sha256').update(pk).digest(),r=createHash('ripemd160').update(s).digest(); return bech32encode('terra',convertbits(r,8,5)); }
 
 function encodeVarint(n) { n=Number(n);const b=[];while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return Buffer.from(b); }
 function encodeField(f,w,d) { const t=encodeVarint((f<<3)|w);if(w===2){return Buffer.concat([t,encodeVarint(d.length),d]);}return t; }
