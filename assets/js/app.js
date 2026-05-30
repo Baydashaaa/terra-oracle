@@ -1549,15 +1549,17 @@ function renderChatMessages(msgs) {
     return `
     <div class="chat-page-msg" id="msg-${m.txHash}" style="padding:14px 0;border-bottom:1px solid rgba(30,51,88,0.35);">
       <div style="display:flex;gap:12px;align-items:flex-start;">
-        <!-- Avatar -->
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.2),rgba(123,92,255,0.25));border:1px solid rgba(84,147,247,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+        <!-- Avatar (click → profile) -->
+        <div onclick="openUserProfile('${m.fullAddr || ''}')" title="View profile" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.2),rgba(123,92,255,0.25));border:1px solid rgba(84,147,247,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s;"
+          onmouseover="this.style.transform='scale(1.08)';this.style.borderColor='var(--accent)'"
+          onmouseout="this.style.transform='scale(1)';this.style.borderColor='rgba(84,147,247,0.2)'">
           ${avatarHtml}
         </div>
         <!-- Content -->
         <div style="flex:1;min-width:0;">
           <!-- Header row -->
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
-            <span style="font-size:13px;font-weight:700;color:var(--text);">${displayName}</span>
+            <span onclick="openUserProfile('${m.fullAddr || ''}')" style="font-size:13px;font-weight:700;color:var(--text);cursor:pointer;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${displayName}</span>
             ${rankBadge}
             <span style="font-size:9px;background:rgba(102,255,170,0.12);color:var(--green);padding:1px 7px;border-radius:4px;letter-spacing:0.05em;">✓ ON-CHAIN</span>
             ${m.amount ? `<span style="font-size:9px;color:var(--gold);background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.2);padding:1px 7px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
@@ -1598,6 +1600,95 @@ function renderChatMessages(msgs) {
   }).join('');
   requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
+
+// ── User profile modal (opened from chat avatar/name click) ──────────────────
+window.openUserProfile = async function(wallet) {
+  if (!wallet || !wallet.startsWith('terra1')) return;
+
+  // Remove any existing modal
+  const existing = document.getElementById('user-profile-modal');
+  if (existing) existing.remove();
+
+  const shortAddr = wallet.slice(0, 10) + '...' + wallet.slice(-6);
+  const rankBadge = (window._walletScores && typeof getRankBadgeHTML === 'function')
+    ? getRankBadgeHTML(window._walletScores[wallet] || 0) : '';
+
+  // Build modal shell with loading placeholders
+  const modal = document.createElement('div');
+  modal.id = 'user-profile-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);padding:20px;';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:linear-gradient(160deg,#0e1830,#0a1120);border:1px solid rgba(84,147,247,0.25);border-radius:16px;max-width:420px;width:100%;padding:0;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="padding:22px 22px 18px;border-bottom:1px solid rgba(30,51,88,0.5);position:relative;">
+        <button onclick="document.getElementById('user-profile-modal').remove()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;color:var(--muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;">✕</button>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.25),rgba(123,92,255,0.3));border:1px solid rgba(84,147,247,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="font-size:17px;font-weight:700;color:var(--accent);">${wallet.slice(0,2).toUpperCase()}</span>
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">${shortAddr}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${rankBadge}<span style="font-size:9px;background:rgba(102,255,170,0.12);color:var(--green);padding:1px 7px;border-radius:4px;">✓ ON-CHAIN</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:20px 22px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div style="text-align:center;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.15);border-radius:12px;padding:14px 8px;">
+            <div id="up-rep" style="font-size:22px;font-weight:800;color:var(--accent);font-family:Rajdhani,sans-serif;">…</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">REP</div>
+          </div>
+          <div style="text-align:center;background:rgba(245,197,24,0.06);border:1px solid rgba(245,197,24,0.15);border-radius:12px;padding:14px 8px;">
+            <div id="up-draw" style="font-size:22px;font-weight:800;color:var(--gold);font-family:Rajdhani,sans-serif;">…</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">DRAW REP</div>
+          </div>
+          <div style="text-align:center;background:rgba(123,92,255,0.06);border:1px solid rgba(123,92,255,0.15);border-radius:12px;padding:14px 8px;">
+            <div id="up-nfts" style="font-size:22px;font-weight:800;color:#9d7bff;font-family:Rajdhani,sans-serif;">…</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">NFTs</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px;">
+          <div style="text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 8px;">
+            <div id="up-chat" style="font-size:18px;font-weight:700;color:var(--text);font-family:Rajdhani,sans-serif;">…</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">CHAT MESSAGES</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 8px;">
+            <div id="up-streak" style="font-size:18px;font-weight:700;color:var(--text);font-family:Rajdhani,sans-serif;">…</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">STREAK 🔥</div>
+          </div>
+        </div>
+        <a href="https://finder.terraport.finance/classic/address/${wallet}" target="_blank" style="display:block;text-align:center;margin-top:16px;font-size:11px;color:var(--accent);text-decoration:none;">🔗 View wallet on Finder</a>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Fetch stats in parallel; fill in as they resolve (each independently)
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  // Draw REP
+  fetch(`${WORKER_URL}/rep/draw?wallet=${wallet}`).then(r => r.json()).then(d => {
+    setText('up-draw', (d && d.total ? d.total : 0).toLocaleString());
+  }).catch(() => setText('up-draw', '0'));
+
+  // Total REP (from weekly score map if present, else draw rep)
+  const totalRep = (window._walletScores && window._walletScores[wallet]) || 0;
+  setText('up-rep', totalRep.toLocaleString());
+
+  // Chat messages + streak
+  fetch(`${WORKER_URL}/chat/count?wallet=${wallet}`).then(r => r.json()).then(d => {
+    setText('up-chat', (d && d.total ? d.total : 0).toLocaleString());
+  }).catch(() => setText('up-chat', '0'));
+
+  fetch(`${WORKER_URL}/streak?wallet=${wallet}`).then(r => r.json()).then(d => {
+    setText('up-streak', (d && d.currentStreak ? d.currentStreak : 0) + 'd');
+  }).catch(() => setText('up-streak', '0d'));
+
+  // NFT count (via Oracle Draw / Paco API)
+  fetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`).then(r => r.json()).then(d => {
+    const n = (d && (d.total_owned ?? (Array.isArray(d.nfts) ? d.nfts.length : 0))) || 0;
+    setText('up-nfts', n.toLocaleString());
+  }).catch(() => setText('up-nfts', '—'));
+};
 
 async function loadChatFromChain() {
   const container = document.getElementById('chat-page-messages');
