@@ -1,0 +1,18 @@
+name: Treasury Diagnose
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - name: Run diagnose
+        env:
+          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC }}
+        run: node scripts/treasury-diagnose.js
