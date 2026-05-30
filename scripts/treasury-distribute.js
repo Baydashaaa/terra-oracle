@@ -56,12 +56,8 @@ function pubkeyToAddress(pk) { const s=createHash('sha256').update(pk).digest(),
 function encodeVarint(n) { n=Number(n);const b=[];while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return Buffer.from(b); }
 function encodeField(f,w,d) { const t=encodeVarint((f<<3)|w);if(w===2){return Buffer.concat([t,encodeVarint(d.length),d]);}return t; }
 
-async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo) {
+async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
   const enc = s => Buffer.from(s);
-  const accRes = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${fromAddr}`);
-  const acct = (await accRes.json())?.account || {};
-  const accountNumber = parseInt(acct.account_number||'0');
-  const sequence      = parseInt(acct.sequence||'0');
   const totalFee = Math.ceil(GAS_LIMIT*GAS_PRICE) + Math.ceil(Number(amountUluna)*0.005);
 
   const coinP   = Buffer.concat([encodeField(1,2,enc('uluna')),encodeField(2,2,enc(String(amountUluna)))]);
@@ -121,15 +117,25 @@ async function run() {
   if (sender !== WALLETS.treasury) throw new Error(`Address mismatch: got ${sender}`);
   console.log(`\nSigner: ${sender}`);
 
+  // Fetch account ONCE up front. sendTokens needs accountNumber + sequence;
+  // we increment sequence manually per tx (BROADCAST_MODE_SYNC returns before
+  // the node updates sequence, so re-reading it between sends is unreliable).
+  const accRes = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${sender}`);
+  const acct   = (await accRes.json())?.account || {};
+  const accountNumber = parseInt(acct.account_number || '0');
+  let   sequence      = parseInt(acct.sequence || '0');
+  console.log(`Account #${accountNumber}, starting sequence ${sequence}`);
+
   let ok = 0;
   for (const [key, to] of [['rewards',WALLETS.rewards],['reserve',WALLETS.reserve],['liquidity',WALLETS.liquidity],['dev',WALLETS.dev]]) {
     const amount = amounts[key];
     if (!amount || amount <= 0) continue;
-    console.log(`\nSending ${(amount/1_000_000).toLocaleString()} LUNC → ${key}...`);
+    console.log(`\nSending ${(amount/1_000_000).toLocaleString()} LUNC → ${key} (seq ${sequence})...`);
     try {
-      const txHash = await sendTokens(privateKey, publicKey, sender, to, amount, `Treasury: ${key} ${DISTRIBUTION[key]*100}%`);
+      const txHash = await sendTokens(privateKey, publicKey, sender, to, amount, `Treasury: ${key} ${DISTRIBUTION[key]*100}%`, accountNumber, sequence);
       console.log(`  OK: ${txHash}`);
       ok++;
+      sequence++;   // advance for next tx (only on success)
     } catch(e) { console.error(`  FAILED: ${e.message}`); }
     await new Promise(r => setTimeout(r, 6000));
   }
