@@ -1665,7 +1665,62 @@ function renderChatMessages(msgs) {
   requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
   // Pull shared reactions from the Worker and refresh the rows
   loadChatReactions(msgs.map(m => m.txHash).filter(Boolean));
+  // Build the participants panel from everyone who has posted
+  renderChatParticipants(msgs);
 }
+
+// ── Chat participants panel (desktop side + mobile drawer) ───────────────────
+function renderChatParticipants(msgs) {
+  // Unique wallets in order of most recent activity
+  const seen = new Set();
+  const wallets = [];
+  for (const m of msgs) {
+    const w = m.fullAddr;
+    if (w && w.startsWith('terra1') && !seen.has(w)) { seen.add(w); wallets.push(w); }
+  }
+  const count = wallets.length;
+
+  const rowHtml = (w) => {
+    const short = w.slice(0, 8) + '...' + w.slice(-4);
+    const init = w.slice(0, 2).toUpperCase();
+    const rankHtml = (window._walletScores && typeof getRankBadgeHTML === 'function')
+      ? getRankBadgeHTML(window._walletScores[w] || 0) : '';
+    return `<div class="chat-participant" onclick="openUserProfile('${w}')">
+      <div class="cp-av">${init}</div>
+      <div style="min-width:0;">
+        <div class="cp-addr">${short}</div>
+        ${rankHtml ? `<div class="cp-rank">${rankHtml}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const listHtml = wallets.length
+    ? wallets.map(rowHtml).join('')
+    : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">No messages yet</div>';
+
+  // Desktop side panel
+  const sideList = document.getElementById('chat-participants-list');
+  if (sideList) sideList.innerHTML = listHtml;
+  const sideCount = document.getElementById('chat-participants-count');
+  if (sideCount) sideCount.textContent = count;
+
+  // Mobile drawer + button count
+  const drawerList = document.getElementById('chat-drawer-list');
+  if (drawerList) drawerList.innerHTML = listHtml;
+  const drawerCount = document.getElementById('chat-drawer-count');
+  if (drawerCount) drawerCount.textContent = count;
+  const mobileCount = document.getElementById('chat-mobile-pcount');
+  if (mobileCount) mobileCount.textContent = count;
+}
+
+window.openChatParticipants = function() {
+  document.getElementById('chat-drawer-overlay')?.classList.add('open');
+  document.getElementById('chat-drawer')?.classList.add('open');
+};
+window.closeChatParticipants = function() {
+  document.getElementById('chat-drawer-overlay')?.classList.remove('open');
+  document.getElementById('chat-drawer')?.classList.remove('open');
+};
 
 // ── User profile modal (opened from chat avatar/name click) ──────────────────
 window.openUserProfile = async function(wallet) {
