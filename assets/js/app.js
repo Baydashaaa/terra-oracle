@@ -1749,11 +1749,30 @@ window.openUserProfile = async function(wallet) {
     setText('up-streak', (d && d.currentStreak ? d.currentStreak : 0) + 'd');
   }).catch(() => setText('up-streak', '0d'));
 
-  // NFT count (via Oracle Draw / Paco API)
-  fetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`).then(r => r.json()).then(d => {
-    const n = (d && (d.total_owned ?? (Array.isArray(d.nfts) ? d.nfts.length : 0))) || 0;
-    setText('up-nfts', n.toLocaleString());
-  }).catch(() => setText('up-nfts', '—'));
+  // NFT count — query the CW721 contracts directly via LCD (fast, no Paco/CORS).
+  // Sums Daily + Weekly Oracle Mask collections owned by this wallet.
+  (async () => {
+    const LCD = 'https://terra-classic-lcd.publicnode.com';
+    const CONTRACTS = [
+      'terra1py527m8kv3473gs8kfjez0qjm0yxgm7jjpv6v5ct3scvrvdvx8pqswyea0', // Daily
+      'terra1jkl6r2d9sycvm3zg8l9y6lwcqsr8mfy24mxxe7utqgn0sv7ljnhq9ka49p', // Weekly
+    ];
+    try {
+      const counts = await Promise.all(CONTRACTS.map(async (c) => {
+        try {
+          const q = btoa(JSON.stringify({ tokens: { owner: wallet, limit: 100 } }));
+          const r = await fetch(`${LCD}/cosmwasm/wasm/v1/contract/${c}/smart/${q}`, { signal: AbortSignal.timeout(8000) });
+          if (!r.ok) return 0;
+          const d = await r.json();
+          return Array.isArray(d.data?.tokens) ? d.data.tokens.length : 0;
+        } catch(e) { return 0; }
+      }));
+      const total = counts.reduce((s, n) => s + n, 0);
+      setText('up-nfts', total.toLocaleString());
+    } catch(e) {
+      setText('up-nfts', '—');
+    }
+  })();
 };
 
 async function loadChatFromChain() {
