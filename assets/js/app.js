@@ -1474,24 +1474,90 @@ const FCD_NODES = [
 
 const CHAT_REACTIONS = ['🔥','👍','🚀','💎','❤️'];
 
-function getChatReactions() { try { return JSON.parse(localStorage.getItem('chat_reactions') || '{}'); } catch(e) { return {}; } }
-function saveChatReactions(r) { localStorage.setItem('chat_reactions', JSON.stringify(r)); }
+// ── Chat reactions (server-backed via Worker) ────────────────────────────────
+// Reactions live in the Worker KV (chat-react:<txHash>) so they're shared by
+// everyone and survive cache clears / device changes. We keep an in-memory
+// cache for the current render: { txHash: { emoji: { count, voters:[...] } } }
+window._chatReactions = {};
 
-function toggleReaction(txHash, emoji) {
-  const all = getChatReactions();
-  const key = txHash + '_' + emoji;
-  const myReactions = JSON.parse(localStorage.getItem('my_chat_reactions') || '{}');
-  if (myReactions[key]) { all[key] = Math.max(0, (all[key] || 1) - 1); delete myReactions[key]; }
-  else { all[key] = (all[key] || 0) + 1; myReactions[key] = true; }
-  saveChatReactions(all);
-  localStorage.setItem('my_chat_reactions', JSON.stringify(myReactions));
-  const row = document.getElementById('reactions-' + txHash);
-  if (row) row.outerHTML = buildReactionsRow(txHash, all, myReactions);
+function getMyWallet() { return globalWalletAddress || connectedAddress || null; }
+
+// Fetch reactions for the currently shown messages, then re-render the rows.
+async function loadChatReactions(txHashes) {
+  const hashes = (txHashes || []).filter(Boolean);
+  if (!hashes.length) return;
+  try {
+    const res = await fetch(`${WORKER_URL}/chat/reactions?txHashes=${encodeURIComponent(hashes.join(','))}`, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return;
+    const data = await res.json();
+    window._chatReactions = data || {};
+    // Re-render each reaction row in place
+    for (const h of hashes) {
+      const row = document.getElementById('reactions-' + h);
+      if (row) row.outerHTML = buildReactionsRow(h);
+    }
+  } catch(e) { /* network issue — keep whatever we had */ }
 }
 
-function buildReactionsRow(txHash, all, myReactions) {
-  const counts = CHAT_REACTIONS.map(e => { const key = txHash+'_'+e; return { e, count: all[key]||0, mine: myReactions[key], key }; });
-  const active = counts.filter(r => r.count > 0);
+async function toggleReaction(txHash, emoji) {
+  const wallet = getMyWallet();
+  if (!wallet) { alert('Connect wallet to react'); return; }
+
+  // Optimistic update on the in-memory cache
+  const r = window._chatReactions[txHash] || (window._chatReactions[txHash] = {});
+  const cell = r[emoji] || { count: 0, voters: [] };
+  const had = cell.voters.includes(wallet);
+  if (had) { cell.voters = cell.voters.filter(w => w !== wallet); cell.count = cell.voters.length; }
+  else { cell.voters = [...cell.voters, wallet]; cell.count = cell.voters.length; }
+  if (cell.count === 0) delete r[emoji]; else r[emoji] = cell;
+
+  const row = document.getElementById('reactions-' + txHash);
+  if (row) row.outerHTML = buildReactionsRow(txHash);
+
+  // Persist to Worker; roll back on failure
+  try {
+    const res = await fetch(`${WORKER_URL}/chat/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ txHash, emoji, wallet }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error('react failed: ' + res.status);
+    const d = await res.json();
+    // Adopt the server's authoritative count for this emoji
+    const rr = window._chatReactions[txHash] || (window._chatReactions[txHash] = {});
+    if (d.count > 0) {
+      const existing = rr[emoji] || { voters: [] };
+      // keep voters list roughly in sync (server is source of truth on count)
+      if (d.reacted && !existing.voters.includes(wallet)) existing.voters.push(wallet);
+      if (!d.reacted) existing.voters = existing.voters.filter(w => w !== wallet);
+      existing.count = d.count;
+      rr[emoji] = existing;
+    } else {
+      delete rr[emoji];
+    }
+    const row2 = document.getElementById('reactions-' + txHash);
+    if (row2) row2.outerHTML = buildReactionsRow(txHash);
+  } catch(e) {
+    // Roll back the optimistic change
+    const rb = window._chatReactions[txHash] || {};
+    const c = rb[emoji] || { count: 0, voters: [] };
+    if (had) { if (!c.voters.includes(wallet)) c.voters.push(wallet); }
+    else { c.voters = c.voters.filter(w => w !== wallet); }
+    c.count = c.voters.length;
+    if (c.count === 0) delete rb[emoji]; else rb[emoji] = c;
+    window._chatReactions[txHash] = rb;
+    const row3 = document.getElementById('reactions-' + txHash);
+    if (row3) row3.outerHTML = buildReactionsRow(txHash);
+  }
+}
+
+function buildReactionsRow(txHash) {
+  const wallet = getMyWallet();
+  const r = window._chatReactions[txHash] || {};
+  const active = CHAT_REACTIONS
+    .map(e => { const cell = r[e]; return cell && cell.count > 0 ? { e, count: cell.count, mine: wallet && cell.voters.includes(wallet) } : null; })
+    .filter(Boolean);
   return `<div id="reactions-${txHash}" class="chat-reactions-row">
     ${active.map(r => `<button class="chat-reaction ${r.mine?'my-reaction':''}" onclick="toggleReaction('${txHash}','${r.e}')">${r.e} <span>${r.count}</span></button>`).join('')}
     <div class="reaction-picker-wrap">
@@ -1510,8 +1576,6 @@ function renderChatMessages(msgs) {
     container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:60px 20px;"><div style="font-size:32px;margin-bottom:12px;">💬</div>No messages yet - be the first to speak!</div>';
     return;
   }
-  const all = getChatReactions();
-  const myReactions = JSON.parse(localStorage.getItem('my_chat_reactions') || '{}');
 
   container.innerHTML = msgs.map(m => {
     const displayName = _getDisplayName(m.fullAddr, m.author);
@@ -1583,7 +1647,7 @@ function renderChatMessages(msgs) {
           <!-- Message text -->
           <div style="font-size:14px;line-height:1.65;color:rgba(232,240,255,0.92);word-break:break-word;">${m.text}</div>
           <!-- Reactions -->
-          ${buildReactionsRow(m.txHash, all, myReactions)}
+          ${buildReactionsRow(m.txHash)}
           <!-- Reply button -->
           <button
             data-reply-txhash="${m.txHash}"
@@ -1599,6 +1663,8 @@ function renderChatMessages(msgs) {
     </div>`;
   }).join('');
   requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+  // Pull shared reactions from the Worker and refresh the rows
+  loadChatReactions(msgs.map(m => m.txHash).filter(Boolean));
 }
 
 // ── User profile modal (opened from chat avatar/name click) ──────────────────
