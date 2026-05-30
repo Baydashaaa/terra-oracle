@@ -70,7 +70,7 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
   const feeCoinP  = Buffer.concat([encodeField(1,2,enc('uluna')),encodeField(2,2,enc(String(totalFee)))]);
   const feeP      = Buffer.concat([encodeField(1,2,feeCoinP),encodeVarint((2<<3)|0),encodeVarint(GAS_LIMIT)]);
   const authInfoP = Buffer.concat([encodeField(1,2,signerP),encodeField(2,2,feeP)]);
-  const signDocP  = Buffer.concat([encodeField(1,2,txBodyP),encodeField(2,2,authInfoP),encodeField(3,2,enc(CHAIN_ID)),encodeVarint((4<<3)|0),encodeVarint(accountNumber),encodeVarint((5<<3)|0),encodeVarint(sequence)]);
+  const signDocP  = Buffer.concat([encodeField(1,2,txBodyP),encodeField(2,2,authInfoP),encodeField(3,2,enc(CHAIN_ID)),encodeVarint((4<<3)|0),encodeVarint(accountNumber)]);
 
   const eccMod = await import('tiny-secp256k1');
   const secp256k1 = eccMod.default || eccMod;
