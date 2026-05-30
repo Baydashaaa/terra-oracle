@@ -2142,24 +2142,65 @@ function loadVotesFromStorage() { const key = getVoteStorageKey(); if (!key) ret
 function saveVoteToStorage(voteId, optionIdx) { const key = getVoteStorageKey(); if (!key) return; const votes = loadVotesFromStorage(); votes[voteId] = optionIdx; localStorage.setItem(key, JSON.stringify(votes)); }
 function applyStoredVotes() { const votes = loadVotesFromStorage(); for (const vote of VOTES_DATA) { vote.userVoted = votes[vote.id] !== undefined ? votes[vote.id] : null; } }
 
-function castVote(voteId, optionIdx) {
+async function castVote(voteId, optionIdx) {
   if (!globalWalletAddress) { alert('Connect Keplr wallet to vote!'); return; }
   if (optionIdx === -1) return;
   const vote = VOTES_DATA.find(v => v.id === voteId);
   if (!vote || vote.userVoted !== null) return;
   if (vote.status === 'upcoming') { alert('Voting is not open yet! Check back on the 20th.'); return; }
-  // Optimistic update
+  if (vote._voting) return; // guard against double-click while a vote is in flight
+  vote._voting = true;
+
+  // Optimistic update — show it immediately, but be ready to roll back.
+  const prevVotes  = vote.options[optionIdx].votes;
+  const prevTotal  = vote.totalVotes;
   vote.options[optionIdx].votes++; vote.totalVotes++; vote.userVoted = optionIdx;
   saveVoteToStorage(voteId, optionIdx);
   if (vote.isMonthlyLiquidity && vote.voteKey) { try { localStorage.setItem(vote.voteKey, JSON.stringify({ totalVotes: vote.totalVotes, options: vote.options.map(o => o.votes) })); } catch(e) {} }
   renderVotes();
-  // Persist to Worker for server-side count
-  fetch(`${WORKER_URL}/votes/cast`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ voteId, optionIdx, wallet: globalWalletAddress }),
-    signal: AbortSignal.timeout(6000),
-  }).catch(() => {});
+
+  // Persist to Worker — the server is the source of truth. Only KEEP the vote
+  // if the server confirms it; otherwise roll back so the count stays honest.
+  try {
+    const res = await fetch(`${WORKER_URL}/votes/cast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voteId, optionIdx, wallet: globalWalletAddress }),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (res.ok) {
+      // Confirmed. Adopt the server's authoritative total if provided.
+      try { const d = await res.json(); if (d && typeof d.totalVotes === 'number') vote.totalVotes = d.totalVotes; } catch(e) {}
+      vote._voting = false;
+      renderVotes();
+      return;
+    }
+
+    // 409 = this wallet already voted on the server (e.g. from another device).
+    // Keep the "voted" state but refresh real numbers from the server.
+    if (res.status === 409) {
+      vote._voting = false;
+      await loadVotesFromWorker();
+      return;
+    }
+
+    // Any other error (vote closed, server error) → roll back the optimistic vote.
+    throw new Error('cast rejected: ' + res.status);
+  } catch (e) {
+    // Roll back — the vote did NOT register on the server.
+    vote.options[optionIdx].votes = prevVotes;
+    vote.totalVotes = prevTotal;
+    vote.userVoted = null;
+    vote._voting = false;
+    // Clear the local "voted" marker so the user can try again.
+    try {
+      const key = getVoteStorageKey();
+      if (key) { const stored = loadVotesFromStorage(); delete stored[voteId]; localStorage.setItem(key, JSON.stringify(stored)); }
+    } catch(e2) {}
+    renderVotes();
+    alert('Your vote could not be submitted (network issue). Please try again.');
+  }
 }
 
 
