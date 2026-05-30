@@ -74,13 +74,8 @@ function pubkeyToAddress(pubkey) {
 function encodeVarint(n) { n=Number(n);const b=[];while(n>127){b.push((n&0x7f)|0x80);n=Math.floor(n/128);}b.push(n&0x7f);return Buffer.from(b); }
 function encodeField(f,w,d) { const t=encodeVarint((f<<3)|w);if(w===2){const l=encodeVarint(d.length);return Buffer.concat([t,l,d]);}return t; }
 
-async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo) {
+async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
   const enc = s => Buffer.from(s);
-  const accRes  = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${fromAddr}`);
-  const accData = await accRes.json();
-  const acct    = accData?.account || {};
-  const accountNumber = parseInt(acct.account_number||'0');
-  const sequence      = parseInt(acct.sequence||'0');
   const gasFee   = Math.ceil(GAS_LIMIT*GAS_PRICE);
   const taxFee   = Math.ceil(amountUluna*0.005);
   const totalFee = gasFee+taxFee;
@@ -186,11 +181,20 @@ async function main() {
   let successCount=0, failCount=0;
   const week = new Date().toISOString().slice(0,10);
 
+  // Read account ONCE; increment sequence manually per tx (SYNC broadcast
+  // returns before the node updates sequence, so re-reading between fast
+  // sends gives a stale value → "account sequence mismatch").
+  const accRes = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${sender}`);
+  const acct   = (await accRes.json())?.account || {};
+  const accountNumber = parseInt(acct.account_number || '0');
+  let   sequence      = parseInt(acct.sequence || '0');
+
   for (const payout of payouts) {
     try {
-      const txHash = await sendTokens(privateKey, publicKey, sender, payout.wallet, payout.uluna, `rep-rewards:${week}`);
+      const txHash = await sendTokens(privateKey, publicKey, sender, payout.wallet, payout.uluna, `rep-rewards:${week}`, accountNumber, sequence);
       console.log(`✅ ${(payout.uluna/1e6).toFixed(3)} LUNC → ${payout.wallet.slice(0,20)}... | tx: ${txHash}`);
       successCount++;
+      sequence++;   // advance only on success
       await new Promise(r=>setTimeout(r,3000));
     } catch(err) {
       console.error(`❌ Error for ${payout.wallet}: ${err.message}`);
