@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202605310128">
+  <link rel="stylesheet" href="assets/css/style.css?v=202605310145">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -240,14 +240,14 @@
 @media(min-width:901px){
   .page#page-chat.active{display:flex;flex-direction:column;height:calc(100vh - 110px);padding:16px 24px 24px!important;}
   .page#page-chat .chat-desktop-header{display:none!important;}
-  #chat-shell{flex:1;display:grid;grid-template-columns:96px 1fr 220px;gap:0;min-height:0;overflow:hidden;}
-  #chat-accent{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;background:transparent;border:none;}
+  #chat-shell{flex:1;display:grid;grid-template-columns:96px 1fr 220px;gap:14px;min-height:0;overflow:hidden;}
+  #chat-accent{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:16px 0;border:1px solid rgba(232,200,64,0.18);border-radius:14px;background:rgba(232,200,64,0.03);}
   #chat-accent span{font-family:'Exo 2',monospace;font-size:clamp(40px,5vw,58px);font-weight:700;color:rgba(232,200,64,0.16);line-height:0.8;}
   #chat-center{display:flex;flex-direction:column;min-height:0;min-width:0;padding:0 20px;}
   #chat-page-messages{flex:1;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(123,92,255,0.4) transparent;}
   #chat-page-messages .chat-page-msg:first-child{margin-top:auto;}
   #chat-input-bar{flex-shrink:0;}
-  #chat-participants{border:none;background:transparent;padding:14px 12px;overflow-y:auto;display:flex;flex-direction:column;}
+  #chat-participants{border:1px solid rgba(84,147,247,0.18);border-radius:14px;background:rgba(84,147,247,0.03);padding:14px 12px;overflow-y:auto;display:flex;flex-direction:column;}
   #chat-cost-card{background:rgba(232,200,64,0.08);border:1px solid rgba(232,200,64,0.18);border-radius:8px;padding:9px 11px;margin-bottom:14px;text-align:center;}
   .cc-label{font-size:9px;color:var(--gold);letter-spacing:0.08em;opacity:0.7;}
   .cc-value{font-size:16px;font-weight:700;color:var(--gold);font-family:monospace;margin-top:2px;}
@@ -1911,10 +1911,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202605310128"></script>
-  <script src="assets/js/app.js?v=202605310128"></script>
-  <script src="assets/js/profile.js?v=202605310128"></script>
-  <script src="assets/js/reputation.js?v=202605310128"></script>
+  <script src="assets/js/treasury.js?v=202605310145"></script>
+  <script src="assets/js/app.js?v=202605310145"></script>
+  <script src="assets/js/profile.js?v=202605310145"></script>
+  <script src="assets/js/reputation.js?v=202605310145"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
