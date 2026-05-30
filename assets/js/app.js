@@ -1671,12 +1671,19 @@ function renderChatMessages(msgs) {
 
 // ── Chat participants panel (desktop side + mobile drawer) ───────────────────
 function renderChatParticipants(msgs) {
-  // Unique wallets in order of most recent activity
+  // "Recently active" — wallets that posted in the last 24 hours.
+  // Fully on-chain: derived from message timestamps, no tracking server.
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - DAY_MS;
   const seen = new Set();
   const wallets = [];
-  for (const m of msgs) {
+  // Newest first so the most recently active appear on top
+  for (const m of [...msgs].sort((a, b) => (b.ts || 0) - (a.ts || 0))) {
     const w = m.fullAddr;
-    if (w && w.startsWith('terra1') && !seen.has(w)) { seen.add(w); wallets.push(w); }
+    if (!w || !w.startsWith('terra1')) continue;
+    if ((m.ts || 0) < cutoff) continue;       // older than 24h — skip
+    if (seen.has(w)) continue;
+    seen.add(w); wallets.push(w);
   }
   const count = wallets.length;
 
@@ -1696,7 +1703,8 @@ function renderChatParticipants(msgs) {
 
   const listHtml = wallets.length
     ? wallets.map(rowHtml).join('')
-    : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">No messages yet</div>';
+    : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;">No one active in the last 24h</div>';
+
 
   // Desktop side panel
   const sideList = document.getElementById('chat-participants-list');
