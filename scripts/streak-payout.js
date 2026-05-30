@@ -105,15 +105,8 @@ function encodeField(f, w, d) {
 }
 function concat(...a) { return Buffer.concat(a); }
 
-async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo) {
+async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
   const enc = (s) => Buffer.from(s);
-
-  // Get account info
-  const accRes  = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${fromAddr}`);
-  const accData = await accRes.json();
-  const acct    = accData?.account || {};
-  const accountNumber = parseInt(acct.account_number || '0');
-  const sequence      = parseInt(acct.sequence || '0');
 
   const gasFee   = Math.ceil(GAS_LIMIT * GAS_PRICE);
   const taxFee   = Math.ceil(amountUluna * 0.005);
@@ -215,6 +208,14 @@ async function main() {
   // 4. Process payouts
   let successCount = 0, failCount = 0;
 
+  // Read account ONCE; increment sequence manually per tx (SYNC broadcast
+  // returns before the node updates sequence — re-reading between fast sends
+  // gives a stale value → "account sequence mismatch").
+  const accRes2 = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${sender}`);
+  const acct2   = (await accRes2.json())?.account || {};
+  const accountNumber = parseInt(acct2.account_number || '0');
+  let   sequence      = parseInt(acct2.sequence || '0');
+
   for (const payout of payouts) {
     try {
       console.log(`\n⏳ ${payout.wallet.slice(0,20)}... milestone=${payout.milestone} amount=${(payout.amount/1e6).toFixed(3)} LUNC`);
@@ -222,10 +223,12 @@ async function main() {
       const txHash = await sendTokens(
         privateKey, publicKey, sender, payout.to,
         payout.amount,
-        `streak:milestone:${payout.milestone}`
+        `streak:milestone:${payout.milestone}`,
+        accountNumber, sequence
       );
 
       console.log(`✅ Paid → ${payout.to} | tx: ${txHash}`);
+      sequence++;   // advance only on success
 
       const markRes = await safeFetch(`${WORKER_URL}/streak/mark-paid`, {
         method:  'POST',
