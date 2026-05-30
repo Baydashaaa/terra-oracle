@@ -83,7 +83,7 @@ function convertbits(data, frombits, tobits, pad = true) {
 function pubkeyToAddress(pubkey) {
   const sha256 = createHash('sha256').update(pubkey).digest();
   const ripemd160 = createHash('ripemd160').update(sha256).digest();
-  const words = [0, ...convertbits(ripemd160, 8, 5)];
+  const words = convertbits(ripemd160, 8, 5);
   return bech32encode('terra', words);
 }
 
@@ -145,12 +145,12 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
     encodeField(1, 2, txBodyP),
     encodeField(2, 2, authInfoP),
     encodeField(3, 2, enc(CHAIN_ID)),
-    encodeVarint((4 << 3) | 0), encodeVarint(accountNumber),
-    encodeVarint((5 << 3) | 0), encodeVarint(sequence)
+    encodeVarint((4 << 3) | 0), encodeVarint(accountNumber)
   );
 
   // Sign
-  const { default: secp256k1 } = await import('tiny-secp256k1');
+  const eccMod = await import('tiny-secp256k1');
+  const secp256k1 = eccMod.default || eccMod;
   const msgHash = createHash('sha256').update(signDocP).digest();
   const sigObj  = secp256k1.sign(msgHash, privateKey);
   const sig     = Buffer.from(sigObj);
