@@ -816,31 +816,7 @@ async function connectKeplr() {
     connectedAddress = accounts[0].address;
     // Update Pay button - async fetch real title from worker
     const _addr = accounts[0].address;
-    {
-      // Price preview on the button. Discount = rank (by REP) + streak (7+ days), summed.
-      (async () => {
-        let _rankD = 0, _streakD = 0;
-        try {
-          let _rep = (window._walletScores && window._walletScores[_addr]) || 0;
-          if (!_rep) {
-            try { const _rr = await fetch(`${WORKER_URL}/rep?wallet=${_addr}`); if (_rr.ok) { const _rd = await _rr.json(); _rep = _rd.total || _rd.score || _rd.rep || 0; } } catch(e) {}
-          }
-          if (typeof getRank === 'function') { const _rk = getRank(_rep); _rankD = (_rk && _rk.discount) ? _rk.discount : 0; }
-        } catch(e) {}
-        try {
-          const _sr = await fetch(`${WORKER_URL}/streak?wallet=${_addr}`);
-          if (_sr.ok) { const _sd = await _sr.json(); if ((_sd.currentStreak || 0) >= 7) _streakD = 25; }
-        } catch(e) {}
-        const _discPct = Math.min(_rankD + _streakD, 50);
-        const _discAmt = Math.round(200000 * (_discPct / 100));
-        const _price   = 200000 - _discAmt;
-        const _btnEl   = document.getElementById('verify-btn');
-        if (_btnEl) {
-          const _disc = _discPct > 0 ? ` (${_discPct}% off)` : '';
-          _btnEl.textContent = `Pay ${_price.toLocaleString()} LUNC & Unlock →${_disc}`;
-        }
-      })();
-    }
+    if (typeof updateVerifyBtnPrice === 'function') updateVerifyBtnPrice(_addr);
     document.getElementById('connected-addr').textContent = connectedAddress.slice(0,10)+'...'+connectedAddress.slice(-4);
     document.getElementById('verified-wallet-hidden').value = connectedAddress;
     // Refresh My Bag if open
@@ -1078,6 +1054,37 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
   return txHash;
 }
 
+// ── Shared discount calc: rank discount (by REP) + streak discount (7+ days), summed, capped 50% ──
+// Used by both the button price preview and the actual transaction so they always agree.
+async function getQuestionDiscountPct(addr) {
+  let rankD = 0, streakD = 0;
+  try {
+    let rep = (window._walletScores && window._walletScores[addr]) || 0;
+    if (!rep) {
+      try { const rr = await fetch(`${WORKER_URL}/rep?wallet=${addr}`); if (rr.ok) { const rd = await rr.json(); rep = rd.total || rd.score || rd.rep || 0; } } catch(e) {}
+    }
+    if (typeof getRank === 'function') { const rk = getRank(rep); rankD = (rk && rk.discount) ? rk.discount : 0; }
+  } catch(e) {}
+  try {
+    const sr = await fetch(`${WORKER_URL}/streak?wallet=${addr}`);
+    if (sr.ok) { const sd = await sr.json(); if ((sd.currentStreak || 0) >= 7) streakD = 25; }
+  } catch(e) {}
+  return Math.min(rankD + streakD, 50);
+}
+
+// Update the verify button text with the user's real (discounted) price.
+async function updateVerifyBtnPrice(addr) {
+  try {
+    const discPct = await getQuestionDiscountPct(addr);
+    const price   = 200000 - Math.round(200000 * (discPct / 100));
+    const btnEl   = document.getElementById('verify-btn');
+    if (btnEl) {
+      const disc = discPct > 0 ? ` (${discPct}% off)` : '';
+      btnEl.textContent = `Pay ${price.toLocaleString()} LUNC & Unlock →${disc}`;
+    }
+  } catch(e) {}
+}
+
 async function autoPayAndUnlock() {
   if (!connectedAddress) { alert('Connect wallet first!'); return; }
   const btn = document.getElementById('verify-btn');
@@ -1087,34 +1094,9 @@ async function autoPayAndUnlock() {
     const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
 
-    // ── Discount = RANK discount (by REP) + STREAK discount (7+ days). They SUM. ──
-    // Rank comes from Oracle Ascension (getRank by REP), NOT from getUserTitleFromStats.
-    let rankDiscount = 0;
-    let streakDiscount = 0;
-    try {
-      // REP score → rank → rank's discount
-      let _rep = (window._walletScores && window._walletScores[sender]) || 0;
-      if (!_rep) {
-        // _walletScores not populated on this page — fetch REP directly
-        try {
-          const _rr = await fetch(`${WORKER_URL}/rep?wallet=${sender}`);
-          if (_rr.ok) { const _rd = await _rr.json(); _rep = _rd.total || _rd.score || _rd.rep || 0; }
-        } catch(e) {}
-      }
-      if (typeof getRank === 'function') {
-        const _rank = getRank(_rep);
-        rankDiscount = (_rank && _rank.discount) ? _rank.discount : 0;
-      }
-    } catch(e) {}
-    try {
-      const _streakRes = await fetch(`${WORKER_URL}/streak?wallet=${sender}`);
-      if (_streakRes.ok) {
-        const _streakData = await _streakRes.json();
-        if ((_streakData.currentStreak || 0) >= 7) streakDiscount = 25;
-      }
-    } catch(e) {}
-    // Sum both, cap at 50% so Treasury never goes negative (100k pool stays fixed)
-    let discountPct = Math.min(rankDiscount + streakDiscount, 50);
+    // ── Discount = RANK discount (by REP) + STREAK discount (7+ days), summed, capped 50%. ──
+    // Same helper the button uses, so preview and charge always match.
+    const discountPct = await getQuestionDiscountPct(sender);
 
     // Discount is % of total 200,000 LUNC, subtracted from Treasury portion
     // Weekly Pool: always 100,000 LUNC (fixed)
@@ -1148,7 +1130,12 @@ async function autoPayAndUnlock() {
       document.getElementById('ask-form').style.display = 'block';
     }, 1200);
   } catch(e) {
-    btn.textContent = 'Pay 200,000 LUNC & Unlock'; btn.disabled = false;
+    btn.disabled = false;
+    if (typeof connectedAddress !== 'undefined' && connectedAddress && typeof updateVerifyBtnPrice === 'function') {
+      updateVerifyBtnPrice(connectedAddress);
+    } else {
+      btn.textContent = 'Pay 200,000 LUNC & Unlock';
+    }
     showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
   }
 }
