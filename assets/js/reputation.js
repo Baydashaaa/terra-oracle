@@ -275,6 +275,14 @@ function renderLeaderboardPage(page) {
     const medal = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : `#${globalIdx + 1}`;
     const medalColor = globalIdx < 3 ? '#fff' : 'var(--muted)';
 
+    // Top-3 medal styling (gold / silver / bronze)
+    const MEDAL_STYLES = [
+      { c: '#ffc828', rgba: '255,200,40' },   // gold
+      { c: '#c8d2e1', rgba: '200,210,225' },  // silver
+      { c: '#cd7f32', rgba: '205,127,50' },   // bronze
+    ];
+    const ms = globalIdx < 3 ? MEDAL_STYLES[globalIdx] : null;
+
     if (!w) {
       // Empty slot
       return `
@@ -295,18 +303,33 @@ function renderLeaderboardPage(page) {
     }
 
     const isMe = myWallet && w.wallet === myWallet;
+    // Background/border: medal style for top-3, "me" highlight, or default
+    const rowBg = ms
+      ? `linear-gradient(100deg,rgba(${ms.rgba},0.1),rgba(14,24,48,0.4))`
+      : (isMe ? 'rgba(84,147,247,0.07)' : 'var(--surface)');
+    const rowBorder = ms
+      ? `rgba(${ms.rgba},0.4)`
+      : (isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)');
+    const accentBar = ms
+      ? `<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${ms.c};"></div>` : '';
+    const medalSize = ms ? '25px' : '18px';
+    const medalGlow = ms ? `filter:drop-shadow(0 0 6px rgba(${ms.rgba},0.5));` : '';
+    const repColor = ms ? ms.c : w.rank.color;
+    const repGlow  = ms ? `0 0 12px rgba(${ms.rgba},0.5)` : w.rank.glow;
+    const repSize  = ms ? '24px' : '20px';
     return `
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-        background:${isMe ? 'rgba(84,147,247,0.07)' : 'var(--surface)'};
-        border:1px solid ${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'};
-        border-radius:10px;margin-bottom:8px;transition:all 0.2s;"
-        onmouseover="this.style.borderColor='rgba(84,147,247,0.25)'"
-        onmouseout="this.style.borderColor='${isMe ? 'rgba(84,147,247,0.3)' : 'var(--border)'}'">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
-          color:${medalColor};min-width:32px;text-align:center;">${medal}</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:${ms ? '16px' : '14px'} 16px;position:relative;overflow:hidden;
+        background:${rowBg};
+        border:1px solid ${rowBorder};
+        border-radius:12px;margin-bottom:8px;transition:all 0.2s;${ms ? `box-shadow:0 0 20px rgba(${ms.rgba},0.07);` : ''}"
+        onmouseover="this.style.borderColor='${ms ? `rgba(${ms.rgba},0.6)` : 'rgba(84,147,247,0.25)'}'"
+        onmouseout="this.style.borderColor='${rowBorder}'">
+        ${accentBar}
+        <div style="font-family:'Rajdhani',sans-serif;font-size:${medalSize};font-weight:800;
+          color:${medalColor};min-width:36px;text-align:center;${medalGlow}">${medal}</div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-            <span style="font-size:12px;font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
+            <span style="font-size:${ms ? '13px' : '12px'};font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               ${(w.wallet ? w.wallet.slice(0,8) + '...' + w.wallet.slice(-4) : 'Anonymous')}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
             </span>
@@ -323,8 +346,8 @@ function renderLeaderboardPage(page) {
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;
-            color:${w.rank.color};text-shadow:0 0 10px ${w.rank.glow};">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:${repSize};font-weight:800;
+            color:${repColor};text-shadow:0 0 10px ${repGlow};">
             ${w.score.toLocaleString()}
           </div>
           <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
