@@ -142,6 +142,11 @@ function switchLeaderboardPeriod(period) {
 async function loadLeaderboard() {
   const el = document.getElementById('leaderboard-list');
   if (!el) return;
+  // Load token: if the user switches period mid-load, an older (slower) request
+  // must NOT overwrite the newer one. We stamp each load and check it before render.
+  const myToken = (window._lbLoadToken || 0) + 1;
+  window._lbLoadToken = myToken;
+  const myPeriod = _lbPeriod;
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">Loading contributors...</div>';
 
   try {
@@ -244,6 +249,9 @@ async function loadLeaderboard() {
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
       return { ...w, score, drawRep, chatRep, multiplier, rank };
     }).filter(w => w.score > 0).sort((a, b) => b.score - a.score).slice(0, 50);
+
+    // If a newer load started (user switched period), discard this stale result
+    if (window._lbLoadToken !== myToken || _lbPeriod !== myPeriod) return;
 
     const myWallet = typeof globalWalletAddress !== 'undefined' ? globalWalletAddress : null;
     window._lbRanked   = ranked;
