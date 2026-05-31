@@ -39,8 +39,11 @@
 
   /* ── Styles ──────────────────────────────────────────────────── */
   var css = ''
-    + '#oe-btn{position:fixed;right:24px;bottom:24px;width:56px;height:56px;border:none;background:none;cursor:grab;z-index:9998;padding:0;}'
-    + '#oe-btn .oe-eye-wrap{width:56px;height:56px;}'
+    + '#oe-btn{position:fixed;right:24px;bottom:24px;width:110px;height:110px;border:none;background:none;cursor:grab;z-index:9998;padding:0;}'
+    + '#oe-btn .oe-eye-wrap{width:110px;height:110px;}'
+    + '#oe-bubble{position:fixed;z-index:9997;background:#16233f;border:1px solid rgba(84,147,247,0.4);border-radius:12px;padding:8px 13px;font-size:13px;color:#dce8ff;white-space:nowrap;font-family:inherit;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.4);}'
+    + '#oe-bubble.show{opacity:1;transform:translateY(0);}'
+    + '#oe-bubble:after{content:"";position:absolute;bottom:-7px;left:24px;width:12px;height:12px;background:#16233f;border-right:1px solid rgba(84,147,247,0.4);border-bottom:1px solid rgba(84,147,247,0.4);transform:rotate(45deg);}'
     + '#oe-overlay{position:fixed;inset:0;background:rgba(4,8,18,0.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:9999;}'
     + '#oe-overlay.open{display:flex;}'
     + '#oe-modal{width:340px;max-width:calc(100vw - 32px);background:#0c1322;border:1px solid rgba(84,147,247,0.25);border-radius:16px;padding:0 22px 22px;font-family:inherit;box-shadow:0 20px 60px rgba(0,0,0,0.5);}'
@@ -96,8 +99,12 @@
     var btn = document.createElement('button');
     btn.id = 'oe-btn';
     btn.title = 'Feedback & Bug Report';
-    btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(0.62);transform-origin:center;">' + eyeMarkup(1) + '</div>';
+    btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.2);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
     document.body.appendChild(btn);
+
+    var bubble = document.createElement('div');
+    bubble.id = 'oe-bubble';
+    document.body.appendChild(bubble);
 
     var overlay = document.createElement('div');
     overlay.id = 'oe-overlay';
@@ -154,6 +161,41 @@
     // idle loops — button eye (always, subtle)
     setInterval(function () { if (!isOpen()) blink(_btnEye); }, 4200);
     setInterval(function () { if (_btnEye.glow) _btnEye.glow.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2); }, 1100);
+
+    // ── Button speech bubble: on hover + occasionally while idle ──
+    var btn = document.querySelector('#oe-btn');
+    var bubble = document.querySelector('#oe-bubble');
+    var bubbleTimer = null;
+
+    function positionBubble() {
+      var r = btn.getBoundingClientRect();
+      // place bubble above the button, tail pointing down to it
+      bubble.style.left = (r.left + 6) + 'px';
+      bubble.style.top = (r.top - bubble.offsetHeight - 12) + 'px';
+    }
+    function showBubble(text, holdMs) {
+      if (isOpen()) return;
+      bubble.textContent = text;
+      bubble.style.left = '-9999px'; bubble.style.top = '-9999px';
+      bubble.classList.add('show');
+      positionBubble();
+      clearTimeout(bubbleTimer);
+      if (holdMs) bubbleTimer = setTimeout(hideBubble, holdMs);
+    }
+    function hideBubble() { bubble.classList.remove('show'); }
+
+    btn.addEventListener('mouseenter', function () { showBubble(pick(PHRASES.hover), 0); });
+    btn.addEventListener('mouseleave', function () { hideBubble(); });
+
+    // occasional idle greeting (when not hovered, not open)
+    setInterval(function () {
+      if (isOpen() || bubble.classList.contains('show')) return;
+      if (Math.random() < 0.5) showBubble(pick(PHRASES.hover), 3000);
+    }, 9000);
+
+    window.addEventListener('resize', function () { if (bubble.classList.contains('show')) positionBubble(); });
+    // keep bubble glued to button while dragging
+    setInterval(function () { if (bubble.classList.contains('show')) positionBubble(); }, 200);
   }
   var _btnEye = {};
 
@@ -355,8 +397,8 @@
       if (!isDragging) return;
       var dx = e.clientX - startX, dy = e.clientY - startY;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
-      btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
-      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
+      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, startLeft + dx)) + 'px';
+      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, startTop + dy)) + 'px';
     });
     window.addEventListener('mouseup', function () {
       if (!isDragging) return;
@@ -378,8 +420,8 @@
       if (!isDragging) return;
       var t = e.touches[0]; var dx = t.clientX - startX, dy = t.clientY - startY;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
-      btn.style.left = Math.max(0, Math.min(window.innerWidth - 60, startLeft + dx)) + 'px';
-      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
+      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, startLeft + dx)) + 'px';
+      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, startTop + dy)) + 'px';
       if (justDragged) e.preventDefault();
     }, { passive: false });
     window.addEventListener('touchend', function () {
