@@ -39,8 +39,8 @@
 
   /* ── Styles ──────────────────────────────────────────────────── */
   var css = ''
-    + '#oe-btn{position:fixed;right:24px;bottom:24px;width:110px;height:110px;border:none;background:none;cursor:grab;z-index:9998;padding:0;}'
-    + '#oe-btn .oe-eye-wrap{width:110px;height:110px;}'
+    + '#oe-btn{position:fixed;right:24px;bottom:24px;width:102px;height:102px;border:none;background:none;cursor:grab;z-index:9998;padding:0;}'
+    + '#oe-btn .oe-eye-wrap{width:102px;height:102px;}'
     + '#oe-bubble{position:fixed;z-index:9997;background:#16233f;border:1px solid rgba(84,147,247,0.4);border-radius:12px;padding:8px 13px;font-size:13px;color:#dce8ff;white-space:nowrap;font-family:inherit;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.4);}'
     + '#oe-bubble.show{opacity:1;transform:translateY(0);}'
     + '#oe-bubble:after{content:"";position:absolute;bottom:-7px;left:24px;width:12px;height:12px;background:#16233f;border-right:1px solid rgba(84,147,247,0.4);border-bottom:1px solid rgba(84,147,247,0.4);transform:rotate(45deg);}'
@@ -99,7 +99,7 @@
     var btn = document.createElement('button');
     btn.id = 'oe-btn';
     btn.title = 'Feedback & Bug Report';
-    btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.2);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
+    btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.116);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
     document.body.appendChild(btn);
 
     var bubble = document.createElement('div');
@@ -161,6 +161,48 @@
     // idle loops — button eye (always, subtle)
     setInterval(function () { if (!isOpen()) blink(_btnEye); }, 4200);
     setInterval(function () { if (_btnEye.glow) _btnEye.glow.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2); }, 1100);
+
+    // ── Eye follows the cursor when it comes near the button ──
+    var btnEl = document.querySelector('#oe-btn');
+    var WATCH_RADIUS = 300;   // px — how close the cursor must be to be noticed
+    var MAX_OFFSET = 7;       // px — how far the iris can shift from center
+    var watching = false;
+    var idleIris = null;
+
+    function fastIris() { if (_btnEye.iris) _btnEye.iris.style.transition = 'transform .12s ease-out'; }
+    function slowIris() { if (_btnEye.iris) _btnEye.iris.style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)'; }
+
+    function onMouseMove(e) {
+      if (isOpen() || !_btnEye.iris) return;
+      var r = btnEl.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dx = e.clientX - cx, dy = e.clientY - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < WATCH_RADIUS) {
+        if (!watching) { watching = true; fastIris(); if (idleIris) { clearInterval(idleIris); idleIris = null; } }
+        var len = dist || 1;
+        var ox = (dx / len) * MAX_OFFSET;
+        var oy = (dy / len) * MAX_OFFSET;
+        moveIris(_btnEye, ox, oy);
+        if (_btnEye.glow) _btnEye.glow.style.opacity = '0.95';
+      } else if (watching) {
+        watching = false;
+        slowIris();
+        moveIris(_btnEye, 0, 0);
+        startIdleDrift();
+      }
+    }
+    function startIdleDrift() {
+      if (idleIris) return;
+      slowIris();
+      var t = 0;
+      idleIris = setInterval(function () {
+        if (watching || isOpen()) return;
+        t++; moveIris(_btnEye, Math.sin(t / 2) * 3, Math.cos(t / 3) * 2);
+      }, 1800);
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    startIdleDrift();
 
     // ── Button speech bubble: on hover + occasionally while idle ──
     var btn = document.querySelector('#oe-btn');
