@@ -400,10 +400,11 @@ async function votePoll(qi, optionIdx) {
   if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
   const q = questions[qi];
   if (!q.poll) return;
-  if (q.myPollVote !== undefined && q.myPollVote !== null) return;
-  if (q._pollVoting) return;
+  if (q.myPollVote !== undefined && q.myPollVote !== null) return; // already voted
+  if (q._pollVoting) return; // guard against double-click
   q._pollVoting = true;
 
+  // Optimistic update
   q.myPollVote = optionIdx;
   q.poll[optionIdx].votes = (q.poll[optionIdx].votes || 0) + 1;
   localStorage.setItem('poll_vote_' + q.id, String(optionIdx));
@@ -419,7 +420,8 @@ async function votePoll(qi, optionIdx) {
     if (res.ok) { q._pollVoting = false; return; }
     let err = {}; try { err = await res.json(); } catch(e) {}
     q._pollVoting = false;
-    if (err.error === 'Already voted') return;
+    if (err.error === 'Already voted') return; // already on server
+    // Roll back
     q.myPollVote = null;
     q.poll[optionIdx].votes = Math.max(0, (q.poll[optionIdx].votes || 1) - 1);
     localStorage.removeItem('poll_vote_' + q.id);
@@ -644,17 +646,19 @@ async function submitAnswer(qi) {
 async function voteQuestion(qi) {
   const q = questions[qi];
   if (q.voted) return;
-  if (q._voting) return;
+  if (q._voting) return; // guard against double-click
   const _wallet = globalWalletAddress || connectedAddress;
   if (!_wallet) { alert('Connect wallet to vote'); return; }
   q._voting = true;
 
+  // Optimistic update
   q.votes++; q.voted = true;
   const votedQ = JSON.parse(localStorage.getItem('voted_questions') || '{}');
   votedQ[q.id] = true;
   localStorage.setItem('voted_questions', JSON.stringify(votedQ));
   renderBoard();
 
+  // Helper to undo the optimistic vote
   const rollback = () => {
     q.votes = Math.max(0, q.votes - 1); q.voted = false;
     const v = JSON.parse(localStorage.getItem('voted_questions') || '{}');
@@ -662,6 +666,7 @@ async function voteQuestion(qi) {
     renderBoard();
   };
 
+  // Sync to worker — only keep the vote if the server confirms it
   try {
     const res = await fetch(`${WORKER_URL}/question-vote`, {
       method: 'POST',
@@ -669,14 +674,16 @@ async function voteQuestion(qi) {
       body: JSON.stringify({ questionId: q.id, wallet: _wallet }),
       signal: AbortSignal.timeout(8000),
     });
-    if (res.ok) { q._voting = false; return; }
+    if (res.ok) { q._voting = false; return; } // confirmed
+    // Server rejected — read reason
     let err = {}; try { err = await res.json(); } catch(e) {}
     q._voting = false;
-    if (err.error === 'Already voted') return;
+    if (err.error === 'Already voted') return; // already counted on server — keep voted state
     rollback();
     if (err.error === 'Cannot vote your own question') alert('You cannot vote your own question');
     else alert('Your vote could not be submitted. Please try again.');
   } catch(e) {
+    // Network failure — vote did NOT reach the server
     q._voting = false;
     rollback();
     alert('Your vote could not be submitted (network issue). Please try again.');
@@ -686,10 +693,11 @@ async function voteQuestion(qi) {
 async function voteAnswer(qi, ai) {
   const answer = questions[qi].answers[ai];
   if (answer.voted) return;
-  if (answer._voting) return;
+  if (answer._voting) return; // guard against double-click
   if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
   answer._voting = true;
 
+  // Optimistic update
   answer.votes++; answer.voted = true;
   const votedA = JSON.parse(localStorage.getItem('voted_answers') || '{}');
   votedA[answer.id] = true;
@@ -703,6 +711,7 @@ async function voteAnswer(qi, ai) {
     renderBoard();
   };
 
+  // Persist to worker — only keep if confirmed
   try {
     const res = await fetch(`${WORKER_URL}/vote`, {
       method: 'POST',
@@ -713,7 +722,7 @@ async function voteAnswer(qi, ai) {
     if (res.ok) { answer._voting = false; return; }
     let err = {}; try { err = await res.json(); } catch(e) {}
     answer._voting = false;
-    if (err.error === 'Already voted') return;
+    if (err.error === 'Already voted') return; // already on server
     rollback();
     if (err.error === 'Cannot vote your own answer') alert('You cannot vote your own answer');
     else alert('Your vote could not be submitted. Please try again.');
@@ -2197,7 +2206,7 @@ function renderVotes() {
     const quorumPct = Math.min(100, Math.round((v.totalVotes / v.quorum) * 100));
     const typeClass = { weekly: 'vote-type-weekly', monthly: 'vote-type-monthly', special: 'vote-type-special' }[v.type];
     const typeLabel = { weekly: '📅 Weekly', monthly: '🗓 Monthly', special: '⚡ Special' }[v.type];
-    return `<div class="vote-card" id="vcard-${v.id}">
+    return `<div class="vote-card vote-card-${v.type || 'special'} ${(v.status === 'closed' || v.status === 'stopped') ? 'vote-closed' : ''}" id="vcard-${v.id}">
       <div class="vote-card-meta"><span class="vote-type-badge ${typeClass}">${typeLabel}</span><span class="vote-timer">⏱ ${v.timer}</span></div>
       <div class="vote-card-title">${v.title}</div>
       <div class="vote-desc" style="margin-top:8px;">${v.desc}</div>
