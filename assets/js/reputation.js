@@ -130,12 +130,11 @@ function switchLeaderboardPeriod(period) {
   _lbPeriod = period;
   const weekly  = document.getElementById('lb-btn-weekly');
   const alltime = document.getElementById('lb-btn-alltime');
-  if (weekly) {
-    const active = 'background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.4);color:var(--accent);';
-    const inactive = 'background:transparent;border:1px solid var(--border);color:var(--muted);';
-    weekly.style.cssText  += period === 'weekly'  ? active : inactive;
-    alltime.style.cssText += period === 'alltime' ? active : inactive;
-  }
+  const base = "font-family:'Exo 2',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:6px 16px;border-radius:6px;cursor:pointer;";
+  const active = 'background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.4);color:var(--accent);';
+  const inactive = 'background:transparent;border:1px solid var(--border);color:var(--muted);';
+  if (weekly)  weekly.style.cssText  = base + (period === 'weekly'  ? active : inactive);
+  if (alltime) alltime.style.cssText = base + (period === 'alltime' ? active : inactive);
   loadLeaderboard();
 }
 
@@ -187,6 +186,7 @@ async function loadLeaderboard() {
 
       if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
       wallets[q.wallet].questions++;
+      wallets[q.wallet].upvotesReceived += q.votes || 0;
 
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
