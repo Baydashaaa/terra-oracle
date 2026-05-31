@@ -1055,20 +1055,47 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
 }
 
 // ── Shared discount calc: rank discount (by REP) + streak discount (7+ days), summed, capped 50% ──
+// Rank uses the SAME full REP the profile uses (Q&A + chat + draw), via getRank().
 // Used by both the button price preview and the actual transaction so they always agree.
 async function getQuestionDiscountPct(addr) {
   let rankD = 0, streakD = 0;
+
+  // ── Full REP = questions*40 + answers*15 + chatMsgs*5 + upvotes*10 + drawRep ──
   try {
-    let rep = (window._walletScores && window._walletScores[addr]) || 0;
-    if (!rep) {
-      try { const rr = await fetch(`${WORKER_URL}/rep?wallet=${addr}`); if (rr.ok) { const rd = await rr.json(); rep = rd.total || rd.score || rd.rep || 0; } } catch(e) {}
+    let rep = 0;
+    // Q&A stats (questions, answers, upvotes)
+    let qStats = null;
+    if (typeof fetchQuestionStats === 'function') {
+      try { qStats = await fetchQuestionStats(addr); } catch(e) {}
     }
+    if (qStats) {
+      const nQ = (qStats.myQuestions || []).length;
+      const nA = (qStats.myAnswers || []).length;
+      const up = qStats.totalUpvotes || 0;
+      rep += nQ * 40 + nA * 15 + up * 10;
+    }
+    // Chat messages
+    try {
+      const cr = await fetch(`${WORKER_URL}/chat/count?wallet=${addr}`);
+      if (cr.ok) { const cd = await cr.json(); rep += (cd.msgCount || cd.total || 0) * 5; }
+    } catch(e) {}
+    // Draw REP
+    try {
+      const dr = await fetch(`${WORKER_URL}/rep/draw?wallet=${addr}`);
+      if (dr.ok) { const dd = await dr.json(); rep += dd.total || 0; }
+    } catch(e) {}
+    // Fallback: if everything above failed, use the partial score map
+    if (!rep && window._walletScores && window._walletScores[addr]) rep = window._walletScores[addr];
+
     if (typeof getRank === 'function') { const rk = getRank(rep); rankD = (rk && rk.discount) ? rk.discount : 0; }
   } catch(e) {}
+
+  // ── Streak discount (7+ days = 25%) ──
   try {
     const sr = await fetch(`${WORKER_URL}/streak?wallet=${addr}`);
     if (sr.ok) { const sd = await sr.json(); if ((sd.currentStreak || 0) >= 7) streakD = 25; }
   } catch(e) {}
+
   return Math.min(rankD + streakD, 50);
 }
 
