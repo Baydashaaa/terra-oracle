@@ -308,7 +308,7 @@ function renderLeaderboardPage(page) {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
             <span style="font-size:12px;font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              ${w.alias}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
+              ${(w.wallet ? w.wallet.slice(0,8) + '...' + w.wallet.slice(-4) : 'Anonymous')}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
             </span>
             <span style="font-size:10px;font-weight:700;color:${w.rank.color};
               text-shadow:0 0 8px ${w.rank.glow};white-space:nowrap;">
