@@ -22,6 +22,7 @@
 
   var _fbType = 'bug';
   var _busy = false;
+  var _oeDragging = false;
 
   /* ── Mascot phrases (no emojis) ──────────────────────────────── */
   var PHRASES = {
@@ -173,7 +174,7 @@
     if (btnIris) btnIris.style.transition = 'transform .15s ease-out';
 
     window.addEventListener('mousemove', function (e) {
-      if (isOpen() || !btnIris) return;
+      if (isOpen() || _oeDragging || !btnIris) return;
       var r = btnEl.getBoundingClientRect();
       var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       var dx = e.clientX - cx, dy = e.clientY - cy;
@@ -422,7 +423,7 @@
 
     btn.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return;
-      isDragging = true; justDragged = false;
+      isDragging = true; justDragged = false; _oeDragging = true;
       var rect = btn.getBoundingClientRect();
       startLeft = rect.left; startTop = rect.top; startX = e.clientX; startY = e.clientY;
       btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
@@ -439,7 +440,7 @@
     });
     window.addEventListener('mouseup', function () {
       if (!isDragging) return;
-      isDragging = false; btn.style.cursor = 'grab'; btn.style.transition = '';
+      isDragging = false; _oeDragging = false; btn.style.cursor = 'grab'; btn.style.transition = '';
       if (justDragged) {
         try { localStorage.setItem('oe-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch (e) {}
       } else { openModal(); }
@@ -447,7 +448,7 @@
     });
 
     btn.addEventListener('touchstart', function (e) {
-      isDragging = true; justDragged = false;
+      isDragging = true; justDragged = false; _oeDragging = true;
       var t = e.touches[0]; var rect = btn.getBoundingClientRect();
       startLeft = rect.left; startTop = rect.top; startX = t.clientX; startY = t.clientY;
       btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
@@ -463,7 +464,7 @@
     }, { passive: false });
     window.addEventListener('touchend', function () {
       if (!isDragging) return;
-      isDragging = false; btn.style.transition = '';
+      isDragging = false; _oeDragging = false; btn.style.transition = '';
       if (justDragged) {
         try { localStorage.setItem('oe-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch (e) {}
       } else { openModal(); }
