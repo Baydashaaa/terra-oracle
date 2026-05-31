@@ -197,8 +197,6 @@
       btnIris.style.transition = 'transform .8s ease-in-out';
       btnIris.style.transform = 'translate(' + (Math.sin(driftT / 2) * 3).toFixed(1) + 'px,' + (Math.cos(driftT / 3) * 2).toFixed(1) + 'px)';
     }, 1800);
-    window.addEventListener('mousemove', onMouseMove);
-    startIdleDrift();
 
     // ── Button speech bubble: on hover + occasionally while idle ──
     var btn = document.querySelector('#oe-btn');
