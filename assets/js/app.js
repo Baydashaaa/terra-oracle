@@ -401,19 +401,40 @@ async function votePoll(qi, optionIdx) {
   const q = questions[qi];
   if (!q.poll) return;
   if (q.myPollVote !== undefined && q.myPollVote !== null) return; // already voted
+  if (q._pollVoting) return; // guard against double-click
+  q._pollVoting = true;
 
+  // Optimistic update
   q.myPollVote = optionIdx;
   q.poll[optionIdx].votes = (q.poll[optionIdx].votes || 0) + 1;
   localStorage.setItem('poll_vote_' + q.id, String(optionIdx));
   renderBoard();
 
   try {
-    await fetch(`${WORKER_URL}/poll-vote`, {
+    const res = await fetch(`${WORKER_URL}/poll-vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionId: q.id, optionIdx, wallet: globalWalletAddress }),
+      signal: AbortSignal.timeout(8000),
     });
-  } catch(e) { console.warn('Poll vote sync failed:', e.message); }
+    if (res.ok) { q._pollVoting = false; return; }
+    let err = {}; try { err = await res.json(); } catch(e) {}
+    q._pollVoting = false;
+    if (err.error === 'Already voted') return; // already on server
+    // Roll back
+    q.myPollVote = null;
+    q.poll[optionIdx].votes = Math.max(0, (q.poll[optionIdx].votes || 1) - 1);
+    localStorage.removeItem('poll_vote_' + q.id);
+    renderBoard();
+    alert('Your poll vote could not be submitted. Please try again.');
+  } catch(e) {
+    q._pollVoting = false;
+    q.myPollVote = null;
+    q.poll[optionIdx].votes = Math.max(0, (q.poll[optionIdx].votes || 1) - 1);
+    localStorage.removeItem('poll_vote_' + q.id);
+    renderBoard();
+    alert('Your poll vote could not be submitted (network issue). Please try again.');
+  }
 }
 
 function renderBoard() {
@@ -625,8 +646,10 @@ async function submitAnswer(qi) {
 async function voteQuestion(qi) {
   const q = questions[qi];
   if (q.voted) return;
+  if (q._voting) return; // guard against double-click
   const _wallet = globalWalletAddress || connectedAddress;
   if (!_wallet) { alert('Connect wallet to vote'); return; }
+  q._voting = true;
 
   // Optimistic update
   q.votes++; q.voted = true;
@@ -635,46 +658,79 @@ async function voteQuestion(qi) {
   localStorage.setItem('voted_questions', JSON.stringify(votedQ));
   renderBoard();
 
-  // Sync to worker
+  // Helper to undo the optimistic vote
+  const rollback = () => {
+    q.votes = Math.max(0, q.votes - 1); q.voted = false;
+    const v = JSON.parse(localStorage.getItem('voted_questions') || '{}');
+    delete v[q.id]; localStorage.setItem('voted_questions', JSON.stringify(v));
+    renderBoard();
+  };
+
+  // Sync to worker — only keep the vote if the server confirms it
   try {
     const res = await fetch(`${WORKER_URL}/question-vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionId: q.id, wallet: _wallet }),
+      signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      if (err.error === 'Already voted') return; // already counted
-      if (err.error === 'Cannot vote your own question') {
-        // Revert
-        q.votes--; q.voted = false;
-        delete votedQ[q.id];
-        localStorage.setItem('voted_questions', JSON.stringify(votedQ));
-        renderBoard();
-        alert('You cannot vote your own question');
-      }
-    }
-  } catch(e) { console.warn('Vote sync failed:', e.message); }
+    if (res.ok) { q._voting = false; return; } // confirmed
+    // Server rejected — read reason
+    let err = {}; try { err = await res.json(); } catch(e) {}
+    q._voting = false;
+    if (err.error === 'Already voted') return; // already counted on server — keep voted state
+    rollback();
+    if (err.error === 'Cannot vote your own question') alert('You cannot vote your own question');
+    else alert('Your vote could not be submitted. Please try again.');
+  } catch(e) {
+    // Network failure — vote did NOT reach the server
+    q._voting = false;
+    rollback();
+    alert('Your vote could not be submitted (network issue). Please try again.');
+  }
 }
 
 async function voteAnswer(qi, ai) {
   const answer = questions[qi].answers[ai];
   if (answer.voted) return;
+  if (answer._voting) return; // guard against double-click
   if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  answer._voting = true;
+
   // Optimistic update
   answer.votes++; answer.voted = true;
   const votedA = JSON.parse(localStorage.getItem('voted_answers') || '{}');
   votedA[answer.id] = true;
   localStorage.setItem('voted_answers', JSON.stringify(votedA));
   renderBoard();
-  // Persist to worker
+
+  const rollback = () => {
+    answer.votes = Math.max(0, answer.votes - 1); answer.voted = false;
+    const v = JSON.parse(localStorage.getItem('voted_answers') || '{}');
+    delete v[answer.id]; localStorage.setItem('voted_answers', JSON.stringify(v));
+    renderBoard();
+  };
+
+  // Persist to worker — only keep if confirmed
   try {
-    await fetch(`${WORKER_URL}/vote`, {
+    const res = await fetch(`${WORKER_URL}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionId: questions[qi].id, answerId: answer.id, wallet: globalWalletAddress }),
+      signal: AbortSignal.timeout(8000),
     });
-  } catch(e) { console.warn('Vote sync failed:', e.message); }
+    if (res.ok) { answer._voting = false; return; }
+    let err = {}; try { err = await res.json(); } catch(e) {}
+    answer._voting = false;
+    if (err.error === 'Already voted') return; // already on server
+    rollback();
+    if (err.error === 'Cannot vote your own answer') alert('You cannot vote your own answer');
+    else alert('Your vote could not be submitted. Please try again.');
+  } catch(e) {
+    answer._voting = false;
+    rollback();
+    alert('Your vote could not be submitted (network issue). Please try again.');
+  }
 }
 
 // ─── ASK FORM ────────────────────────────────────────────────
@@ -1625,8 +1681,6 @@ function renderChatMessages(msgs) {
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
             <span onclick="openUserProfile('${m.fullAddr || ''}')" style="font-size:13px;font-weight:700;color:var(--text);cursor:pointer;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${displayName}</span>
             ${rankBadge}
-            <span style="font-size:9px;background:rgba(102,255,170,0.12);color:var(--green);padding:1px 7px;border-radius:4px;letter-spacing:0.05em;">✓ ON-CHAIN</span>
-            ${m.amount ? `<span style="font-size:9px;color:var(--gold);background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.2);padding:1px 7px;border-radius:4px;">${m.amount} LUNC</span>` : ''}
             <a href="https://finder.terraport.finance/classic/tx/${m.txHash}" target="_blank"
               style="font-size:9px;color:var(--muted);text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0;"
               onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
