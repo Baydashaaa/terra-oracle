@@ -164,43 +164,38 @@
 
     // ── Eye follows the cursor when it comes near the button ──
     var btnEl = document.querySelector('#oe-btn');
-    var WATCH_RADIUS = 300;   // px — how close the cursor must be to be noticed
-    var MAX_OFFSET = 7;       // px — how far the iris can shift from center
-    var watching = false;
-    var idleIris = null;
+    var WATCH_RADIUS = 320;
+    var MAX_OFFSET = 7;
+    var btnIris = _btnEye.iris;
+    var driftT = 0;
+    var nearNow = false;
 
-    function fastIris() { if (_btnEye.iris) _btnEye.iris.style.transition = 'transform .12s ease-out'; }
-    function slowIris() { if (_btnEye.iris) _btnEye.iris.style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)'; }
+    if (btnIris) btnIris.style.transition = 'transform .15s ease-out';
 
-    function onMouseMove(e) {
-      if (isOpen() || !_btnEye.iris) return;
+    window.addEventListener('mousemove', function (e) {
+      if (isOpen() || !btnIris) return;
       var r = btnEl.getBoundingClientRect();
       var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       var dx = e.clientX - cx, dy = e.clientY - cy;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < WATCH_RADIUS) {
-        if (!watching) { watching = true; fastIris(); if (idleIris) { clearInterval(idleIris); idleIris = null; } }
+        nearNow = true;
         var len = dist || 1;
-        var ox = (dx / len) * MAX_OFFSET;
-        var oy = (dy / len) * MAX_OFFSET;
-        moveIris(_btnEye, ox, oy);
+        btnIris.style.transition = 'transform .12s ease-out';
+        btnIris.style.transform = 'translate(' + (dx / len * MAX_OFFSET).toFixed(1) + 'px,' + (dy / len * MAX_OFFSET).toFixed(1) + 'px)';
         if (_btnEye.glow) _btnEye.glow.style.opacity = '0.95';
-      } else if (watching) {
-        watching = false;
-        slowIris();
-        moveIris(_btnEye, 0, 0);
-        startIdleDrift();
+      } else {
+        nearNow = false;
       }
-    }
-    function startIdleDrift() {
-      if (idleIris) return;
-      slowIris();
-      var t = 0;
-      idleIris = setInterval(function () {
-        if (watching || isOpen()) return;
-        t++; moveIris(_btnEye, Math.sin(t / 2) * 3, Math.cos(t / 3) * 2);
-      }, 1800);
-    }
+    });
+
+    // gentle idle drift only when cursor is NOT near
+    setInterval(function () {
+      if (isOpen() || nearNow || !btnIris) return;
+      driftT++;
+      btnIris.style.transition = 'transform .8s ease-in-out';
+      btnIris.style.transform = 'translate(' + (Math.sin(driftT / 2) * 3).toFixed(1) + 'px,' + (Math.cos(driftT / 3) * 2).toFixed(1) + 'px)';
+    }, 1800);
     window.addEventListener('mousemove', onMouseMove);
     startIdleDrift();
 
