@@ -168,33 +168,26 @@ async function loadLeaderboard() {
 
     for (const q of allQuestions) {
       if (!q.wallet) continue;
-      const qThisWeek = q.createdAt >= cutoff;
+      const qInPeriod = _lbPeriod !== 'weekly' || (q.createdAt || 0) >= cutoff;
 
-      // For weekly: only count questions asked this week
-      if (_lbPeriod === 'weekly' && !qThisWeek) {
-        // Still check answers for this week
-        for (const a of q.answers || []) {
-          if (!a.wallet) continue;
-          const aThisWeek = (a.createdAt || 0) >= cutoff;
-          if (!aThisWeek) continue;
-          if (!wallets[a.wallet]) wallets[a.wallet] = { wallet: a.wallet, alias: a.alias || ('Anonymous#' + a.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
-          wallets[a.wallet].answers++;
-          wallets[a.wallet].upvotesReceived += a.votes || 0;
-        }
-        continue;
-      }
-
+      // Always register the question author (same as All Time), so they can
+      // still show up via their draw/chat REP. Their question only counts
+      // toward the score if it falls within the period.
       if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
-      wallets[q.wallet].questions++;
-      wallets[q.wallet].upvotesReceived += q.votes || 0;
+      if (qInPeriod) {
+        wallets[q.wallet].questions++;
+        wallets[q.wallet].upvotesReceived += q.votes || 0;
+      }
 
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
-        const aThisWeek = _lbPeriod !== 'weekly' || (a.createdAt || 0) >= cutoff;
-        if (!aThisWeek) continue;
+        const aInPeriod = _lbPeriod !== 'weekly' || (a.createdAt || 0) >= cutoff;
+        // Register the answer author always; count only if within period.
         if (!wallets[a.wallet]) wallets[a.wallet] = { wallet: a.wallet, alias: a.alias || ('Anonymous#' + a.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
-        wallets[a.wallet].answers++;
-        wallets[a.wallet].upvotesReceived += a.votes || 0;
+        if (aInPeriod) {
+          wallets[a.wallet].answers++;
+          wallets[a.wallet].upvotesReceived += a.votes || 0;
+        }
       }
     }
 
@@ -204,11 +197,33 @@ async function loadLeaderboard() {
       wallets[connWallet] = { wallet: connWallet, alias: 'Anonymous#' + connWallet.slice(-4).toUpperCase(), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
     }
 
+    // Include Oracle Draw participants (people who minted NFTs) so they appear
+    // on the board even without connecting a wallet. For weekly, only mints
+    // within the last 7 days count; for all-time, everyone who ever minted.
+    try {
+      const DRAW_WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
+      const drawRes = await fetch(`${DRAW_WORKER}/used-nfts`);
+      if (drawRes.ok) {
+        const drawData = await drawRes.json();
+        const used = drawData.used || [];
+        for (const n of used) {
+          if (!n.wallet) continue;
+          if (_lbPeriod === 'weekly') {
+            const mintTs = n.usedAt ? new Date(n.usedAt).getTime() / 1000 : 0;
+            if (mintTs < cutoff) continue; // older than this week — skip
+          }
+          if (!wallets[n.wallet]) {
+            wallets[n.wallet] = { wallet: n.wallet, alias: 'Anonymous#' + n.wallet.slice(-4).toUpperCase(), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
+          }
+        }
+      }
+    } catch(e) {}
+
     // Fetch draw REP, chat REP and streak for all wallets in parallel
     const walletList = Object.values(wallets);
     const drawRepMap = {}, chatRepMap = {}, streakMap = {};
     try {
-      const fetches = walletList.slice(0, 20).flatMap(w => [
+      const fetches = walletList.slice(0, 50).flatMap(w => [
         fetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`)
           .then(r => r.ok ? r.json() : { total: 0, history: [] })
           .then(d => {
