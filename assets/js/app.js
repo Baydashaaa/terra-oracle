@@ -145,6 +145,9 @@ let boardSearch = '';
 async function restoreWalletSession() {
   const saved = loadWalletSession();
   if (!saved) return;
+  // Only Keplr supports silent session restore here. For Galaxy/Station we skip
+  // auto-restore (user reconnects via the header) to avoid popping the wrong wallet.
+  if (getActiveProvider() !== 'keplr') return;
   let attempts = 0;
   while (!window.keplr && attempts < 30) {
     await new Promise(r => setTimeout(r, 100));
@@ -814,6 +817,7 @@ async function connectKeplr() {
     const offlineSigner = window.keplr.getOfflineSigner('columbus-5');
     const accounts = await offlineSigner.getAccounts();
     connectedAddress = accounts[0].address;
+    setActiveProvider('keplr');
     // Update Pay button - async fetch real title from worker
     const _addr = accounts[0].address;
     if (typeof updateVerifyBtnPrice === 'function') updateVerifyBtnPrice(_addr);
@@ -854,6 +858,31 @@ function disconnectKeplr() {
 }
 
 // ─── AMINO SIGNING HELPER (no cosmjs) ────────────────────────────────────────
+// ── Active wallet provider routing (Keplr / Galaxy Station / Terra Station) ──
+// All three expose a Keplr-compatible signer (getOfflineSigner + signDirect).
+// Galaxy/Station nest that interface under `.keplr`; we fall back to the object
+// itself, which also carries getOfflineSigner. Keplr stays `window.keplr`, so the
+// Keplr path is byte-for-byte unchanged.
+function setActiveProvider(p) {
+  window._activeWalletProvider = p;
+  try { localStorage.setItem('wallet_provider', p); } catch(e) {}
+}
+function getActiveProvider() {
+  if (window._activeWalletProvider) return window._activeWalletProvider;
+  try { return localStorage.getItem('wallet_provider') || 'keplr'; } catch(e) { return 'keplr'; }
+}
+function getActiveKeplr() {
+  const p = getActiveProvider();
+  if (p === 'galaxy') { const g = window.galaxyStation; if (g) return g.keplr || g; }
+  if (p === 'station') { const s = window.station || window.galaxyStation; if (s) return s.keplr || s; }
+  return window.keplr;
+}
+async function enableActive(chainId) {
+  const k = getActiveKeplr();
+  if (k && typeof k.enable === 'function') { try { await k.enable(chainId); } catch(e) {} }
+  return k;
+}
+
 async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
   const LCD   = 'https://terra-classic-lcd.publicnode.com';
   const CHAIN = chainId || 'columbus-5';
@@ -884,7 +913,7 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
   const txBodyP = concat(encodeField(1,2,anyMsg), encodeField(2,2,enc.encode(memo)));
 
   // Get pubkey from Keplr
-  const directSigner = window.keplr.getOfflineSigner(CHAIN);
+  const directSigner = getActiveKeplr().getOfflineSigner(CHAIN);
   const accounts = await directSigner.getAccounts();
   const pubkeyB   = accounts[0].pubkey;
   const pubkeyAny = concat(
@@ -992,7 +1021,7 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
   const anyMsg2 = buildMsgSend(fromAddr, to2, amount2);
   const txBodyP = concat(encodeField(1,2,anyMsg1), encodeField(1,2,anyMsg2), encodeField(2,2,enc.encode(memo)));
 
-  const directSigner = window.keplr.getOfflineSigner(CHAIN);
+  const directSigner = getActiveKeplr().getOfflineSigner(CHAIN);
   const accounts = await directSigner.getAccounts();
   const pubkeyB  = accounts[0].pubkey;
   const pubkeyAny = concat(
@@ -1115,10 +1144,10 @@ async function updateVerifyBtnPrice(addr) {
 async function autoPayAndUnlock() {
   if (!connectedAddress) { alert('Connect wallet first!'); return; }
   const btn = document.getElementById('verify-btn');
-  btn.textContent = '⏳ Opening Keplr...'; btn.disabled = true;
+  btn.textContent = '⏳ Opening wallet...'; btn.disabled = true;
   try {
-    await window.keplr.enable('columbus-5');
-    const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
+    await enableActive('columbus-5');
+    const accounts = await getActiveKeplr().getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
 
     // ── Discount = RANK discount (by REP) + STREAK discount (7+ days), summed, capped 50%. ──
@@ -1246,6 +1275,7 @@ document.addEventListener('click', function(e) {
 
 window.connectWallet = async function(type) {
   if (type === 'keplr-ext') {
+    setActiveProvider('keplr');
     if (!window.keplr) {
       if (confirm('Keplr extension not found. Install Keplr?')) window.open('https://www.keplr.app/download', '_blank');
       return;
@@ -1261,6 +1291,7 @@ window.connectWallet = async function(type) {
       alert('Connection failed: ' + (e.message || e));
     }
   } else if (type === 'galaxy' || type === 'galaxy-mobile') {
+    setActiveProvider('galaxy');
     const galaxy = window.galaxyStation || window.station;
     if (!galaxy) {
       if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
@@ -1280,6 +1311,7 @@ window.connectWallet = async function(type) {
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
   } else if (type === 'station' || type === 'station-mobile') {
+    setActiveProvider('station');
     // Terra Station — uses window.station (same API as Galaxy Station)
     const stationWallet = window.station;
     if (!stationWallet) {
@@ -1470,13 +1502,13 @@ window.sendChatMessage = async function() {
   const statusEl = document.getElementById('chat-tx-status');
   const btn = document.getElementById('chat-page-send-btn');
   if (!text) { alert('Write a message first!'); return; }
-  if (!globalWalletAddress) { alert('Connect Keplr first!'); return; }
-  if (!window.keplr) { alert('Keplr not found!'); return; }
-  btn.textContent = '⏳ Waiting for Keplr...'; btn.disabled = true;
+  if (!globalWalletAddress) { alert('Connect your wallet first!'); return; }
+  if (!getActiveKeplr()) { alert('Wallet not found. Please connect a wallet.'); return; }
+  btn.textContent = '⏳ Waiting for wallet...'; btn.disabled = true;
   statusEl.style.display = 'none';
   try {
-    await window.keplr.enable('columbus-5');
-    const accounts = await window.keplr.getOfflineSigner('columbus-5').getAccounts();
+    await enableActive('columbus-5');
+    const accounts = await getActiveKeplr().getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
     const replyPrefix = window._chatReplyTo ? `>${window._chatReplyTo.txHash.slice(0,16)}|` : '';
     const fullMemo = (replyPrefix + text).slice(0, 256);
