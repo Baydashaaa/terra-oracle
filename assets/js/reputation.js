@@ -84,7 +84,7 @@ function renderRepPage(tab) {
     </div>
   `;
 
-  if (tab === 'leaderboard') loadLeaderboard();
+  if (tab === 'leaderboard') { loadLeaderboard(); setTimeout(updateWeeklyTimerVisibility, 50); }
   if (tab === 'stats') {
     // Poll until wallet is ready (session restore can take up to 3s)
     let attempts = 0;
@@ -104,7 +104,7 @@ function renderRepPage(tab) {
 // ── LEADERBOARD ───────────────────────────────────────────────
 function renderLeaderboardHTML() {
   return `
-    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
       <button onclick="switchLeaderboardPeriod('weekly')" id="lb-btn-weekly" style="
         background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.4);
         color:var(--accent);font-family:'Exo 2',sans-serif;font-size:10px;font-weight:700;
@@ -117,6 +117,12 @@ function renderLeaderboardHTML() {
         letter-spacing:0.1em;padding:6px 16px;border-radius:6px;cursor:pointer;">
         🔥 All Time
       </button>
+      <div id="lb-weekly-timer" style="display:none;margin-left:auto;align-items:center;gap:8px;
+        padding:6px 14px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.22);border-radius:8px;">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:0.04em;">Resets in</span>
+        <span id="lb-timer-value" style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:800;
+          color:var(--accent);letter-spacing:0.04em;">—</span>
+      </div>
     </div>
     <div id="leaderboard-list">
       <div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;">Loading...</div>
@@ -135,7 +141,51 @@ function switchLeaderboardPeriod(period) {
   const inactive = 'background:transparent;border:1px solid var(--border);color:var(--muted);';
   if (weekly)  weekly.style.cssText  = base + (period === 'weekly'  ? active : inactive);
   if (alltime) alltime.style.cssText = base + (period === 'alltime' ? active : inactive);
+  updateWeeklyTimerVisibility();
   loadLeaderboard();
+}
+
+// ── Weekly reset countdown — synced with REP Rewards payout ──
+// Payout runs every Tuesday 20:00 UTC (rep-rewards.js GitHub Action).
+function getNextPayoutDate() {
+  const now = new Date();
+  // Build this week's Tuesday 20:00 UTC
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 20, 0, 0));
+  const day = d.getUTCDay();            // 0=Sun, 1=Mon, 2=Tue, ...
+  const daysUntilTue = (2 - day + 7) % 7; // days forward to Tuesday
+  d.setUTCDate(d.getUTCDate() + daysUntilTue);
+  // If it's Tuesday but already past 20:00 UTC, jump to next Tuesday
+  if (d.getTime() <= now.getTime()) d.setUTCDate(d.getUTCDate() + 7);
+  return d;
+}
+
+function updateWeeklyTimer() {
+  const valEl = document.getElementById('lb-timer-value');
+  if (!valEl) return;
+  const now = Date.now();
+  const target = getNextPayoutDate().getTime();
+  let diff = Math.max(0, target - now);
+  const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+  const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+  const m = Math.floor(diff / 60000);    diff -= m * 60000;
+  const s = Math.floor(diff / 1000);
+  const pad = n => String(n).padStart(2, '0');
+  valEl.textContent = (d > 0 ? d + 'd ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+}
+
+function updateWeeklyTimerVisibility() {
+  const box = document.getElementById('lb-weekly-timer');
+  if (!box) return;
+  if (_lbPeriod === 'weekly') {
+    box.style.display = 'flex';
+    updateWeeklyTimer();
+    if (!window._lbTimerInterval) {
+      window._lbTimerInterval = setInterval(updateWeeklyTimer, 1000);
+    }
+  } else {
+    box.style.display = 'none';
+    if (window._lbTimerInterval) { clearInterval(window._lbTimerInterval); window._lbTimerInterval = null; }
+  }
 }
 
 async function loadLeaderboard() {
