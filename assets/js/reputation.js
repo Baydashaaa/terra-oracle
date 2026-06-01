@@ -276,8 +276,11 @@ function renderLeaderboardPage(page) {
 
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Always render 20 slots — fill empty ones with placeholder
-  const slots = Array.from({ length: PAGE_SIZE }, (_, i) => {
+  // Render a fixed number of slots so the board looks full even with few
+  // contributors. Empty slots show an inviting "open spot" — NOT a loading skeleton.
+  const VISUAL_MIN_SLOTS = 10;
+  const slotCount = page === 0 ? Math.max(VISUAL_MIN_SLOTS, slice.length) : slice.length;
+  const slots = Array.from({ length: slotCount }, (_, i) => {
     const globalIdx = page * PAGE_SIZE + i;
     const w = slice[i] || null;
     const medal = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : `#${globalIdx + 1}`;
@@ -292,20 +295,19 @@ function renderLeaderboardPage(page) {
     const ms = globalIdx < 3 ? MEDAL_STYLES[globalIdx] : null;
 
     if (!w) {
-      // Empty slot
+      // Empty slot — an inviting "open spot", not a loading skeleton.
       return `
         <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:10px;margin-bottom:8px;opacity:0.35;">
+          background:transparent;border:1px dashed var(--border);
+          border-radius:10px;margin-bottom:8px;opacity:0.5;">
           <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
-            color:${medalColor};min-width:32px;text-align:center;">${medal}</div>
+            color:var(--muted);min-width:32px;text-align:center;opacity:0.6;">${medal}</div>
           <div style="flex:1;">
-            <div style="width:140px;height:12px;background:var(--border);border-radius:4px;margin-bottom:6px;"></div>
-            <div style="width:200px;height:9px;background:var(--border);border-radius:4px;opacity:0.5;"></div>
+            <div style="font-size:12px;color:var(--muted);opacity:0.7;">Open spot — be a contributor</div>
           </div>
           <div style="text-align:right;">
-            <div style="width:48px;height:18px;background:var(--border);border-radius:4px;margin-bottom:3px;"></div>
-            <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--muted);opacity:0.5;">—</div>
+            <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;opacity:0.6;">REP</div>
           </div>
         </div>`;
     }
@@ -350,6 +352,7 @@ function renderLeaderboardPage(page) {
             <span>❓ ${w.questions} questions</span>
             <span>💬 ${w.answers} answers</span>
             <span>👍 ${w.upvotesReceived || 0} upvotes</span>
+            ${w.chatRep ? `<span>🗨️ +${w.chatRep} chat</span>` : ''}
             ${w.drawRep ? `<span>🎭 +${w.drawRep} draw</span>` : ''}
           </div>
         </div>
@@ -388,8 +391,6 @@ function renderLeaderboardPage(page) {
 
   el.innerHTML = slots + pagination;
 }
-
-// ── YOUR STATS ────────────────────────────────────────────────
 function renderStatsHTML(isConnected) {
   if (!isConnected) {
     return `
