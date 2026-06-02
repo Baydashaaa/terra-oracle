@@ -1,7 +1,26 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-05-23T21:26:34.511Z",
+  "_updated": "2026-06-02T14:13:49.383Z",
   "questions": [
+    {
+      "id": "LUNC-PWPX8N8",
+      "category": "Other",
+      "text": "Hello technical team,\n\nI am officially testing this question field with a deliberately long, semi-technical, slightly absurd, but genuinely useful message to check whether the form panics like a production server on a Friday at 5:59 PM.\n\nTest objective: verify that the input field accepts a long message, special characters, fake code snippets, paragraphs, French accents, reasonable emojis, absurd but realistic questions, and most importantly, that the “Submit” button does not suddenly decide to go on vacation.\n\nLet’s start with a classic developer situation.\n\nA user lands on the website, sees a button, clicks it, then clicks again, then clicks again because they think nothing happened. At that exact moment, the frontend wonders whether it should send one request, three requests, or write its resignation letter. The backend, meanwhile, may receive several identical requests and quietly whispers: “Why me?”\n\nSo here is my first technical question:\n\nIf I click the submit button 42 times, does the website:\n1. send only one clean request?\n2. send the same message 42 times?\n3. disable the button after the first click?\n4. display a loader?\n5. summon a JavaScript demon named FormValidationErrorExceptionOfChaos?\n\nSmall fake code example to test display:\n\nfunction submitQuestion(message) {\n  if (!message) {\n    return \"Error: the message is as empty as a developer’s motivation after 6 hours of debugging CSS.\";\n  }\n\n  if (message.length > 2000) {\n    return \"Warning: this message is longer than a meeting that should have been an email.\";\n  }\n\n  return \"Question submitted successfully. The server did not explode. Congratulations.\";\n}\n\nNow let’s test special characters:\n\né è à ù ç ô î ï ê ë\n% € $ £ # @ & * / \\ | ~ ^ ` \" ' ( ) [ ] { } < > = + - _\nDoes everything display correctly?\nDo apostrophes break anything?\nAre angle brackets <test> interpreted as HTML or simply displayed as text?\nDoes a fake script like <script>console.log(\"hello chaos\")</script> remain harmless inside the me",
+      "wallet": "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+      "walletHash": "sha256:v5skegx7",
+      "alias": "Anonymous#EGX7",
+      "title": "Seeker",
+      "txHash": "D5E09893FA9DE2FE485E3ACE76A6AB007B66937A9887F961F5B288D89940B66D",
+      "paymentAmount": 200000,
+      "tags": [],
+      "poll": null,
+      "createdAt": 1780409629,
+      "expiresAt": 1781014429,
+      "votes": 0,
+      "answers": [],
+      "status": "open",
+      "chosenAnswerId": null
+    },
     {
       "id": "LUNC-PH7PRXG",
       "category": "Other",
