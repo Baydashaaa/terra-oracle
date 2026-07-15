@@ -1085,13 +1085,27 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
   return txHash;
 }
 
-// ── Shared discount calc: rank discount (by REP) + streak discount (7+ days), summed, capped 50% ──
-// Rank uses the SAME full REP the profile uses (Q&A + chat + draw), via getRank().
+// ── Shared discount calc (canonical, per protocol docs) ──────────────────────
+// 1. Streak is fetched first: it provides both the 7-day discount (25%) and the
+//    REP multiplier. Effective REP = base REP × streak multiplier — the SAME
+//    number the profile page and leaderboard display, so rank always matches.
+// 2. Final discount = the HIGHER of rank discount vs streak discount (they do
+//    NOT stack). Canonical rules live in profile.js (combineDiscounts et al.).
 // Used by both the button price preview and the actual transaction so they always agree.
 async function getQuestionDiscountPct(addr) {
-  let rankD = 0, streakD = 0;
+  let rankD = 0, streakD = 0, streakMult = 1.0;
 
-  // ── Full REP = questions*40 + answers*15 + chatMsgs*5 + upvotes*10 + drawRep ──
+  // ── Streak: 7+ days = 25% discount, and the REP multiplier for ranks ──
+  try {
+    const sr = await fetch(`${WORKER_URL}/streak?wallet=${addr}`);
+    if (sr.ok) {
+      const sd = await sr.json();
+      if ((sd.currentStreak || 0) >= 7) streakD = (typeof STREAK_QUESTION_DISCOUNT !== 'undefined') ? STREAK_QUESTION_DISCOUNT : 25;
+      streakMult = sd.multiplier || 1.0;
+    }
+  } catch(e) {}
+
+  // ── Full base REP = questions*40 + answers*15 + chatMsgs*5 + upvotes*10 + drawRep ──
   try {
     let rep = 0;
     // Q&A stats (questions, answers, upvotes)
@@ -1118,16 +1132,13 @@ async function getQuestionDiscountPct(addr) {
     // Fallback: if everything above failed, use the partial score map
     if (!rep && window._walletScores && window._walletScores[addr]) rep = window._walletScores[addr];
 
-    if (typeof getRank === 'function') { const rk = getRank(rep); rankD = (rk && rk.discount) ? rk.discount : 0; }
+    // Rank is computed on EFFECTIVE REP (base × streak multiplier) — same as profile/leaderboard.
+    const effRep = (typeof getEffectiveRep === 'function') ? getEffectiveRep(rep, streakMult) : Math.round(rep * streakMult);
+    if (typeof getRank === 'function') { const rk = getRank(effRep); rankD = (rk && rk.discount) ? rk.discount : 0; }
   } catch(e) {}
 
-  // ── Streak discount (7+ days = 25%) ──
-  try {
-    const sr = await fetch(`${WORKER_URL}/streak?wallet=${addr}`);
-    if (sr.ok) { const sd = await sr.json(); if ((sd.currentStreak || 0) >= 7) streakD = 25; }
-  } catch(e) {}
-
-  return Math.min(rankD + streakD, 50);
+  // Higher of the two, never summed (per docs).
+  return (typeof combineDiscounts === 'function') ? combineDiscounts(rankD, streakD) : Math.max(rankD, streakD);
 }
 
 // Update the verify button text with the user's real (discounted) price.
@@ -1156,7 +1167,8 @@ async function autoPayAndUnlock() {
     const accounts = await getActiveKeplr().getOfflineSigner('columbus-5').getAccounts();
     const sender = accounts[0].address;
 
-    // ── Discount = RANK discount (by REP) + STREAK discount (7+ days), summed, capped 50%. ──
+    // ── Discount = HIGHER of RANK discount / STREAK discount (per docs, not summed). ──
+    // Rank uses effective REP (base × streak multiplier), same as profile page.
     // Same helper the button uses, so preview and charge always match.
     const discountPct = await getQuestionDiscountPct(sender);
 
