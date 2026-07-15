@@ -771,7 +771,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   try {
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: txHash === 'ADMIN_BYPASS' ? adminHeaders() : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, paymentAmount: 200000, poll }),
     });
     if (!res.ok) {
@@ -802,6 +802,23 @@ const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Proto
 const WEEKLY_DRAW_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
+
+// ── Admin secret (pairs with worker env ADMIN_SECRET) ────────────────────────
+// The admin wallet address is public (it's in this file), so the worker also
+// requires a shared secret in the X-Admin-Secret header for admin endpoints.
+// Asked once via prompt, then kept in localStorage on the admin's browser.
+function getAdminSecret(forceAsk) {
+  let s = null;
+  try { s = localStorage.getItem('admin_secret'); } catch(e) {}
+  if ((!s || forceAsk) && connectedAddress === ADMIN_WALLET) {
+    s = (prompt('Enter admin secret (must match the worker ADMIN_SECRET variable):') || '').trim();
+    if (s) { try { localStorage.setItem('admin_secret', s); } catch(e) {} }
+  }
+  return s || '';
+}
+function adminHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET, 'X-Admin-Secret': getAdminSecret() };
+}
 const REQUIRED_LUNC   = 200000000000; // 200,000 LUNC in uLUNC
 let connectedAddress  = null;
 
@@ -2307,7 +2324,7 @@ window.adminStartVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      headers: adminHeaders(),
       body: JSON.stringify({ id: voteId, action: 'start' }),
       signal: AbortSignal.timeout(6000),
     });
@@ -2324,7 +2341,7 @@ window.adminStopVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      headers: adminHeaders(),
       body: JSON.stringify({ id: voteId, action: 'stop' }),
       signal: AbortSignal.timeout(6000),
     });
@@ -2448,7 +2465,7 @@ window.adminCreateVote = async function() {
   try {
     const res = await fetch(`${WORKER_URL}/votes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      headers: adminHeaders(),
       body: JSON.stringify({ title, desc, type, durationMs, quorum, source, options: opts }),
       signal: AbortSignal.timeout(8000),
     });
@@ -2476,7 +2493,7 @@ window.adminDeleteVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET },
+      headers: adminHeaders(),
       body: JSON.stringify({ id: voteId }),
       signal: AbortSignal.timeout(6000),
     });
