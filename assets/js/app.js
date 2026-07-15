@@ -873,10 +873,12 @@ function getActiveProvider() {
 }
 function getActiveKeplr() {
   const p = getActiveProvider();
+  if (p === 'luncdash') return null; // view-only: address entered manually, no signer available
   if (p === 'galaxy') { const g = window.galaxyStation; if (g) return g.keplr || g; }
   if (p === 'station') { const s = window.station || window.galaxyStation; if (s) return s.keplr || s; }
   return window.keplr;
 }
+const VIEW_ONLY_MSG = 'This wallet was connected by address only (view-only). To sign transactions, connect via Keplr, Galaxy Station or Terra Station.';
 async function enableActive(chainId) {
   const k = getActiveKeplr();
   if (k && typeof k.enable === 'function') { try { await k.enable(chainId); } catch(e) {} }
@@ -1144,6 +1146,10 @@ async function updateVerifyBtnPrice(addr) {
 async function autoPayAndUnlock() {
   if (!connectedAddress) { alert('Connect wallet first!'); return; }
   const btn = document.getElementById('verify-btn');
+  if (!getActiveKeplr()) {
+    alert(getActiveProvider() === 'luncdash' ? VIEW_ONLY_MSG : 'Wallet extension not found. Please reconnect your wallet.');
+    return;
+  }
   btn.textContent = '⏳ Opening wallet...'; btn.disabled = true;
   try {
     await enableActive('columbus-5');
@@ -1275,7 +1281,6 @@ document.addEventListener('click', function(e) {
 
 window.connectWallet = async function(type) {
   if (type === 'keplr-ext') {
-    setActiveProvider('keplr');
     if (!window.keplr) {
       if (confirm('Keplr extension not found. Install Keplr?')) window.open('https://www.keplr.app/download', '_blank');
       return;
@@ -1285,13 +1290,13 @@ window.connectWallet = async function(type) {
       await window.keplr.enable('columbus-5');
       const signer = window.keplr.getOfflineSigner('columbus-5');
       const accounts = await signer.getAccounts();
+      setActiveProvider('keplr');
       setWalletConnected(accounts[0].address);
     } catch(e) {
       document.getElementById('wallet-btn-label').textContent = 'Connect';
       alert('Connection failed: ' + (e.message || e));
     }
   } else if (type === 'galaxy' || type === 'galaxy-mobile') {
-    setActiveProvider('galaxy');
     const galaxy = window.galaxyStation || window.station;
     if (!galaxy) {
       if (confirm('Galaxy Station not found. Install Galaxy Station?')) window.open('https://station.hexxagon.io/', '_blank');
@@ -1302,6 +1307,7 @@ window.connectWallet = async function(type) {
       const conn = await galaxy.connect();
       const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
       if (address) {
+        setActiveProvider('galaxy');
         setWalletConnected(address);
       } else {
         throw new Error('No address returned');
@@ -1311,7 +1317,6 @@ window.connectWallet = async function(type) {
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
   } else if (type === 'station' || type === 'station-mobile') {
-    setActiveProvider('station');
     // Terra Station — uses window.station (same API as Galaxy Station)
     const stationWallet = window.station;
     if (!stationWallet) {
@@ -1323,6 +1328,7 @@ window.connectWallet = async function(type) {
       const conn = await stationWallet.connect();
       const address = conn?.address || conn?.addresses?.mainnet || conn?.addresses?.['columbus-5'];
       if (address) {
+        setActiveProvider('station');
         setWalletConnected(address);
       } else {
         throw new Error('No address returned');
@@ -1334,12 +1340,14 @@ window.connectWallet = async function(type) {
   } else if (type === 'luncdash') {
     const addr = prompt('Enter your Terra Classic wallet address (terra1...):');
     if (addr && addr.startsWith('terra1') && addr.length > 20) {
+      setActiveProvider('luncdash');
       setWalletConnected(addr.trim());
     } else if (addr !== null) {
       alert('Invalid Terra Classic address.');
     }
   } else if (type === 'keplr-mobile') {
-    alert('Keplr Mobile (WalletConnect) coming soon! Use Keplr Extension for now.');
+    if (typeof openWalletQRModal === 'function') { openWalletQRModal('keplr-mobile'); return; }
+    alert('Keplr Mobile: use the QR option in the wallet menu, or connect via Keplr Extension.');
   }
 }
 
@@ -1432,6 +1440,8 @@ window.disconnectWallet = function() {
   globalWalletAddress = null;
   connectedAddress = null;
   clearWalletSession();
+  window._activeWalletProvider = null;
+  try { localStorage.removeItem('wallet_provider'); } catch(e) {}
   document.getElementById('wallet-btn-label').textContent = 'Connect';
   document.getElementById('wallet-main-btn').classList.remove('connected');
   document.getElementById('wallet-not-connected').style.display = 'block';
@@ -1503,7 +1513,7 @@ window.sendChatMessage = async function() {
   const btn = document.getElementById('chat-page-send-btn');
   if (!text) { alert('Write a message first!'); return; }
   if (!globalWalletAddress) { alert('Connect your wallet first!'); return; }
-  if (!getActiveKeplr()) { alert('Wallet not found. Please connect a wallet.'); return; }
+  if (!getActiveKeplr()) { alert(getActiveProvider() === 'luncdash' ? VIEW_ONLY_MSG : 'Wallet not found. Please connect a wallet.'); return; }
   btn.textContent = '⏳ Waiting for wallet...'; btn.disabled = true;
   statusEl.style.display = 'none';
   try {
