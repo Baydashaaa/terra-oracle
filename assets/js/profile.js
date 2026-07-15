@@ -26,9 +26,9 @@
 
 // ─── RANK SYSTEM (Oracle Ascension) ──────────────────────────
 // Reputation = Action Score + Quality Score
-// Action:  Ask question +40 | Vote +15 | Chat msg +2 | Join draw +10
-// Quality: Upvote received on question/answer +10 | Answer activity +5
-// Discount applies to question fee - pool always gets full amount
+// Action:  Ask question +40 | Answer +15 | Chat msg +5 (no limit)
+// Quality: Upvote received +10 | Oracle Draw mint +25/125/250 (via worker /rep/draw)
+// Discount applies to the question fee - Weekly Pool always gets its full 100,000 LUNC
 
 const RANKS = [
   {
@@ -81,6 +81,25 @@ const RANKS = [
     multiplier: 3.0,
   },
 ];
+
+// ── Canonical discount & effective-REP rules (SINGLE SOURCE OF TRUTH) ────────
+// Used by profile.js, reputation.js and app.js so rank, displayed REP and the
+// actual charged question price always agree. Per the protocol docs:
+//   1. The streak REP multiplier applies to your total base REP — this
+//      "effective REP" is the displayed reputation AND the score ranks use.
+//   2. When both a rank discount and the 7-day-streak discount (25%) are
+//      available, the HIGHER one applies. They do NOT stack.
+const STREAK_QUESTION_DISCOUNT = 25; // % off at 7+ day streak
+
+function getEffectiveRep(baseRep, streakMultiplier) {
+  return Math.round((baseRep || 0) * (streakMultiplier || 1.0));
+}
+function combineDiscounts(rankDiscount, streakDiscount) {
+  return Math.max(rankDiscount || 0, streakDiscount || 0);
+}
+window.getEffectiveRep = getEffectiveRep;
+window.combineDiscounts = combineDiscounts;
+window.STREAK_QUESTION_DISCOUNT = STREAK_QUESTION_DISCOUNT;
 
 // Legacy alias so existing code using TITLES still works
 const TITLES = RANKS.filter(r => r.minScore > 0).map(r => ({
@@ -618,7 +637,7 @@ function renderProfilePage() {
     // Calculate reputation + rank
     const baseReputation = calcReputation(qStats, chatStats) + (drawRep?.total || 0);
     const streakMultiplier = streakData?.multiplier || 1.0;
-    const reputation = Math.round(baseReputation * streakMultiplier);
+    const reputation = getEffectiveRep(baseReputation, streakMultiplier);
     const rank       = getRank(reputation);
     const nextRank   = getNextRank(reputation);
 
