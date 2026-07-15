@@ -2256,9 +2256,11 @@ async function loadVotesFromWorker() {
   }
 }
 
+// Static demo votes removed: they existed only in the frontend (not in the
+// worker KV), so /votes/cast returned 404 "Vote not found" and users saw a
+// fake "network issue" error. All votes now come from the worker (/votes) —
+// create real proposals via the admin panel instead.
 const VOTES_DATA = [
-  { id: 'v1', type: 'weekly', status: 'active', title: 'Protocol Development Priority - Week 11', desc: 'What should the development team focus on this week?', source: 'Based on community chat discussions', timer: '3d 14h remaining', totalVotes: 234, quorum: 100, options: [{ label: 'SDK 0.53 upgrade testing & QA', votes: 112 }, { label: 'MM 2.0 activation preparation', votes: 78 }, { label: 'USTC re-peg research', votes: 44 }], userVoted: null },
-  { id: 'v3', type: 'special', status: 'active', title: 'Terra Oracle - Reward Distribution Model', desc: 'Should we switch from "winner takes all" to top-3 distribution for Q&A rewards?', source: 'Proposal by community member · Terra Oracle governance', timer: '6d 2h remaining', totalVotes: 156, quorum: 100, options: [{ label: '70% winner + 30% voters', votes: 89 }, { label: 'Top-3 split (60/25/15)', votes: 41 }, { label: 'Keep current model', votes: 26 }], userVoted: null }
 ];
 
 // Filter out locally deleted static votes
@@ -2558,8 +2560,13 @@ async function castVote(voteId, optionIdx) {
       return;
     }
 
-    // Any other error (vote closed, server error) → roll back the optimistic vote.
-    throw new Error('cast rejected: ' + res.status);
+    // Any other error (vote closed, vote not found, server error) → roll back
+    // the optimistic vote and surface the REAL server reason to the user.
+    let serverErr = '';
+    try { const d = await res.json(); if (d && d.error) serverErr = d.error; } catch(e2) {}
+    const rejection = new Error(serverErr || ('cast rejected: ' + res.status));
+    rejection._serverReason = serverErr;
+    throw rejection;
   } catch (e) {
     // Roll back — the vote did NOT register on the server.
     vote.options[optionIdx].votes = prevVotes;
@@ -2572,7 +2579,8 @@ async function castVote(voteId, optionIdx) {
       if (key) { const stored = loadVotesFromStorage(); delete stored[voteId]; localStorage.setItem(key, JSON.stringify(stored)); }
     } catch(e2) {}
     renderVotes();
-    alert('Your vote could not be submitted (network issue). Please try again.');
+    if (e && e._serverReason) alert('Your vote could not be submitted: ' + e._serverReason);
+    else alert('Your vote could not be submitted (network issue). Please try again.');
   }
 }
 
