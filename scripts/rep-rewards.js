@@ -132,6 +132,10 @@ async function main() {
 
   const { privateKey, publicKey } = await deriveKeypair(MNEMONIC);
   const sender = pubkeyToAddress(publicKey);
+  // Safety: same address check the treasury script does — refuse to pay out
+  // from an unexpected wallet if the wrong mnemonic is configured.
+  const EXPECTED_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
+  if (sender !== EXPECTED_REWARDS_WALLET) throw new Error(`Address mismatch: mnemonic derives ${sender}, expected ${EXPECTED_REWARDS_WALLET}`);
   console.log(`👛 Rewards wallet: ${sender}`);
 
   const balRes  = await safeFetch(`${LCD_URL}/cosmos/bank/v1beta1/balances/${sender}`);
@@ -144,16 +148,45 @@ async function main() {
   console.log(`💰 Payout pool: ${(poolUluna/1e6).toFixed(3)} LUNC`);
   if (poolUluna<1_000_000) { console.log('⚠️ Pool too small.'); return; }
 
-  // Fetch all-time REP for each wallet to determine rank multiplier
-  console.log('\n📊 Fetching all-time REP for rank multipliers...');
+  // ── All-time REP for rank multipliers ──────────────────────────────────
+  // Rank must be computed on the SAME number the site shows: full all-time
+  // REP (Q&A + chat + draw) × streak multiplier ("effective REP", see the
+  // canonical rules in profile.js). Previously only draw-REP was used here,
+  // which under-ranked active Q&A/chat users and under-paid them.
+  console.log('\n📊 Building all-time REP map (Q&A + chat + draw, × streak)...');
+
+  // One /questions fetch covers Q&A REP for everyone (40/answer 15/upvote 10)
+  const qaRep = {};
+  try {
+    const qRes = await safeFetch(`${WORKER_URL}/questions`);
+    if (qRes.ok) {
+      const qData = await qRes.json();
+      for (const q of qData.questions || []) {
+        if (q.wallet) qaRep[q.wallet] = (qaRep[q.wallet] || 0) + 40;
+        for (const a of q.answers || []) {
+          if (a.wallet) qaRep[a.wallet] = (qaRep[a.wallet] || 0) + 15 + (a.votes || 0) * 10;
+        }
+      }
+    }
+  } catch(e) { console.warn('⚠️ Q&A fetch failed (Q&A REP counted as 0):', e.message); }
+
   const allTimeRepMap = {};
   await Promise.all(data.topWallets.map(async w => {
+    let draw = 0, chat = 0, streakMult = 1.0;
     try {
       const r = await safeFetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`);
-      const d = r.ok ? await r.json() : { total: 0 };
-      // all-time draw REP (total from draw)
-      allTimeRepMap[w.wallet] = d.total || 0;
-    } catch(e) { allTimeRepMap[w.wallet] = 0; }
+      if (r.ok) draw = (await r.json()).total || 0;
+    } catch(e) {}
+    try {
+      const r = await safeFetch(`${WORKER_URL}/chat/count?wallet=${w.wallet}`);
+      if (r.ok) { const d = await r.json(); chat = (d.msgCount || d.total || 0) * 5; }
+    } catch(e) {}
+    try {
+      const r = await safeFetch(`${WORKER_URL}/streak?wallet=${w.wallet}`);
+      if (r.ok) streakMult = (await r.json()).multiplier || 1.0;
+    } catch(e) {}
+    const base = (qaRep[w.wallet] || 0) + chat + draw;
+    allTimeRepMap[w.wallet] = Math.round(base * streakMult); // effective REP — same as site rank
   }));
 
   // Weighted REP = weekly REP × rank multiplier (rank based on all-time REP)
