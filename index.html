@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607151600">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607151800">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -859,37 +859,41 @@
  <!-- ── TCO TOKEN ── -->
  <div class="zk-module" style="margin-bottom:20px;--mod-c1:#E8C840;--mod-c2:#7B5CFF;">
   <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:20px 22px;">
-   <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-    <div style="width:36px;height:36px;border-radius:50%;background:rgba(232,200,64,0.12);border:1px solid rgba(232,200,64,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🪙</div>
-    <div>
-     <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-weight:700;font-size:14px;color:#fff;">TCO Token</span>
-      <span style="font-size:8px;background:rgba(232,200,64,0.12);color:var(--gold);border:1px solid rgba(232,200,64,0.25);border-radius:6px;padding:2px 8px;letter-spacing:0.1em;text-transform:uppercase;">COMING SOON</span>
+  <div class="zk-module-inner" style="padding:24px 26px;">
+   <div class="tcox-wrap">
+    <div class="tcox-coin">
+     <div class="halo"></div>
+     <div class="core">TCO</div>
+     <div class="ring"></div>
+    </div>
+    <div style="flex:1;min-width:0;">
+     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-weight:800;font-size:16px;color:#fff;font-family:'Exo 2',sans-serif;letter-spacing:.03em;">TCO Token</span>
+      <span class="tcox-badge">Coming Soon</span>
      </div>
-     <div style="font-size:11px;color:var(--muted);margin-top:2px;">Terra Classic Oracle - native governance &amp; reward token</div>
-    </div>
-   </div>
-   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">🏛️</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Governance</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Vote weight by TCO stake</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">💎</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Rewards</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Earned by Oracle participation</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">🔥</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">Deflationary</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">% burned on every activity</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 10px;text-align:center;">
-     <div style="font-size:20px;margin-bottom:6px;">⛓️</div>
-     <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:3px;">On-Chain</div>
-     <div style="font-size:10px;color:var(--muted);line-height:1.5;">Terra Classic · columbus-5</div>
+     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle — native governance &amp; reward token of the ecosystem. Earned by participating, burned by using.</div>
+     <div class="tcox-grid">
+      <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
+       <div class="tcox-ico">🏛️</div>
+       <div class="t">Governance</div>
+       <div class="d">Vote weight by TCO stake</div>
+      </div>
+      <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
+       <div class="tcox-ico">💎</div>
+       <div class="t">Rewards</div>
+       <div class="d">Earned by Oracle participation</div>
+      </div>
+      <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
+       <div class="tcox-ico">🔥</div>
+       <div class="t">Deflationary</div>
+       <div class="d">% burned on every activity</div>
+      </div>
+      <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
+       <div class="tcox-ico">⛓️</div>
+       <div class="t">On-Chain</div>
+       <div class="d">Terra Classic · columbus-5</div>
+      </div>
+     </div>
     </div>
    </div>
   </div>
@@ -898,76 +902,81 @@
  <!-- ── PROTOCOL FLOW ── -->
  <div class="zk-module" style="--mod-c1:#7B5CFF;--mod-c2:#00D4FF;">
   <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:20px 22px;">
+  <div class="zk-module-inner" style="padding:24px 26px;">
 
-   <div style="font-size:9px;letter-spacing:0.22em;color:rgba(160,140,255,0.9);text-transform:uppercase;margin-bottom:20px;font-family:'Exo 2',sans-serif;">◈ Protocol Flow</div>
+   <div style="font-size:9px;letter-spacing:0.22em;color:rgba(160,140,255,0.9);text-transform:uppercase;margin-bottom:22px;font-family:'Exo 2',sans-serif;">&#9672; Protocol Flow</div>
 
    <!-- STREAM 1: Oracle Questions -->
-   <div style="margin-bottom:20px;">
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#a08fff;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;animation:dotPulse 2s infinite;"></span>
-     Oracle Questions
+   <div class="pfx-stream" style="--pc:#7B5CFF;--pt:#a08fff;">
+    <div class="pfx-node"></div>
+    <div class="pfx-title">Oracle Questions</div>
+    <div class="pfx-row">
+     <div class="pfx-chip" style="border-color:rgba(123,92,255,.3);background:rgba(123,92,255,.08);">
+      <div class="v">200,000 LUNC</div>
+      <div class="s">per question</div>
+     </div>
+     <span class="pfx-arrow">&rarr;</span>
+     <div class="pfx-chip"><div class="v" style="font-size:11px;color:rgba(0,255,176,.9);">&#127903; +2 free Weekly entries</div></div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(123,92,255,0.1);border:1px solid rgba(123,92,255,0.25);border-radius:8px;padding:8px 14px;min-width:100px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;letter-spacing:0.02em;">200,000 LUNC</div>
-      <div style="font-size:10px;color:rgba(160,180,210,0.7);margin-top:1px;">per question</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(192,168,255,0.98);">🎰 <strong>50%</strong> → Weekly Prize Pool</div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.15);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.98);">🏛 <strong>50%</strong> → Protocol Treasury</div>
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.7);">🎟 <strong>+2</strong> free Weekly entries</div>
-     </div>
+    <div class="pfx-bar">
+     <span style="width:50%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);"></span>
+     <span style="width:50%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.15s;"></span>
+    </div>
+    <div class="pfx-legend">
+     <div><i style="background:#a78bfa;"></i>50% &rarr; Weekly Prize Pool</div>
+     <div><i style="background:#E8C840;"></i>50% &rarr; Protocol Treasury</div>
     </div>
    </div>
-
-   <div style="height:1px;background:rgba(255,255,255,0.04);margin-bottom:20px;"></div>
 
    <!-- STREAM 2: Daily Draw -->
-   <div style="margin-bottom:20px;">
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#fbbf24;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;display:inline-block;animation:dotPulse 2s 0.3s infinite;"></span>
-     Daily Draw · every day 20:00 UTC
+   <div class="pfx-stream" style="--pc:#f59e0b;--pt:#fbbf24;">
+    <div class="pfx-node"></div>
+    <div class="pfx-title">Daily Draw &middot; every day 20:00 UTC</div>
+    <div class="pfx-row">
+     <div class="pfx-chip" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08);">
+      <div class="v">NFT Mint</div>
+      <div class="s">Common / Rare / Legendary</div>
+     </div>
+     <span class="pfx-arrow">&rarr;</span>
+     <div class="pfx-chip" style="border-color:rgba(245,158,11,.25);"><div class="v" style="font-size:12px;color:#fbbf24;">Daily Pool</div></div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:8px 14px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;">NFT Mint</div>
-      <div style="font-size:10px;color:rgba(160,180,210,0.7);margin-top:1px;">Common / Rare / Legendary</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.18);border-radius:8px;padding:6px 14px;font-size:12px;color:#fbbf24;font-weight:700;">Daily Pool</div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.95);">🥇 <strong>80%</strong> → 1 Winner</div>
-      <div style="background:rgba(123,92,255,0.06);border:1px solid rgba(123,92,255,0.15);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(160,130,255,0.98);">🌱 <strong>10%</strong> → Seeds next round</div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.95);">🏛 <strong>10%</strong> → Treasury</div>
-     </div>
+    <div class="pfx-bar">
+     <span style="width:80%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
+     <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.15s;"></span>
+     <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.3s;"></span>
+    </div>
+    <div class="pfx-legend">
+     <div><i style="background:#00ffb0;"></i>&#129351; 80% &rarr; 1 Winner</div>
+     <div><i style="background:#a78bfa;"></i>&#127793; 10% &rarr; Seeds next round</div>
+     <div><i style="background:#E8C840;"></i>&#127963; 10% &rarr; Treasury</div>
     </div>
    </div>
 
-   <div style="height:1px;background:rgba(255,255,255,0.04);margin-bottom:20px;"></div>
-
    <!-- STREAM 3: Weekly Draw -->
-   <div>
-    <div style="font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#c4b5fd;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-     <span style="width:5px;height:5px;border-radius:50%;background:#a78bfa;display:inline-block;animation:dotPulse 2s 0.6s infinite;"></span>
-     Weekly Draw · every Monday 20:00 UTC
+   <div class="pfx-stream" style="--pc:#a78bfa;--pt:#c4b5fd;">
+    <div class="pfx-node"></div>
+    <div class="pfx-title">Weekly Draw &middot; every Monday 20:00 UTC</div>
+    <div class="pfx-row">
+     <div class="pfx-chip" style="border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08);">
+      <div class="v">NFT Mint + Questions</div>
+      <div class="s">entries from both</div>
+     </div>
+     <span class="pfx-arrow">&rarr;</span>
+     <div class="pfx-chip" style="border-color:rgba(167,139,250,.25);"><div class="v" style="font-size:12px;color:#c4b5fd;">Weekly Pool</div></div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-     <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.22);border-radius:8px;padding:8px 14px;">
-      <div style="font-size:13px;color:#ffffff;font-weight:700;">NFT Mint + Questions</div>
-     </div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:6px 14px;font-size:12px;color:#c4b5fd;font-weight:700;">Weekly Pool</div>
-     <span style="color:rgba(160,180,210,0.6);font-size:14px;">→</span>
-     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <div style="background:rgba(0,255,176,0.05);border:1px solid rgba(0,255,176,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.98);">🥇 <strong>48%</strong> → 1st</div>
-      <div style="background:rgba(0,255,176,0.03);border:1px solid rgba(0,255,176,0.08);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.88);">🥈 <strong>20%</strong> → 2nd</div>
-      <div style="background:rgba(0,255,176,0.02);border:1px solid rgba(0,255,176,0.06);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(0,255,176,0.78);">🥉 <strong>12%</strong> → 3rd</div>
-      <div style="background:rgba(123,92,255,0.06);border:1px solid rgba(123,92,255,0.14);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(160,130,255,0.98);">🌱 <strong>10%</strong> → Seeds</div>
-      <div style="background:rgba(232,200,64,0.05);border:1px solid rgba(232,200,64,0.12);border-radius:8px;padding:6px 12px;font-size:11px;color:rgba(245,215,80,0.95);">🏛 <strong>10%</strong> → Treasury</div>
-     </div>
+    <div class="pfx-bar">
+     <span style="width:48%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
+     <span style="width:20%;background:linear-gradient(90deg,#0a9f74,#00e6a0);animation-delay:.12s;"></span>
+     <span style="width:12%;background:linear-gradient(90deg,#0b8a68,#00cc90);animation-delay:.24s;"></span>
+     <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.36s;"></span>
+     <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.48s;"></span>
+    </div>
+    <div class="pfx-legend">
+     <div><i style="background:#00ffb0;"></i>&#129351; 48% &rarr; 1st</div>
+     <div><i style="background:#00e6a0;"></i>&#129352; 20% &rarr; 2nd</div>
+     <div><i style="background:#00cc90;"></i>&#129353; 12% &rarr; 3rd</div>
+     <div><i style="background:#a78bfa;"></i>&#127793; 10% &rarr; Seeds</div>
+     <div><i style="background:#E8C840;"></i>&#127963; 10% &rarr; Treasury</div>
     </div>
    </div>
 
@@ -1911,10 +1920,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607151600"></script>
-  <script src="assets/js/app.js?v=202607151600"></script>
-  <script src="assets/js/profile.js?v=202607151600"></script>
-  <script src="assets/js/reputation.js?v=202607151600"></script>
+  <script src="assets/js/treasury.js?v=202607151800"></script>
+  <script src="assets/js/app.js?v=202607151800"></script>
+  <script src="assets/js/profile.js?v=202607151800"></script>
+  <script src="assets/js/reputation.js?v=202607151800"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
