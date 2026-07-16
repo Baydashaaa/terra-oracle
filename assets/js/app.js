@@ -2628,12 +2628,12 @@ function oLoadBagCache(wallet) {
     return d.nftsRaw;
   } catch(e) { return null; }
 }
-async function oFetch(url, opts = {}, attempts = 2) {
+async function oFetch(url, opts = {}, attempts = 2, timeoutMs = 8000) {
   let err;
   for (let i = 0; i < attempts; i++) {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
       const res = await fetch(url, { ...opts, signal: ctrl.signal });
       clearTimeout(t);
       if (res.ok || res.status < 500) return res;
@@ -2671,8 +2671,12 @@ function renderOracleBag() {
 async function loadOracleBagNFTs(wallet) {
   const el = id => document.getElementById(id);
 
+  // NFTs go through the Draw Worker proxy (/owned-nfts) — same SWR cache as
+  // the draw site: instant from KV after the first ever load, background
+  // refresh, no more waiting on the slow marketplace API. Direct Paco call
+  // remains as a last-resort fallback below.
   const [nftResult, dailyStatsResult, weeklyStatsResult] = await Promise.allSettled([
-    oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 3),
+    oFetch(`${O_DRAW_WORKER}/owned-nfts?wallet=${wallet}`, {}, 2, 45000),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=daily`, {}, 2),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=weekly`, {}, 2),
   ]);
@@ -2688,6 +2692,16 @@ async function loadOracleBagNFTs(wallet) {
     } catch(e) { pacoError = 'Invalid response'; }
   } else {
     pacoError = nftResult.reason?.message || 'API error';
+    // Worker proxy failed — last resort: Paco directly with a generous timeout.
+    try {
+      const direct = await oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 2, 15000);
+      if (direct.ok) {
+        const data = await direct.json();
+        allNFTs = Array.isArray(data) ? data : (data.nfts || data.data || data.tokens || []);
+        oSaveBagCache(wallet, allNFTs);
+        pacoError = null;
+      }
+    } catch(e2) {}
   }
 
   if (dailyStatsResult.status === 'fulfilled' && dailyStatsResult.value.ok) {
