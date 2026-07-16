@@ -1172,3 +1172,48 @@ canvas {
     box-shadow: none !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   HOME: TCO Token & Protocol Flow sections (redesign)
+   ═══════════════════════════════════════════════════════════ */
+/* ── TCO Token & Protocol Flow redesign (scoped) ── */
+@keyframes tcoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes tcoOrbit { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes tcoShimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes tcoGlow { 0%,100%{opacity:.55} 50%{opacity:1} }
+@keyframes pfxPulse { 0%,100%{box-shadow:0 0 0 0 rgba(123,92,255,.45)} 50%{box-shadow:0 0 0 6px rgba(123,92,255,0)} }
+@keyframes pfxBar { from{width:0} }
+.tcox-wrap{display:flex;gap:26px;align-items:center;}
+.tcox-coin{position:relative;width:112px;height:112px;flex-shrink:0;animation:tcoFloat 5s ease-in-out infinite;}
+.tcox-coin .core{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle at 32% 28%, #ffe9a3 0%, #E8C840 34%, #b8860b 68%, #6d4c00 100%);box-shadow:0 0 34px rgba(232,200,64,.4), inset 0 -6px 14px rgba(0,0,0,.35), inset 0 5px 10px rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:rgba(60,40,0,.85);font-family:'Exo 2',sans-serif;letter-spacing:.02em;}
+.tcox-coin .ring{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(232,200,64,.4);animation:tcoOrbit 14s linear infinite;}
+.tcox-coin .ring::before{content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;border-radius:50%;background:#00D4FF;box-shadow:0 0 10px #00D4FF;}
+.tcox-coin .halo{position:absolute;inset:-16px;border-radius:50%;background:radial-gradient(circle, rgba(232,200,64,.18) 0%, transparent 65%);animation:tcoGlow 4s ease-in-out infinite;pointer-events:none;}
+.tcox-badge{font-size:8px;border:1px solid rgba(232,200,64,.3);border-radius:6px;padding:3px 10px;letter-spacing:.14em;text-transform:uppercase;color:#0b0d14;font-weight:800;background:linear-gradient(110deg,#E8C840 30%,#fff3c2 45%,#E8C840 60%);background-size:200% 100%;animation:tcoShimmer 3.2s linear infinite;}
+.tcox-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;}
+.tcox-tile{position:relative;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px 12px;text-align:center;overflow:hidden;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.tcox-tile::before{content:'';position:absolute;top:0;left:12%;right:12%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--tc,#7B5CFF),transparent);opacity:.55;transition:opacity .25s ease;}
+.tcox-tile:hover{transform:translateY(-4px);border-color:var(--tcb,rgba(123,92,255,.35));box-shadow:0 10px 28px -12px var(--tcs,rgba(123,92,255,.45));}
+.tcox-tile:hover::before{opacity:1;}
+.tcox-ico{width:38px;height:38px;margin:0 auto 9px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:color-mix(in srgb, var(--tc,#7B5CFF) 12%, transparent);border:1px solid var(--tcb,rgba(123,92,255,.3));box-shadow:0 0 14px -4px var(--tcs,rgba(123,92,255,.5));}
+.tcox-tile .t{font-size:11px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.03em;}
+.tcox-tile .d{font-size:10px;color:var(--muted);line-height:1.55;}
+@media(max-width:640px){.tcox-wrap{flex-direction:column;text-align:center}.tcox-grid{grid-template-columns:repeat(2,1fr)}}
+.pfx-stream{position:relative;padding-left:26px;}
+.pfx-stream + .pfx-stream{margin-top:22px;}
+.pfx-stream::before{content:'';position:absolute;left:6px;top:16px;bottom:-22px;width:2px;background:linear-gradient(180deg, var(--pc,#7B5CFF), transparent);opacity:.28;}
+.pfx-stream:last-child::before{display:none;}
+.pfx-node{position:absolute;left:0;top:2px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%, #fff, var(--pc,#7B5CFF) 55%);box-shadow:0 0 10px var(--pc,#7B5CFF);animation:pfxPulse 2.4s infinite;}
+.pfx-title{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--pt,#a08fff);margin-bottom:10px;font-family:'Exo 2',sans-serif;font-weight:700;}
+.pfx-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.pfx-chip{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;transition:transform .2s ease, border-color .2s ease, background .2s ease;}
+.pfx-chip:hover{transform:translateY(-2px);border-color:var(--pc,#7B5CFF);background:rgba(255,255,255,.055);}
+.pfx-chip .v{font-size:13px;color:#fff;font-weight:800;letter-spacing:.02em;}
+.pfx-chip .s{font-size:10px;color:rgba(160,180,210,.72);margin-top:1px;}
+.pfx-arrow{color:rgba(160,180,210,.55);font-size:14px;}
+.pfx-bar{display:flex;height:9px;border-radius:6px;overflow:hidden;margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);}
+.pfx-bar span{height:100%;animation:pfxBar 1.2s cubic-bezier(.2,.8,.2,1) both;}
+.pfx-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:8px;}
+.pfx-legend div{font-size:10px;color:rgba(190,200,225,.85);display:flex;align-items:center;gap:6px;}
+.pfx-legend i{width:8px;height:8px;border-radius:2px;display:inline-block;}
