@@ -2591,6 +2591,7 @@ const O_NFT_API_BASE = 'https://nft.lunc.tools/api';
 const O_DRAW_WORKER  = 'https://oracle-draw.vladislav-baydan.workers.dev';
 const O_BAG_CACHE_KEY = 'oracle_bag_cache_v1';
 const O_BAG_CACHE_TTL = 5 * 60 * 1000;
+const O_BAG_CACHE_MAX_AGE = 30 * 60 * 1000; // still instant-painted, just marked stale
 
 function oDetectNFTTier(nft) {
   const name = (nft.name || nft.nft_name || '').toLowerCase();
@@ -2617,14 +2618,14 @@ function oFormatNFTLabel(tokenId) {
   return '#' + tokenId;
 }
 function oSaveBagCache(wallet, nftsRaw) {
-  try { sessionStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
+  try { localStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
 }
-function oLoadBagCache(wallet) {
+function oLoadBagCache(wallet, maxAge = O_BAG_CACHE_TTL) {
   try {
-    const raw = sessionStorage.getItem(O_BAG_CACHE_KEY);
+    const raw = localStorage.getItem(O_BAG_CACHE_KEY);
     if (!raw) return null;
     const d = JSON.parse(raw);
-    if (d.wallet !== wallet || Date.now() - d.ts > O_BAG_CACHE_TTL) return null;
+    if (d.wallet !== wallet || Date.now() - d.ts > maxAge) return null;
     return d.nftsRaw;
   } catch(e) { return null; }
 }
@@ -2659,11 +2660,29 @@ function renderOracleBag() {
   conn.style.display    = 'block';
 
   const el = id => document.getElementById(id);
-  if (el('o-bag-stat-nfts'))   el('o-bag-stat-nfts').textContent   = '…';
-  if (el('o-bag-stat-won'))    el('o-bag-stat-won').textContent    = '-';
-  if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = '…';
-  if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = '…';
-  if (el('o-bag-count'))       el('o-bag-count').textContent       = '…';
+
+  // Instant paint from cache (client-side stale-while-revalidate): if we have
+  // ANY cached NFT list for this wallet, render it immediately instead of
+  // sitting on ambiguous "…" placeholders while loadOracleBagNFTs fetches
+  // fresh data in the background.
+  const cachedNfts = oLoadBagCache(wallet, O_BAG_CACHE_MAX_AGE);
+  if (cachedNfts) {
+    renderOracleBagFromNFTs(wallet, cachedNfts, { fromCache: true });
+  } else {
+    if (el('o-bag-stat-nfts'))   el('o-bag-stat-nfts').textContent   = '…';
+    if (el('o-bag-stat-won'))    el('o-bag-stat-won').textContent    = '-';
+    if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = '…';
+    if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = '…';
+    if (el('o-bag-count'))       el('o-bag-count').textContent       = '…';
+    const grid = el('o-bag-grid'), empty = el('o-bag-empty');
+    if (grid) grid.style.display = 'none';
+    if (empty) {
+      empty.style.display = 'block';
+      const msg = empty.querySelector('div');
+      if (msg) msg.innerHTML = `⏳ Loading your Oracle Masks…<br>
+        <span style="font-size:11px;color:var(--muted);">First load can take up to ~60s if the marketplace API is slow. Later visits load instantly from cache.</span>`;
+    }
+  }
 
   loadOracleBagNFTs(wallet);
 }
@@ -2675,8 +2694,10 @@ async function loadOracleBagNFTs(wallet) {
   // the draw site: instant from KV after the first ever load, background
   // refresh, no more waiting on the slow marketplace API. Direct Paco call
   // remains as a last-resort fallback below.
+  // Single attempt: the worker already retries 3× internally against Paco.
+  // A second browser-side attempt used to double the worst-case wait.
   const [nftResult, dailyStatsResult, weeklyStatsResult] = await Promise.allSettled([
-    oFetch(`${O_DRAW_WORKER}/owned-nfts?wallet=${wallet}`, {}, 2, 45000),
+    oFetch(`${O_DRAW_WORKER}/owned-nfts?wallet=${wallet}`, {}, 1, 42000),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=daily`, {}, 2),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=weekly`, {}, 2),
   ]);
@@ -2694,7 +2715,7 @@ async function loadOracleBagNFTs(wallet) {
     pacoError = nftResult.reason?.message || 'API error';
     // Worker proxy failed — last resort: Paco directly with a generous timeout.
     try {
-      const direct = await oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 2, 15000);
+      const direct = await oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 1, 18000);
       if (direct.ok) {
         const data = await direct.json();
         allNFTs = Array.isArray(data) ? data : (data.nfts || data.data || data.tokens || []);
@@ -2738,6 +2759,18 @@ async function loadOracleBagNFTs(wallet) {
       return;
     }
   }
+
+  await renderOracleBagFromNFTs(wallet, allNFTs, { pacoError });
+}
+
+// Pure render: paints My Bag from an already-fetched NFT list. Called both
+// for the instant cache-paint (meta.fromCache=true) and after a real fetch
+// resolves, so the UI never sits on ambiguous "…" placeholders longer than
+// the actual network wait requires.
+async function renderOracleBagFromNFTs(wallet, allNFTs, meta = {}) {
+  const { pacoError = null, fromCache = false } = meta;
+  const el = id => document.getElementById(id);
+  let dailyActiveWallets = new Set(), weeklyActiveWallets = new Set();
 
   // Filter Oracle Mask NFTs only
   const masks = allNFTs.filter(n => {
@@ -2822,7 +2855,7 @@ async function loadOracleBagNFTs(wallet) {
   if (el('o-won-weekly'))      el('o-won-weekly').textContent      = wonWeekly;
   if (el('o-bag-stat-daily'))  el('o-bag-stat-daily').textContent  = dailyEntries;
   if (el('o-bag-stat-weekly')) el('o-bag-stat-weekly').textContent = weeklyEntries;
-  if (el('o-bag-count'))       el('o-bag-count').textContent       = nfts.length;
+  if (el('o-bag-count'))       el('o-bag-count').textContent       = nfts.length + (fromCache ? ' (refreshing…)' : '');
 
   const grid = el('o-bag-grid'), empty = el('o-bag-empty');
   if (grid) {
