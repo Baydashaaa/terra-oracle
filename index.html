@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607152800">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607153100">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -887,6 +887,76 @@
     </div>
   </div>
  </div>
+
+  <!-- ── ORACLE CYCLE ── -->
+  <div style="max-width:860px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
+   <div class="oc3">
+    <div class="oc3-glow1"></div><div class="oc3-glow2"></div>
+    <div class="oc3-star" style="left:12%;top:22%;"></div><div class="oc3-star" style="left:28%;top:70%;animation-delay:.8s;"></div><div class="oc3-star" style="left:64%;top:14%;animation-delay:1.4s;"></div><div class="oc3-star" style="left:86%;top:52%;animation-delay:.4s;"></div><div class="oc3-star" style="left:48%;top:88%;animation-delay:2s;"></div>
+    <div class="oc3-head">
+     <div class="oc3-kicker">&#9670; How It All Connects</div>
+     <div class="oc3-title">One loop. <em>Every action pays forward.</em></div>
+     <div class="oc3-sub">The Oracle Cycle resets every Monday &mdash; and the top players split the Treasury.</div>
+    </div>
+    <div class="oc3-body">
+     <div class="oc3-reactor">
+      <svg viewBox="0 0 240 240">
+       <circle cx="120" cy="120" r="112" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+       <g class="oc3-ring-spin"><circle cx="120" cy="120" r="104" fill="none" stroke="rgba(123,92,255,.35)" stroke-width="1.5" stroke-dasharray="40 260"/></g>
+       <g class="oc3-ring-spin2"><circle cx="120" cy="120" r="96" fill="none" stroke="rgba(0,212,255,.3)" stroke-width="1" stroke-dasharray="20 120"/></g>
+       <circle id="oc3prog" class="oc3-prog" cx="120" cy="120" r="86" fill="none" stroke="url(#oc3g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
+       <defs><linearGradient id="oc3g" x1="0" y1="0" x2="240" y2="240"><stop offset="0" stop-color="#7B5CFF"/><stop offset=".5" stop-color="#00D4FF"/><stop offset="1" stop-color="#00FFB0"/></linearGradient></defs>
+      </svg>
+      <div class="oc3-core"><div class="oc3-core-num" id="oc3num" style="color:#a78bfa;">01</div><div class="oc3-core-lbl">of 04 &middot; weekly</div></div>
+     </div>
+     <div class="oc3-steps" id="oc3steps">
+      <div class="oc3-step on" style="--nc:#7B5CFF;--nc2:#c4b5fd;">
+       <div class="top"><div class="oc3-ico">&#128172;</div><div class="oc3-name">Participate</div><div class="oc3-idx">01</div></div>
+       <div class="oc3-more"><div class="oc3-desc">Ask a question, join the on-chain chat, or cast your governance vote.</div>
+       <div class="oc3-tags"><span>Ask</span><span>Chat</span><span>Vote</span></div></div>
+       <div class="oc3-bar"></div>
+      </div>
+      <div class="oc3-step" style="--nc:#00D4FF;--nc2:#67e8f9;">
+       <div class="top"><div class="oc3-ico">&#9889;</div><div class="oc3-name">Earn REP</div><div class="oc3-idx">02</div></div>
+       <div class="oc3-more"><div class="oc3-desc">Every action builds reputation. Daily streaks multiply everything you earn.</div>
+       <div class="oc3-tags"><span>Points</span><span>Streaks &times;1.5</span><span>Ranks</span></div></div>
+       <div class="oc3-bar"></div>
+      </div>
+      <div class="oc3-step" style="--nc:#E8C840;--nc2:#fde68a;">
+       <div class="top"><div class="oc3-ico">&#127903;</div><div class="oc3-name">Enter the Draw</div><div class="oc3-idx">03</div></div>
+       <div class="oc3-more"><div class="oc3-desc">Mint an Oracle Mask &mdash; win LUNC prizes, stack bonus REP, keep the collectible.</div>
+       <div class="oc3-tags"><span>LUNC Prizes</span><span>+REP</span><span>NFT</span></div></div>
+       <div class="oc3-bar"></div>
+      </div>
+      <div class="oc3-step" style="--nc:#00FFB0;--nc2:#6ee7b7;">
+       <div class="top"><div class="oc3-ico">&#127942;</div><div class="oc3-name">Get Rewarded</div><div class="oc3-idx">04</div></div>
+       <div class="oc3-more"><div class="oc3-desc">Top 20% by weekly REP split the Treasury pool. Then the loop begins again.</div>
+       <div class="oc3-tags"><span>Top 20%</span><span>Treasury Payout</span></div></div>
+       <div class="oc3-bar"></div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <script>
+  (function () {
+    var steps = [].slice.call(document.querySelectorAll('.oc3-step'));
+    if (!steps.length) return;
+    var num = document.getElementById('oc3num');
+    var prog = document.getElementById('oc3prog');
+    var colors = ['#a78bfa', '#67e8f9', '#fde68a', '#6ee7b7'];
+    function setActive(n) {
+      steps.forEach(function (s, k) { s.classList.toggle('on', k === n); });
+      num.textContent = '0' + (n + 1);
+      num.style.color = colors[n];
+      prog.style.strokeDashoffset = String(540 - 540 * ((n + 1) / 4));
+    }
+    steps.forEach(function (s, k) {
+      s.addEventListener('click', function () { setActive(k); });
+    });
+  })();
+  </script>
 
   <!-- Protocol sections below -->
  <div style="max-width:720px;margin:0 auto;padding:16px 24px 80px;position:relative;z-index:1;">
@@ -1955,10 +2025,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607152800"></script>
-  <script src="assets/js/app.js?v=202607152800"></script>
-  <script src="assets/js/profile.js?v=202607152800"></script>
-  <script src="assets/js/reputation.js?v=202607152800"></script>
+  <script src="assets/js/treasury.js?v=202607153100"></script>
+  <script src="assets/js/app.js?v=202607153100"></script>
+  <script src="assets/js/profile.js?v=202607153100"></script>
+  <script src="assets/js/reputation.js?v=202607153100"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
