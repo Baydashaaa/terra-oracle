@@ -98,6 +98,22 @@
       + '</div>';
   }
 
+  /* ── Compact standalone eyeball icon (for the small restore tab) ──────
+     The full eyeMarkup() includes a stand/base meant for a taller stage;
+     scaling that down and clipping it in a small round badge looked like
+     a messy blob. This draws just the eyeball itself, sized to sit
+     cleanly centered inside a small circle with no cropping needed. */
+  function restoreIconMarkup() {
+    var ballW = 36, ballH = 44;
+    return ''
+      + '<div style="position:relative;width:' + ballW + 'px;height:' + ballH + 'px;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 38% 30%, #fdfdff 0%, #e3e9f5 45%, #c2ccdf 100%);border:2px solid #aeb8cc;box-shadow:0 0 10px rgba(70,130,255,0.35);">'
+      +   '<div style="position:absolute;left:10px;top:13px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 40% 35%, #6db0ff 0%, #2f7be6 45%, #14346e 100%);border:2px solid #1a4ea0;">'
+      +     '<div style="position:absolute;left:4px;top:4px;width:7px;height:7px;border-radius:50%;background:#0a1f45;"></div>'
+      +     '<div style="position:absolute;left:5px;top:3px;width:3px;height:3px;border-radius:50%;background:#eaf3ff;"></div>'
+      +   '</div>'
+      + '</div>';
+  }
+
   /* ── Build DOM ───────────────────────────────────────────────── */
   function build() {
     var style = document.createElement('style');
@@ -116,7 +132,7 @@
     restoreBtn.id = 'oe-restore';
     restoreBtn.title = 'Show Oracle Eye';
     restoreBtn.setAttribute('aria-label', 'Show Oracle Eye');
-    restoreBtn.innerHTML = '<div style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;transform:scale(0.46);transform-origin:center;">' + eyeMarkup(1) + '</div>';
+    restoreBtn.innerHTML = restoreIconMarkup();
     restoreBtn.addEventListener('click', function () { expand(); });
     document.body.appendChild(restoreBtn);
 
