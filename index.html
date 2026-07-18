@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607152500">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607152800">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -549,8 +549,8 @@
 
  <button class="nav-tab" onclick="mobileNavGo('board')">📋 Board</button>
  <button class="nav-tab" onclick="mobileNavGo('ask')"><img src="assets/icons/questions.png" style="width:22px;height:22px;vertical-align:middle;margin-right:3px;"> Ask</button>
- <button class="nav-tab" onclick="mobileNavGo('chat')">💬 Chat</button>
- <button class="nav-tab" onclick="mobileNavGo('vote')">🗳️ Vote</button>
+ <button class="nav-tab" onclick="mobileNavGo('chat')"><img src="assets/icons/chat-message.png" style="width:22px;height:22px;vertical-align:middle;margin-right:3px;object-fit:contain;"> Chat</button>
+ <button class="nav-tab" onclick="mobileNavGo('vote')"><img src="assets/icons/Governance.png" style="width:22px;height:22px;vertical-align:middle;margin-right:3px;object-fit:contain;"> Vote</button>
  <button class="nav-tab" onclick="mobileNavGo('about')">ℹ️ About</button>
  <button class="nav-tab" onclick="mobileNavGo('bag')" style="color:#f4d03f;">My Bag</button>
  <button class="nav-tab" onclick="mobileNavGoFn('showPage_treasury')">💰 Treasury</button>
@@ -562,9 +562,9 @@
    <span id="rep-menu-arrow" style="font-size:10px;transition:transform 0.2s;">▼</span>
   </button>
   <div id="mobile-rep-menu" style="display:none;padding-left:8px;">
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('leaderboard'),50)" style="font-size:11px;">🏆 Leaderboard</button>
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('how'),50)" style="font-size:11px;">📖 How it works</button>
-   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('stats'),50)" style="font-size:11px;">📊 Your Stats</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('leaderboard'),50)" style="font-size:11px;"><img src="assets/icons/Leaderboard.png" style="width:18px;height:18px;vertical-align:middle;margin-right:3px;object-fit:contain;"> Leaderboard</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('how'),50)" style="font-size:11px;"><img src="assets/icons/How-it-works.png" style="width:18px;height:18px;vertical-align:middle;margin-right:3px;object-fit:contain;"> How it works</button>
+   <button class="nav-tab" onclick="closeMobileMenu();setTimeout(()=>showRepPage('stats'),50)" style="font-size:11px;"><img src="assets/icons/Stats.png" style="width:18px;height:18px;vertical-align:middle;margin-right:3px;object-fit:contain;"> Your Stats</button>
   </div>
  </div>
 
@@ -1955,10 +1955,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607152500"></script>
-  <script src="assets/js/app.js?v=202607152500"></script>
-  <script src="assets/js/profile.js?v=202607152500"></script>
-  <script src="assets/js/reputation.js?v=202607152500"></script>
+  <script src="assets/js/treasury.js?v=202607152800"></script>
+  <script src="assets/js/app.js?v=202607152800"></script>
+  <script src="assets/js/profile.js?v=202607152800"></script>
+  <script src="assets/js/reputation.js?v=202607152800"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
