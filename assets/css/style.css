@@ -1224,9 +1224,9 @@ canvas {
 @keyframes oc3Tw { 0%,100%{opacity:.12;} 50%{opacity:.5;} }
 @keyframes oc3Rot { to { transform: rotate(360deg); } }
 
-.oc3{ position:relative; overflow:hidden; margin:56px 0 64px; padding:44px 30px 40px; border-radius:20px; background:rgba(10,13,24,.55); border:1px solid rgba(255,255,255,.06); backdrop-filter:blur(6px); }
-.oc3-glow1{ position:absolute; width:420px; height:420px; left:-120px; top:-80px; border-radius:50%; background:radial-gradient(circle,rgba(123,92,255,.15),transparent 65%); pointer-events:none; }
-.oc3-glow2{ position:absolute; width:380px; height:380px; right:-100px; bottom:-120px; border-radius:50%; background:radial-gradient(circle,rgba(0,212,255,.09),transparent 65%); pointer-events:none; }
+.oc3{ position:relative; margin:64px 0 72px; padding:0 6px; }
+.oc3-glow1{ position:absolute; width:380px; height:380px; left:-60px; top:-40px; border-radius:50%; background:radial-gradient(circle,rgba(123,92,255,.10),transparent 65%); pointer-events:none; }
+.oc3-glow2{ position:absolute; width:340px; height:340px; right:-40px; bottom:-60px; border-radius:50%; background:radial-gradient(circle,rgba(0,212,255,.07),transparent 65%); pointer-events:none; }
 .oc3-star{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.35; animation:oc3Tw 3s ease-in-out infinite; pointer-events:none; }
 .oc3-head{ position:relative; text-align:center; margin-bottom:32px; }
 .oc3-kicker{ font-size:9px; letter-spacing:.26em; text-transform:uppercase; color:rgba(160,140,255,.85); font-family:'Exo 2',sans-serif; margin-bottom:12px; }
@@ -1260,7 +1260,7 @@ canvas {
 .oc3-step.on .oc3-bar{ width:100%; }
 
 @media (max-width:900px){
-  .oc3{ padding:36px 18px 32px; }
+  .oc3{ padding:0; }
   .oc3-body{ flex-direction:column; gap:26px; }
   .oc3-reactor{ flex:0 0 auto; width:180px; height:180px; }
   .oc3-core-num{ font-size:28px; }
