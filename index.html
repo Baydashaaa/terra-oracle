@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607152200">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607152300">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -346,6 +346,32 @@
   <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
+<script>
+// ── Instant-correct-page (anti-FOUC) ──────────────────────────────────────
+// .page{display:none} / .page.active{display:block} (see style.css), and
+// ONLY #page-home has class="page active" hardcoded in the static markup.
+// app.js sits near the very end of <body> (not deferred), so on a direct
+// load/refresh of e.g. /reputation the browser fully parses+paints this
+// large document — Home visible per the static markup — LONG before JS at
+// the bottom ever runs showPage()/showRepPage() to switch it. That's the
+// "flash of Home, then switches after ~1s" symptom.
+// Fix: run synchronously HERE, before any .page div below is parsed, and
+// inject a style override so the CORRECT page is what gets painted first —
+// zero flash, independent of how long the rest of the page takes to load.
+(function () {
+  try {
+    var validTabs = ['home','board','ask','chat','vote','about','bag','treasury','profile','reputation'];
+    var pathParts = location.pathname.replace(/^\//, '').split('/');
+    var page = pathParts[0] || 'home';
+    if (!validTabs.includes(page)) page = 'home';
+    if (page !== 'home') {
+      var s = document.createElement('style');
+      s.textContent = '#page-home.active{display:none!important}#page-' + page + '{display:block!important}';
+      document.head.appendChild(s);
+    }
+  } catch (e) {}
+})();
+</script>
 
 <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <!-- Parallax layer 3: energy cursor reactive -->
@@ -1928,10 +1954,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607152200"></script>
-  <script src="assets/js/app.js?v=202607152200"></script>
-  <script src="assets/js/profile.js?v=202607152200"></script>
-  <script src="assets/js/reputation.js?v=202607152200"></script>
+  <script src="assets/js/treasury.js?v=202607152300"></script>
+  <script src="assets/js/app.js?v=202607152300"></script>
+  <script src="assets/js/profile.js?v=202607152300"></script>
+  <script src="assets/js/reputation.js?v=202607152300"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
