@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
+       slash) to resolve against site root, regardless of the SPA path shown
+       in the address bar (e.g. /reputation/stats). Without this, the SPA
+       router serving index.html's content at a nested path caused every
+       relative CSS/JS/image reference to 404 (browser was resolving them
+       relative to /reputation/ instead of /). Must stay the FIRST thing
+       inside <head>, before any relative href/src. -->
+  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>if (history.scrollRestoration) history.scrollRestoration = 'manual';</script>
   <title>Terra Oracle · Anonymous Q&A Protocol</title>
@@ -12,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607152100">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607152200">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -1920,10 +1928,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607152100"></script>
-  <script src="assets/js/app.js?v=202607152100"></script>
-  <script src="assets/js/profile.js?v=202607152100"></script>
-  <script src="assets/js/reputation.js?v=202607152100"></script>
+  <script src="assets/js/treasury.js?v=202607152200"></script>
+  <script src="assets/js/app.js?v=202607152200"></script>
+  <script src="assets/js/profile.js?v=202607152200"></script>
+  <script src="assets/js/reputation.js?v=202607152200"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
