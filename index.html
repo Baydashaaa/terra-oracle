@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607152300">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607152500">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -366,6 +366,7 @@
     if (!validTabs.includes(page)) page = 'home';
     if (page !== 'home') {
       var s = document.createElement('style');
+      s.id = 'fouc-fix';
       s.textContent = '#page-home.active{display:none!important}#page-' + page + '{display:block!important}';
       document.head.appendChild(s);
     }
@@ -1954,10 +1955,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607152300"></script>
-  <script src="assets/js/app.js?v=202607152300"></script>
-  <script src="assets/js/profile.js?v=202607152300"></script>
-  <script src="assets/js/reputation.js?v=202607152300"></script>
+  <script src="assets/js/treasury.js?v=202607152500"></script>
+  <script src="assets/js/app.js?v=202607152500"></script>
+  <script src="assets/js/profile.js?v=202607152500"></script>
+  <script src="assets/js/reputation.js?v=202607152500"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
