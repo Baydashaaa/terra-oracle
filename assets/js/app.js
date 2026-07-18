@@ -288,6 +288,20 @@ function removeTag(tag) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Removes the temporary <style id="fouc-fix"> injected at the very top of
+  // <body> (see index.html) that forces the correct page visible on first
+  // paint before this script has a chance to run. It uses !important, which
+  // — if left in place — permanently overrides every later class-based page
+  // switch: clicking any nav tab would keep showing whatever page the user
+  // had originally loaded/refreshed on, since #id{display:...!important}
+  // always beats .page.active{display:block} regardless of which page later
+  // gets the "active" class. Must be called exactly once, right after the
+  // real routing below has taken over — never left in the DOM permanently.
+  function removeFoucFix() {
+    const el = document.getElementById('fouc-fix');
+    if (el) el.remove();
+  }
+
   // Restore page from pathname or hash (404.html redirect)
   const pathParts = location.pathname.replace(/^\//, '').split('/');
   const hashPart = location.hash.replace(/^#/, '');
@@ -303,21 +317,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (history.replaceState) history.replaceState({ page: savedPage || 'home' }, '', cleanUrl);
   if (savedPage === 'treasury') {
     if (typeof showPage_treasury === 'function') showPage_treasury(null, null, true);
+    removeFoucFix();
   } else if (savedPage && savedPage.startsWith('reputation')) {
     const tab = savedPage.split(':')[1] || 'leaderboard';
     if (typeof showRepPage === 'function') showRepPage(tab, true);
+    removeFoucFix();
   } else if (savedPage === 'profile') {
     // profile.js loads after app.js — wait for openProfile to be defined
     if (typeof openProfile === 'function') {
       openProfile(true);
+      removeFoucFix();
     } else {
       const t = setInterval(() => {
-        if (typeof openProfile === 'function') { clearInterval(t); openProfile(true); }
+        if (typeof openProfile === 'function') { clearInterval(t); openProfile(true); removeFoucFix(); }
       }, 50);
-      setTimeout(() => clearInterval(t), 3000); // safety timeout
+      setTimeout(() => { clearInterval(t); removeFoucFix(); }, 3000); // safety timeout
     }
   } else {
     showPage(savedPage || 'home', null, true);
+    removeFoucFix();
   }
   const input = document.getElementById('tag-raw-input');
   if (!input) return;
