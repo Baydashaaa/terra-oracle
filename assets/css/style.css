@@ -1221,13 +1221,11 @@ canvas {
 /* ═══════════════════════════════════════════════════════════
    HOME: Oracle Cycle — reactor + auto-playing steps
    ═══════════════════════════════════════════════════════════ */
-@keyframes oc3Tw { 0%,100%{opacity:.12;} 50%{opacity:.5;} }
 @keyframes oc3Rot { to { transform: rotate(360deg); } }
 
 .oc3{ position:relative; margin:64px 0 72px; padding:0 6px; }
 .oc3-glow1{ position:absolute; width:380px; height:380px; left:-60px; top:-40px; border-radius:50%; background:radial-gradient(circle,rgba(123,92,255,.10),transparent 65%); pointer-events:none; }
 .oc3-glow2{ position:absolute; width:340px; height:340px; right:-40px; bottom:-60px; border-radius:50%; background:radial-gradient(circle,rgba(0,212,255,.07),transparent 65%); pointer-events:none; }
-.oc3-star{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.35; animation:oc3Tw 3s ease-in-out infinite; pointer-events:none; }
 .oc3-head{ position:relative; text-align:center; margin-bottom:32px; }
 .oc3-kicker{ font-size:9px; letter-spacing:.26em; text-transform:uppercase; color:rgba(160,140,255,.85); font-family:'Exo 2',sans-serif; margin-bottom:12px; }
 .oc3-title{ font-family:'Rajdhani',sans-serif; font-weight:800; font-size:clamp(24px,3.2vw,32px); line-height:1.12; color:#fff; }
