@@ -68,9 +68,11 @@
     + '#oe-send{flex:2;background:linear-gradient(135deg,#4178d4,#7b5cff);border:none;color:#fff;font-size:13px;font-weight:500;padding:11px;border-radius:8px;cursor:pointer;font-family:inherit;}'
     + '#oe-send:disabled{opacity:0.6;cursor:default;}'
     + '#oe-status{text-align:center;font-size:12px;margin-top:10px;min-height:16px;}'
-    + '#oe-min{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:50%;background:rgba(8,13,26,0.9);border:1px solid rgba(255,255,255,0.25);color:#dce8ff;font-size:16px;line-height:26px;text-align:center;cursor:pointer;z-index:2;opacity:0.7;transition:opacity .2s,background .2s;touch-action:manipulation;}'
-    + '#oe-min:hover{opacity:1;background:rgba(20,30,55,0.95);}'
+    + '#oe-hide-link{display:block;text-align:center;font-size:10px;color:rgba(159,180,216,0.55);margin-top:14px;cursor:pointer;text-decoration:underline;}'
+    + '#oe-hide-link:hover{color:#9fb4d8;}'
     + '#oe-restore{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:#16233f;border:1px solid rgba(84,147,247,0.4);align-items:center;justify-content:center;cursor:pointer;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;overflow:hidden;padding:0;touch-action:manipulation;}'
+    + '#oe-restore.show{display:flex;}'
+    + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
     + '#oe-restore.show{display:flex;}'
     + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
 
@@ -105,23 +107,9 @@
     var btn = document.createElement('button');
     btn.id = 'oe-btn';
     btn.title = 'Feedback & Bug Report';
-    btn.style.position = 'fixed'; // ensure #oe-min anchors correctly even after drag repositioning
+    btn.style.position = 'fixed';
     btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.116);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
     document.body.appendChild(btn);
-
-    // ── Minimize badge (hide the mascot if someone doesn't want it) ──
-    // Placed as a real sibling-in-DOM child of #oe-btn but with its own
-    // mousedown/touchstart/click handlers that stop propagation — so it
-    // never triggers the button's own drag-or-open logic underneath it.
-    var minBtn = document.createElement('span');
-    minBtn.id = 'oe-min';
-    minBtn.title = 'Hide';
-    minBtn.setAttribute('aria-label', 'Hide Oracle Eye');
-    minBtn.textContent = '\u00D7';
-    minBtn.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-    minBtn.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
-    minBtn.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); collapse(); });
-    btn.appendChild(minBtn);
 
     // ── Restore tab (small peeking eye, shown only while collapsed) ──
     var restoreBtn = document.createElement('button');
@@ -172,9 +160,15 @@
       +     '<button id="oe-send" type="button">Send</button>'
       +   '</div>'
       +   '<div id="oe-status"></div>'
+      +   '<div id="oe-hide-link">Hide this mascot</div>'
       + '</div>';
     overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
     document.body.appendChild(overlay);
+    overlay.querySelector('#oe-hide-link').addEventListener('click', function (e) {
+      e.stopPropagation();
+      collapse();
+      closeModal();
+    });
 
     wireMascot();
     wireForm();
