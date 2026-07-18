@@ -67,7 +67,12 @@
     + '#oe-cancel{flex:1;background:transparent;border:1px solid rgba(255,255,255,0.15);color:#9fb4d8;font-size:13px;padding:11px;border-radius:8px;cursor:pointer;font-family:inherit;}'
     + '#oe-send{flex:2;background:linear-gradient(135deg,#4178d4,#7b5cff);border:none;color:#fff;font-size:13px;font-weight:500;padding:11px;border-radius:8px;cursor:pointer;font-family:inherit;}'
     + '#oe-send:disabled{opacity:0.6;cursor:default;}'
-    + '#oe-status{text-align:center;font-size:12px;margin-top:10px;min-height:16px;}';
+    + '#oe-status{text-align:center;font-size:12px;margin-top:10px;min-height:16px;}'
+    + '#oe-min{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:50%;background:rgba(8,13,26,0.9);border:1px solid rgba(255,255,255,0.25);color:#dce8ff;font-size:16px;line-height:26px;text-align:center;cursor:pointer;z-index:2;opacity:0.7;transition:opacity .2s,background .2s;touch-action:manipulation;}'
+    + '#oe-min:hover{opacity:1;background:rgba(20,30,55,0.95);}'
+    + '#oe-restore{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:#16233f;border:1px solid rgba(84,147,247,0.4);align-items:center;justify-content:center;cursor:pointer;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;overflow:hidden;padding:0;touch-action:manipulation;}'
+    + '#oe-restore.show{display:flex;}'
+    + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
 
   /* ── The Eye SVG-ish markup (sizes via .scale wrapper) ───────── */
   // size: button = 56, modal = 90 wide stage
@@ -100,8 +105,46 @@
     var btn = document.createElement('button');
     btn.id = 'oe-btn';
     btn.title = 'Feedback & Bug Report';
+    btn.style.position = 'fixed'; // ensure #oe-min anchors correctly even after drag repositioning
     btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.116);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
     document.body.appendChild(btn);
+
+    // ── Minimize badge (hide the mascot if someone doesn't want it) ──
+    // Placed as a real sibling-in-DOM child of #oe-btn but with its own
+    // mousedown/touchstart/click handlers that stop propagation — so it
+    // never triggers the button's own drag-or-open logic underneath it.
+    var minBtn = document.createElement('span');
+    minBtn.id = 'oe-min';
+    minBtn.title = 'Hide';
+    minBtn.setAttribute('aria-label', 'Hide Oracle Eye');
+    minBtn.textContent = '\u00D7';
+    minBtn.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    minBtn.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
+    minBtn.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); collapse(); });
+    btn.appendChild(minBtn);
+
+    // ── Restore tab (small peeking eye, shown only while collapsed) ──
+    var restoreBtn = document.createElement('button');
+    restoreBtn.id = 'oe-restore';
+    restoreBtn.title = 'Show Oracle Eye';
+    restoreBtn.setAttribute('aria-label', 'Show Oracle Eye');
+    restoreBtn.innerHTML = '<div style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;transform:scale(0.46);transform-origin:center;">' + eyeMarkup(1) + '</div>';
+    restoreBtn.addEventListener('click', function () { expand(); });
+    document.body.appendChild(restoreBtn);
+
+    function collapse() {
+      btn.style.display = 'none';
+      bubble.classList.remove('show');
+      restoreBtn.classList.add('show');
+      try { localStorage.setItem('oe-collapsed', '1'); } catch (e) {}
+    }
+    function expand() {
+      btn.style.display = '';
+      restoreBtn.classList.remove('show');
+      try { localStorage.removeItem('oe-collapsed'); } catch (e) {}
+    }
+    window.OracleEye_hide = collapse;
+    window.OracleEye_show = expand;
 
     var bubble = document.createElement('div');
     bubble.id = 'oe-bubble';
@@ -136,6 +179,12 @@
     wireMascot();
     wireForm();
     wireDrag(btn);
+
+    // Restore collapsed state immediately (before first paint of this
+    // widget) so returning visitors who hid it don't see it flash back on.
+    try {
+      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); }
+    } catch (e) {}
   }
 
   /* ── Mascot animation ────────────────────────────────────────── */
@@ -478,5 +527,10 @@
   }
 
   // Expose a couple of helpers (optional external use)
-  window.OracleEye = { open: openModal, close: closeModal };
+  window.OracleEye = {
+    open: openModal,
+    close: closeModal,
+    hide: function () { if (window.OracleEye_hide) window.OracleEye_hide(); },
+    show: function () { if (window.OracleEye_show) window.OracleEye_show(); }
+  };
 })();
