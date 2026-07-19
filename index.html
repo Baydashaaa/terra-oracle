@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607153400">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607153500">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -889,7 +889,7 @@
  </div>
 
   <!-- ── ORACLE CYCLE ── -->
-  <div style="max-width:860px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
+  <div id="oc3-wrap" style="max-width:860px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
    <div class="oc3">
     <div class="oc3-glow1"></div><div class="oc3-glow2"></div>
     <div class="oc3-head">
@@ -910,25 +910,25 @@
      </div>
      <div class="oc3-steps" id="oc3steps">
       <div class="oc3-step on" style="--nc:#7B5CFF;--nc2:#c4b5fd;">
-       <div class="top"><div class="oc3-ico">&#128172;</div><div class="oc3-name">Participate</div><div class="oc3-idx">01</div></div>
+       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div><div class="oc3-name">Participate</div><div class="oc3-idx">01</div></div>
        <div class="oc3-more"><div class="oc3-desc">Ask a question, join the on-chain chat, or cast your governance vote.</div>
        <div class="oc3-tags"><span>Ask</span><span>Chat</span><span>Vote</span></div></div>
        <div class="oc3-bar"></div>
       </div>
       <div class="oc3-step" style="--nc:#00D4FF;--nc2:#67e8f9;">
-       <div class="top"><div class="oc3-ico">&#9889;</div><div class="oc3-name">Earn REP</div><div class="oc3-idx">02</div></div>
+       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg></div><div class="oc3-name">Earn REP</div><div class="oc3-idx">02</div></div>
        <div class="oc3-more"><div class="oc3-desc">Every action builds reputation. Daily streaks multiply everything you earn.</div>
        <div class="oc3-tags"><span>Points</span><span>Streaks &times;1.5</span><span>Ranks</span></div></div>
        <div class="oc3-bar"></div>
       </div>
       <div class="oc3-step" style="--nc:#E8C840;--nc2:#fde68a;">
-       <div class="top"><div class="oc3-ico">&#127903;</div><div class="oc3-name">Enter the Draw</div><div class="oc3-idx">03</div></div>
+       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></div><div class="oc3-name">Enter the Draw</div><div class="oc3-idx">03</div></div>
        <div class="oc3-more"><div class="oc3-desc">Mint an Oracle Mask &mdash; win LUNC prizes, stack bonus REP, keep the collectible.</div>
        <div class="oc3-tags"><span>LUNC Prizes</span><span>+REP</span><span>NFT</span></div></div>
        <div class="oc3-bar"></div>
       </div>
       <div class="oc3-step" style="--nc:#00FFB0;--nc2:#6ee7b7;">
-       <div class="top"><div class="oc3-ico">&#127942;</div><div class="oc3-name">Get Rewarded</div><div class="oc3-idx">04</div></div>
+       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/></svg></div><div class="oc3-name">Get Rewarded</div><div class="oc3-idx">04</div></div>
        <div class="oc3-more"><div class="oc3-desc">Top 20% by weekly REP split the Treasury pool. Then the loop begins again.</div>
        <div class="oc3-tags"><span>Top 20%</span><span>Treasury Payout</span></div></div>
        <div class="oc3-bar"></div>
@@ -940,6 +940,22 @@
 
   <script>
   (function () {
+    // On mobile the desktop hero and lower desktop sections are hidden, so
+    // this section (living in the desktop flow) used to fall to the very
+    // bottom of the page. Move it up: right before the "Token" label of the
+    // mobile layout. Desktop (>900px) keeps the original position.
+    try {
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        var wrap = document.getElementById('oc3-wrap');
+        var labels = document.querySelectorAll('.mobile-section-label');
+        var tokenLabel = null;
+        labels.forEach(function (l) { if (!tokenLabel && /token/i.test(l.textContent)) tokenLabel = l; });
+        if (wrap && tokenLabel && tokenLabel.parentNode) {
+          tokenLabel.parentNode.insertBefore(wrap, tokenLabel);
+        }
+      }
+    } catch (e) {}
+
     var steps = [].slice.call(document.querySelectorAll('.oc3-step'));
     if (!steps.length) return;
     var num = document.getElementById('oc3num');
@@ -2071,10 +2087,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607153400"></script>
-  <script src="assets/js/app.js?v=202607153400"></script>
-  <script src="assets/js/profile.js?v=202607153400"></script>
-  <script src="assets/js/reputation.js?v=202607153400"></script>
+  <script src="assets/js/treasury.js?v=202607153500"></script>
+  <script src="assets/js/app.js?v=202607153500"></script>
+  <script src="assets/js/profile.js?v=202607153500"></script>
+  <script src="assets/js/reputation.js?v=202607153500"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
