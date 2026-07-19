@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607153300">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607153400">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -1134,10 +1134,42 @@
  <h1>Ask the <span>Community</span></h1>
  <p class="subtitle">Stay anonymous · Get community answers</p>
  </div>
+
+ <div class="askv-steps">
+  <div class="askv-step"><div class="askv-dot">1</div>Pay with LUNC</div>
+  <div class="askv-sep">&rsaquo;</div>
+  <div class="askv-step"><div class="askv-dot">2</div>Ask anonymously</div>
+  <div class="askv-sep">&rsaquo;</div>
+  <div class="askv-step"><div class="askv-dot">3</div>Community answers</div>
+ </div>
+
  <div class="card">
  <div id="ask-form-section">
  <div class="note">
  🔒 Your identity is never stored. Connect your wallet to verify your payment - wallet address will NOT be linked to your question.
+ </div>
+
+ <div class="askv-grid">
+  <div class="askv-tile" style="--tc:#7B5CFF;">
+   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+   <div class="t">Community answers</div>
+   <div class="d">Your question goes live on the Board. You pick the best answer.</div>
+  </div>
+  <div class="askv-tile" style="--tc:#E8C840;">
+   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></div>
+   <div class="t">+2 free Weekly entries</div>
+   <div class="d">Every question automatically enters you in the Weekly Draw.</div>
+  </div>
+  <div class="askv-tile" style="--tc:#00D4FF;">
+   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M5 12a7 7 0 0 1 14 0"/><circle cx="8" cy="15.5" r="2.6"/><circle cx="16" cy="15.5" r="2.6"/><path d="M10.6 15.5h2.8"/></svg></div>
+   <div class="t">Fully anonymous</div>
+   <div class="d">Your wallet is never linked to your question. Ever.</div>
+  </div>
+  <div class="askv-tile" style="--tc:#00FFB0;">
+   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg></div>
+   <div class="t">Builds your REP</div>
+   <div class="d">Asking counts toward your rank, streak, and weekly rewards.</div>
+  </div>
  </div>
  <div id="keplr-section">
  <div id="keplr-disconnected">
@@ -1164,6 +1196,21 @@
  </div>
  <div id="tx-section" style="display:none;">
  <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;text-align:center;">Step 2 - Verify Payment</div>
+
+ <div class="askv-price" id="ask-price-panel">
+  <div>
+   <div class="base" id="ask-price-base" style="display:none;">Base price &middot; 200,000 LUNC</div>
+   <div class="now" id="ask-price-now">Your price: <b>200,000 LUNC</b></div>
+  </div>
+  <div class="askv-badge" id="ask-price-badge" style="display:none;">
+   <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg><span id="ask-price-badge-text"></span>
+  </div>
+ </div>
+ <div class="askv-split">
+  <div class="askv-chip p"><b>50%</b> &rarr; Weekly Prize Pool</div>
+  <div class="askv-chip"><b>50%</b> &rarr; Protocol Treasury</div>
+ </div>
+
  <div class="form-group">
  <label>TX Hash</label>
  <div style="display:flex;gap:8px;">
@@ -2024,10 +2071,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607153300"></script>
-  <script src="assets/js/app.js?v=202607153300"></script>
-  <script src="assets/js/profile.js?v=202607153300"></script>
-  <script src="assets/js/reputation.js?v=202607153300"></script>
+  <script src="assets/js/treasury.js?v=202607153400"></script>
+  <script src="assets/js/app.js?v=202607153400"></script>
+  <script src="assets/js/profile.js?v=202607153400"></script>
+  <script src="assets/js/reputation.js?v=202607153400"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
