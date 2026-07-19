@@ -595,6 +595,61 @@ function renderStreakBlock(streakData) {
   `;
 }
 
+
+// ── Generative "Oracle face" avatar ──────────────────────────────────────
+// Deterministic from the wallet address: orbit angles, colors and particle
+// positions are derived from a simple string hash, so every wallet gets a
+// unique but STABLE identicon — recognizable identity with zero deanonymization.
+function _avaHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function walletAvatar(addr) {
+  const P = ['#7B5CFF', '#00D4FF', '#E8C840', '#00FFB0', '#ff6b8a', '#a78bfa'];
+  const h1 = _avaHash(addr), h2 = _avaHash(addr + ':1'), h3 = _avaHash(addr + ':2'), h4 = _avaHash(addr + ':3');
+  const rot1 = h1 % 180, rot2 = h2 % 180, rot3 = h3 % 180;
+  const c1 = P[h1 % P.length], c2 = P[h2 % P.length], c3 = P[h3 % P.length];
+  const core = P[h4 % P.length];
+  // 3 particles on deterministic positions (polar coords from hash)
+  let dots = '';
+  for (let i = 0; i < 3; i++) {
+    const hh = _avaHash(addr + ':p' + i);
+    const ang = (hh % 360) * Math.PI / 180;
+    const rad = 26 + (hh % 14);
+    const x = (50 + rad * Math.cos(ang)).toFixed(1);
+    const y = (50 + rad * Math.sin(ang)).toFixed(1);
+    const r = (1.4 + (hh % 12) / 10).toFixed(1);
+    dots += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + P[hh % P.length] + '"/>';
+  }
+  return '<svg viewBox="0 0 100 100">'
+    + '<defs><radialGradient id="avac' + (h1 % 997) + '" cx="42%" cy="36%"><stop offset="0" stop-color="#2a2450"/><stop offset="1" stop-color="#0a0e1c"/></radialGradient></defs>'
+    + '<rect width="100" height="100" fill="url(#avac' + (h1 % 997) + ')"/>'
+    + '<g transform="rotate(' + rot1 + ' 50 50)"><ellipse cx="50" cy="50" rx="36" ry="14" fill="none" stroke="' + c1 + '" stroke-width="1.6" opacity=".8"/></g>'
+    + '<g transform="rotate(' + rot2 + ' 50 50)"><ellipse cx="50" cy="50" rx="33" ry="11" fill="none" stroke="' + c2 + '" stroke-width="1.2" opacity=".65"/></g>'
+    + '<g transform="rotate(' + rot3 + ' 50 50)"><ellipse cx="50" cy="50" rx="27" ry="8" fill="none" stroke="' + c3 + '" stroke-width="1" opacity=".5"/></g>'
+    + '<circle cx="50" cy="50" r="9" fill="' + core + '" opacity=".9"/>'
+    + '<circle cx="47" cy="47" r="3.4" fill="#fff" opacity=".85"/>'
+    + dots
+    + '</svg>';
+}
+const _PF_STAR = '<svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>';
+function copyProfileAddr() {
+  const el = document.getElementById('profile-wallet-short');
+  const btn = document.getElementById('profile-copy-btn');
+  if (!el) return;
+  const addr = el.textContent || '';
+  const done = () => {
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="stroke:#6ee7b7;"><path d="M20 6 9 17l-5-5"/></svg>';
+    setTimeout(() => { btn.innerHTML = orig; }, 1400);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(done).catch(() => {});
+  }
+}
+
 function renderProfilePage() {
   const address = globalWalletAddress;
   if (!address) return;
@@ -604,6 +659,13 @@ function renderProfilePage() {
   // Wallet address — show full address
   const walletShortEl = document.getElementById('profile-wallet-short');
   if (walletShortEl) walletShortEl.textContent = address;
+
+  // Generative avatar (stable per address)
+  const avaEl = document.getElementById('profile-avatar');
+  if (avaEl && avaEl.dataset.addr !== address) {
+    avaEl.innerHTML = walletAvatar(address);
+    avaEl.dataset.addr = address;
+  }
 
   // Title badge - show loading until real data arrives
   const titleEl = document.getElementById('profile-title-badge');
@@ -641,11 +703,38 @@ function renderProfilePage() {
     const rank       = getRank(reputation);
     const nextRank   = getNextRank(reputation);
 
-    // Update title badge → now shows rank
+    // Update title badge → rank with SVG star (no default emoji)
     const titleEl = document.getElementById('profile-title-badge');
     if (titleEl) {
-      titleEl.innerHTML = `<span style="color:${rank.color};text-shadow:0 0 12px ${rank.glow};">${rank.icon} ${rank.name}</span> <span style="font-size:10px;opacity:0.7;margin-left:6px;">${rank.discountLabel}</span>`;
+      titleEl.innerHTML = `<span style="display:inline-flex;width:14px;height:14px;">${_PF_STAR.replace('<svg ', '<svg style="stroke:' + rank.color + ';" ')}</span><span style="color:${rank.color};text-shadow:0 0 12px ${rank.glow};">${rank.name}</span>`;
       titleEl.style.color = rank.color;
+    }
+    // Rank-colored ring around the avatar
+    const ringEl = document.getElementById('profile-ava-ring');
+    if (ringEl) {
+      ringEl.style.borderColor = rank.color;
+      ringEl.style.boxShadow = '0 0 22px ' + rank.glow;
+    }
+    // Big REP number in the header
+    const repBigEl = document.getElementById('profile-rep-big');
+    if (repBigEl) repBigEl.textContent = reputation.toLocaleString();
+    // Perk badge: current discount, or the NEXT rank that unlocks one
+    const perkEl = document.getElementById('profile-next-perk');
+    if (perkEl) {
+      if (rank.discount > 0) {
+        perkEl.textContent = rank.discount + '% off questions';
+        perkEl.style.display = '';
+      } else {
+        const nextPerkRank = (typeof RANKS !== 'undefined')
+          ? RANKS.find(r => r.minScore > rank.minScore && (r.discount || 0) > 0)
+          : null;
+        if (nextPerkRank) {
+          perkEl.textContent = 'Next perk: ' + nextPerkRank.discount + '% off at ' + nextPerkRank.name;
+          perkEl.style.display = '';
+        } else {
+          perkEl.style.display = 'none';
+        }
+      }
     }
 
     // Render reputation block
