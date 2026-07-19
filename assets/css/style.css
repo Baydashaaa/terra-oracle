@@ -1243,7 +1243,8 @@ canvas {
 .oc3-steps{ flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; position:relative; }
 .oc3-step{ position:relative; border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:13px 16px; background:rgba(255,255,255,.02); cursor:pointer; transition:all .45s cubic-bezier(.4,0,.2,1); overflow:hidden; }
 .oc3-step .top{ display:flex; align-items:center; gap:12px; }
-.oc3-ico{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; background:color-mix(in srgb,var(--nc) 14%,transparent); border:1px solid color-mix(in srgb,var(--nc) 40%,transparent); flex-shrink:0; transition:box-shadow .45s; }
+.oc3-ico{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb,var(--nc) 14%,transparent); border:1px solid color-mix(in srgb,var(--nc) 40%,transparent); flex-shrink:0; transition:box-shadow .45s; }
+.oc3-ico svg{ width:17px; height:17px; stroke:var(--nc); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 3px color-mix(in srgb,var(--nc) 60%,transparent)); }
 .oc3-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:15px; color:#c5cfe4; transition:color .3s; }
 .oc3-idx{ margin-left:auto; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; color:rgba(255,255,255,.22); }
 .oc3-more{ max-height:0; opacity:0; transition:all .5s cubic-bezier(.4,0,.2,1); padding-left:46px; }
