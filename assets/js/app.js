@@ -1128,14 +1128,15 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
 //    NOT stack). Canonical rules live in profile.js (combineDiscounts et al.).
 // Used by both the button price preview and the actual transaction so they always agree.
 async function getQuestionDiscountPct(addr) {
-  let rankD = 0, streakD = 0, streakMult = 1.0;
+  let rankD = 0, streakD = 0, streakMult = 1.0, _streakDays = 0, _rankName = '';
 
   // ── Streak: 7+ days = 25% discount, and the REP multiplier for ranks ──
   try {
     const sr = await fetch(`${WORKER_URL}/streak?wallet=${addr}`);
     if (sr.ok) {
       const sd = await sr.json();
-      if ((sd.currentStreak || 0) >= 7) streakD = (typeof STREAK_QUESTION_DISCOUNT !== 'undefined') ? STREAK_QUESTION_DISCOUNT : 25;
+      _streakDays = sd.currentStreak || 0;
+      if (_streakDays >= 7) streakD = (typeof STREAK_QUESTION_DISCOUNT !== 'undefined') ? STREAK_QUESTION_DISCOUNT : 25;
       streakMult = sd.multiplier || 1.0;
     }
   } catch(e) {}
@@ -1169,14 +1170,21 @@ async function getQuestionDiscountPct(addr) {
 
     // Rank is computed on EFFECTIVE REP (base × streak multiplier) — same as profile/leaderboard.
     const effRep = (typeof getEffectiveRep === 'function') ? getEffectiveRep(rep, streakMult) : Math.round(rep * streakMult);
-    if (typeof getRank === 'function') { const rk = getRank(effRep); rankD = (rk && rk.discount) ? rk.discount : 0; }
+    if (typeof getRank === 'function') { const rk = getRank(effRep); rankD = (rk && rk.discount) ? rk.discount : 0; _rankName = (rk && rk.name) ? rk.name : ''; }
   } catch(e) {}
 
   // Higher of the two, never summed (per docs).
-  return (typeof combineDiscounts === 'function') ? combineDiscounts(rankD, streakD) : Math.max(rankD, streakD);
+  const pct = (typeof combineDiscounts === 'function') ? combineDiscounts(rankD, streakD) : Math.max(rankD, streakD);
+  // Stash the breakdown so the price panel can show the WHY (streak vs rank)
+  // without re-fetching everything.
+  getQuestionDiscountPct._last = { pct, rankD, streakD, streakDays: _streakDays, rankName: _rankName };
+  return pct;
 }
 
 // Update the verify button text with the user's real (discounted) price.
+// Also fills the price panel above the button: base (struck through), the
+// personal price, and a badge explaining WHY (streak vs rank) — driven by
+// the breakdown stashed in getQuestionDiscountPct._last.
 async function updateVerifyBtnPrice(addr) {
   try {
     const discPct = await getQuestionDiscountPct(addr);
@@ -1185,6 +1193,25 @@ async function updateVerifyBtnPrice(addr) {
     if (btnEl) {
       const disc = discPct > 0 ? ` (${discPct}% off)` : '';
       btnEl.textContent = `Pay ${price.toLocaleString()} LUNC & Unlock →${disc}`;
+    }
+    const nowEl   = document.getElementById('ask-price-now');
+    const baseEl  = document.getElementById('ask-price-base');
+    const badgeEl = document.getElementById('ask-price-badge');
+    const badgeTx = document.getElementById('ask-price-badge-text');
+    if (nowEl) nowEl.innerHTML = 'Your price: <b>' + price.toLocaleString() + ' LUNC</b>';
+    if (discPct > 0) {
+      if (baseEl)  baseEl.style.display = '';
+      if (badgeEl) badgeEl.style.display = '';
+      if (badgeTx) {
+        const info = getQuestionDiscountPct._last || {};
+        let reason = '';
+        if (info.streakD >= info.rankD && info.streakD > 0) reason = (info.streakDays || 7) + '-day streak';
+        else if (info.rankName) reason = info.rankName + ' rank';
+        badgeTx.textContent = discPct + '% OFF' + (reason ? ' · ' + reason : '');
+      }
+    } else {
+      if (baseEl)  baseEl.style.display = 'none';
+      if (badgeEl) badgeEl.style.display = 'none';
     }
   } catch(e) {}
 }
