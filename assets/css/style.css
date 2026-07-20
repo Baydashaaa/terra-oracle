@@ -1340,3 +1340,6 @@ canvas {
 .mobile-tco-block .tcox-coin{ width:88px; height:88px; }
 .mobile-tco-block .tcox-coin .core{ font-size:21px; inset:11px; }
 .mobile-tco-block .tcox-grid{ grid-template-columns:repeat(2,1fr); margin-top:14px; }
+
+/* TCO tiles: neon SVG icons (replacing default emoji) */
+.tcox-ico svg{ width:17px; height:17px; stroke:var(--tc); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 3px var(--tcs)); }
