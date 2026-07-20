@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607153700">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607153800">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -682,23 +682,45 @@
   <!-- TOKEN label -->
   <div class="mobile-section-label">Token</div>
 
-  <!-- TCO Token block -->
+  <!-- TCO Token block — same redesign as desktop (animated coin + tiles) -->
   <div class="mobile-tco-block">
     <div class="mobile-tco-bar"></div>
     <div class="mobile-tco-inner">
-      <div class="mobile-tco-header">
-        <div class="mobile-tco-icon">🪙</div>
-        <div class="mobile-tco-title-wrap">
-          <div class="name">TCO Token <span class="badge">Coming Soon</span></div>
-          <div class="sub">Terra Classic Oracle - native governance &amp; reward token</div>
+      <div class="tcox-wrap">
+        <div class="tcox-coin">
+          <div class="halo"></div>
+          <div class="core">TCO</div>
+          <div class="ring"></div>
         </div>
-      </div>
-      <div class="mobile-tco-desc">TCO powers governance and rewards - earn by participating in Oracle.</div>
-      <div class="mobile-tco-grid">
-        <div class="mobile-tco-item"><div class="ico">🏛️</div><div class="lbl">Governance</div><div class="desc">Vote weight by TCO stake</div></div>
-        <div class="mobile-tco-item"><div class="ico">💎</div><div class="lbl">Rewards</div><div class="desc">Earned by participation</div></div>
-        <div class="mobile-tco-item"><div class="ico">🔥</div><div class="lbl">Deflationary</div><div class="desc">% burned on every action</div></div>
-        <div class="mobile-tco-item"><div class="ico">⛓️</div><div class="lbl">On-Chain</div><div class="desc">Terra Classic · columbus-5</div></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:15px;color:#fff;font-family:'Rajdhani',sans-serif;letter-spacing:.03em;">TCO Token</span>
+            <span class="tcox-badge">Coming Soon</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55;">Terra Classic Oracle &mdash; native governance &amp; reward token. Earned by participating, staked for more.</div>
+          <div class="tcox-grid">
+            <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
+              <div class="tcox-ico">🏛️</div>
+              <div class="t">Governance</div>
+              <div class="d">Vote weight by TCO stake</div>
+            </div>
+            <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
+              <div class="tcox-ico">💎</div>
+              <div class="t">Rewards</div>
+              <div class="d">Earned by Oracle participation</div>
+            </div>
+            <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
+              <div class="tcox-ico">📈</div>
+              <div class="t">Staking</div>
+              <div class="d">Lock TCO to earn passive yield</div>
+            </div>
+            <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
+              <div class="tcox-ico">⛓️</div>
+              <div class="t">On-Chain</div>
+              <div class="d">Terra Classic · columbus-5</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -991,7 +1013,7 @@
       <span style="font-weight:800;font-size:16px;color:#fff;font-family:'Exo 2',sans-serif;letter-spacing:.03em;">TCO Token</span>
       <span class="tcox-badge">Coming Soon</span>
      </div>
-     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle — native governance &amp; reward token of the ecosystem. Earned by participating, burned by using.</div>
+     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle — native governance &amp; reward token of the ecosystem. Earned by participating, staked for more.</div>
      <div class="tcox-grid">
       <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
        <div class="tcox-ico">🏛️</div>
@@ -1004,9 +1026,9 @@
        <div class="d">Earned by Oracle participation</div>
       </div>
       <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
-       <div class="tcox-ico">🔥</div>
-       <div class="t">Deflationary</div>
-       <div class="d">% burned on every activity</div>
+       <div class="tcox-ico">📈</div>
+       <div class="t">Staking</div>
+       <div class="d">Lock TCO to earn passive yield</div>
       </div>
       <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
        <div class="tcox-ico">⛓️</div>
@@ -2101,10 +2123,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607153700"></script>
-  <script src="assets/js/app.js?v=202607153700"></script>
-  <script src="assets/js/profile.js?v=202607153700"></script>
-  <script src="assets/js/reputation.js?v=202607153700"></script>
+  <script src="assets/js/treasury.js?v=202607153800"></script>
+  <script src="assets/js/app.js?v=202607153800"></script>
+  <script src="assets/js/profile.js?v=202607153800"></script>
+  <script src="assets/js/reputation.js?v=202607153800"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
