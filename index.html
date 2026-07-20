@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607153800">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607153900">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -700,22 +700,22 @@
           <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55;">Terra Classic Oracle &mdash; native governance &amp; reward token. Earned by participating, staked for more.</div>
           <div class="tcox-grid">
             <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
-              <div class="tcox-ico">🏛️</div>
+              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
               <div class="t">Governance</div>
               <div class="d">Vote weight by TCO stake</div>
             </div>
             <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
-              <div class="tcox-ico">💎</div>
+              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M8 9l4 12M16 9l-4 12M8 9l4-6M16 9l-4-6"/></svg></div>
               <div class="t">Rewards</div>
               <div class="d">Earned by Oracle participation</div>
             </div>
             <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
-              <div class="tcox-ico">📈</div>
+              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/><path d="M3 21h18"/></svg></div>
               <div class="t">Staking</div>
               <div class="d">Lock TCO to earn passive yield</div>
             </div>
             <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
-              <div class="tcox-ico">⛓️</div>
+              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg></div>
               <div class="t">On-Chain</div>
               <div class="d">Terra Classic · columbus-5</div>
             </div>
@@ -728,65 +728,80 @@
   <!-- FLOW label -->
   <div class="mobile-section-label">Protocol Flow</div>
 
-  <!-- Protocol Flow Accordion -->
+  <!-- Protocol Flow — same pfx redesign as desktop (spine, nodes, split bars) -->
   <div class="mobile-flow-block">
     <div class="mobile-flow-bar"></div>
     <div class="mobile-flow-header">◈ Protocol Flow</div>
+    <div style="padding:16px 14px 18px;">
 
-    <!-- Accordion 1: Oracle Questions -->
-    <div class="mobile-accordion-item" id="acc-1">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-1')">
-        🔮 Oracle Questions
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">200,000 LUNC per question</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill">🎰 50% → Weekly Pool</span>
-            <span class="mobile-flow-pill gold">🏛 50% → Treasury</span>
-            <span class="mobile-flow-pill green">🎟 +2 free Weekly entries</span>
+      <div class="pfx-stream" style="--pc:#7B5CFF;--pt:#a08fff;">
+        <div class="pfx-node"></div>
+        <div class="pfx-title">Oracle Questions</div>
+        <div class="pfx-row">
+          <div class="pfx-chip" style="border-color:rgba(123,92,255,.3);background:rgba(123,92,255,.08);">
+            <div class="v">200,000 LUNC</div>
+            <div class="s">per question</div>
           </div>
+          <div class="pfx-chip"><div class="v" style="font-size:11px;color:rgba(0,255,176,.9);">+2 free Weekly entries</div></div>
+        </div>
+        <div class="pfx-bar">
+          <span style="width:50%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);"></span>
+          <span style="width:50%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.15s;"></span>
+        </div>
+        <div class="pfx-legend">
+          <div><i style="background:#a78bfa;"></i>50% &rarr; Weekly Prize Pool</div>
+          <div><i style="background:#E8C840;"></i>50% &rarr; Protocol Treasury</div>
         </div>
       </div>
-    </div>
 
-    <!-- Accordion 2: Daily Draw -->
-    <div class="mobile-accordion-item" id="acc-2">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-2')">
-        🌙 Daily Draw · every day 20:00 UTC
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">NFT Mint → Daily Pool</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill green">🥇 80% → 1 Winner</span>
-            <span class="mobile-flow-pill">🌱 10% → Seeds</span>
-            <span class="mobile-flow-pill gold">🏛 10% → Treasury</span>
+      <div class="pfx-stream" style="--pc:#f59e0b;--pt:#fbbf24;">
+        <div class="pfx-node"></div>
+        <div class="pfx-title">Daily Draw &middot; every day 20:00 UTC</div>
+        <div class="pfx-row">
+          <div class="pfx-chip" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08);">
+            <div class="v">NFT Mint</div>
+            <div class="s">Common / Rare / Legendary</div>
           </div>
+          <div class="pfx-chip" style="border-color:rgba(245,158,11,.25);"><div class="v" style="font-size:12px;color:#fbbf24;">Daily Pool</div></div>
+        </div>
+        <div class="pfx-bar">
+          <span style="width:80%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
+          <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.15s;"></span>
+          <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.3s;"></span>
+        </div>
+        <div class="pfx-legend">
+          <div><i style="background:#00ffb0;"></i>80% &rarr; 1 Winner</div>
+          <div><i style="background:#a78bfa;"></i>10% &rarr; Seeds</div>
+          <div><i style="background:#E8C840;"></i>10% &rarr; Treasury</div>
         </div>
       </div>
-    </div>
 
-    <!-- Accordion 3: Weekly Draw -->
-    <div class="mobile-accordion-item" id="acc-3">
-      <button class="mobile-accordion-trigger" onclick="toggleAccordion('acc-3')">
-        📅 Weekly Draw · every Monday 20:00 UTC
-        <span class="mobile-accordion-arrow">▼</span>
-      </button>
-      <div class="mobile-accordion-body">
-        <div class="mobile-accordion-content">
-          <div class="mobile-flow-amount">NFT Mint + Questions → Weekly Pool</div>
-          <div class="mobile-flow-pills-row">
-            <span class="mobile-flow-pill green">🥇 48% → 1st</span>
-            <span class="mobile-flow-pill blue">🥈 20% → 2nd</span>
-            <span class="mobile-flow-pill">🥉 12% → 3rd</span>
-            <span class="mobile-flow-pill">🌱 10% → Seeds</span>
-            <span class="mobile-flow-pill gold">🏛 10% → Treasury</span>
+      <div class="pfx-stream" style="--pc:#a78bfa;--pt:#c4b5fd;">
+        <div class="pfx-node"></div>
+        <div class="pfx-title">Weekly Draw &middot; every Monday 20:00 UTC</div>
+        <div class="pfx-row">
+          <div class="pfx-chip" style="border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08);">
+            <div class="v">NFT Mint + Questions</div>
+            <div class="s">entries from both</div>
           </div>
+          <div class="pfx-chip" style="border-color:rgba(167,139,250,.25);"><div class="v" style="font-size:12px;color:#c4b5fd;">Weekly Pool</div></div>
+        </div>
+        <div class="pfx-bar">
+          <span style="width:48%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
+          <span style="width:20%;background:linear-gradient(90deg,#0a9f74,#00e6a0);animation-delay:.12s;"></span>
+          <span style="width:12%;background:linear-gradient(90deg,#0b8a68,#00cc90);animation-delay:.24s;"></span>
+          <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.36s;"></span>
+          <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.48s;"></span>
+        </div>
+        <div class="pfx-legend">
+          <div><i style="background:#00ffb0;"></i>48% &rarr; 1st</div>
+          <div><i style="background:#00e6a0;"></i>20% &rarr; 2nd</div>
+          <div><i style="background:#00cc90;"></i>12% &rarr; 3rd</div>
+          <div><i style="background:#a78bfa;"></i>10% &rarr; Seeds</div>
+          <div><i style="background:#E8C840;"></i>10% &rarr; Treasury</div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -1016,22 +1031,22 @@
      <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle — native governance &amp; reward token of the ecosystem. Earned by participating, staked for more.</div>
      <div class="tcox-grid">
       <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
-       <div class="tcox-ico">🏛️</div>
+       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
        <div class="t">Governance</div>
        <div class="d">Vote weight by TCO stake</div>
       </div>
       <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
-       <div class="tcox-ico">💎</div>
+       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M8 9l4 12M16 9l-4 12M8 9l4-6M16 9l-4-6"/></svg></div>
        <div class="t">Rewards</div>
        <div class="d">Earned by Oracle participation</div>
       </div>
       <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
-       <div class="tcox-ico">📈</div>
+       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/><path d="M3 21h18"/></svg></div>
        <div class="t">Staking</div>
        <div class="d">Lock TCO to earn passive yield</div>
       </div>
       <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
-       <div class="tcox-ico">⛓️</div>
+       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg></div>
        <div class="t">On-Chain</div>
        <div class="d">Terra Classic · columbus-5</div>
       </div>
@@ -2123,10 +2138,10 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607153800"></script>
-  <script src="assets/js/app.js?v=202607153800"></script>
-  <script src="assets/js/profile.js?v=202607153800"></script>
-  <script src="assets/js/reputation.js?v=202607153800"></script>
+  <script src="assets/js/treasury.js?v=202607153900"></script>
+  <script src="assets/js/app.js?v=202607153900"></script>
+  <script src="assets/js/profile.js?v=202607153900"></script>
+  <script src="assets/js/reputation.js?v=202607153900"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
