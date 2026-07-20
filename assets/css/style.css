@@ -1334,3 +1334,9 @@ canvas {
 @media (max-width:560px){
   .pf-rep{ margin-left:0; text-align:left; width:100%; }
 }
+
+/* Mobile TCO block: reuse of desktop tcox-* redesign, slightly compacted */
+.mobile-tco-block .tcox-wrap{ flex-direction:column; text-align:center; gap:18px; }
+.mobile-tco-block .tcox-coin{ width:88px; height:88px; }
+.mobile-tco-block .tcox-coin .core{ font-size:21px; inset:11px; }
+.mobile-tco-block .tcox-grid{ grid-template-columns:repeat(2,1fr); margin-top:14px; }
