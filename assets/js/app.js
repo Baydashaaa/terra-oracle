@@ -2327,20 +2327,65 @@ function renderVotes() {
   const list = document.getElementById('votes-list');
   const filtered = currentVoteFilter === 'all' ? VOTES_DATA : VOTES_DATA.filter(v => v.type === currentVoteFilter);
   if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">No votes in this category yet.</div>'; return; }
+
+  // Per-type color scheme (accent + winner colors) — mirrors home-page style.
+  const TYPE = {
+    weekly:  { vc:'#7B5CFF', vc2:'#c4b5fd', label:'Weekly',  ico:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' },
+    monthly: { vc:'#E8C840', vc2:'#fde68a', label:'Monthly', ico:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01"/>' },
+    special: { vc:'#ff6b8a', vc2:'#ffa3b6', label:'Special', ico:'<path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/>' },
+  };
+  const svg = (paths, cls) => `<svg viewBox="0 0 24 24" class="${cls}">${paths}</svg>`;
+
   list.innerHTML = filtered.map(v => {
+    const t = TYPE[v.type] || TYPE.special;
+    const closed = (v.status === 'closed' || v.status === 'stopped');
+    const voted = v.userVoted !== null && v.userVoted !== undefined;
+    const revealed = voted || closed; // show bars/percents once voted or closed
     const maxVotes = Math.max(...v.options.map(o => o.votes));
     const pct = o => v.totalVotes > 0 ? Math.round((o.votes / v.totalVotes) * 100) : 0;
     const quorumPct = Math.min(100, Math.round((v.totalVotes / v.quorum) * 100));
-    const typeClass = { weekly: 'vote-type-weekly', monthly: 'vote-type-monthly', special: 'vote-type-special' }[v.type];
-    const typeLabel = { weekly: '📅 Weekly', monthly: '🗓 Monthly', special: '⚡ Special' }[v.type];
-    return `<div class="vote-card vote-card-${v.type || 'special'} ${(v.status === 'closed' || v.status === 'stopped') ? 'vote-closed' : ''}" id="vcard-${v.id}">
-      <div class="vote-card-meta"><span class="vote-type-badge ${typeClass}">${typeLabel}</span><span class="vote-timer">⏱ ${v.timer}</span></div>
-      <div class="vote-card-title">${v.title}</div>
-      <div class="vote-desc" style="margin-top:8px;">${v.desc}</div>
-      <div class="vote-progress-wrap"><div class="vote-progress-bar-bg"><div class="vote-progress-bar-fill" style="width:${quorumPct}%"></div></div><div class="vote-progress-info"><span>Quorum: ${v.totalVotes} / ${v.quorum} votes</span><span>${quorumPct}%</span></div></div>
-      <div class="vote-options">${v.options.map((o, oi) => { const p = pct(o); const isWinner = o.votes === maxVotes && v.totalVotes > 0; const isSelected = v.userVoted === oi; return `<div class="vote-option ${isSelected?'selected':''} ${isWinner&&v.userVoted!==null?'winner':''}" onclick="castVote('${v.id}', ${oi})"><div class="vote-option-bar ${isWinner&&v.userVoted!==null?'winner-bar':''}" style="width:${v.userVoted!==null?p:0}%"></div><div class="vote-option-content"><div class="vote-option-radio"></div><div class="vote-option-label">${o.label}</div>${v.userVoted!==null?`<div class="vote-option-pct">${p}%</div>`:''}</div></div>`; }).join('')}</div>
-      <div class="vote-btn-row">${v.userVoted !== null ? `<span style="font-size:12px;color:var(--green);">✅ You voted</span>` : v.status === 'upcoming' ? `<span style="font-size:12px;color:var(--gold);">🗓 Voting opens on the 20th</span>` : `<button class="btn btn-primary" onclick="castVote('${v.id}', -1)" style="padding:10px 24px;font-size:11px;" ${!globalWalletAddress?'disabled':''}}>${globalWalletAddress?'Cast Vote':'🔑 Connect to Vote'}</button>`}<span style="font-size:11px;color:var(--muted);">${v.totalVotes} votes total</span></div>
-      <div class="vote-source">💬 ${v.source}</div>
+
+    const opts = v.options.map((o, oi) => {
+      const p = pct(o);
+      const isWinner = revealed && o.votes === maxVotes && v.totalVotes > 0;
+      const isSel = v.userVoted === oi;
+      const cls = ['vp-opt', revealed ? (isWinner ? 'win' : 'lose') : '', isSel ? 'sel' : ''].filter(Boolean).join(' ');
+      const radioInner = isWinner ? svg('<path d="M20 6 9 17l-5-5"/>', 'vp-check') : '';
+      return `<div class="${cls}" ${closed ? '' : `onclick="castVote('${v.id}', ${oi})"`} style="--wc:${t.vc}">
+        <div class="vp-opt-fill" style="width:${revealed ? p : 0}%"></div>
+        <div class="vp-opt-row">
+          <div class="vp-radio">${radioInner}</div>
+          <div class="vp-opt-label">${o.label}</div>
+          ${revealed ? `<div class="vp-opt-pct">${p}%</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    let foot;
+    if (voted) {
+      foot = `<div class="vp-voted">${svg('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', 'vp-foot-ico')}You voted</div>`;
+    } else if (closed) {
+      foot = `<div class="vp-voted" style="color:var(--muted);">${svg('<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>', 'vp-foot-ico')}Voting closed</div>`;
+    } else if (v.status === 'upcoming') {
+      foot = `<div class="vp-voted" style="color:var(--gold);">${svg('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>', 'vp-foot-ico')}Voting opens on the 20th</div>`;
+    } else {
+      foot = `<button class="vp-cast-btn" onclick="castVote('${v.id}', -1)" ${!globalWalletAddress ? 'disabled' : ''}>${globalWalletAddress ? 'Cast Vote →' : svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', 'vp-lock') + ' Connect to Vote'}</button>`;
+    }
+
+    return `<div class="vp-card ${closed ? 'vp-card-closed' : ''}" id="vcard-${v.id}" style="--vc:${t.vc};--vc2:${t.vc2};">
+      <div class="vp-meta">
+        <div class="vp-badge">${svg(t.ico, 'vp-badge-ico')}${t.label}</div>
+        <div class="vp-timer">${svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'vp-timer-ico')}${v.timer || ''}</div>
+      </div>
+      <div class="vp-title">${v.title}</div>
+      <div class="vp-desc">${v.desc}</div>
+      <div class="vp-quorum">
+        <div class="vp-q-bar"><div class="vp-q-fill" style="width:${quorumPct}%"></div></div>
+        <div class="vp-q-info"><span>Quorum · ${v.totalVotes} / ${v.quorum} votes</span><span>${quorumPct}%</span></div>
+      </div>
+      <div class="vp-opts">${opts}</div>
+      <div class="vp-foot">${foot}<div class="vp-total">${v.totalVotes} votes total</div></div>
+      ${v.source ? `<div class="vp-src">${svg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 'vp-src-ico')}${v.source}</div>` : ''}
     </div>`;
   }).join('');
 }
