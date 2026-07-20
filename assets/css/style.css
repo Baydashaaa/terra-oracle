@@ -1343,3 +1343,49 @@ canvas {
 
 /* TCO tiles: neon SVG icons (replacing default emoji) */
 .tcox-ico svg{ width:17px; height:17px; stroke:var(--tc); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 3px var(--tcs)); }
+
+/* ═══════════════════════════════════════════════════════════
+   VOTE PAGE: redesigned proposal cards (accent spine, neon icons,
+   gradient result bars, winner highlight)
+   ═══════════════════════════════════════════════════════════ */
+@keyframes vpSweep { 0%{transform:translateX(-120%)} 100%{transform:translateX(400%)} }
+
+.vp-card{ position:relative; background:rgba(14,18,32,.9); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px 26px; overflow:hidden; margin-bottom:20px; }
+.vp-card::before{ content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--vc),transparent); }
+.vp-card-closed{ opacity:.72; }
+.vp-meta{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.vp-badge{ display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; border-radius:20px; background:color-mix(in srgb,var(--vc) 14%,transparent); border:1px solid color-mix(in srgb,var(--vc) 40%,transparent); color:var(--vc2); }
+.vp-badge-ico{ width:11px; height:11px; stroke:var(--vc2); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.vp-timer{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+.vp-timer-ico{ width:12px; height:12px; stroke:var(--muted); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.vp-title{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:20px; color:#fff; line-height:1.25; margin-bottom:8px; }
+.vp-desc{ font-size:12.5px; line-height:1.6; color:var(--muted); margin-bottom:18px; }
+.vp-quorum{ margin-bottom:18px; }
+.vp-q-bar{ height:5px; border-radius:4px; background:rgba(255,255,255,.06); overflow:hidden; position:relative; }
+.vp-q-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg,var(--vc),color-mix(in srgb,var(--vc) 40%,#fff)); position:relative; transition:width .8s cubic-bezier(.3,.9,.3,1); }
+.vp-q-fill::after{ content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent); animation:vpSweep 2.4s ease-in-out infinite; }
+.vp-q-info{ display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:6px; letter-spacing:.03em; }
+.vp-opts{ display:flex; flex-direction:column; gap:9px; }
+.vp-opt{ position:relative; border:1px solid rgba(255,255,255,.09); border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color .2s, transform .15s; }
+.vp-opt[onclick]:hover{ transform:translateX(2px); border-color:color-mix(in srgb,var(--wc) 45%,transparent); }
+.vp-opt-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:12px 0 0 12px; width:0; background:rgba(255,255,255,.03); transition:width 1s cubic-bezier(.3,.9,.3,1); }
+.vp-opt-row{ position:relative; display:flex; align-items:center; gap:12px; padding:14px 16px; z-index:1; }
+.vp-radio{ width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.3); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:border-color .2s, background .2s; }
+.vp-opt-label{ font-size:13.5px; color:#e6ecf7; font-weight:600; flex:1; }
+.vp-opt-pct{ font-family:'Rajdhani',sans-serif; font-weight:800; font-size:16px; color:#e6ecf7; }
+.vp-opt.sel{ border-color:color-mix(in srgb,var(--wc) 55%,transparent); }
+.vp-opt.win{ border-color:color-mix(in srgb,var(--wc) 60%,transparent); }
+.vp-opt.win .vp-opt-fill{ background:linear-gradient(90deg,color-mix(in srgb,var(--wc) 28%,transparent),color-mix(in srgb,var(--wc) 8%,transparent)); }
+.vp-opt.win .vp-radio{ border-color:var(--wc); background:var(--wc); box-shadow:0 0 12px var(--wc); }
+.vp-check{ width:10px; height:10px; stroke:#0a0d1a; fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.vp-opt.win .vp-opt-pct{ color:var(--wc); }
+.vp-opt.lose .vp-opt-pct{ color:var(--muted); }
+.vp-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); }
+.vp-voted{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--green); font-weight:600; }
+.vp-foot-ico{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.vp-total{ font-size:11px; color:var(--muted); }
+.vp-cast-btn{ display:inline-flex; align-items:center; gap:7px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; letter-spacing:.06em; color:#fff; background:linear-gradient(90deg,#6d5ae0,#8b7cf7); border:none; border-radius:10px; padding:10px 22px; cursor:pointer; box-shadow:0 8px 22px -10px rgba(123,92,255,.7); transition:opacity .2s; }
+.vp-cast-btn:disabled{ background:rgba(255,255,255,.06); color:var(--muted); box-shadow:none; cursor:not-allowed; }
+.vp-lock{ width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.vp-src{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--muted); margin-top:14px; padding:9px 12px; background:rgba(255,255,255,.02); border-radius:9px; border:1px solid rgba(255,255,255,.05); }
+.vp-src-ico{ width:12px; height:12px; stroke:var(--muted); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
