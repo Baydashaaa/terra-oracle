@@ -341,6 +341,26 @@
 }
 
 </style>
+<style id="android-paint-fix">
+/* ══ Android: полноэкранные композитные слои ══════════════════════════════
+   Симптом: контент есть в DOM и кликается, но не отрисован — чёрные полосы,
+   пропавшие карточки, «появляется после скролла». Причина — фиксированные
+   слои во весь вьюпорт поверх очень длинного документа:
+     #energy-field  — position:fixed + анимация opacity/scale (перерисовка
+                      всего экрана каждый кадр);
+     #noise-overlay — position:fixed + тайл SVG feTurbulence 200×200.
+   Существующий блок «Disable heavy GPU effects» их не отключал.           */
+@media (max-width: 900px), (hover: none) {
+  #energy-field,
+  #noise-overlay { display: none !important; }
+
+  /* Пульсация логотипа десктопного героя — тоже полноэкранный перерисовщик */
+  #hero-stage img { animation: none !important; }
+
+  /* Ничто не должно создавать композитный слой размером с документ */
+  #page-home, .mobile-home-sections { will-change: auto !important; }
+}
+</style>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="shortcut icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
