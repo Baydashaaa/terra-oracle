@@ -937,11 +937,11 @@
     <div class="oc3-body">
      <div class="oc3-reactor">
       <svg viewBox="0 0 240 240">
-       <circle cx="120" cy="120" r="112" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
-       <g class="oc3-ring-spin"><circle cx="120" cy="120" r="104" fill="none" stroke="rgba(123,92,255,.35)" stroke-width="1.5" stroke-dasharray="40 260"/></g>
-       <g class="oc3-ring-spin2"><circle cx="120" cy="120" r="96" fill="none" stroke="rgba(0,212,255,.3)" stroke-width="1" stroke-dasharray="20 120"/></g>
+       <circle class="oc3-r-base" cx="120" cy="120" r="112" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+       <g class="oc3-ring-spin"><circle class="oc3-r1" cx="120" cy="120" r="104" fill="none" stroke="rgba(123,92,255,.35)" stroke-width="1.5" stroke-dasharray="40 260"/></g>
+       <g class="oc3-ring-spin2"><circle class="oc3-r2" cx="120" cy="120" r="96" fill="none" stroke="rgba(0,212,255,.3)" stroke-width="1" stroke-dasharray="20 120"/></g>
        <circle id="oc3prog" class="oc3-prog" cx="120" cy="120" r="86" fill="none" stroke="url(#oc3g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
-       <defs><linearGradient id="oc3g" x1="0" y1="0" x2="240" y2="240"><stop offset="0" stop-color="#7B5CFF"/><stop offset=".5" stop-color="#00D4FF"/><stop offset="1" stop-color="#00FFB0"/></linearGradient></defs>
+       <defs><linearGradient id="oc3g" x1="0" y1="0" x2="240" y2="240"><stop id="oc3gs1" offset="0" stop-color="#7B5CFF"/><stop id="oc3gs2" offset="1" stop-color="#c4b5fd"/></linearGradient></defs>
       </svg>
       <div class="oc3-core"><div class="oc3-core-num" id="oc3num" style="color:#a78bfa;">01</div><div class="oc3-core-lbl">of 04 &middot; weekly</div></div>
      </div>
@@ -975,6 +975,27 @@
    </div>
   </div>
 
+
+<style id="oc3-ring-color">
+/* ── Кольца реактора наследуют цвет активного модуля ──────────────────────
+   Единственный источник правды — --rc / --rc2 на .oc3-reactor.
+   JS ставит только их, всё остальное подхватывается по наследованию.       */
+.oc3-reactor{ --rc:#7B5CFF; --rc2:#c4b5fd; }
+
+.oc3-reactor svg circle{ transition:stroke .5s ease, opacity .5s ease; }
+.oc3-reactor .oc3-r-base{ stroke:var(--rc);  opacity:.13; }
+.oc3-reactor .oc3-r1    { stroke:var(--rc);  opacity:.42; }
+.oc3-reactor .oc3-r2    { stroke:var(--rc2); opacity:.34; }
+
+/* Пользовательские свойства наследуются внутрь <defs>, поэтому стопы
+   градиента красятся тем же значением без вмешательства JS. */
+.oc3-reactor #oc3gs1{ stop-color:var(--rc);  transition:stop-color .5s ease; }
+.oc3-reactor #oc3gs2{ stop-color:var(--rc2); transition:stop-color .5s ease; }
+
+.oc3-reactor .oc3-prog{ filter:drop-shadow(0 0 7px var(--rc)); transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), filter .5s ease; }
+.oc3-core-num{ transition:color .5s ease; }
+</style>
+
   <script>
   (function () {
     // On mobile the desktop hero and lower desktop sections are hidden, so
@@ -997,13 +1018,34 @@
     if (!steps.length) return;
     var num = document.getElementById('oc3num');
     var prog = document.getElementById('oc3prog');
-    var colors = ['#a78bfa', '#67e8f9', '#fde68a', '#6ee7b7'];
+    var reactor = document.querySelector('.oc3-reactor');
+
+    // Цвет берём из --nc / --nc2 самого шага — второго списка цветов больше нет
+    function stepColors(el) {
+      var cs = getComputedStyle(el);
+      return {
+        c1: (cs.getPropertyValue('--nc')  || '#7B5CFF').trim(),
+        c2: (cs.getPropertyValue('--nc2') || '#c4b5fd').trim()
+      };
+    }
+    function paint(n) {
+      var c = stepColors(steps[n]);
+      if (reactor) {
+        reactor.style.setProperty('--rc',  c.c1);
+        reactor.style.setProperty('--rc2', c.c2);
+      }
+      if (num) num.style.color = c.c2;
+    }
     function setActive(n) {
       steps.forEach(function (s, k) { s.classList.toggle('on', k === n); });
       num.textContent = '0' + (n + 1);
-      num.style.color = colors[n];
+      paint(n);
       prog.style.strokeDashoffset = String(540 - 540 * ((n + 1) / 4));
     }
+
+    // Стартовая раскраска под первый шаг; дугу прогресса не трогаем,
+    // чтобы поведение при загрузке осталось прежним
+    paint(0);
     steps.forEach(function (s, k) {
       s.addEventListener('click', function () { setActive(k); });
     });
