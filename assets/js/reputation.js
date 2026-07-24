@@ -109,13 +109,13 @@ function renderLeaderboardHTML() {
         background:rgba(84,147,247,0.12);border:1px solid rgba(84,147,247,0.4);
         color:var(--accent);font-family:'Exo 2',sans-serif;font-size:10px;font-weight:700;
         letter-spacing:0.1em;padding:6px 16px;border-radius:6px;cursor:pointer;">
-        📅 Weekly
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.4" y="5.4" width="17.2" height="15.2" rx="2.4"/><path d="M3.4 10h17.2M8.4 3.4v4M15.6 3.4v4"/></svg> Weekly
       </button>
       <button onclick="switchLeaderboardPeriod('alltime')" id="lb-btn-alltime" style="
         background:transparent;border:1px solid var(--border);
         color:var(--muted);font-family:'Exo 2',sans-serif;font-size:10px;font-weight:700;
         letter-spacing:0.1em;padding:6px 16px;border-radius:6px;cursor:pointer;">
-        🔥 All Time
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M12 20.6c3.2 0 5.7-2.2 5.7-5.3 0-3.6-2.9-5.6-4.2-9.6-2 1.6-3 3.3-3 5 0 1.2.5 2 .5 2.9 0 .9-.7 1.6-1.6 1.6-.85 0-1.45-.55-1.65-1.45-1 1.2-1.55 2.6-1.55 4.05 0 3 2.5 4.8 5.75 4.8z"/></svg> All Time
       </button>
       <div id="lb-weekly-timer" style="display:none;margin-left:auto;align-items:center;gap:8px;
         padding:6px 14px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.22);border-radius:8px;">
@@ -348,7 +348,6 @@ function renderLeaderboardPage(page) {
   const slots = Array.from({ length: slotCount }, (_, i) => {
     const globalIdx = page * PAGE_SIZE + i;
     const w = slice[i] || null;
-    const medal = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : `#${globalIdx + 1}`;
     const medalColor = globalIdx < 3 ? '#fff' : 'var(--muted)';
 
     // Top-3 medal styling (gold / silver / bronze)
@@ -358,6 +357,16 @@ function renderLeaderboardPage(page) {
       { c: '#cd7f32', rgba: '205,127,50' },   // bronze
     ];
     const ms = globalIdx < 3 ? MEDAL_STYLES[globalIdx] : null;
+    // Медаль рисуется вектором с номером места внутри — цвет берётся из
+    // MEDAL_STYLES, поэтому определение переехало сюда, ниже него.
+    // Места с 4-го остаются текстовыми (#4, #5 …), как и были.
+    const medal = ms
+      ? `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;filter:drop-shadow(0 0 5px ${ms.c}99);">
+           <path d="M8.6 2.8 11 8.4M15.4 2.8 13 8.4" stroke="${ms.c}" stroke-width="1.8" stroke-linecap="round"/>
+           <circle cx="12" cy="14.8" r="5.9" stroke="${ms.c}" stroke-width="1.8"/>
+           <text x="12" y="15" text-anchor="middle" dominant-baseline="central" fill="${ms.c}" font-family="Rajdhani,sans-serif" font-size="7.5" font-weight="800">${globalIdx + 1}</text>
+         </svg>`
+      : `#${globalIdx + 1}`;
 
     if (!w) {
       // Empty slot — an inviting "open spot", not a loading skeleton.
@@ -414,11 +423,11 @@ function renderLeaderboardPage(page) {
             </span>
           </div>
           <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
-            <span>❓ ${w.questions} questions</span>
-            <span>💬 ${w.answers} answers</span>
-            <span>👍 ${w.upvotesReceived || 0} upvotes</span>
-            ${w.chatRep ? `<span>🗨️ +${w.chatRep} chat</span>` : ''}
-            ${w.drawRep ? `<span>🎭 +${w.drawRep} draw</span>` : ''}
+            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> ${w.questions} questions</span>
+            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> ${w.answers} answers</span>
+            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${w.upvotesReceived || 0} upvotes</span>
+            ${w.chatRep ? `<span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> +${w.chatRep} chat</span>` : ''}
+            ${w.drawRep ? `<span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> +${w.drawRep} draw</span>` : ''}
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
@@ -461,7 +470,7 @@ function renderStatsHTML(isConnected) {
     return `
       <div style="text-align:center;padding:60px 20px;background:var(--surface);
         border:1px solid var(--border);border-radius:14px;">
-        <div style="font-size:40px;margin-bottom:12px;">🔒</div>
+        <div style="line-height:0;margin-bottom:12px;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6B82A8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #6B82A888);"><rect x="4.5" y="10.4" width="15" height="9.6" rx="2.2"/><path d="M8 10.4V7.8a4 4 0 0 1 8 0v2.6"/><path d="M12 14.3v2.2"/></svg></div>
         <div style="font-size:14px;color:var(--text);margin-bottom:6px;">Connect your wallet</div>
         <div style="font-size:12px;color:var(--muted);">Connect to see your reputation analytics</div>
       </div>`;
