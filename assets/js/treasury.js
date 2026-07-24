@@ -308,6 +308,32 @@ async function loadTreasuryData() {
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
   tLoadRecentTxs();
 }
+// Копирование адреса кошелька. Clipboard API недоступен вне защищённого
+// контекста и в части встроенных браузеров кошельков, поэтому есть запасной
+// путь через скрытое textarea + execCommand.
+function tCopyAddr(ev, addr) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const btn = ev.currentTarget;
+  const done = () => { btn.classList.add('ok'); setTimeout(() => btn.classList.remove('ok'), 1300); };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = addr;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+window.tCopyAddr = tCopyAddr;
+
 function showPage_treasury(e, _unused, skipHistory) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
