@@ -504,7 +504,7 @@ function renderBoard() {
       ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
       <div class="q-footer">
         <div class="q-votes">
-          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})"><img src="/assets/icons/upvotes.png" style="width:27px;height:27px;vertical-align:middle;margin-right:3px;"> ${q.votes}</button>
+          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 4px currentColor);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${q.votes}</button>
         </div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-sm btn-answer-view" onclick="toggleAnswers(${realQi})">💬 ${q.answers.length} answer${q.answers.length !== 1 ? 's' : ''}</button>
@@ -525,7 +525,7 @@ function renderBoard() {
             </div>` : ''}
             <div class="answer-text">${a.text}</div>
             <div class="answer-votes" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${realQi},${ai})"><img src="/assets/icons/upvotes.png" style="width:27px;height:27px;vertical-align:middle;margin-right:3px;"> ${a.votes}</button>
+              <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${realQi},${ai})"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 4px currentColor);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${a.votes}</button>
               <button
                 data-board-reply-qi="${realQi}"
                 data-board-reply-id="${a.id}"
