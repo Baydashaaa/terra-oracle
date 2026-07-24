@@ -845,36 +845,45 @@ canvas {
 @media (max-width: 900px) {
 
   /* ── MOBILE HERO ── */
+  /* Высота по содержимому. Было min-height:100svh — герой занимал целый
+     экран, а контента в нём на ~300px, поэтому justify-content:center
+     разгонял пустоту вверх и вниз от логотипа, и до остальной страницы
+     приходилось прокручивать полный экран.
+     Два числа для подгонки: верхний и нижний padding ниже. */
   .mobile-hero {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100svh;
-    padding: 80px 24px 100px;
+    min-height: auto;
+    padding: 52px 24px 60px;
     text-align: center;
     position: relative;
     overflow: hidden;
   }
 
   /* Фоновый логотип */
+  /* Логотип уменьшен под новую высоту героя — при 330px он вылезал бы
+     за границы и обрезался по overflow:hidden */
   .mobile-hero-bg-logo {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -58%);
-    width: 330px;
-    height: 330px;
+    transform: translate(-50%, -54%);
+    width: 260px;
+    height: 260px;
     pointer-events: none;
     z-index: 0;
   }
+  /* Анимация снята: изображение под filter:blur+saturate перерастрируется
+     на каждом кадре, а это ровно тот класс нагрузки, из-за которого на
+     Android появлялись чёрные полосы. Статичный логотип выглядит так же. */
   .mobile-hero-bg-logo img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     opacity: 0.18;
     filter: blur(0.5px) saturate(0.7);
-    animation: centerPulse 6s ease-in-out infinite;
   }
 
   /* Контент поверх логотипа */
