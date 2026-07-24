@@ -40,7 +40,7 @@ function renderRepPage(tab) {
         color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
         background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
       <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;">
-        ${tab === 'leaderboard' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/Leaderboard.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Leaderboard</span></span>' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/Stats.png" style="width:80px;height:80px;flex-shrink:0;display:block;mix-blend-mode:screen;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">Your Stats</span></span>' : '<span style="display:inline-flex;align-items:center;gap:10px;"><img src="/assets/icons/How-it-works.png" style="width:80px;height:80px;flex-shrink:0;display:block;"><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;margin-top:8px;">How it Works</span></span>'}
+        ${tab === 'leaderboard' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M8 4.4h8v4.7a4 4 0 0 1-8 0z"/><path d="M8 5.9H5.4v1.6a3 3 0 0 0 3 3M16 5.9h2.6v1.6a3 3 0 0 1-3 3"/><path d="M12 13.1v3.4"/><path d="M9.3 20.1h5.4l-.55-3.6H9.85z"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">Leaderboard</span></span>' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #00D4FF88);"><path d="M3.6 20.4h16.8"/><path d="M7.2 20.4v-7.2M12 20.4V6.6M16.8 20.4v-4.6"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">Your Stats</span></span>' : '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M12 6.9S10.1 5 6.6 5H3.4v12.6h3.4c3 0 5.2 1.8 5.2 1.8s2.2-1.8 5.2-1.8h3.4V5h-3.2C14 5 12 6.9 12 6.9z"/><path d="M12 6.9v12.5"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">How it Works</span></span>'}
       </h1>
       <p style="font-size:12px;color:var(--muted);">
         ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
@@ -57,7 +57,7 @@ function renderRepPage(tab) {
         color:${tab==='leaderboard' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="/assets/icons/Leaderboard.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> Leaderboard
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M8 4.4h8v4.7a4 4 0 0 1-8 0z"/><path d="M8 5.9H5.4v1.6a3 3 0 0 0 3 3M16 5.9h2.6v1.6a3 3 0 0 1-3 3"/><path d="M12 13.1v3.4"/><path d="M9.3 20.1h5.4l-.55-3.6H9.85z"/></svg> Leaderboard
       </button>
       <button onclick="showRepPage('stats')" style="
         background:${tab==='stats' ? 'rgba(84,147,247,0.12)' : 'transparent'};
@@ -65,7 +65,7 @@ function renderRepPage(tab) {
         color:${tab==='stats' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="/assets/icons/Stats.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;mix-blend-mode:screen;"> Your Stats
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #00D4FF88);"><path d="M3.6 20.4h16.8"/><path d="M7.2 20.4v-7.2M12 20.4V6.6M16.8 20.4v-4.6"/></svg> Your Stats
       </button>
       <button onclick="showRepPage('how')" style="
         background:${tab==='how' ? 'rgba(84,147,247,0.12)' : 'transparent'};
@@ -73,7 +73,7 @@ function renderRepPage(tab) {
         color:${tab==='how' ? 'var(--accent)' : 'var(--muted)'};
         font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
         padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <img src="/assets/icons/How-it-works.png" style="width:35px;height:35px;vertical-align:middle;margin-right:4px;"> How it Works
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M12 6.9S10.1 5 6.6 5H3.4v12.6h3.4c3 0 5.2 1.8 5.2 1.8s2.2-1.8 5.2-1.8h3.4V5h-3.2C14 5 12 6.9 12 6.9z"/><path d="M12 6.9v12.5"/></svg> How it Works
       </button>
     </div>
 
@@ -479,7 +479,7 @@ function renderStatsHTML(isConnected) {
             display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" id="stats-label-${k}">
-                ${{questions:'<img src="/assets/icons/questions.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Questions',answers:'<img src="/assets/icons/answers.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Answers',upvotes:'<img src="/assets/icons/upvotes.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Upvotes received',chat:'<img src="/assets/icons/chat-message.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Chat messages'}[k]}
+                ${{questions:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Questions',answers:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #00FFB088);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> Answers',upvotes:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes received',chat:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat messages'}[k]}
               </div>
               <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-${k}">…</div>
             </div>
@@ -491,7 +491,7 @@ function renderStatsHTML(isConnected) {
         <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
           display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img src="/assets/icons/oracle-draw-mints.png" style="width:41px;height:41px;vertical-align:middle;margin-right:4px;"> Oracle Draw mints</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Oracle Draw mints</div>
             <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-draw">…</div>
           </div>
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#ff8844;"
@@ -500,11 +500,11 @@ function renderStatsHTML(isConnected) {
       </div>
       <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
-        <img src="/assets/icons/questions.png" style="width:25px;height:25px;vertical-align:middle;"> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
-        <img src="/assets/icons/answers.png" style="width:25px;height:25px;vertical-align:middle;"> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
-        <img src="/assets/icons/upvotes.png" style="width:25px;height:25px;vertical-align:middle;"> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
-        <img src="/assets/icons/chat-message.png" style="width:25px;height:25px;vertical-align:middle;"> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
-        <img src="/assets/icons/oracle-draw-mints.png" style="width:25px;height:25px;vertical-align:middle;"> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
