@@ -1352,6 +1352,37 @@ canvas {
 
 .vp-card{ position:relative; background:rgba(14,18,32,.9); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px 26px; overflow:hidden; margin-bottom:20px; }
 .vp-card::before{ content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--vc),transparent); }
+/* ── Адреса кошельков на странице Treasury ──────────────────────────────────
+   Были 9px, прозрачность .5 и word-break:break-all — строка рвалась посреди
+   адреса на два куска и читалась как технический мусор. При этом именно
+   адрес и есть доказательство, что цифры настоящие.
+   Теперь: обрезка по краям (начало и хвост — то, по чему адрес и сверяют),
+   ссылка на обозреватель и кнопка копирования. Полный адрес в title.        */
+.t-addr{
+  display:flex; align-items:center; gap:8px;
+  margin-top:10px; padding-top:10px;
+  border-top:1px solid var(--border);
+}
+.t-addr-link{
+  font-family:monospace; font-size:10px; letter-spacing:.02em;
+  color:var(--muted); text-decoration:none;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .18s;
+}
+.t-addr-link:hover{ color:var(--accent); }
+.t-addr-copy{
+  flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; padding:0; cursor:pointer;
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:6px; color:var(--muted);
+  transition:color .18s, border-color .18s, background .18s;
+}
+.t-addr-copy:hover{ color:var(--accent); border-color:rgba(123,92,255,.4); background:rgba(123,92,255,.08); }
+.t-addr-copy .ic-ok{ display:none; }
+.t-addr-copy.ok{ color:var(--green); border-color:rgba(0,255,176,.45); background:rgba(0,255,176,.08); }
+.t-addr-copy.ok .ic-copy{ display:none; }
+.t-addr-copy.ok .ic-ok{ display:block; }
+
 .vp-card-closed{ opacity:.72; }
 
 /* ── Завершённое голосование ────────────────────────────────────────────────
