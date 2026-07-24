@@ -1332,13 +1332,13 @@ canvas {
 .pf-rep .n{ font-family:'Rajdhani',sans-serif; font-weight:800; font-size:34px; color:#fff; line-height:1; }
 .pf-rep .l{ font-size:8.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
 
-.pf-stat{ position:relative; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:14px 8px 12px; text-align:center; transition:transform .2s, border-color .2s, box-shadow .2s; overflow:hidden; }
+.pf-stat{ position:relative; background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:18px 10px 15px; text-align:center; transition:transform .2s, border-color .2s, box-shadow .2s; overflow:hidden; }
 .pf-stat:hover{ transform:translateY(-3px); border-color:var(--sc); box-shadow:0 10px 26px -14px var(--sc); }
 .pf-stat::before{ content:''; position:absolute; top:0; left:11px; right:11px; height:2px; border-radius:2px; background:linear-gradient(90deg,transparent,var(--sc),transparent); opacity:.6; }
-.pf-stat .ic{ width:26px; height:26px; margin:0 auto 7px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb,var(--sc) 14%,transparent); border:1px solid color-mix(in srgb,var(--sc) 38%,transparent); }
-.pf-stat .ic svg{ width:13px; height:13px; stroke:var(--sc); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-.pf-stat .v{ font-family:'Rajdhani',sans-serif; font-weight:800; font-size:22px; color:var(--sc); line-height:1; }
-.pf-stat .k{ font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.pf-stat .ic{ width:40px; height:40px; margin:0 auto 9px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb,var(--sc) 14%,transparent); border:1px solid color-mix(in srgb,var(--sc) 38%,transparent); }
+.pf-stat .ic svg{ width:21px; height:21px; stroke:var(--sc); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 5px color-mix(in srgb,var(--sc) 55%,transparent)); }
+.pf-stat .v{ font-family:'Rajdhani',sans-serif; font-weight:800; font-size:28px; color:var(--sc); line-height:1; }
+.pf-stat .k{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
 
 @media (max-width:560px){
   .pf-rep{ margin-left:0; text-align:left; width:100%; }
