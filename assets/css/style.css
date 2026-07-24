@@ -1353,6 +1353,30 @@ canvas {
 .vp-card{ position:relative; background:rgba(14,18,32,.9); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px 26px; overflow:hidden; margin-bottom:20px; }
 .vp-card::before{ content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--vc),transparent); }
 .vp-card-closed{ opacity:.72; }
+
+/* ── Завершённое голосование ────────────────────────────────────────────────
+   Активная и закрытая карточки различались только прозрачностью .72 — этого
+   не хватало, полоса кворума в обеих одинаково переливалась бегущим бликом
+   vpSweep и обе читались как «идёт прямо сейчас».
+   Гасим у закрытых всю «живую» атрибутику: бегущий блик, цветную полосу
+   кворума и цветную планку слева. Результаты голосования при этом остаются
+   в цвете — они и есть содержимое закрытой карточки.                        */
+.vp-card-closed .vp-q-fill::after{ display:none; }
+.vp-card-closed .vp-q-fill{ background:rgba(255,255,255,.22); }
+.vp-card-closed::before{ background:linear-gradient(180deg,rgba(255,255,255,.22),transparent); }
+.vp-card-closed .vp-badge{
+  background:rgba(255,255,255,.05);
+  border-color:rgba(255,255,255,.14);
+  color:var(--muted);
+}
+/* Диагональная штриховка по фону — спокойный, но однозначный признак архива */
+.vp-card-closed::after{
+  content:'';
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(135deg,
+    rgba(255,255,255,.022) 0 2px, transparent 2px 9px);
+}
 .vp-meta{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
 .vp-badge{ display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; border-radius:20px; background:color-mix(in srgb,var(--vc) 14%,transparent); border:1px solid color-mix(in srgb,var(--vc) 40%,transparent); color:var(--vc2); }
 .vp-badge-ico{ width:11px; height:11px; stroke:var(--vc2); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
