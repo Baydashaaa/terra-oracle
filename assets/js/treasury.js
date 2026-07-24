@@ -9,9 +9,11 @@ const T_WALLETS = {
   dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr', // Development 10%
 };
 const T_LCD = [
-  'https://terra-classic.publicnode.com',
-  'https://lcd.terraclassic.community',
+  // Раньше первым стоял terra-classic.publicnode.com — это RPC-хост, REST API
+  // он не отдаёт. Каждый из семи запросов баланса сначала бился о него впустую.
   'https://terra-classic-lcd.publicnode.com',
+  'https://lcd.terraclassic.community',
+  'https://terra-classic-lcd.hexxagon.io',
 ];
 function tFmt(uluna) {
   const n = uluna / 1_000_000;
@@ -40,11 +42,24 @@ async function tFetchBal(addr) {
   return null;
 }
 async function tFetchPrice() {
+  // Через воркер oracle-draw: там кэш в KV на 60 секунд и цепочка
+  // CryptoCompare → CoinGecko. Прямой вызов CoinGecko из браузера шёл на
+  // каждое открытие страницы, без кэша и без запасного источника, и упирался
+  // в лимиты публичного API. Заодно цена на обоих сайтах теперь одна и та же.
+  const W = (typeof O_DRAW_WORKER !== 'undefined' && O_DRAW_WORKER) || 'https://oracle-draw.vladislav-baydan.workers.dev';
   try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd');
+    const r = await fetch(`${W}/lunc-price`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.LUNC > 0) return d.LUNC;
+    }
+  } catch(e) {}
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd', { signal: AbortSignal.timeout(8000) });
     const d = await r.json();
-    return d['terra-luna']?.usd || 0.00009;
-  } catch(e) { return 0.00009; }
+    if (d['terra-luna']?.usd) return d['terra-luna'].usd;
+  } catch(e) {}
+  return 0.00009;
 }
 let _countdownTimer = null;
 function tStartCountdowns() {
@@ -85,14 +100,15 @@ async function tLoadRecentTxs(retries = 5) {
     'https://columbus-fcd.terra.dev',
   ];
 
-  async function fetchTxsFor(wallet, limit) {
+  // dir: 'in' — что пришло на кошелёк, 'out' — что с него ушло
+  async function fetchTxsFor(wallet, limit, dir) {
     let txs = [];
+    const evKey = dir === 'out' ? 'transfer.sender' : 'transfer.recipient';
 
-    // Use LCD with query parameter (modern Cosmos SDK syntax)
-    if (!txs.length) {
+    {
       for (const lcd of T_LCD) {
         try {
-          const url = `${lcd}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(`transfer.recipient='${wallet}'`)}&pagination.limit=${limit}&order_by=2`;
+          const url = `${lcd}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(`${evKey}='${wallet}'`)}&pagination.limit=${limit}&order_by=2`;
           const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
           if (!r.ok) continue;
           const data = await r.json();
@@ -140,12 +156,16 @@ async function tLoadRecentTxs(retries = 5) {
       const msgs = tx.tx?.value?.msg  || tx.tx?.body?.messages || [];
 
       // Sum ALL uluna sent TO this wallet across all messages
+      // Переводы самому себе не считаем ни в одну, ни в другую сторону
       let rawUluna = 0;
       for (const msg of msgs) {
-        const to    = msg.value?.to_address || msg.to_address || '';
+        const to    = msg.value?.to_address   || msg.to_address   || '';
+        const from  = msg.value?.from_address || msg.from_address || '';
         const coins = msg.value?.coins || msg.value?.amount || msg.amount || [];
         const lunc  = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
-        if (lunc && to === wallet) rawUluna += parseInt(lunc.amount);
+        if (!lunc) continue;
+        if (dir === 'out') { if (from === wallet && to !== wallet) rawUluna += parseInt(lunc.amount); }
+        else               { if (to === wallet && from !== wallet) rawUluna += parseInt(lunc.amount); }
       }
       if (!rawUluna) continue;
 
@@ -159,7 +179,11 @@ async function tLoadRecentTxs(retries = 5) {
 
       // Classify by destination wallet + amount
       let label;
-      if (wallet === T_WALLETS.treasury) {
+      if (dir === 'out') {
+        label = wallet === T_WALLETS.daily  ? 'Daily draw — prize payout'
+              : wallet === T_WALLETS.weekly ? 'Weekly draw — prize payout'
+              : (memo || 'Treasury outflow');
+      } else if (wallet === T_WALLETS.treasury) {
         if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
           label = 'DAO Chat message';
         else if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL))
@@ -188,49 +212,69 @@ async function tLoadRecentTxs(retries = 5) {
         label = memo || 'Transfer';
       }
 
-      results.push({ label, amount: tFmt(rawUluna), hash, ts, tsMs });
+      results.push({ label, amount: tFmt(rawUluna), hash, ts, tsMs, dir: dir === 'out' ? 'out' : 'in' });
     }
     return results;
   }
 
   try {
-    // Fetch from Treasury, Weekly Pool and Daily Pool in parallel
-    const [treasuryTxs, weeklyTxs, dailyTxs] = await Promise.all([
-      fetchTxsFor(T_WALLETS.treasury, 8),
-      fetchTxsFor(T_WALLETS.weekly, 8),
-      fetchTxsFor(T_WALLETS.daily, 8),
+    // Три кошелька × два направления. Раньше спрашивали только
+    // transfer.recipient, поэтому на странице было видно, как деньги
+    // приходят, но не как уходят — выплаты победителям не показывались.
+    const groups = await Promise.all([
+      fetchTxsFor(T_WALLETS.treasury, 8, 'in'),
+      fetchTxsFor(T_WALLETS.weekly,   8, 'in'),
+      fetchTxsFor(T_WALLETS.daily,    8, 'in'),
+      fetchTxsFor(T_WALLETS.treasury, 6, 'out'),
+      fetchTxsFor(T_WALLETS.weekly,   6, 'out'),
+      fetchTxsFor(T_WALLETS.daily,    6, 'out'),
     ]);
 
-    // Merge and sort by time descending, show latest 10
-    const allTxs = [...treasuryTxs, ...weeklyTxs, ...dailyTxs]
+    // Одна транзакция может прийти из двух запросов (перевод между своими
+    // кошельками) — оставляем по одной записи на пару хеш+направление
+    const seen = new Set();
+    const allTxs = groups.flat()
+      .filter(t => { const k = t.hash + '|' + t.dir; if (seen.has(k)) return false; seen.add(k); return true; })
       .sort((a, b) => b.tsMs - a.tsMs)
-      .slice(0, 10);
+      .slice(0, 14);
 
     if (!allTxs.length) {
       el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">No transactions yet</div>';
       return;
     }
 
-    el.innerHTML = allTxs.map(tx => `
+    // Направление читается тремя способами сразу — стрелкой, знаком и цветом
+    const ARROW = {
+      in:  '<path d="M12 4.6v14.8"/><path d="M6.4 13.6 12 19.4l5.6-5.8"/>',
+      out: '<path d="M12 19.4V4.6"/><path d="M6.4 10.4 12 4.6l5.6 5.8"/>',
+    };
+    el.innerHTML = allTxs.map(tx => {
+      const isOut = tx.dir === 'out';
+      const c = isOut ? '#ff8a7a' : '#66ffaa';
+      return `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">
-        <div style="min-width:0;flex:1;">
-          <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tx.label}</div>
-          <div style="font-size:10px;color:var(--muted);">${tx.ts}</div>
+        <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">${isOut ? ARROW.out : ARROW.in}</svg>
+          <div style="min-width:0;">
+            <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tx.label}</div>
+            <div style="font-size:10px;color:var(--muted);">${tx.ts}</div>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-          <span style="font-size:11px;font-weight:700;color:#66ffaa;font-family:Rajdhani,sans-serif;">+${tx.amount}</span>
-          <a href="https://finder.terraport.finance/mainnet/tx/${tx.hash}" target="_blank"
-            style="font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
-            🔗 ${tx.hash.slice(0,8)}...</a>
+          <span style="font-size:11px;font-weight:700;color:${c};font-family:Rajdhani,sans-serif;">${isOut ? '\u2212' : '+'}${tx.amount}</span>
+          <a href="https://finder.terraport.finance/mainnet/tx/${tx.hash}" target="_blank" title="${tx.hash}"
+            style="display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 13.4a4.5 4.5 0 0 0 6.8.5l2.7-2.7a4.5 4.5 0 0 0-6.4-6.4l-1.5 1.5"/><path d="M13.4 10.6a4.5 4.5 0 0 0-6.8-.5l-2.7 2.7a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5"/></svg>${tx.hash.slice(0,8)}</a>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Could not load transactions</div>';
   }
 }
 async function loadTreasuryData() {
   const btn = document.getElementById('t-refresh-btn');
-  if (btn) { btn.textContent='⏳ Loading...'; btn.disabled=true; }
+  if (btn) { btn.textContent='Loading…'; btn.disabled=true; }
 
   const [price, tB, dB, wB, rB, resB, liqB, devB] = await Promise.all([
     tFetchPrice(),
