@@ -2695,17 +2695,22 @@ function oTierEntries(tier) {
 function oExtractTokenId(n) {
   return String(n.token_id || n.id || n.tokenId || n.nft_id || '');
 }
-// Format: "Common_09528042026_ETME5" → "ETME5"
-// or numeric token_id → "#5"
+// Подпись NFT. Контрактные id вида common-5 раньше сюда не попадали и
+// уходили в последнюю ветку как "#common-5" — тир дублировался с надписью
+// над карточкой. Формат приведён к тому же виду, что на draw.terraoracle.io.
+// Контракт:  common-5              → "Common #5"
+// Наследие Paco: Common_0952…_ETME5 → "ETME5"
 function oFormatNFTLabel(tokenId) {
   if (!tokenId) return '—';
-  // If it's a structured name like Common_timestamp_CODE → show CODE
-  const parts = tokenId.split('_');
-  if (parts.length >= 3) {
-    return parts[parts.length - 1]; // last segment = unique code e.g. "ETME5"
+  const str = String(tokenId);
+  const m = str.match(/^(common|rare|legendary)-(\d+)$/i);
+  if (m) {
+    const tier = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    return tier + ' #' + m[2];
   }
-  // Pure numeric or short string
-  return '#' + tokenId;
+  const parts = str.split('_');
+  if (parts.length >= 3) return parts[parts.length - 1];
+  return str.slice(0, 8);
 }
 function oSaveBagCache(wallet, nftsRaw) {
   try { localStorage.setItem(O_BAG_CACHE_KEY, JSON.stringify({ wallet, nftsRaw, ts: Date.now() })); } catch(e) {}
