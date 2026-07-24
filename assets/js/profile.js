@@ -556,7 +556,7 @@ function renderStreakBlock(streakData) {
       background:${reached ? 'rgba(30,200,100,0.08)' : 'rgba(255,255,255,0.03)'};
       border:1px solid ${reached ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
       opacity:${reached ? 1 : 0.45};">
-      <div style="font-size:15px;">${reached ? '✅' : '🔒'}</div>
+      <div style="line-height:0;margin-bottom:2px;">${reached ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #4ade8088);"><path d="M4.5 12.6 9.4 17.5 19.5 7.4"/></svg>` : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B82A8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="4.5" y="10.4" width="15" height="9.6" rx="2.2"/><path d="M8 10.4V7.8a4 4 0 0 1 8 0v2.6"/><path d="M12 14.3v2.2"/></svg>`}</div>
       <div style="font-size:12px;font-weight:700;color:${reached ? '#4ade80' : 'var(--muted)'};margin-top:2px;">${m}d</div>
       ${lines.map(l => `<div style="font-size:11px;color:${reached ? '#4ade80' : 'var(--muted)'};opacity:0.85;margin-top:2px;line-height:1.3;">${l}</div>`).join('')}
     </div>`;
@@ -565,7 +565,7 @@ function renderStreakBlock(streakData) {
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:${flameSize};filter:${currentStreak > 0 ? `drop-shadow(0 0 8px ${streakGlow})` : 'none'};">🔥</span>
+        <svg width="${flameSize}" height="${flameSize}" viewBox="0 0 24 24" fill="none" stroke="${streakColor}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;filter:${currentStreak > 0 ? `drop-shadow(0 0 8px ${streakGlow})` : 'none'};"><path d="M12 20.6c3.2 0 5.7-2.2 5.7-5.3 0-3.6-2.9-5.6-4.2-9.6-2 1.6-3 3.3-3 5 0 1.2.5 2 .5 2.9 0 .9-.7 1.6-1.6 1.6-.85 0-1.45-.55-1.65-1.45-1 1.2-1.55 2.6-1.55 4.05 0 3 2.5 4.8 5.75 4.8z"/></svg>
         <div>
           <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;">Daily Streak</div>
           <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:${streakColor};${currentStreak > 0 ? `text-shadow:0 0 14px ${streakGlow};` : ''}line-height:1;">
@@ -764,7 +764,7 @@ function renderMessageProgress(stats) {
 
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-size:13px;color:var(--muted);">💬 Chat messages → free Weekly lottery entries</span>
+      <span style="font-size:13px;color:var(--muted);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat messages → free Weekly lottery entries</span>
       <span style="font-size:13px;color:var(--green);font-weight:700;">${entriesEarned} ${entriesEarned === 1 ? 'entry' : 'entries'} earned</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden;">
@@ -852,7 +852,7 @@ function renderRankProgress(reputation) {
           </div>
         </div>
         <div style="font-size:12px;color:${r.color};opacity:${achieved ? 1 : 0.45};min-width:80px;text-align:right;">
-          ${achieved ? '✅ ' : ''}${r.discountLabel}
+          ${achieved ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M4.5 12.6 9.4 17.5 19.5 7.4"/></svg> ` : ''}${r.discountLabel}
         </div>
       </div>`;
   }).join('');
@@ -925,7 +925,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
             const tokenId = src.split('_').pop() || '';
             return `<div class="history-item">
               <div class="history-item-meta">
-                <span style="color:${color};">🎭 ${tier} NFT</span>
+                <span style="color:${color};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><path d="M4.3 7.7c0-1.2 1-2.1 2.2-2 1.85.18 3.68.28 5.5.28s3.65-.1 5.5-.28c1.2-.1 2.2.8 2.2 2v3c0 4.45-3.45 8.05-7.7 8.05S4.3 15.15 4.3 10.7z"/><path d="M8.3 10.5c.85-.5 1.85-.5 2.7 0M13 10.5c.85-.5 1.85-.5 2.7 0"/></svg> ${tier} NFT</span>
                 <span style="color:var(--muted);">${pool} Draw</span>
                 ${date ? `<span style="color:var(--muted);">${date}</span>` : ''}
                 ${tokenId ? `<span class="q-ref" style="font-family:monospace;">#${tokenId}</span>` : ''}
@@ -945,7 +945,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     el.innerHTML = `
       <div class="history-item">
         <div class="history-item-meta">
-          <span style="color:var(--green);">💬 DAO Chat Activity</span>
+          <span style="color:var(--green);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> DAO Chat Activity</span>
           <span style="font-size:12px;color:var(--muted);">Last 7 days · on-chain</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;" id="chat-stats-grid">
@@ -1000,13 +1000,13 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     el.innerHTML = myAnswers.map(a => `
       <div class="history-item">
         <div class="history-item-meta">
-          <span style="color:var(--accent);">💬 Answer</span>
+          <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Answer</span>
           <span>on question ${a.questionId}</span>
-          ${a.votes >= 3 ? '<span style="color:var(--gold);">⭐ Top Answer</span>' : ''}
+          ${a.votes >= 3 ? '<span style="color:var(--gold);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #E8C84088);"><path d="M12 3.6l2.55 5.2 5.75.84-4.15 4.05.98 5.71L12 16.7l-5.13 2.7.98-5.71L3.7 9.64l5.75-.84z"/></svg> Top Answer</span>' : ''}
         </div>
         <div class="history-item-text" style="font-size:13px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${(a.questionText||'').slice(0,80)}..."</div>
         <div class="history-item-text">${a.text.slice(0,200)}${a.text.length > 200 ? '...' : ''}</div>
-        <div class="history-item-votes">👍 ${a.votes || 0} upvotes</div>
+        <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${a.votes || 0} upvotes</div>
       </div>
     `).join('');
   } else {
@@ -1014,13 +1014,13 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     el.innerHTML = myQuestions.map(q => `
       <div class="history-item">
         <div class="history-item-meta">
-          <span style="color:var(--accent);">🔮 Question</span>
+          <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Question</span>
           <span>${q.category}</span>
           <span>${q.time}</span>
           <span class="q-ref">${q.id}</span>
         </div>
         <div class="history-item-text">${q.text.slice(0,200)}${q.text.length > 200 ? '...' : ''}</div>
-        <div class="history-item-votes">👍 ${q.votes || 0} votes · 💬 ${q.answers?.length || 0} answers</div>
+        <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${q.votes || 0} votes · <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> ${q.answers?.length || 0} answers</div>
       </div>
     `).join('');
   }
