@@ -304,6 +304,7 @@ async function loadTreasuryData() {
   tSet('t-total-tvl', tFmt(total));
   tSet('t-total-usd', tFmtUsd(total,price));
   tSet('t-last-updated','Updated '+new Date().toLocaleTimeString());
+  tLoadTvlDelta();
 
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
   tLoadRecentTxs();
@@ -333,6 +334,40 @@ function tCopyAddr(ev, addr) {
   }
 }
 window.tCopyAddr = tCopyAddr;
+
+// Изменение TVL за 24 часа. Снимок пишет крон воркера oracle-draw раз в час,
+// поэтому первые сутки после запуска дельты ещё нет — тогда блок просто скрыт.
+async function tLoadTvlDelta() {
+  const el = document.getElementById('t-tvl-delta');
+  if (!el) return;
+  const W = (typeof O_DRAW_WORKER !== 'undefined' && O_DRAW_WORKER) || 'https://oracle-draw.vladislav-baydan.workers.dev';
+  try {
+    const r = await fetch(`${W}/treasury-history`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) { el.style.display = 'none'; return; }
+    const d = await r.json();
+    if (d.deltaUluna === null || d.deltaUluna === undefined) { el.style.display = 'none'; return; }
+    const lunc = d.deltaUluna / 1_000_000;
+    const up = d.deltaUluna >= 0;
+    const color = up ? '#66ffaa' : '#ff8a7a';
+    const sign  = up ? '+' : '−';
+    const mag   = Math.abs(lunc);
+    const val   = mag >= 1_000_000 ? (mag/1_000_000).toFixed(2)+'M'
+                : mag >= 1_000     ? (mag/1_000).toFixed(1)+'K'
+                : Math.round(mag).toString();
+    const arr = up
+      ? '<path d="M12 19.4V4.6"/><path d="M6.4 10.4 12 4.6l5.6 5.8"/>'
+      : '<path d="M12 4.6v14.8"/><path d="M6.4 13.6 12 19.4l5.6-5.8"/>';
+    el.innerHTML =
+      '<span style="display:inline-flex;align-items:center;gap:4px;color:' + color + ';">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + arr + '</svg>' +
+      sign + val + ' LUNC' +
+      '</span>' +
+      '<span style="color:var(--muted);font-weight:600;margin-left:6px;">за 24ч</span>';
+    el.style.display = 'block';
+  } catch (e) {
+    el.style.display = 'none';
+  }
+}
 
 function showPage_treasury(e, _unused, skipHistory) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
