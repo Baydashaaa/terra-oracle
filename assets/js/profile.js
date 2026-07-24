@@ -7,7 +7,7 @@
     .wallet-profile-btn {
       display:block;width:100%;text-align:left;
       background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.15);
-      color:var(--accent);font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;
+      color:var(--accent);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:700;
       letter-spacing:0.08em;padding:9px 14px;border-radius:8px;cursor:pointer;
       margin-bottom:8px;transition:all 0.2s;
     }
@@ -17,9 +17,9 @@
     .title-progress-bar { flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden; }
     .title-progress-fill { height:100%;border-radius:3px;transition:width 0.6s ease; }
     .history-item { background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px; }
-    .history-item-meta { font-size:10px;color:var(--muted);margin-bottom:6px;display:flex;gap:10px;align-items:center; }
-    .history-item-text { font-size:12px;color:var(--text);line-height:1.7; }
-    .history-item-votes { font-size:11px;color:var(--green);margin-top:8px; }
+    .history-item-meta { font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;gap:10px;align-items:center; }
+    .history-item-text { font-size:14px;color:var(--text);line-height:1.7; }
+    .history-item-votes { font-size:13px;color:var(--green);margin-top:8px; }
   `;
   document.head.appendChild(style);
 })();
@@ -153,7 +153,7 @@ function getRankBadgeHTML(score) {
   const rank = getRank(score);
   if (!rank) return '';
   const isInitiate = rank.name === 'INITIATE';
-  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
+  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
 }
 
 // Build a score map from allQuestions: wallet → {questions, answers, upvotes}
@@ -538,8 +538,8 @@ function renderStreakBlock(streakData) {
   const nextMsLabel = nextMs ? MILESTONE_LABELS[nextMs] : null;
 
   const statusBadge = todayDone
-    ? `<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(30,200,100,0.12);border:1px solid rgba(30,200,100,0.35);color:#4ade80;font-weight:700;">✓ Streak secured today</span>`
-    : `<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);color:#ffaa00;font-weight:700;">⏳ Today not completed</span>`;
+    ? `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(30,200,100,0.12);border:1px solid rgba(30,200,100,0.35);color:#4ade80;font-weight:700;">✓ Streak secured today</span>`
+    : `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);color:#ffaa00;font-weight:700;">⏳ Today not completed</span>`;
 
   const MILESTONE_REWARDS = {
     3:  'x1.1 REP',
@@ -556,9 +556,9 @@ function renderStreakBlock(streakData) {
       background:${reached ? 'rgba(30,200,100,0.08)' : 'rgba(255,255,255,0.03)'};
       border:1px solid ${reached ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
       opacity:${reached ? 1 : 0.45};">
-      <div style="font-size:13px;">${reached ? '✅' : '🔒'}</div>
-      <div style="font-size:10px;font-weight:700;color:${reached ? '#4ade80' : 'var(--muted)'};margin-top:2px;">${m}d</div>
-      ${lines.map(l => `<div style="font-size:9px;color:${reached ? '#4ade80' : 'var(--muted)'};opacity:0.85;margin-top:2px;line-height:1.3;">${l}</div>`).join('')}
+      <div style="font-size:15px;">${reached ? '✅' : '🔒'}</div>
+      <div style="font-size:12px;font-weight:700;color:${reached ? '#4ade80' : 'var(--muted)'};margin-top:2px;">${m}d</div>
+      ${lines.map(l => `<div style="font-size:11px;color:${reached ? '#4ade80' : 'var(--muted)'};opacity:0.85;margin-top:2px;line-height:1.3;">${l}</div>`).join('')}
     </div>`;
   }).join('');
 
@@ -567,28 +567,28 @@ function renderStreakBlock(streakData) {
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:${flameSize};filter:${currentStreak > 0 ? `drop-shadow(0 0 8px ${streakGlow})` : 'none'};">🔥</span>
         <div>
-          <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;">Daily Streak</div>
+          <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;">Daily Streak</div>
           <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:${streakColor};${currentStreak > 0 ? `text-shadow:0 0 14px ${streakGlow};` : ''}line-height:1;">
-            ${currentStreak} <span style="font-size:14px;font-weight:600;opacity:0.7;">days</span>
+            ${currentStreak} <span style="font-size:16px;font-weight:600;opacity:0.7;">days</span>
           </div>
         </div>
       </div>
       <div style="text-align:right;">
         ${statusBadge}
-        <div style="font-size:10px;color:var(--muted);margin-top:6px;">Best: ${longestStreak}d · REP ×${multiplier.toFixed(1)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px;">Best: ${longestStreak}d · REP ×${multiplier.toFixed(1)}</div>
       </div>
     </div>
     ${nextMs ? `
       <div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Next milestone: <strong style="color:var(--text);">${nextMs} days</strong></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Next milestone: <strong style="color:var(--text);">${nextMs} days</strong></div>
         <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:5px;overflow:hidden;">
           <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#ff8844,#ffd700);width:${Math.round((currentStreak / nextMs) * 100)}%;transition:width 0.6s ease;"></div>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;">${currentStreak}/${nextMs} days · unlocks: <span style="color:var(--green);">${nextMsLabel}</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">${currentStreak}/${nextMs} days · unlocks: <span style="color:var(--green);">${nextMsLabel}</span></div>
       </div>
-    ` : `<div style="font-size:11px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK - TRUSTED STATUS UNLOCKED</div>`}
+    ` : `<div style="font-size:13px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK - TRUSTED STATUS UNLOCKED</div>`}
     <div style="display:flex;gap:6px;">${msBadges}</div>
-    <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6;">
+    <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6;">
       Active in <strong style="color:var(--text);">Ask · Answer · Vote · Chat · Draw</strong> = 1 streak day.
       Miss 1 day per 7 days = grace period applied automatically.
     </div>
@@ -764,18 +764,18 @@ function renderMessageProgress(stats) {
 
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-size:11px;color:var(--muted);">💬 Chat messages → free Weekly lottery entries</span>
-      <span style="font-size:11px;color:var(--green);font-weight:700;">${entriesEarned} ${entriesEarned === 1 ? 'entry' : 'entries'} earned</span>
+      <span style="font-size:13px;color:var(--muted);">💬 Chat messages → free Weekly lottery entries</span>
+      <span style="font-size:13px;color:var(--green);font-weight:700;">${entriesEarned} ${entriesEarned === 1 ? 'entry' : 'entries'} earned</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden;">
       <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#1ec864,#4ade80);width:${pct}%;transition:width 0.6s ease;"></div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-      <div style="font-size:10px;padding:3px 10px;border-radius:20px;
+      <div style="font-size:12px;padding:3px 10px;border-radius:20px;
         background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);">
         Every 10th message = +1 Weekly Draw entry
       </div>
-      <div style="font-size:10px;color:var(--muted);padding:3px 0;">
+      <div style="font-size:12px;color:var(--muted);padding:3px 0;">
         ${totalProgress}/10 to next entry
       </div>
     </div>
@@ -794,31 +794,31 @@ function renderReputationBlock(reputation, rank, nextRank) {
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Oracle Reputation</div>
+        <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Oracle Reputation</div>
         <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:${rank.color};text-shadow:0 0 18px ${rank.glow};line-height:1;">
           ${reputation.toLocaleString()}
         </div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Current Rank</div>
+        <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Current Rank</div>
         <div style="font-size:18px;font-weight:800;letter-spacing:0.1em;color:${rank.color};text-shadow:0 0 14px ${rank.glow};">
           ${rank.icon} ${rank.name}
         </div>
       </div>
     </div>
     ${nextRank ? `
-      <div style="margin-bottom:6px;display:flex;justify-content:space-between;font-size:10px;color:var(--muted);">
+      <div style="margin-bottom:6px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
         <span>Progress to <span style="color:${nextRank.color};font-weight:700;">${nextRank.icon} ${nextRank.name}</span></span>
         <span style="color:${rank.color};">${pct}%</span>
       </div>
       <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px;">
         <div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,${rank.bar},${nextRank.bar});transition:width 0.8s ease;box-shadow:0 0 8px ${rank.glow};"></div>
       </div>
-      <div style="font-size:10px;color:var(--muted);">
+      <div style="font-size:12px;color:var(--muted);">
         ${reputation.toLocaleString()} / ${nextRank.minScore.toLocaleString()} REP · need <strong style="color:var(--text);">${(nextRank.minScore - reputation).toLocaleString()}</strong> more
       </div>
     ` : `
-      <div style="font-size:11px;color:${rank.color};text-shadow:0 0 10px ${rank.glow};font-weight:700;letter-spacing:0.08em;">
+      <div style="font-size:13px;color:${rank.color};text-shadow:0 0 10px ${rank.glow};font-weight:700;letter-spacing:0.08em;">
         ✦ MAX RANK ACHIEVED - ASCENDED
       </div>
     `}
@@ -837,21 +837,21 @@ function renderRankProgress(reputation) {
 
     return `
       <div class="title-row" style="${isCurrent ? `border-left:2px solid ${r.color};padding-left:10px;margin-left:-12px;` : ''}">
-        <div style="width:110px;font-size:11px;font-weight:700;color:${r.color};opacity:${achieved ? 1 : 0.45};
+        <div style="width:110px;font-size:13px;font-weight:700;color:${r.color};opacity:${achieved ? 1 : 0.45};
           ${achieved ? `text-shadow:0 0 8px ${r.glow};` : ''}">
           ${r.icon} ${r.name}
-          ${isCurrent ? '<span style="font-size:9px;opacity:0.7;"> ← you</span>' : ''}
+          ${isCurrent ? '<span style="font-size:11px;opacity:0.7;"> ← you</span>' : ''}
         </div>
         <div style="flex:1;">
           <div class="title-progress-bar" style="margin-bottom:3px;">
             <div class="title-progress-fill" style="width:${pct}%;background:${achieved ? r.bar : 'rgba(255,255,255,0.12)'};
               ${achieved ? `box-shadow:0 0 6px ${r.glow};` : ''}"></div>
           </div>
-          <div style="font-size:9px;color:var(--muted);">
+          <div style="font-size:11px;color:var(--muted);">
             ${r.minScore === 0 ? 'Starting rank' : r.minScore.toLocaleString() + ' REP'}
           </div>
         </div>
-        <div style="font-size:10px;color:${r.color};opacity:${achieved ? 1 : 0.45};min-width:80px;text-align:right;">
+        <div style="font-size:12px;color:${r.color};opacity:${achieved ? 1 : 0.45};min-width:80px;text-align:right;">
           ${achieved ? '✅ ' : ''}${r.discountLabel}
         </div>
       </div>`;
@@ -888,7 +888,7 @@ function switchHistoryTab(tab) {
 function renderHistoryTab(tab, myAnswers, myQuestions) {
   const el = document.getElementById('profile-history-list');
   if (tab === 'draw') {
-    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Loading Draw activity...</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">Loading Draw activity...</div>`;
     const WORKER_URL_LOCAL = typeof window.WORKER_URL !== 'undefined'
       ? window.WORKER_URL
       : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
@@ -899,7 +899,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
         const history = data.history || [];
         const total   = data.total   || 0;
         if (!history.length) {
-          el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">
+          el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">
             No Oracle Draw activity yet ·
             <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
               style="color:var(--accent);text-decoration:none;">Mint your first NFT →</a>
@@ -910,7 +910,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
           <div style="display:flex;justify-content:space-between;align-items:center;
             padding:12px 16px;background:var(--surface2);border:1px solid var(--border);
             border-radius:10px;margin-bottom:12px;">
-            <span style="font-size:12px;color:var(--muted);">Total Draw REP earned</span>
+            <span style="font-size:14px;color:var(--muted);">Total Draw REP earned</span>
             <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:800;color:#ff8844;">
               +${total.toLocaleString()} REP
             </span>
@@ -931,10 +931,10 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
                 ${tokenId ? `<span class="q-ref" style="font-family:monospace;">#${tokenId}</span>` : ''}
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
-                <span style="font-size:12px;color:var(--muted);">
+                <span style="font-size:14px;color:var(--muted);">
                   Minted · entered ${pool} Draw pool
                 </span>
-                <span style="font-size:13px;font-weight:700;color:#ff8844;">+${pts} REP</span>
+                <span style="font-size:15px;font-weight:700;color:#ff8844;">+${pts} REP</span>
               </div>
             </div>`;
           }).join('')}`;
@@ -946,20 +946,20 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
       <div class="history-item">
         <div class="history-item-meta">
           <span style="color:var(--green);">💬 DAO Chat Activity</span>
-          <span style="font-size:10px;color:var(--muted);">Last 7 days · on-chain</span>
+          <span style="font-size:12px;color:var(--muted);">Last 7 days · on-chain</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;" id="chat-stats-grid">
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
             <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">…</div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
+            <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
             <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">…</div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
+            <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
           </div>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;" id="chat-stats-days"></div>
-        <div style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.6;">
+        <div style="margin-top:14px;font-size:13px;color:var(--muted);line-height:1.6;">
           Every <strong style="color:var(--text)">10th message</strong> = 1 free Weekly Draw entry.
           Messages cost <strong style="color:var(--text)">5,000 LUNC</strong> each and go to the Protocol Treasury.
         </div>
@@ -971,11 +971,11 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
       grid.innerHTML = `
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
           <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:var(--green);">${stats.msgCount}</div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Messages sent</div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
           <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:800;color:#a78bfa;">${stats.entriesEarned}</div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Free Weekly entries</div>
         </div>`;
       // Per-day breakdown
       const daysEl = document.getElementById('chat-stats-days');
@@ -984,7 +984,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
         daysEl.innerHTML = sorted.map(([day, cnt]) => {
           const entries = Math.floor(cnt / 10);
           const label   = new Date(day).toLocaleDateString([], {month:'short',day:'numeric'});
-          return `<div style="font-size:10px;padding:3px 10px;border-radius:20px;
+          return `<div style="font-size:12px;padding:3px 10px;border-radius:20px;
             background:${entries > 0 ? 'rgba(30,200,100,0.1)' : 'rgba(255,255,255,0.04)'};
             border:1px solid ${entries > 0 ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
             color:${entries > 0 ? '#4ade80' : 'var(--muted)'};">
@@ -996,7 +996,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     return;
   }
   if (tab === 'answers') {
-    if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No answers yet - go to the Board and share your knowledge!</div>'; return; }
+    if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">No answers yet - go to the Board and share your knowledge!</div>'; return; }
     el.innerHTML = myAnswers.map(a => `
       <div class="history-item">
         <div class="history-item-meta">
@@ -1004,13 +1004,13 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
           <span>on question ${a.questionId}</span>
           ${a.votes >= 3 ? '<span style="color:var(--gold);">⭐ Top Answer</span>' : ''}
         </div>
-        <div class="history-item-text" style="font-size:11px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${(a.questionText||'').slice(0,80)}..."</div>
+        <div class="history-item-text" style="font-size:13px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${(a.questionText||'').slice(0,80)}..."</div>
         <div class="history-item-text">${a.text.slice(0,200)}${a.text.length > 200 ? '...' : ''}</div>
         <div class="history-item-votes">👍 ${a.votes || 0} upvotes</div>
       </div>
     `).join('');
   } else {
-    if (!myQuestions.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:30px;">No questions yet - ask the community something!</div>'; return; }
+    if (!myQuestions.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">No questions yet - ask the community something!</div>'; return; }
     el.innerHTML = myQuestions.map(q => `
       <div class="history-item">
         <div class="history-item-meta">
