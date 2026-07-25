@@ -1499,6 +1499,22 @@
        </div>
        <button onclick="clearChatReply()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;" title="Cancel reply">✕</button>
       </div>
+      <!-- Прогресс к бесплатной Weekly entry: каждое 10-е сообщение = +1 entry -->
+      <div id="chat-entry-progress" style="display:none;padding:9px 16px;border-bottom:1px solid var(--border);background:rgba(167,139,250,0.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:10.5px;color:var(--muted);letter-spacing:0.04em;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;margin-right:4px;filter:drop-shadow(0 0 4px #a78bfa88);"><path d="M14.5 3.5 6 14h5l-1.5 6.5L18 10h-5z"/></svg>
+            Messages to next free entry
+          </span>
+          <span style="font-size:11px;font-weight:700;font-family:'Rajdhani',sans-serif;color:#a78bfa;">
+            <span id="chat-entry-cur">0</span><span style="color:var(--muted);font-weight:600;">/<span id="chat-entry-goal">10</span></span>
+          </span>
+        </div>
+        <div style="height:5px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;">
+          <div id="chat-entry-fill" style="height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#7c5cff,#a78bfa);transition:width 0.4s cubic-bezier(.3,.9,.3,1);"></div>
+        </div>
+        <div id="chat-entry-earned" style="font-size:9.5px;color:var(--muted);margin-top:5px;display:none;"></div>
+      </div>
       <div style="display:flex;align-items:flex-end;gap:0;">
        <textarea id="chat-page-input"
         placeholder="Write your message... (stored on Terra Classic forever)"
@@ -2221,7 +2237,7 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/treasury.js?v=202607256000"></script>
+  <script src="assets/js/treasury.js?v=202607154000"></script>
   <script src="assets/js/app.js?v=202607154000"></script>
   <script src="assets/js/profile.js?v=202607154000"></script>
   <script src="assets/js/reputation.js?v=202607154000"></script>
