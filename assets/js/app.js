@@ -84,8 +84,10 @@ const CHAT_MSGS_PER_ENTRY = 10;
 async function updateChatEntryProgress(total) {
   const box = document.getElementById('chat-entry-progress');
   if (!box) return;
-  const wallet = (typeof connectedWalletAddress !== 'undefined' && connectedWalletAddress)
-    || (typeof lotteryAddress !== 'undefined' && lotteryAddress) || null;
+  // Тот же паттерн адреса, что и во всём файле: globalWalletAddress (view-only
+  // luncdash) имеет приоритет над connectedAddress (подключённый Keplr).
+  const wallet = (typeof globalWalletAddress !== 'undefined' && globalWalletAddress)
+    || (typeof connectedAddress !== 'undefined' && connectedAddress) || null;
   if (!wallet) { box.style.display = 'none'; return; }
 
   if (total === undefined || total === null) {
@@ -1473,6 +1475,9 @@ function setWalletConnected(address) {
   globalWalletAddress = address;
   connectedAddress = address;
   saveWalletSession(address);
+  // Показать прогресс к бесплатной entry сразу при подключении, не дожидаясь
+  // первой отправки или перезагрузки ленты.
+  if (typeof updateChatEntryProgress === 'function') updateChatEntryProgress();
   const short = address.slice(0,8) + '...' + address.slice(-4);
   document.getElementById('wallet-btn-label').textContent = short;
   document.getElementById('wallet-main-btn').classList.add('connected');
