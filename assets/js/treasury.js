@@ -100,6 +100,43 @@ async function tLoadRecentTxs(retries = 5) {
     'https://columbus-fcd.terra.dev',
   ];
 
+  // Сумма uluna из событий transfer в логах транзакции. Для минта NFT
+  // (MsgExecuteContract) это единственное место, где видно движение монет —
+  // в самом сообщении LUNC не лежит. amount приходит строкой "N uluna" или
+  // "Nuluna", иногда несколько монет через запятую.
+  function sumTransferEvents(logs, wallet, dir) {
+    if (!Array.isArray(logs)) return 0;
+    const wantKey = dir === 'out' ? 'sender' : 'recipient';
+    let total = 0;
+    for (const lg of logs) {
+      for (const ev of (lg.events || [])) {
+        if (ev.type !== 'transfer') continue;
+        // Атрибуты идут плоским списком recipient/sender/amount, повторяясь
+        // тройками. Проходим окном по 3.
+        const a = ev.attributes || [];
+        for (let i = 0; i < a.length; i++) {
+          if (a[i].key !== 'amount') continue;
+          // ближайшие recipient и sender до этого amount
+          let recipient = null, sender = null;
+          for (let j = i; j >= 0; j--) {
+            if (!sender && a[j].key === 'sender') sender = a[j].value;
+            if (!recipient && a[j].key === 'recipient') recipient = a[j].value;
+            if (sender && recipient) break;
+          }
+          const party = wantKey === 'sender' ? sender : recipient;
+          const other = wantKey === 'sender' ? recipient : sender;
+          if (party !== wallet) continue;
+          if (other === wallet) continue; // самому себе
+          for (const part of String(a[i].value).split(',')) {
+            const m = part.trim().match(/^(\d+)\s*uluna$/);
+            if (m) total += parseInt(m[1]);
+          }
+        }
+      }
+    }
+    return total;
+  }
+
   // dir: 'in' — что пришло на кошелёк, 'out' — что с него ушло
   async function fetchTxsFor(wallet, limit, dir) {
     let txs = [];
@@ -118,12 +155,22 @@ async function tLoadRecentTxs(retries = 5) {
           txs = metas.map((meta, i) => ({
             txhash:    meta.txhash,
             timestamp: meta.timestamp,
+            // События transfer — единственное место, где виден LUNC из
+            // MsgExecuteContract (минт NFT): в самом сообщении его нет.
+            // Старые ноды кладут их в logs[].events, новые — в плоский
+            // tx_response.events. Сохраняем оба, sumTransferEvents съест любой.
+            logs:   meta.logs || [],
+            events: meta.events || [],
             tx: {
               value: {
                 memo: bodies[i]?.body?.memo || '',
                 msg:  (bodies[i]?.body?.messages || []).map(m => ({
                   type:  m['@type'] || '',
-                  value: { amount: m.amount, from_address: m.from_address, to_address: m.to_address },
+                  value: {
+                    amount: m.amount, from_address: m.from_address, to_address: m.to_address,
+                    // funds контрактного вызова — запасной путь, если логов нет
+                    funds: m.funds || (m.msg && m.msg.funds) || null,
+                  },
                 })),
               },
             },
@@ -155,7 +202,6 @@ async function tLoadRecentTxs(retries = 5) {
       const memo = tx.tx?.value?.memo || tx.tx?.body?.memo || '';
       const msgs = tx.tx?.value?.msg  || tx.tx?.body?.messages || [];
 
-      // Sum ALL uluna sent TO this wallet across all messages
       // Переводы самому себе не считаем ни в одну, ни в другую сторону
       let rawUluna = 0;
       for (const msg of msgs) {
@@ -166,6 +212,26 @@ async function tLoadRecentTxs(retries = 5) {
         if (!lunc) continue;
         if (dir === 'out') { if (from === wallet && to !== wallet) rawUluna += parseInt(lunc.amount); }
         else               { if (to === wallet && from !== wallet) rawUluna += parseInt(lunc.amount); }
+      }
+
+      // MsgSend ничего не дал → это контрактная транзакция (минт NFT).
+      // Читаем события transfer из логов: recipient/sender/amount, где amount —
+      // строка вида "25000000000uluna". Отбираем по нужной стороне и по кошельку.
+      if (!rawUluna) {
+        // logs[].events (старые ноды) ИЛИ плоский events (новые) — приводим
+        // к единому виду [{events:[...]}] и разбираем.
+        const logSets = (tx.logs && tx.logs.length) ? tx.logs
+                      : (tx.events && tx.events.length) ? [{ events: tx.events }]
+                      : [];
+        rawUluna = sumTransferEvents(logSets, wallet, dir);
+      }
+      // Последний фолбэк — funds контрактного вызова (если логи не пришли)
+      if (!rawUluna && dir === 'in') {
+        for (const msg of msgs) {
+          const funds = msg.value?.funds;
+          const lunc  = Array.isArray(funds) ? funds.find(c => c.denom === 'uluna') : null;
+          if (lunc) rawUluna += parseInt(lunc.amount);
+        }
       }
       if (!rawUluna) continue;
 
