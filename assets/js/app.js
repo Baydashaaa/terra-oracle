@@ -76,6 +76,50 @@ const DEMO_QUESTIONS = [
 // ─── QUESTIONS STORAGE ───────────────────────────────────────
 const WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
 
+// Каждое 10-е оплаченное сообщение в DAO Chat даёт бесплатную Weekly-entry.
+const CHAT_MSGS_PER_ENTRY = 10;
+
+// Обновляет полоску прогресса над полем ввода чата. total — общее число
+// сообщений кошелька (из /chat/count). Если total не передан, тянет сам.
+async function updateChatEntryProgress(total) {
+  const box = document.getElementById('chat-entry-progress');
+  if (!box) return;
+  const wallet = (typeof connectedWalletAddress !== 'undefined' && connectedWalletAddress)
+    || (typeof lotteryAddress !== 'undefined' && lotteryAddress) || null;
+  if (!wallet) { box.style.display = 'none'; return; }
+
+  if (total === undefined || total === null) {
+    try {
+      const r = await fetch(`${WORKER_URL}/chat/count?wallet=${wallet}`, { signal: AbortSignal.timeout(8000) });
+      const d = await r.json();
+      total = (d && (d.total || d.msgCount)) || 0;
+    } catch (e) { box.style.display = 'none'; return; }
+  }
+
+  const per      = CHAT_MSGS_PER_ENTRY;
+  const inCycle  = total % per;            // сколько в текущем цикле
+  const toNext   = per - inCycle;          // сколько осталось до entry
+  const earned   = Math.floor(total / per);
+  const cur = document.getElementById('chat-entry-cur');
+  const goal = document.getElementById('chat-entry-goal');
+  const fill = document.getElementById('chat-entry-fill');
+  const earnedEl = document.getElementById('chat-entry-earned');
+  if (cur)  cur.textContent  = inCycle;
+  if (goal) goal.textContent = per;
+  if (fill) fill.style.width = Math.round(inCycle / per * 100) + '%';
+  if (earnedEl) {
+    if (earned > 0) {
+      earnedEl.style.display = 'block';
+      earnedEl.textContent = earned + (earned === 1 ? ' free entry earned so far' : ' free entries earned so far')
+        + ' \u00b7 ' + toNext + ' to go';
+    } else {
+      earnedEl.style.display = 'none';
+    }
+  }
+  box.style.display = 'block';
+}
+window.updateChatEntryProgress = updateChatEntryProgress;
+
 // ── Worker-based questions storage ───────────────────────────
 // questions[] is the in-memory cache, synced from worker on load
 let questions = [];
@@ -1616,6 +1660,7 @@ window.sendChatMessage = async function() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wallet: sender, txHash: result.transactionHash }),
     }).then(r => r.json()).then(data => {
+      if (data && typeof data.newCount === 'number') updateChatEntryProgress(data.newCount);
       if (data.milestoneEntry && data.newCount) {
         setTimeout(() => {
           statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.3);color:#a78bfa;margin-top:10px;';
@@ -2029,6 +2074,7 @@ window.openUserProfile = async function(wallet) {
 };
 
 async function loadChatFromChain() {
+  updateChatEntryProgress();  // прогресс к бесплатной entry над полем ввода
   const container = document.getElementById('chat-page-messages');
   if (!cachedMsgs.length) {
     container.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div style="font-size:22px;margin-bottom:10px;">⏳</div><div style="color:var(--muted);font-size:12px;">Loading messages from blockchain...</div></div>`;
