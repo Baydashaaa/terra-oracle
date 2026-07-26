@@ -1809,75 +1809,73 @@ function buildReactionsRow(txHash) {
   </div>`;
 }
 
-// ── Reaction picker: tap-to-open (mobile fix) ────────────────────────────────
-// Two problems in style.css made the picker fail on mobile:
-//   1) It was revealed only via CSS :hover, which never fires on touch.
-//   2) .reaction-picker is position:absolute inside .chat-page-messages, which
-//      has overflow-y:auto — so the picker gets CLIPPED by the scroll container
-//      (invisible on the newest messages the chat auto-scrolls to).
-// Fix: on tap we position the picker with position:fixed, measured from the
-// button's on-screen rect, so it escapes the overflow clip entirely.
-function _closeAllReactionPickers(except) {
-  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => {
-    if (w === except) return;
-    w.classList.remove('rp-open');
-    const p = w.querySelector('.reaction-picker');
-    if (p) p.removeAttribute('style'); // restore class-based (desktop hover) behavior
+// ── Reaction picker: single tap-to-open path (mobile + desktop) ──────────────
+// style.css revealed the picker via :hover AND :focus-within. On mobile, tapping
+// "＋" focuses it → :focus-within showed the picker at its (broken, absolute)
+// position, clipped by .chat-page-messages' overflow → an empty box appeared,
+// fighting the JS. Fix: neutralize hover/focus-within entirely (injected CSS
+// below) and drive the picker from JS only, positioned fixed so the scroll
+// container can't clip it. One code path, one tap, works everywhere.
+function _closeAllReactionPickers(exceptPicker) {
+  document.querySelectorAll('.reaction-picker.rp-show').forEach(p => {
+    if (p === exceptPicker) return;
+    p.classList.remove('rp-show');
+    p.removeAttribute('style');
   });
 }
 
 function toggleReactionPicker(btn, ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   const wrap = btn.closest('.reaction-picker-wrap');
-  if (!wrap) return;
-  const picker = wrap.querySelector('.reaction-picker');
-  const isOpen = wrap.classList.contains('rp-open');
+  const picker = wrap && wrap.querySelector('.reaction-picker');
+  if (!picker) return;
+  const isOpen = picker.classList.contains('rp-show');
 
-  _closeAllReactionPickers(wrap);
+  _closeAllReactionPickers(picker);
 
-  if (isOpen) { // second tap → close
-    wrap.classList.remove('rp-open');
-    if (picker) picker.removeAttribute('style');
+  if (isOpen) { // second tap on the same button → close
+    picker.classList.remove('rp-show');
+    picker.removeAttribute('style');
     return;
   }
 
-  wrap.classList.add('rp-open');
-  if (!picker) return;
-
-  // Render off-screen first so we can measure its real size, then place it.
-  picker.style.cssText = 'display:flex;position:fixed;left:0;top:0;visibility:hidden;z-index:100000;';
+  picker.classList.add('rp-show');
+  // Measure off-screen (display comes from .rp-show CSS), then place with fixed
+  // coords from the button so overflow:auto on the message list can't clip it.
+  picker.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;z-index:100000;';
   const br = btn.getBoundingClientRect();
   const pr = picker.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const M = 8; // viewport margin
+  const vw = window.innerWidth, vh = window.innerHeight, M = 8;
 
   let left = br.left;
   if (left + pr.width > vw - M) left = vw - pr.width - M;
   if (left < M) left = M;
 
-  let top = br.top - pr.height - 6;      // prefer above the button
-  if (top < M) top = br.bottom + 6;      // no room above → drop below
+  let top = br.top - pr.height - 6;   // prefer above the button
+  if (top < M) top = br.bottom + 6;   // no room above → drop below
   if (top + pr.height > vh - M) top = Math.max(M, vh - pr.height - M);
 
   picker.style.cssText =
-    `display:flex;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;visibility:visible;z-index:100000;`;
+    `position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;visibility:visible;z-index:100000;`;
 }
 window.toggleReactionPicker = toggleReactionPicker;
 
-// Close any open picker when tapping/scrolling outside of it.
+// Tap/scroll outside → close.
 document.addEventListener('click', function(e) {
-  if (e.target.closest('.reaction-picker-wrap')) return; // tap inside → keep open
+  if (e.target.closest('.reaction-picker-wrap')) return;
   _closeAllReactionPickers(null);
 });
 window.addEventListener('scroll', function() { _closeAllReactionPickers(null); }, true);
 
-// Belt-and-braces: make the open state win even if only the class toggles.
+// Neutralize the hover/focus-within reveal from style.css and give .rp-show the
+// only reveal path. Both use !important; .rp-show wins on higher specificity.
 (function ensureReactionPickerCss() {
   if (document.getElementById('rp-open-css')) return;
   const s = document.createElement('style');
   s.id = 'rp-open-css';
-  s.textContent = '.reaction-picker-wrap.rp-open .reaction-picker{display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;}';
+  s.textContent =
+    '.reaction-picker{display:none !important;}' +
+    '.reaction-picker.rp-show{display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;}';
   (document.head || document.documentElement).appendChild(s);
 })();
 
