@@ -1803,11 +1803,48 @@ function buildReactionsRow(txHash) {
   return `<div id="reactions-${txHash}" class="chat-reactions-row">
     ${active.map(x => `<button class="chat-reaction ${x.mine?'my-reaction':''}" title="${x.label}" onclick="toggleReaction('${txHash}','${x.key}')">${x.sm} <span>${x.count}</span></button>`).join('')}
     <div class="reaction-picker-wrap">
-      <button class="chat-reaction add-reaction-btn" title="Add reaction">＋</button>
+      <button class="chat-reaction add-reaction-btn" title="Add reaction" onclick="toggleReactionPicker(this,event)">＋</button>
       <div class="reaction-picker">${CHAT_REACTIONS.map(x => `<button title="${x.label}" onclick="toggleReaction('${txHash}','${x.key}')">${x.lg}</button>`).join('')}</div>
     </div>
   </div>`;
 }
+
+// ── Reaction picker: tap-to-open (mobile fix) ────────────────────────────────
+// The picker was revealed only via CSS :hover, which never fires on touch, so
+// on phones tapping "＋" did nothing and the reaction emojis never appeared.
+// We toggle an .rp-open class on tap and force it visible via injected CSS.
+function toggleReactionPicker(btn, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const wrap = btn.closest('.reaction-picker-wrap');
+  if (!wrap) return;
+  const willOpen = !wrap.classList.contains('rp-open');
+  // Only one picker open at a time
+  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => { if (w !== wrap) w.classList.remove('rp-open'); });
+  wrap.classList.toggle('rp-open', willOpen);
+}
+window.toggleReactionPicker = toggleReactionPicker;
+
+// Close any open picker when tapping outside of it
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.reaction-picker-wrap')) return;
+  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => w.classList.remove('rp-open'));
+});
+
+// Force the open picker visible regardless of the hover-only rules in style.css
+(function ensureReactionPickerCss() {
+  if (document.getElementById('rp-open-css')) return;
+  const s = document.createElement('style');
+  s.id = 'rp-open-css';
+  s.textContent = `.reaction-picker-wrap.rp-open .reaction-picker{
+    display:flex !important;
+    opacity:1 !important;
+    visibility:visible !important;
+    pointer-events:auto !important;
+    transform:none !important;
+    max-height:none !important;
+  }`;
+  (document.head || document.documentElement).appendChild(s);
+})();
 
 let cachedMsgs = [];
 
