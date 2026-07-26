@@ -1810,39 +1810,74 @@ function buildReactionsRow(txHash) {
 }
 
 // ── Reaction picker: tap-to-open (mobile fix) ────────────────────────────────
-// The picker was revealed only via CSS :hover, which never fires on touch, so
-// on phones tapping "＋" did nothing and the reaction emojis never appeared.
-// We toggle an .rp-open class on tap and force it visible via injected CSS.
+// Two problems in style.css made the picker fail on mobile:
+//   1) It was revealed only via CSS :hover, which never fires on touch.
+//   2) .reaction-picker is position:absolute inside .chat-page-messages, which
+//      has overflow-y:auto — so the picker gets CLIPPED by the scroll container
+//      (invisible on the newest messages the chat auto-scrolls to).
+// Fix: on tap we position the picker with position:fixed, measured from the
+// button's on-screen rect, so it escapes the overflow clip entirely.
+function _closeAllReactionPickers(except) {
+  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => {
+    if (w === except) return;
+    w.classList.remove('rp-open');
+    const p = w.querySelector('.reaction-picker');
+    if (p) p.removeAttribute('style'); // restore class-based (desktop hover) behavior
+  });
+}
+
 function toggleReactionPicker(btn, ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   const wrap = btn.closest('.reaction-picker-wrap');
   if (!wrap) return;
-  const willOpen = !wrap.classList.contains('rp-open');
-  // Only one picker open at a time
-  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => { if (w !== wrap) w.classList.remove('rp-open'); });
-  wrap.classList.toggle('rp-open', willOpen);
+  const picker = wrap.querySelector('.reaction-picker');
+  const isOpen = wrap.classList.contains('rp-open');
+
+  _closeAllReactionPickers(wrap);
+
+  if (isOpen) { // second tap → close
+    wrap.classList.remove('rp-open');
+    if (picker) picker.removeAttribute('style');
+    return;
+  }
+
+  wrap.classList.add('rp-open');
+  if (!picker) return;
+
+  // Render off-screen first so we can measure its real size, then place it.
+  picker.style.cssText = 'display:flex;position:fixed;left:0;top:0;visibility:hidden;z-index:100000;';
+  const br = btn.getBoundingClientRect();
+  const pr = picker.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const M = 8; // viewport margin
+
+  let left = br.left;
+  if (left + pr.width > vw - M) left = vw - pr.width - M;
+  if (left < M) left = M;
+
+  let top = br.top - pr.height - 6;      // prefer above the button
+  if (top < M) top = br.bottom + 6;      // no room above → drop below
+  if (top + pr.height > vh - M) top = Math.max(M, vh - pr.height - M);
+
+  picker.style.cssText =
+    `display:flex;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;visibility:visible;z-index:100000;`;
 }
 window.toggleReactionPicker = toggleReactionPicker;
 
-// Close any open picker when tapping outside of it
+// Close any open picker when tapping/scrolling outside of it.
 document.addEventListener('click', function(e) {
-  if (e.target.closest('.reaction-picker-wrap')) return;
-  document.querySelectorAll('.reaction-picker-wrap.rp-open').forEach(w => w.classList.remove('rp-open'));
+  if (e.target.closest('.reaction-picker-wrap')) return; // tap inside → keep open
+  _closeAllReactionPickers(null);
 });
+window.addEventListener('scroll', function() { _closeAllReactionPickers(null); }, true);
 
-// Force the open picker visible regardless of the hover-only rules in style.css
+// Belt-and-braces: make the open state win even if only the class toggles.
 (function ensureReactionPickerCss() {
   if (document.getElementById('rp-open-css')) return;
   const s = document.createElement('style');
   s.id = 'rp-open-css';
-  s.textContent = `.reaction-picker-wrap.rp-open .reaction-picker{
-    display:flex !important;
-    opacity:1 !important;
-    visibility:visible !important;
-    pointer-events:auto !important;
-    transform:none !important;
-    max-height:none !important;
-  }`;
+  s.textContent = '.reaction-picker-wrap.rp-open .reaction-picker{display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;}';
   (document.head || document.documentElement).appendChild(s);
 })();
 
