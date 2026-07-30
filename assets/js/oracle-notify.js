@@ -1,5 +1,5 @@
 /* ============================================================================
- * oracle-notify.js  ·  v1.0.0
+ * oracle-notify.js  ·  v1.2.0
  * Terra Oracle / Oracle Draw — unified notification system (phase 1)
  * ----------------------------------------------------------------------------
  * WHAT IT DOES
@@ -39,7 +39,24 @@
     maxItems:     10,      // how many notifications to keep/show
     maxToasts:    3,       // stacked toasts at once
     toastMs:      7000,    // auto-dismiss delay
+    chatLimit:    50,      // chat txs pulled per poll (matches the site's own)
+    remindMins:   60,      // "draw in X minutes" reminder lead time
+    dailyReminder: false,  // daily fires every 24h — off by default, weekly only
   }, window.ORACLE_NOTIFY_CONFIG || {});
+
+  // Chat lives on-chain: messages are 5,000 LUNC transfers to the Treasury with
+  // the text in the tx memo. Replies are encoded in the memo as
+  // ">" + first 16 chars of the parent txHash + "|" + text.
+  var TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+  var CHAT_MIN_ULUNA  = 5000000000;
+  var CHAT_MAX_ULUNA  = 5200000000;
+  var SYSTEM_WALLETS  = [
+    'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
+    'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
+    'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', // DAILY
+    'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz', // WEEKLY
+    'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p', // COLLECTION
+  ];
 
   var LS_PREFIX = 'oracleNotif:v1:';
 
@@ -60,6 +77,16 @@
     if (s < 86400) return Math.floor(s / 3600) + 'h';
     return Math.floor(s / 86400) + 'd';
   }
+  // uluna → human LUNC ("123,500" / "1.2M"); null when the amount is unknown
+  function lunc(uluna) {
+    var n = Number(uluna);
+    if (!uluna || isNaN(n) || n <= 0) return null;
+    var v = n / 1e6;
+    if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+    if (v >= 1e3) return Math.round(v).toLocaleString('en-US');
+    return String(Math.round(v));
+  }
+
   function toSec(v) {
     if (!v) return 0;
     if (typeof v === 'number') return v > 1e12 ? Math.floor(v / 1000) : Math.floor(v);
@@ -181,6 +208,10 @@
       'box-shadow:0 0 10px rgba(96,165,250,0.12);}',
       '.onf-ic.rep{background:rgba(123,92,255,0.08);border-color:rgba(123,92,255,0.38);color:#a98bff;',
       'box-shadow:0 0 10px rgba(123,92,255,0.14);}',
+      '.onf-ic.chat{background:rgba(0,212,255,0.07);border-color:rgba(0,212,255,0.32);color:#00d4ff;',
+      'box-shadow:0 0 10px rgba(0,212,255,0.12);}',
+      '.onf-ic.draw{background:rgba(102,255,170,0.07);border-color:rgba(102,255,170,0.32);color:#66ffaa;',
+      'box-shadow:0 0 10px rgba(102,255,170,0.12);}',
 
       '.onf-tx{min-width:0;flex:1;}',
       '.onf-t{display:block;font-size:12px;font-weight:700;color:var(--text,#e8eeff);line-height:1.35;}',
@@ -229,6 +260,8 @@
     win: '<svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M16 5h3v2a3 3 0 0 1-3 3"/><path d="M8 5H5v2a3 3 0 0 0 3 3"/><path d="M10 17h4M9 20h6"/></svg>',
     ans: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>',
     rep: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg>',
+    chat: '<svg viewBox="0 0 24 24"><path d="M20 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z"/><path d="M8 9h8M8 12h5"/></svg>',
+    draw: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>',
   };
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -362,9 +395,15 @@
       else location.href = item.link;
       return;
     }
-    if (item.go === 'board') {
-      if (typeof window.showPage === 'function') { try { window.showPage('board'); return; } catch (e) {} }
+    if (item.go === 'board' || item.go === 'chat') {
+      if (typeof window.showPage === 'function') { try { window.showPage(item.go); return; } catch (e) {} }
       window.open('https://terraoracle.io', '_blank', 'noopener');
+      return;
+    }
+    if (item.go === 'draw') {
+      // On the Draw site switch tabs in place; from Terra Oracle hop across.
+      if (typeof window.showTab === 'function') { try { window.showTab('draw'); return; } catch (e) {} }
+      window.open('https://draw.terraoracle.io', '_blank', 'noopener');
     }
   }
 
@@ -425,12 +464,13 @@
         var pool  = (x.pool === 'weekly') ? 'Weekly' : 'Daily';
         var place = Number(x.place || 1);
         var ord   = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place + 'th';
+        var prize = lunc(x.amountUluna);
         return {
           id:    'win:' + (x.tokenId || '') + ':' + (x.roundId || ''),
           kind:  'win',
           ts:    toSec(x.wonAt),
-          title: 'You won the ' + pool.toLowerCase() + ' draw',
-          body:  ord + ' place · ' + (x.tier || 'NFT') + ' ' + (x.tokenId || ''),
+          title: prize ? ('You won ' + prize + ' LUNC') : ('You won the ' + pool.toLowerCase() + ' draw'),
+          body:  (prize ? (pool + ' draw · ') : '') + ord + ' place · ' + (x.tier || 'NFT') + ' ' + (x.tokenId || ''),
           link:  x.drawTxHash ? ('https://finder.terraport.finance/mainnet/tx/' + x.drawTxHash) : null,
         };
       });
@@ -472,6 +512,146 @@
     });
   }
 
+  // Chat replies — read straight off-chain through the draw worker's tx proxy
+  // (same source the chat page itself uses, so no new backend). We look for
+  // messages whose memo reply-prefix points at one of MY message txHashes.
+  function fetchChatReplies(w) {
+    return getJSON(CFG.drawWorker + '/proxy-txs?wallet=' + TREASURY_WALLET + '&limit=' + CFG.chatLimit)
+      .then(function (body) {
+        var raw = (body && body.txs) || [];
+        var msgs = [];
+
+        raw.forEach(function (t) {
+          var memo = (t.tx && t.tx.value && t.tx.value.memo) || '';
+          if (!memo.trim()) return;
+          // Same two-step memo repair the chat page does: UTF-8 re-decode for
+          // emoji, then an optional base64 layer.
+          try {
+            var bytes = Uint8Array.from(memo, function (c) { return c.charCodeAt(0) & 0xFF; });
+            var dec = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            if (dec !== memo) memo = dec;
+          } catch (e) {}
+          try {
+            var b64 = decodeURIComponent(escape(atob(memo.trim())));
+            if (b64 && b64.length) memo = b64;
+          } catch (e) {}
+
+          var sender = null, amt = 0;
+          ((t.tx && t.tx.value && t.tx.value.msg) || []).forEach(function (m) {
+            var v = m.value || m;
+            if ((v.to_address || '') !== TREASURY_WALLET) return;
+            sender = v.from_address || null;
+            var coins = v.amount || [];
+            var lunc = Array.isArray(coins) ? coins.find(function (c) { return c.denom === 'uluna'; }) : null;
+            amt = lunc ? parseInt(lunc.amount, 10) : 0;
+          });
+          if (!sender || amt < CHAT_MIN_ULUNA || amt > CHAT_MAX_ULUNA) return;
+          if (SYSTEM_WALLETS.indexOf(sender) !== -1) return;
+
+          var replyTo = null, text = memo.slice(0, 256);
+          var m2 = memo.match(/^>([A-Fa-f0-9]{16})\|(.*)$/);
+          if (m2) { replyTo = m2[1]; text = m2[2]; }
+
+          msgs.push({
+            sender: sender,
+            text: text,
+            replyTo: replyTo,
+            txHash: (t.txhash || ''),
+            ts: toSec(t.timestamp),
+          });
+        });
+
+        // My message hashes → what a reply prefix would point at (first 16 chars)
+        var mine = {};
+        msgs.forEach(function (m) {
+          if (m.sender === w && m.txHash) mine[m.txHash.slice(0, 16).toUpperCase()] = true;
+        });
+
+        return msgs.filter(function (m) {
+          return m.replyTo && m.sender !== w && mine[m.replyTo.toUpperCase()];
+        }).map(function (m) {
+          return {
+            id:    'chat:' + m.txHash,
+            kind:  'chat',
+            ts:    m.ts,
+            title: shortAddr(m.sender) + ' replied in chat',
+            body:  m.text.slice(0, 140),
+            go:    'chat',
+          };
+        });
+      });
+  }
+
+  // ── Draw broadcasts (schedule is deterministic — no backend needed) ────────
+  // Daily closes at 20:00 UTC, weekly on Monday 20:00 UTC — the same boundary
+  // used by the worker's getCurrentRoundId().
+  function roundInfo(pool) {
+    var now = new Date();
+    var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 20, 0, 0));
+    if (pool === 'weekly') {
+      var diffToMon = (d.getUTCDay() + 6) % 7;
+      d.setUTCDate(d.getUTCDate() - diffToMon);
+      if (now.getTime() < d.getTime()) d.setUTCDate(d.getUTCDate() - 7);
+      var end = new Date(d.getTime()); end.setUTCDate(end.getUTCDate() + 7);
+      return { roundId: 'weekly_' + d.toISOString().slice(0, 10), endsAt: end.getTime() };
+    }
+    if (now.getTime() < d.getTime()) d.setUTCDate(d.getUTCDate() - 1);
+    var e2 = new Date(d.getTime()); e2.setUTCDate(e2.getUTCDate() + 1);
+    return { roundId: 'daily_' + d.toISOString().slice(0, 10), endsAt: e2.getTime() };
+  }
+
+  // Reminders fire once per round: the roundId is baked into the notification
+  // id, so the normal de-dup in merge() prevents repeats across polls/devices.
+  function fetchDrawReminders(w) {
+    var pools = CFG.dailyReminder ? ['weekly', 'daily'] : ['weekly'];
+    return Promise.all(pools.map(function (pool) {
+      var info = roundInfo(pool);
+      var minsLeft = Math.floor((info.endsAt - Date.now()) / 60000);
+      if (minsLeft < 0 || minsLeft > CFG.remindMins) return [];
+
+      return getJSON(CFG.drawWorker + '/round-stats?pool=' + pool).then(function (st) {
+        var myEntries = (st && st.byWallet && st.byWallet[w]) || 0;
+        var label = pool === 'weekly' ? 'Weekly' : 'Daily';
+        return [{
+          id:    'draw:' + info.roundId + ':soon',
+          kind:  'draw',
+          ts:    Math.floor(Date.now() / 1000),
+          title: label + ' draw in ' + (minsLeft < 1 ? 'less than a minute' : minsLeft + ' min'),
+          body:  myEntries
+                   ? ('You have ' + myEntries + ' ' + (myEntries === 1 ? 'entry' : 'entries') + ' · ' +
+                      ((st && st.totalEntries) || 0) + ' total')
+                   : 'You have no entries yet — mint to join',
+          go:    'draw',
+        }];
+      });
+    })).then(function (arrs) { return [].concat.apply([], arrs); });
+  }
+
+  // Draw results — served from the snapshot /round-complete writes, so it stays
+  // readable after the round rolls over. Winners already get a personal "You
+  // won" from /my-wins, so here we only tell everyone else how it ended.
+  function fetchDrawResults(w) {
+    var pools = CFG.dailyReminder ? ['weekly', 'daily'] : ['weekly'];
+    return Promise.all(pools.map(function (pool) {
+      return getJSON(CFG.drawWorker + '/last-draw?pool=' + pool).then(function (d) {
+        if (!d || !d.roundId || !d.winners || !d.winners.length) return [];
+        if (d.winners.some(function (x) { return x.wallet === w; })) return []; // covered by /my-wins
+        var first = d.winners.slice().sort(function (a, b) { return (a.place || 9) - (b.place || 9); })[0];
+        var prize = lunc(first.amountUluna);
+        var label = pool === 'weekly' ? 'Weekly' : 'Daily';
+        return [{
+          id:    'result:' + d.roundId,
+          kind:  'draw',
+          ts:    toSec(d.completedAt),
+          title: label + ' draw complete',
+          body:  'Winner ' + shortAddr(first.wallet) + (prize ? (' · ' + prize + ' LUNC') : '') +
+                 ' · ' + (d.totalEntries || 0) + ' entries',
+          go:    'draw',
+        }];
+      });
+    })).then(function (arrs) { return [].concat.apply([], arrs); });
+  }
+
   // ── Poll cycle ────────────────────────────────────────────────────────────
   function merge(fresh) {
     var known = {};
@@ -501,8 +681,11 @@
     Promise.all([
       fetchWins(wallet).catch(function () { return []; }),
       fetchAnswers(wallet).catch(function () { return []; }),
+      fetchChatReplies(wallet).catch(function () { return []; }),
+      fetchDrawReminders(wallet).catch(function () { return []; }),
+      fetchDrawResults(wallet).catch(function () { return []; }),
     ]).then(function (res) {
-      merge([].concat(res[0], res[1]).filter(Boolean));
+      merge([].concat(res[0], res[1], res[2], res[3], res[4]).filter(Boolean));
     });
   }
 
