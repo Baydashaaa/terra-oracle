@@ -26,9 +26,16 @@
 
 // ─── RANK SYSTEM (Oracle Ascension) ──────────────────────────
 // Reputation = Action Score + Quality Score
-// Action:  Ask question +40 | Answer +15 | Chat msg +5 (no limit)
-// Quality: Upvote received +10 | Oracle Draw mint +25/125/250 (via worker /rep/draw)
-// Discount applies to the question fee - Weekly Pool always gets its full 100,000 LUNC
+// Action:  Ask question +40 | Answer +40 | Chat msg +5 (no limit)
+// Quality: Upvote received +20 | Oracle Draw mint +25/125/250 (via worker /rep/draw)
+// Discount applies to the Treasury leg of the question fee only - the Weekly
+// Pool leg is fixed per tariff (Basic 25,000 / Priority 100,000).
+//
+// NOTE: this is an ESTIMATE. The Worker's weekly leaderboard applies two rules
+// the browser cannot reproduce (it has no access to wallet history in KV):
+//   - answers are degressive per day: 1-3 -> +40, 4-10 -> +10, 11+ -> 0
+//   - upvotes only count from wallets with paid on-chain history
+// So the number shown here can be slightly higher than the one paid out.
 
 const RANKS = [
   {
@@ -49,36 +56,36 @@ const RANKS = [
     name: 'ADEPT',      icon: '🔵', minScore: 1500,
     color: '#7eb8ff',   bar: '#5493f7',   glow: 'rgba(84,147,247,0.4)',
     discount: 5,        questionPrice: 190000,
-    discountLabel: '5% off - 190,000 LUNC',
-    multiplier: 1.2,
+    discountLabel: '5% off any question',
+    multiplier: 1.1,
   },
   {
     name: 'ANALYST',    icon: '🔮', minScore: 4000,
     color: '#c084fc',   bar: '#a855f7',   glow: 'rgba(168,85,247,0.4)',
     discount: 10,       questionPrice: 180000,
-    discountLabel: '10% off - 180,000 LUNC',
-    multiplier: 1.5,
+    discountLabel: '10% off any question',
+    multiplier: 1.2,
   },
   {
     name: 'ORACLE',     icon: '⚡', minScore: 8000,
     color: '#ffd700',   bar: '#f5c518',   glow: 'rgba(245,197,24,0.45)',
     discount: 15,       questionPrice: 170000,
-    discountLabel: '15% off - 170,000 LUNC',
-    multiplier: 2.0,
+    discountLabel: '15% off any question',
+    multiplier: 1.3,
   },
   {
     name: 'ARCHON',     icon: '🔥', minScore: 15000,
     color: '#ff8844',   bar: '#ff6600',   glow: 'rgba(255,102,0,0.45)',
     discount: 20,       questionPrice: 160000,
-    discountLabel: '20% off - 160,000 LUNC',
-    multiplier: 2.5,
+    discountLabel: '20% off any question',
+    multiplier: 1.4,
   },
   {
     name: 'ASCENDED',   icon: '✦',  minScore: 30000,
     color: '#00ffff',   bar: '#00d4ff',   glow: 'rgba(0,212,255,0.55)',
     discount: 25,       questionPrice: 150000,
-    discountLabel: '25% off - 150,000 LUNC',
-    multiplier: 3.0,
+    discountLabel: '25% off any question',
+    multiplier: 1.5,
   },
 ];
 
@@ -120,11 +127,11 @@ function calcReputation(qStats, chatStats) {
   // Action Score
   const actionScore =
     myQuestions.length * 40 +   // Ask question: +40 REP
-    myAnswers.length   * 15 +   // Answer: +15 REP
+    myAnswers.length   * 40 +   // Answer: +40 REP (flat estimate - see note above)
     msgCount * 5;               // Chat: +5 REP per message, no limit
 
   // Quality Score
-  const qualityScore = totalUpvotes * 10; // Upvote received: +10 REP
+  const qualityScore = totalUpvotes * 20; // Upvote received: +20 REP
 
   return actionScore + qualityScore;
 }
@@ -174,7 +181,7 @@ function buildScoreMap(allQuestions) {
   // Convert to score
   const scores = {};
   for (const [w, s] of Object.entries(map)) {
-    scores[w] = s.questions * 40 + s.answers * 15 + s.upvotes * 10;
+    scores[w] = s.questions * 40 + s.answers * 40 + s.upvotes * 20;
   }
   return scores;
 }
@@ -185,7 +192,7 @@ window._walletScores = {};
 // Legacy function so existing calls don't break
 function getUserTitleFromStats(qCount, upvotes) {
   // approximate reputation from old stats
-  const approxScore = qCount * 40 + upvotes * 10;
+  const approxScore = qCount * 40 + upvotes * 20;
   const rank = getRank(approxScore);
   return {
     name: rank.icon + ' ' + rank.name,
@@ -860,7 +867,7 @@ function renderRankProgress(reputation) {
 
 // Legacy - kept so old calls don't break
 function renderTitleProgress(qCount, upvotes) {
-  const approxScore = qCount * 40 + upvotes * 10;
+  const approxScore = qCount * 40 + upvotes * 20;
   renderRankProgress(approxScore);
 }
 
