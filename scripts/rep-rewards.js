@@ -13,15 +13,18 @@ const CHAIN_ID       = 'columbus-5';
 const GAS_LIMIT      = 300000;
 const GAS_PRICE      = 28.325;
 
-// Rank multipliers (based on all-time REP)
+// Rank multipliers (based on all-time REP).
+// Capped at x1.5 on purpose: the payout share is ALREADY proportional to weekly
+// REP, so a multiplier on top rewards the same seniority a second time. A low
+// ceiling keeps veterans ahead without making the top unreachable for newcomers.
 const RANKS = [
   { name: 'INITIATE',  minScore: 0,     multiplier: 1.0 },
   { name: 'SEEKER',    minScore: 500,   multiplier: 1.0 },
-  { name: 'ADEPT',     minScore: 1500,  multiplier: 1.2 },
-  { name: 'ANALYST',   minScore: 4000,  multiplier: 1.5 },
-  { name: 'ORACLE',    minScore: 8000,  multiplier: 2.0 },
-  { name: 'ARCHON',    minScore: 15000, multiplier: 2.5 },
-  { name: 'ASCENDED',  minScore: 30000, multiplier: 3.0 },
+  { name: 'ADEPT',     minScore: 1500,  multiplier: 1.1 },
+  { name: 'ANALYST',   minScore: 4000,  multiplier: 1.2 },
+  { name: 'ORACLE',    minScore: 8000,  multiplier: 1.3 },
+  { name: 'ARCHON',    minScore: 15000, multiplier: 1.4 },
+  { name: 'ASCENDED',  minScore: 30000, multiplier: 1.5 },
 ];
 function getRankMultiplier(allTimeRep) {
   let mult = 1.0;
@@ -155,7 +158,11 @@ async function main() {
   // which under-ranked active Q&A/chat users and under-paid them.
   console.log('\n📊 Building all-time REP map (Q&A + chat + draw, × streak)...');
 
-  // One /questions fetch covers Q&A REP for everyone (40/answer 15/upvote 10)
+  // One /questions fetch covers Q&A REP for everyone.
+  // Weights MUST match REP_WEIGHTS in the Worker: question 40, answer 40, upvote 20.
+  // Note: this all-time figure only drives the RANK, so it uses flat answer REP —
+  // the degressive scale and the funded-voter gate live in the Worker's weekly
+  // leaderboard, which is what actually decides the payout shares.
   const qaRep = {};
   try {
     const qRes = await safeFetch(`${WORKER_URL}/questions`);
@@ -164,7 +171,7 @@ async function main() {
       for (const q of qData.questions || []) {
         if (q.wallet) qaRep[q.wallet] = (qaRep[q.wallet] || 0) + 40;
         for (const a of q.answers || []) {
-          if (a.wallet) qaRep[a.wallet] = (qaRep[a.wallet] || 0) + 15 + (a.votes || 0) * 10;
+          if (a.wallet) qaRep[a.wallet] = (qaRep[a.wallet] || 0) + 40 + (a.votes || 0) * 20;
         }
       }
     }
