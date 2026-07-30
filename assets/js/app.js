@@ -504,6 +504,31 @@ async function votePoll(qi, optionIdx) {
   }
 }
 
+// ── Priority pin countdown ───────────────────────────────────────────────────
+// The remaining pin time is what makes a Priority question read as a paid,
+// expiring slot rather than a static badge. Only the text nodes are updated on
+// each tick — a full renderBoard() happens once, when a pin actually expires.
+function pinTimeLeft(sec) {
+  if (sec <= 0) return '';
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+let _pinTickerId = null;
+function startPinTicker() {
+  if (_pinTickerId) return;
+  _pinTickerId = setInterval(() => {
+    const els = document.querySelectorAll('.pin-time[data-pin-until]');
+    if (!els.length) { clearInterval(_pinTickerId); _pinTickerId = null; return; }
+    const now = Math.floor(Date.now() / 1000);
+    let expired = false;
+    els.forEach(el => {
+      const left = (parseInt(el.dataset.pinUntil, 10) || 0) - now;
+      if (left <= 0) expired = true; else el.textContent = pinTimeLeft(left);
+    });
+    if (expired) { clearInterval(_pinTickerId); _pinTickerId = null; renderBoard(); }
+  }, 30000);
+}
+
 function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
@@ -526,6 +551,14 @@ function renderBoard() {
   else if (boardSort === 'unanswered') filtered = filtered.filter(q => q.answers.length === 0);
   else filtered.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
 
+  // Priority questions float to the top while their 24h pin is still live.
+  // Done AFTER the chosen sort, so ordering inside each group is preserved and
+  // the pin expires on its own without any cleanup job.
+  const _nowSec  = Math.floor(Date.now() / 1000);
+  const isPinned = q => (q.pinnedUntil || 0) > _nowSec;
+  filtered = [...filtered.filter(isPinned), ...filtered.filter(q => !isPinned(q))];
+  startPinTicker();
+
   count.textContent = filtered.length + ' open question' + (filtered.length !== 1 ? 's' : '');
 
   if (filtered.length === 0) {
@@ -538,8 +571,9 @@ function renderBoard() {
   list.innerHTML = filtered.map((q, qi) => {
     const realQi = questions.indexOf(q);
     return `
-    <div class="q-card" id="qcard-${qi}">
+    <div class="q-card${isPinned(q) ? ' q-card--pinned' : ''}" id="qcard-${qi}">
       <div class="q-meta">
+        ${isPinned(q) ? `<span class="badge-pin">Priority</span><span class="pin-timer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.4 2"/></svg><span class="pin-time" data-pin-until="${q.pinnedUntil}">${pinTimeLeft(q.pinnedUntil - _nowSec)}</span></span>` : ''}
         ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img src="${getProfileAvatar(q.wallet)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
         ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : '')}
         <span class="q-category">${q.category}</span>
@@ -845,6 +879,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     // Add optimistically to local cache
     const newQ = { id: ref, alias: 'Anonymous#' + wallet.slice(-4).toUpperCase(), title: _titleLabel,
       category, text, tags, wallet, txHash, createdAt: Date.now() / 1000,
+      pinnedUntil: (txHash !== 'ADMIN_BYPASS' && getSelectedTier().pin) ? Math.floor(Date.now() / 1000) + 24 * 3600 : null,
       poll, votes: 0, answers: [], voted: false, open: false, formOpen: false };
     questions.unshift(newQ);
     renderBoard();
