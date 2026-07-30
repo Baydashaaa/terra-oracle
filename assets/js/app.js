@@ -1267,6 +1267,9 @@ async function updateVerifyBtnPrice(addr) {
     const badgeEl = document.getElementById('ask-price-badge');
     const badgeTx = document.getElementById('ask-price-badge-text');
     if (nowEl) nowEl.innerHTML = 'Your price: <b>' + price.toLocaleString() + ' LUNC</b>';
+    // Base price is per-tariff, so it can't stay static in the HTML.
+    const baseAmtEl = document.getElementById('ask-price-base-amt');
+    if (baseAmtEl) baseAmtEl.textContent = tier.total.toLocaleString();
     if (discPct > 0) {
       if (baseEl)  baseEl.style.display = '';
       if (badgeEl) badgeEl.style.display = '';
