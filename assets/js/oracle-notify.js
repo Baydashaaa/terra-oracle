@@ -1,5 +1,5 @@
 /* ============================================================================
- * oracle-notify.js  ·  v1.2.0
+ * oracle-notify.js  ·  v1.2.1
  * Terra Oracle / Oracle Draw — unified notification system (phase 1)
  * ----------------------------------------------------------------------------
  * WHAT IT DOES
@@ -42,6 +42,8 @@
     chatLimit:    50,      // chat txs pulled per poll (matches the site's own)
     remindMins:   60,      // "draw in X minutes" reminder lead time
     dailyReminder: false,  // daily fires every 24h — off by default, weekly only
+    toastGap:     12,      // gap between the navbar and the first toast
+    toastTop:     null,    // fixed top offset in px; null = measure the navbar
   }, window.ORACLE_NOTIFY_CONFIG || {});
 
   // Chat lives on-chain: messages are 5,000 LUNC transfers to the Treasury with
@@ -225,10 +227,12 @@
       '.onf-empty{padding:28px 14px;text-align:center;color:var(--muted,#6B7AA6);font-size:11px;',
       'letter-spacing:.06em;}',
 
-      /* Toasts — glass card with a colored edge, matching .glass-btn surfaces */
-      '.onf-toasts{position:fixed;right:18px;bottom:18px;z-index:9500;display:flex;flex-direction:column;',
-      'gap:10px;align-items:flex-end;pointer-events:none;max-width:calc(100vw - 36px);',
-      'font-family:"Exo 2",sans-serif;}',
+      /* Toasts — glass card with a colored edge, matching .glass-btn surfaces.
+         Anchored top-right under the navbar; --onf-top is measured from the
+         real <nav> at runtime so both sites get the right offset. */
+      '.onf-toasts{position:fixed;right:18px;top:var(--onf-top,92px);z-index:9500;display:flex;',
+      'flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none;',
+      'max-width:calc(100vw - 36px);font-family:"Exo 2",sans-serif;}',
       '.onf-toast{pointer-events:auto;position:relative;display:flex;align-items:flex-start;gap:10px;',
       'width:300px;max-width:100%;padding:12px 12px 12px 14px;border-radius:10px;overflow:hidden;',
       'background:rgba(20,25,40,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
@@ -247,7 +251,7 @@
 
       '@media (max-width:600px){',
       '.onf-panel{position:fixed;top:auto;right:8px;left:8px;width:auto;max-width:none;}',
-      '.onf-toasts{left:12px;right:12px;bottom:12px;align-items:stretch;}',
+      '.onf-toasts{left:12px;right:12px;bottom:auto;align-items:stretch;}',
       '.onf-toast{width:auto;}',
       '.onf-bell{width:34px;height:34px;}',
       '}',
@@ -323,6 +327,9 @@
     elToasts.className = 'onf-toasts';
     elToasts.id = 'onf-toasts';
     document.body.appendChild(elToasts);
+    positionToasts();
+    window.addEventListener('resize', positionToasts);
+    window.addEventListener('scroll', positionToasts, { passive: true });
 
     elBell.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -418,8 +425,29 @@
   }
 
   // ── Toasts ────────────────────────────────────────────────────────────────
+  // Keep the toast stack tucked just under the navbar. The two sites have
+  // different nav heights (and it changes on mobile), so measure rather than
+  // hardcode. Config can override with a fixed number.
+  function positionToasts() {
+    if (typeof CFG.toastTop === 'number') {
+      document.documentElement.style.setProperty('--onf-top', CFG.toastTop + 'px');
+      return;
+    }
+    var nav = document.querySelector('nav');
+    var h = 0;
+    if (nav) {
+      var r = nav.getBoundingClientRect();
+      // Only count it when it's actually pinned at the top (sticky/fixed);
+      // if the page is scrolled past a static nav, fall back to the gap alone.
+      h = Math.max(0, r.bottom);
+      if (h > 200) h = r.height;
+    }
+    document.documentElement.style.setProperty('--onf-top', Math.round(h + CFG.toastGap) + 'px');
+  }
+
   function toast(item) {
     if (!elToasts) return;
+    positionToasts();
     while (elToasts.children.length >= CFG.maxToasts) elToasts.removeChild(elToasts.firstChild);
 
     var t = document.createElement('div');
