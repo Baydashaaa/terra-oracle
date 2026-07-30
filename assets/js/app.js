@@ -836,7 +836,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
       headers: txHash === 'ADMIN_BYPASS' ? adminHeaders() : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, paymentAmount: 200000, poll }),
+      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -882,6 +882,27 @@ function getAdminSecret(forceAsk) {
 }
 function adminHeaders() {
   return { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET, 'X-Admin-Secret': getAdminSecret() };
+}
+// ── Question tariffs ─────────────────────────────────────────────────────────
+// MUST match QUESTION_TIERS in the Worker. The Worker derives entries from the
+// VERIFIED on-chain pool leg, so these numbers are the source of truth for what
+// the wallet is asked to sign — never send the amount to the Worker as a claim.
+//
+//   Basic     50,000 = 25,000 pool  + 25,000 treasury  → +1 entry
+//   Priority 200,000 = 100,000 pool + 100,000 treasury → +4 entries + 24h pin
+//
+// Rank/streak discounts reduce ONLY the treasury leg; the pool leg is fixed.
+const QUESTION_TIERS = {
+  basic:    { key:'basic',    total: 50000,  poolLeg: 25000,  entries: 1, pin: false, label: 'Basic'    },
+  priority: { key:'priority', total: 200000, poolLeg: 100000, entries: 4, pin: true,  label: 'Priority' },
+};
+// Reads the tier picker if present. Falls back to Priority so that a page whose
+// HTML has not been updated yet keeps behaving exactly as before.
+function getSelectedTier() {
+  const el = document.querySelector('input[name="question-tier"]:checked')
+          || document.getElementById('question-tier');
+  const key = el ? (el.value || '').toLowerCase() : '';
+  return QUESTION_TIERS[key] || QUESTION_TIERS.priority;
 }
 const REQUIRED_LUNC   = 200000000000; // 200,000 LUNC in uLUNC
 let connectedAddress  = null;
@@ -1234,7 +1255,8 @@ async function getQuestionDiscountPct(addr) {
 async function updateVerifyBtnPrice(addr) {
   try {
     const discPct = await getQuestionDiscountPct(addr);
-    const price   = 200000 - Math.round(200000 * (discPct / 100));
+    const tier    = getSelectedTier();
+    const price   = tier.total - Math.round(tier.total * (discPct / 100));
     const btnEl   = document.getElementById('verify-btn');
     if (btnEl) {
       const disc = discPct > 0 ? ` (${discPct}% off)` : '';
@@ -1280,15 +1302,17 @@ async function autoPayAndUnlock() {
     // Same helper the button uses, so preview and charge always match.
     const discountPct = await getQuestionDiscountPct(sender);
 
-    // Discount is % of total 200,000 LUNC, subtracted from Treasury portion
-    // Weekly Pool: always 100,000 LUNC (fixed)
-    // Treasury: 100,000 - (200,000 × discount%)
-    const toWeekly    = 100000 * 1e6;                                          // always fixed
-    const discountAmt = Math.round(200000 * (discountPct / 100));              // e.g. 5% → 10,000
-    const toTreasury  = Math.round((100000 - discountAmt) * 1e6);              // e.g. 90,000 LUNC
-    const totalLunc   = 100000 + (100000 - discountAmt);                       // e.g. 190,000
+    // Discount is % of the tariff total, subtracted from the Treasury leg only.
+    // Pool leg is fixed per tariff — it is what the Worker matches on.
+    const tier         = getSelectedTier();
+    const treasuryBase = tier.total - tier.poolLeg;
+    const toWeekly     = tier.poolLeg * 1e6;                                   // always fixed
+    // Clamp so a large discount can never drive the Treasury leg to zero/negative.
+    const discountAmt  = Math.min(Math.round(tier.total * (discountPct / 100)), treasuryBase - 1);
+    const toTreasury   = Math.round((treasuryBase - discountAmt) * 1e6);
+    const totalLunc    = tier.poolLeg + (treasuryBase - discountAmt);
 
-    const discountLabel = discountPct > 0
+    const discountLabel = discountAmt > 0
       ? ` (${discountPct}% off - saved ${discountAmt.toLocaleString()} LUNC)`
       : '';
 
@@ -1297,7 +1321,7 @@ async function autoPayAndUnlock() {
       sender,
       WEEKLY_DRAW_WALLET, toWeekly,
       TREASURY_WALLET, toTreasury,
-      'Terra Oracle Q&A - Weekly Pool + Treasury', 'columbus-5'
+      `Terra Oracle Q&A ${tier.label} - Weekly Pool + Treasury`, 'columbus-5'
     );
 
     // Store tx hash for question record
@@ -1316,7 +1340,7 @@ async function autoPayAndUnlock() {
     if (typeof connectedAddress !== 'undefined' && connectedAddress && typeof updateVerifyBtnPrice === 'function') {
       updateVerifyBtnPrice(connectedAddress);
     } else {
-      btn.textContent = 'Pay 200,000 LUNC & Unlock';
+      btn.textContent = `Pay ${getSelectedTier().total.toLocaleString()} LUNC & Unlock`;
     }
     showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
   }
@@ -1346,17 +1370,19 @@ async function verifyTX() {
       const coins = val.amount || [];
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
       // Accept payment to Treasury OR Weekly Pool (split payment - either tx is valid proof)
-      const MIN_ACCEPTED = 150000 * 1e6; // 150,000 LUNC minimum (max discount = 25%)
       if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount += parseInt(lunc.amount);
       }
     }
   }
-  const MIN_ACCEPTED = 100000 * 1e6; // at least the Weekly Pool portion
-  if (foundAmount < MIN_ACCEPTED) { showTxStatus('error', `❌ Invalid payment. Expected 100,000+ LUNC to Oracle wallets. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
+  // Loosest tariff floor: Basic pays 25,000 to the pool + a discounted Treasury
+  // leg. This is only a UX pre-check — the Worker re-verifies the exact pool leg
+  // on-chain and is the authority on which tariff (and how many entries) applies.
+  const MIN_ACCEPTED = 25000 * 1e6;
+  if (foundAmount < MIN_ACCEPTED) { showTxStatus('error', `❌ Invalid payment. Expected 25,000+ LUNC to Oracle wallets. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
   valid = true;
   document.getElementById('verified-tx-hidden').value = txHash;
-  showTxStatus('success', '✅ Payment verified! 200,000 LUNC confirmed. Form unlocked.');
+  showTxStatus('success', `✅ Payment verified! ${(foundAmount/1000000).toLocaleString()} LUNC confirmed. Form unlocked.`);
   setTimeout(() => {
     document.getElementById('tx-section').style.display = 'none';
     document.getElementById('keplr-connected').style.display = 'none';
