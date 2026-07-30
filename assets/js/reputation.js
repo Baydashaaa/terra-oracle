@@ -309,7 +309,7 @@ async function loadLeaderboard() {
       const drawRep  = drawRepMap[w.wallet] || 0;
       const chatRep  = chatRepMap[w.wallet] || 0;
       const multiplier = streakMap[w.wallet] || 1.0;
-      const baseScore = w.questions * 40 + w.answers * 15 + (w.upvotesReceived || 0) * 10 + chatRep + drawRep;
+      const baseScore = w.questions * 40 + w.answers * 40 + (w.upvotesReceived || 0) * 20 + chatRep + drawRep;
       const score = Math.round(baseScore * multiplier);
       const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
       return { ...w, score, drawRep, chatRep, multiplier, rank };
@@ -510,8 +510,8 @@ function renderStatsHTML(isConnected) {
       <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
         border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> Answers: <strong style="color:var(--text);">+15 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes: <strong style="color:var(--text);">+10 REP</strong> each ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> Answers: <strong style="color:var(--text);">+40 REP</strong> each ·
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes: <strong style="color:var(--text);">+20 REP</strong> each ·
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
       </div>
@@ -598,8 +598,8 @@ async function loadStatsData() {
     // Displayed/rank REP is EFFECTIVE REP = base × streak multiplier (canonical
     // rule in profile.js) — identical to the profile page and leaderboard.
     const repQuestions = myQuestions.length * 40;
-    const repAnswers   = myAnswers.length   * 15;
-    const repUpvotes   = totalUpvotes       * 10;
+    const repAnswers   = myAnswers.length   * 40;
+    const repUpvotes   = totalUpvotes       * 20;
     const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
     const baseRep      = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
@@ -731,17 +731,17 @@ async function loadStatsData() {
     for (const q of allQuestions) {
       if (!q.wallet || (q.createdAt || 0) < cutoff7d) continue;
       if (!weeklyScores[q.wallet]) weeklyScores[q.wallet] = 0;
-      weeklyScores[q.wallet] += 40 + (q.votes || 0) * 15;
+      weeklyScores[q.wallet] += 40 + (q.votes || 0) * 20;
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
         if (!weeklyScores[a.wallet]) weeklyScores[a.wallet] = 0;
-        weeklyScores[a.wallet] += 5 + (a.votes || 0) * 15;
+        weeklyScores[a.wallet] += 40 + (a.votes || 0) * 20;
       }
     }
     // Include current user's 7d score
     const myWeeklyScore = weeklyScores[wallet] || Math.round(
       myQuestions.filter(q => (q.createdAt||0) >= cutoff7d).length * 40 +
-      myAnswers.filter(a => (a.createdAt||0) >= cutoff7d).length * 5
+      myAnswers.filter(a => (a.createdAt||0) >= cutoff7d).length * 40
     );
     if (!weeklyScores[wallet]) weeklyScores[wallet] = myWeeklyScore;
 
@@ -886,8 +886,8 @@ function renderHowItWorksHTML() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
         ${[
           ['Ask a question',      '+40 REP per question',              'var(--accent)'],
-          ['Answer a question',   '+15 REP per answer',                '#66ffaa'      ],
-          ['Upvote received',     '+10 REP per upvote',                '#ffd700'      ],
+          ['Answer a question',   '+40 REP per answer',                '#66ffaa'      ],
+          ['Upvote received',     '+20 REP per upvote',                '#ffd700'      ],
           ['Chat message',        '+5 REP per message',                '#c084fc'      ],
           ['Mint Common NFT',     '+25 REP per mint',                  '#9ca3af'      ],
           ['Mint Rare NFT',       '+125 REP per mint',                 '#60a5fa'      ],
@@ -904,6 +904,8 @@ function renderHowItWorksHTML() {
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);line-height:1.6;">
           <div>Answers are limited to 3 per question per day to prevent spam.</div>
+          <div>Answer REP is degressive per day: answers 1-3 earn +40, answers 4-10 earn +10, later ones earn 0. You can always keep answering - only the REP stops.</div>
+          <div>Upvotes grant REP only when they come from a wallet with paid on-chain history.</div>
           <div>Voting is capped at 20 votes per day per wallet.</div>
           <div>Self-votes on questions and answers are blocked.</div>
         </div>
