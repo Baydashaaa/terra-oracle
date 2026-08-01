@@ -838,6 +838,65 @@ async function voteAnswer(qi, ai) {
   }
 }
 
+// ─── PAID-BUT-UNSENT QUESTION ────────────────────────────────
+// The verified txHash used to live only in a hidden input, so closing the tab
+// between paying and submitting lost the payment: the money was gone on-chain
+// and the form came back locked. Recovery meant digging the hash out of a
+// wallet and pasting it, which nobody would guess to do.
+//
+// Re-using a stored hash cannot double-post: the Worker registers every
+// question txHash for 180 days and rejects a repeat.
+const PAID_Q_KEY = 'oracle_paid_question';
+const PAID_Q_TTL = 7 * 24 * 60 * 60 * 1000;   // matches the Worker's dedup window comfortably
+
+function savePaidQuestion(txHash, wallet) {
+  if (!txHash || txHash === 'ADMIN_BYPASS') return;
+  try {
+    localStorage.setItem(PAID_Q_KEY, JSON.stringify({ txHash, wallet, ts: Date.now() }));
+  } catch (e) {}
+}
+
+function clearPaidQuestion() {
+  try { localStorage.removeItem(PAID_Q_KEY); } catch (e) {}
+}
+
+function readPaidQuestion() {
+  try {
+    const raw = localStorage.getItem(PAID_Q_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (!d || !d.txHash) return null;
+    if (Date.now() - (d.ts || 0) > PAID_Q_TTL) { clearPaidQuestion(); return null; }
+    return d;
+  } catch (e) { return null; }
+}
+
+// Unlocks the form again on load if a paid question was never sent.
+function restorePaidQuestion() {
+  const d = readPaidQuestion();
+  if (!d) return;
+  const txEl = document.getElementById('verified-tx-hidden');
+  const wEl  = document.getElementById('verified-wallet-hidden');
+  const form = document.getElementById('ask-form');
+  if (!txEl || !form) return;
+
+  txEl.value = d.txHash;
+  if (wEl && d.wallet) wEl.value = d.wallet;
+
+  const txSec = document.getElementById('tx-section');
+  const kConn = document.getElementById('keplr-connected');
+  if (txSec) txSec.style.display = 'none';
+  if (kConn) kConn.style.display = 'none';
+  form.style.display = 'block';
+
+  if (typeof showTxStatus === 'function') {
+    showTxStatus('success', '✅ You have a paid question that was never sent. The form is unlocked — no need to pay again.');
+  }
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', restorePaidQuestion);
+}
+
 // ─── ASK FORM ────────────────────────────────────────────────
 document.getElementById('ask-message').addEventListener('input', function() {
   const max = 2000, len = this.value.length, remaining = max - len;
@@ -906,6 +965,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     const success = document.getElementById('ask-success');
     success.classList.add('visible');
     document.getElementById('ask-ref').textContent = 'REF: ' + ref;
+    clearPaidQuestion();
     if (typeof resetPollOptions === 'function') resetPollOptions();
   } catch(e) {
     alert('Failed to submit question: ' + e.message);
@@ -1388,6 +1448,7 @@ async function autoPayAndUnlock() {
     // Store tx hash for question record
     document.getElementById('verified-tx-hidden').value = txHash;
     document.getElementById('verified-wallet-hidden').value = sender;
+    savePaidQuestion(txHash, sender);
 
     const luncPaid = totalLunc.toLocaleString();
     showTxStatus('success', `✅ Payment confirmed! ${luncPaid} LUNC sent${discountLabel}. Form unlocked.`);
@@ -1443,6 +1504,7 @@ async function verifyTX() {
   if (foundAmount < MIN_ACCEPTED) { showTxStatus('error', `❌ Invalid payment. Expected 25,000+ LUNC to Oracle wallets. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
   valid = true;
   document.getElementById('verified-tx-hidden').value = txHash;
+  savePaidQuestion(txHash, document.getElementById('verified-wallet-hidden')?.value || '');
   showTxStatus('success', `✅ Payment verified! ${(foundAmount/1000000).toLocaleString()} LUNC confirmed. Form unlocked.`);
   setTimeout(() => {
     document.getElementById('tx-section').style.display = 'none';
