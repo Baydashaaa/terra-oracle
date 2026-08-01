@@ -3,7 +3,6 @@
 // Runs hourly via GitHub Actions. Pure HTTP + hand-rolled protobuf, same approach
 // as rep-rewards.js — no cosmjs.
 
-import fetch from 'node-fetch';
 import { createHash } from 'crypto';
 
 const WORKER_URL     = process.env.WORKER_URL;
@@ -11,9 +10,20 @@ const ACTIONS_SECRET = process.env.ACTIONS_SECRET;
 const MNEMONIC       = process.env.ATTESTOR_MNEMONIC;
 const CONTRACT       = process.env.ORACLE_SCORE_CONTRACT;
 
-const LCD_URL  = 'https://terra-classic-lcd.publicnode.com';
-const CHAIN_ID = 'columbus-5';
+// A single endpoint is a single point of failure for the whole hour. These are
+// tried in order; the first one that answers wins. Broadcast deliberately does
+// NOT rotate — see broadcastRaw().
+const LCD_URLS = [
+  'https://terra-classic-lcd.publicnode.com',
+  'https://lcd.terrarebels.net',
+  'https://terra-classic-lcd.everstake.one',
+];
+const CHAIN_ID  = 'columbus-5';
 const GAS_PRICE = 28.325;
+// The chain rejects anything under the minimum gas price, and the multiplication
+// lands on a boundary often enough to matter. 5% costs nothing and removes a
+// class of failure that looks like a bug.
+const FEE_HEADROOM = 1.05;
 
 // Everything earned before the seeded snapshot is already reflected in the
 // on-chain balances. Recording those again would pay the same reputation twice,
@@ -26,27 +36,45 @@ const EXPECTED_ATTESTOR = 'terra1yza5m2dkhnxxrur8cc0qrwwmqztyj54fypwzy8';
 
 // One tx per batch. Larger batches save gas but lose more work when a single
 // message fails, since the whole tx reverts.
-const BATCH_SIZE   = 8;
-const GAS_BASE     = 180_000;
-const GAS_PER_MSG  = 140_000;
+const BATCH_SIZE  = 8;
+const GAS_BASE    = 180_000;
+// Estimated, not simulated. Worth replacing with a real figure from
+// /cosmos/tx/v1beta1/simulate x1.4 — an out-of-gas tx burns the fee and reverts.
+const GAS_PER_MSG = 140_000;
 
-// Actions the contract knows about. Anything else is skipped loudly rather than
-// broadcast, so a typo in the Worker cannot burn gas on a doomed tx.
-const KNOWN_ACTIONS = new Set([
-  'answer', 'upvote', 'chat', 'question_basic', 'question_priority',
-]);
+// An hourly job that can run for hours is a job that overlaps itself. At 8 msgs
+// per batch this caps a single run at 240 grants, which is far above real
+// traffic and still finishes in minutes.
+const MAX_BATCHES_PER_RUN = 30;
 
-async function safeFetch(url, opts = {}) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 20000);
-  try {
-    const res = await fetch(url, { ...opts, signal: ctrl.signal });
-    clearTimeout(t);
-    return res;
-  } catch (e) { clearTimeout(t); throw e; }
+// MUST mirror ATTESTABLE_ACTIONS in the Worker. The attestor key can only record
+// actions the contract prices at zero; a paid action reverts the whole tx. Paid
+// actions are routed to `deferred-rep:` by the Worker and never appear here, but
+// legacy records predating that split still can, so the guard stays.
+const ATTESTABLE_ACTIONS = new Set(['answer', 'upvote']);
+
+// ── http ────────────────────────────────────────────────────────────────────
+
+async function safeFetch(url, opts = {}, timeoutMs = 20000) {
+  return fetch(url, { ...opts, signal: AbortSignal.timeout(timeoutMs) });
+}
+
+// Read-only LCD call with failover. Only for queries — never for broadcast.
+async function lcdGet(path) {
+  let lastErr;
+  for (const base of LCD_URLS) {
+    try {
+      const res = await safeFetch(base + path);
+      if (res.status === 404) return { status: 404, body: null };
+      if (!res.ok) { lastErr = new Error(`${base}${path} → ${res.status}`); continue; }
+      return { status: res.status, body: await res.json() };
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('all LCD endpoints failed for ' + path);
 }
 
 // ── key derivation ──────────────────────────────────────────────────────────
+
 async function deriveKeypair(mnemonic) {
   const { mnemonicToSeedSync } = await import('bip39');
   const { BIP32Factory } = await import('bip32');
@@ -66,12 +94,14 @@ function bech32encode(prefix, words) {
   const cs = []; for (let i = 0; i < 6; i++) cs.push((checksum >> (5 * (5 - i))) & 31);
   return prefix + '1' + [...words, ...cs].map(x => CHARSET[x]).join('');
 }
+
 function convertbits(data, frombits, tobits, pad = true) {
   let acc = 0, bits = 0; const ret = [], maxv = (1 << tobits) - 1;
   for (const v of data) { acc = ((acc << frombits) | v) & 0xffffffff; bits += frombits; while (bits >= tobits) { bits -= tobits; ret.push((acc >> bits) & maxv); } }
   if (pad && bits > 0) ret.push((acc << (tobits - bits)) & maxv);
   return ret;
 }
+
 function pubkeyToAddress(pubkey) {
   const sha = createHash('sha256').update(pubkey).digest();
   const rip = createHash('ripemd160').update(sha).digest();
@@ -79,6 +109,7 @@ function pubkeyToAddress(pubkey) {
 }
 
 // ── protobuf ────────────────────────────────────────────────────────────────
+
 function encodeVarint(n) { n = Number(n); const b = []; while (n > 127) { b.push((n & 0x7f) | 0x80); n = Math.floor(n / 128); } b.push(n & 0x7f); return Buffer.from(b); }
 function encodeField(f, w, d) { const t = encodeVarint((f << 3) | w); if (w === 2) { return Buffer.concat([t, encodeVarint(d.length), d]); } return t; }
 
@@ -97,10 +128,14 @@ function buildExecuteMsg(sender, contract, msgObj) {
   ]);
 }
 
-async function broadcast(privateKey, publicKey, sender, anyMsgs, memo, accountNumber, sequence) {
+// Builds and signs, but does not send. The tx hash is sha256 of the encoded
+// TxRaw, so it is known BEFORE broadcast — which is what lets the queue be
+// marked in-flight with a hash the next run can look up, even if the broadcast
+// response never comes back.
+async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumber, sequence) {
   const enc = s => Buffer.from(s);
   const gasLimit = GAS_BASE + GAS_PER_MSG * anyMsgs.length;
-  const fee = Math.ceil(gasLimit * GAS_PRICE);   // no coins move, so no burn tax
+  const fee = Math.ceil(gasLimit * GAS_PRICE * FEE_HEADROOM); // no coins move, so no burn tax
 
   const txBodyP = Buffer.concat([
     ...anyMsgs.map(m => encodeField(1, 2, m)),
@@ -138,16 +173,44 @@ async function broadcast(privateKey, publicKey, sender, anyMsgs, memo, accountNu
     encodeField(3, 2, sig),
   ]);
 
-  const res = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs`, {
+  const txHash = createHash('sha256').update(txRawP).digest('hex').toUpperCase();
+  return { txBytes: txRawP.toString('base64'), txHash };
+}
+
+// Single endpoint on purpose: retrying a broadcast against a second node after
+// an ambiguous failure risks landing the same tx twice under a different
+// sequence. The in-flight marker plus reconciliation covers the failure instead.
+async function broadcastRaw(txBytes, expectedHash) {
+  const res = await safeFetch(`${LCD_URLS[0]}/cosmos/tx/v1beta1/txs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tx_bytes: txRawP.toString('base64'), mode: 'BROADCAST_MODE_SYNC' }),
+    body: JSON.stringify({ tx_bytes: txBytes, mode: 'BROADCAST_MODE_SYNC' }),
   });
-  const data = await res.json();
-  const txHash = data?.tx_response?.txhash || data?.txhash;
+  if (!res.ok) throw new Error(`LCD broadcast → ${res.status}`);
+  let data; try { data = await res.json(); }
+  catch { throw new Error('LCD broadcast returned non-JSON (proxy error?)'); }
+
   const code = data?.tx_response?.code ?? data?.code ?? 0;
   if (code !== 0) throw new Error('broadcast rejected: ' + (data?.tx_response?.raw_log || JSON.stringify(data)).slice(0, 300));
+
+  const txHash = data?.tx_response?.txhash || data?.txhash;
+  if (!txHash) throw new Error('broadcast returned no txhash: ' + JSON.stringify(data).slice(0, 300));
+  if (txHash.toUpperCase() !== expectedHash) {
+    // Would mean the local encoding and the node disagree — every in-flight
+    // marker written from now on would point at the wrong tx.
+    throw new Error(`hash mismatch: node ${txHash}, local ${expectedHash}`);
+  }
   return txHash;
+}
+
+// success | failed | unknown. `unknown` means the node has not seen it yet,
+// which is not the same as it never existing.
+async function txOutcome(txHash) {
+  const { status, body } = await lcdGet(`/cosmos/tx/v1beta1/txs/${txHash}`);
+  if (status === 404 || !body?.tx_response?.txhash) return { state: 'unknown' };
+  const r = body.tx_response;
+  if ((r.code ?? 0) !== 0) return { state: 'failed', log: String(r.raw_log).slice(0, 300) };
+  return { state: 'success' };
 }
 
 // A tx accepted into the mempool has not executed yet. Marking records as done
@@ -156,13 +219,9 @@ async function confirm(txHash) {
   for (let i = 0; i < 12; i++) {
     await new Promise(r => setTimeout(r, 5000));
     try {
-      const res = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
-      if (!res.ok) continue;
-      const d = await res.json();
-      const r = d?.tx_response;
-      if (!r?.txhash) continue;
-      if ((r.code ?? 0) !== 0) throw new Error('tx failed on chain: ' + String(r.raw_log).slice(0, 300));
-      return true;
+      const out = await txOutcome(txHash);
+      if (out.state === 'success') return true;
+      if (out.state === 'failed') throw new Error('tx failed on chain: ' + out.log);
     } catch (e) {
       if (e.message.startsWith('tx failed')) throw e;
     }
@@ -171,14 +230,22 @@ async function confirm(txHash) {
 }
 
 // ── queue ───────────────────────────────────────────────────────────────────
-async function fetchPending() {
+
+async function workerFetch(path, init = {}) {
+  const res = await safeFetch(`${WORKER_URL}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET, ...(init.headers || {}) },
+  });
+  if (!res.ok) throw new Error(`${path} → ${res.status}`);
+  return res.json();
+}
+
+async function fetchQueue(status = 'pending,inflight') {
   const all = [];
   let cursor = null;
   for (let page = 0; page < 20; page++) {
-    const url = `${WORKER_URL}/rep/pending?limit=200${cursor ? `&after=${encodeURIComponent(cursor)}` : ''}`;
-    const res = await safeFetch(url, { headers: { 'X-Actions-Secret': ACTIONS_SECRET } });
-    if (!res.ok) throw new Error(`/rep/pending → ${res.status}`);
-    const d = await res.json();
+    const q = `?limit=200&status=${encodeURIComponent(status)}${cursor ? `&after=${encodeURIComponent(cursor)}` : ''}`;
+    const d = await workerFetch(`/rep/pending${q}`);
     all.push(...(d.records || []));
     if (d.done || !d.cursor) break;
     cursor = d.cursor;
@@ -186,41 +253,106 @@ async function fetchPending() {
   return all;
 }
 
-async function markRecorded(keys, txHash) {
-  const res = await safeFetch(`${WORKER_URL}/rep/mark-recorded`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET },
-    body: JSON.stringify({ keys, txHash }),
-  });
-  if (!res.ok) throw new Error(`/rep/mark-recorded → ${res.status}`);
-  return (await res.json()).marked;
+async function setStatus(keys, status, txHash, note) {
+  if (!keys.length) return 0;
+  let updated = 0;
+  for (let i = 0; i < keys.length; i += 200) {
+    const d = await workerFetch('/rep/set-status', {
+      method: 'POST',
+      body: JSON.stringify({ keys: keys.slice(i, i + 200), status, txHash, note }),
+    });
+    updated += d.updated || 0;
+  }
+  return updated;
 }
+
+// Retried: the call is idempotent Worker-side, and a failure here after a
+// confirmed tx is the one path that could pay twice. If every attempt fails the
+// records stay in-flight and the next run reconciles them against the chain.
+async function markRecorded(keys, txHash) {
+  if (!keys.length) return 0;
+  let marked = 0;
+  for (let i = 0; i < keys.length; i += 200) {
+    const chunk = keys.slice(i, i + 200);
+    let lastErr;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const d = await workerFetch('/rep/mark-recorded', {
+          method: 'POST',
+          body: JSON.stringify({ keys: chunk, txHash }),
+        });
+        marked += d.marked || 0;
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      }
+    }
+    if (lastErr) throw lastErr;
+  }
+  return marked;
+}
+
+// Records left in-flight by a previous run: the tx was signed and probably sent,
+// but the outcome was never written back. Resolve each against the chain before
+// touching the queue, otherwise they would be re-recorded and paid twice.
+async function reconcileInflight(records) {
+  if (!records.length) return;
+  console.log(`reconciling ${records.length} in-flight record(s)`);
+  const byTx = new Map();
+  const noHash = [];
+  for (const r of records) {
+    if (!r.txHash) { noHash.push(r); continue; }
+    if (!byTx.has(r.txHash)) byTx.set(r.txHash, []);
+    byTx.get(r.txHash).push(r);
+  }
+  // No hash means the marker was written but the tx never got built. Safe to requeue.
+  if (noHash.length) {
+    await setStatus(noHash.map(r => r.key), 'pending', null, 'in-flight without tx hash');
+    console.log(`  ${noHash.length} requeued (no hash)`);
+  }
+  for (const [txHash, group] of byTx) {
+    const keys = group.map(r => r.key);
+    const out = await txOutcome(txHash);
+    if (out.state === 'success') {
+      await markRecorded(keys, txHash);
+      console.log(`  ${txHash} landed → ${keys.length} marked recorded`);
+    } else if (out.state === 'failed') {
+      await setStatus(keys, 'pending', null, 'tx reverted: ' + out.log);
+      console.log(`  ${txHash} reverted → ${keys.length} requeued`);
+    } else {
+      const age = Date.now() - Math.max(...group.map(r => Date.parse(r.statusAt || 0) || r.ts || 0));
+      if (age > 10 * 60 * 1000) {
+        await setStatus(keys, 'pending', null, 'tx never seen on chain');
+        console.log(`  ${txHash} not on chain after ${Math.round(age / 60000)}m → ${keys.length} requeued`);
+      } else {
+        console.log(`  ${txHash} still unresolved, leaving in-flight`);
+      }
+    }
+  }
+}
+
+async function readAccount(sender) {
+  const { body } = await lcdGet(`/cosmos/auth/v1beta1/accounts/${sender}`);
+  const acct = body?.account || {};
+  return {
+    accountNumber: parseInt(acct.account_number || '0'),
+    sequence: parseInt(acct.sequence || '0'),
+  };
+}
+
+// ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
   if (!WORKER_URL || !ACTIONS_SECRET || !MNEMONIC || !CONTRACT) {
     console.error('Missing env: WORKER_URL, ACTIONS_SECRET, ATTESTOR_MNEMONIC, ORACLE_SCORE_CONTRACT');
     process.exit(1);
   }
-
   console.log('Oracle Score attestor —', new Date().toISOString());
 
-  const pending = await fetchPending();
-  console.log(`queue: ${pending.length} pending`);
-
-  const stale = pending.filter(r => r.ts < SNAPSHOT_TS);
-  if (stale.length) {
-    // Already covered by the seed. Clear them so they stop being re-read, but
-    // never record them.
-    console.log(`skipping ${stale.length} pre-snapshot record(s)`);
-    await markRecorded(stale.map(r => r.key), 'pre-snapshot');
-  }
-
-  const unknown = pending.filter(r => r.ts >= SNAPSHOT_TS && !KNOWN_ACTIONS.has(r.action));
-  for (const r of unknown) console.warn(`unknown action "${r.action}" — leaving ${r.key} queued`);
-
-  const work = pending.filter(r => r.ts >= SNAPSHOT_TS && KNOWN_ACTIONS.has(r.action));
-  if (!work.length) { console.log('nothing to record'); return; }
-
+  // Before the queue is touched: a wrong secret must not get as far as writing
+  // to it.
   const { privateKey, publicKey } = await deriveKeypair(MNEMONIC);
   const sender = pubkeyToAddress(publicKey);
   if (sender !== EXPECTED_ATTESTOR) {
@@ -228,43 +360,112 @@ async function main() {
   }
   console.log(`attestor: ${sender}`);
 
-  const accRes = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${sender}`);
-  const acct = (await accRes.json())?.account || {};
-  const accountNumber = parseInt(acct.account_number || '0');
-  // Sequence is tracked locally: SYNC broadcast returns before the node updates
-  // it, so re-reading between batches would give a stale value.
-  let sequence = parseInt(acct.sequence || '0');
+  const first = await fetchQueue('pending,inflight');
+  await reconcileInflight(first.filter(r => r.status === 'inflight'));
 
-  let recorded = 0, failed = 0;
-  for (let i = 0; i < work.length; i += BATCH_SIZE) {
-    const batch = work.slice(i, i + BATCH_SIZE);
-    const msgs = batch.map(r => buildExecuteMsg(sender, CONTRACT, {
+  const pending = await fetchQueue('pending');
+  console.log(`queue: ${pending.length} pending`);
+
+  // A record whose ts cannot be read cannot be placed relative to the snapshot,
+  // and guessing either way is a real risk: too early pays twice, too late
+  // drops a grant. Left queued and reported.
+  const tsOf = r => (typeof r.ts === 'number' ? r.ts : Date.parse(r.ts));
+  const undated = pending.filter(r => !Number.isFinite(tsOf(r)));
+  for (const r of undated) console.warn(`unusable ts on ${r.key} (${JSON.stringify(r.ts)}) — leaving queued`);
+
+  const dated = pending.filter(r => Number.isFinite(tsOf(r)));
+
+  const stale = dated.filter(r => tsOf(r) < SNAPSHOT_TS);
+  if (stale.length) {
+    // Already covered by the seed. Clear them so they stop being re-read, but
+    // never record them.
+    console.log(`skipping ${stale.length} pre-snapshot record(s)`);
+    await markRecorded(stale.map(r => r.key), 'pre-snapshot');
+  }
+
+  const fresh = dated.filter(r => tsOf(r) >= SNAPSHOT_TS);
+  const unknown = fresh.filter(r => !ATTESTABLE_ACTIONS.has(r.action));
+  for (const r of unknown) console.warn(`non-attestable action "${r.action}" — leaving ${r.key} queued`);
+
+  const work = fresh.filter(r => ATTESTABLE_ACTIONS.has(r.action));
+  if (!work.length) { console.log('nothing to record'); return; }
+
+  const acct = await readAccount(sender);
+  const accountNumber = acct.accountNumber;
+  // Sequence is tracked locally: SYNC broadcast returns before the node updates
+  // it, so re-reading between batches would give a stale value. It is re-read
+  // from the chain after any failure, where the local value stops being trusted.
+  let sequence = acct.sequence;
+
+  let recorded = 0, quarantined = 0, deferred = 0;
+
+  // Signs, marks in-flight, sends, waits, marks recorded. Returns true if the
+  // grants landed. The in-flight marker is written before the send so that no
+  // outcome — including the process being killed mid-flight — can leave a
+  // confirmed tx looking like un-recorded work.
+  async function submit(records) {
+    const msgs = records.map(r => buildExecuteMsg(sender, CONTRACT, {
       record_action: { user: r.wallet, action: r.action, ref_id: r.refId },
     }));
+    const { txBytes, txHash } = await buildTx(
+      privateKey, publicKey, sender, msgs,
+      `oracle-score:attest:${records.length}`, accountNumber, sequence,
+    );
+    await setStatus(records.map(r => r.key), 'inflight', txHash);
+    await broadcastRaw(txBytes, txHash);
+    await confirm(txHash);
+    sequence++;
+    const marked = await markRecorded(records.map(r => r.key), txHash);
+    return { txHash, marked };
+  }
 
+  const batches = [];
+  for (let i = 0; i < work.length; i += BATCH_SIZE) batches.push(work.slice(i, i + BATCH_SIZE));
+  if (batches.length > MAX_BATCHES_PER_RUN) {
+    deferred = batches.slice(MAX_BATCHES_PER_RUN).reduce((n, b) => n + b.length, 0);
+    batches.length = MAX_BATCHES_PER_RUN;
+  }
+
+  for (let b = 0; b < batches.length; b++) {
+    const batch = batches[b];
     try {
-      const txHash = await broadcast(
-        privateKey, publicKey, sender, msgs,
-        `oracle-score:attest:${batch.length}`, accountNumber, sequence,
-      );
-      await confirm(txHash);
-      sequence++;   // advance only on success
-
-      const marked = await markRecorded(batch.map(r => r.key), txHash);
+      const { txHash, marked } = await submit(batch);
       recorded += marked;
-      console.log(`batch ${1 + i / BATCH_SIZE}: ${batch.length} msg → ${txHash} (marked ${marked})`);
+      console.log(`batch ${b + 1}/${batches.length}: ${batch.length} msg → ${txHash} (marked ${marked})`);
     } catch (err) {
-      failed += batch.length;
-      console.error(`batch ${1 + i / BATCH_SIZE} failed: ${err.message}`);
-      // Records stay pending, so the next run retries them. A daily limit
-      // rejection is expected and self-resolving: the grant is simply not due.
-      break;   // stop on first failure — sequence is now uncertain
+      console.error(`batch ${b + 1}/${batches.length} failed: ${err.message}`);
+      // The whole tx reverts on one bad message, so a failed batch says nothing
+      // about which record caused it. Re-send one at a time: whatever fails
+      // alone is the culprit, and the other seven still get through instead of
+      // waiting behind it forever.
+      sequence = (await readAccount(sender)).sequence;
+      if (batch.length === 1) {
+        await setStatus([batch[0].key], 'quarantined', null, err.message.slice(0, 300));
+        quarantined++;
+        console.error(`  quarantined ${batch[0].key} (${batch[0].action} / ${batch[0].wallet})`);
+        continue;
+      }
+      console.log(`  isolating ${batch.length} record(s) one by one`);
+      for (const r of batch) {
+        try {
+          const { marked } = await submit([r]);
+          recorded += marked;
+        } catch (e2) {
+          sequence = (await readAccount(sender)).sequence;
+          await setStatus([r.key], 'quarantined', null, e2.message.slice(0, 300));
+          quarantined++;
+          console.error(`  quarantined ${r.key} (${r.action} / ${r.wallet}): ${e2.message}`);
+        }
+        await new Promise(r2 => setTimeout(r2, 2000));
+      }
     }
     await new Promise(r => setTimeout(r, 2000));
   }
 
-  console.log(`done: ${recorded} recorded, ${failed} left pending`);
-  if (failed) process.exitCode = 1;
+  const left = work.length - recorded - quarantined;
+  console.log(`done: ${recorded} recorded, ${quarantined} quarantined, ${left} left pending` +
+              (deferred ? ` (${deferred} over the per-run cap, next run)` : ''));
+  if (quarantined) process.exitCode = 1;
 }
 
 main().catch(e => { console.error('fatal:', e.message); process.exit(1); });
