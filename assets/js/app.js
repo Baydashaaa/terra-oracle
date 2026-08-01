@@ -1243,7 +1243,11 @@ async function getQuestionDiscountPct(addr) {
     }
   } catch(e) {}
 
-  // ── Full base REP = questions*40 + answers*15 + chatMsgs*5 + upvotes*10 + drawRep ──
+  // ── Full base REP = questions*40 + answers*40 + chatMsgs*5 + upvotes*20 + drawRep ──
+  // Weights must match REP_WEIGHTS in the Worker, the profile page and the
+  // on-chain contract config. Answers and upvotes were scored at 15 and 10 here,
+  // which quietly under-ranked people and cost them the fee discount their own
+  // profile page said they had earned.
   try {
     let rep = 0;
     // Q&A stats (questions, answers, upvotes)
@@ -1255,7 +1259,7 @@ async function getQuestionDiscountPct(addr) {
       const nQ = (qStats.myQuestions || []).length;
       const nA = (qStats.myAnswers || []).length;
       const up = qStats.totalUpvotes || 0;
-      rep += nQ * 40 + nA * 15 + up * 10;
+      rep += nQ * 40 + nA * 40 + up * 20;
     }
     // Chat messages
     try {
