@@ -1444,3 +1444,17 @@ canvas {
 .vp-lock{ width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .vp-src{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--muted); margin-top:14px; padding:9px 12px; background:rgba(255,255,255,.02); border-radius:9px; border:1px solid rgba(255,255,255,.05); }
 .vp-src-ico{ width:12px; height:12px; stroke:var(--muted); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+/* ── Ask panel: no hover treatment ──────────────────────────────────────────
+   .card lifts 4px, glows and lays a translucent gradient over itself on hover.
+   On a small card that reads as a nudge; on the full-width Ask panel the whole
+   block drifts up and the text washes out under the overlay, which is exactly
+   the content you are trying to read while filling the form in.
+   Scoped to #page-ask so every other card on the site keeps the effect. */
+#page-ask > .card:hover {
+  transform: none;
+  border-color: var(--border);
+  box-shadow: 0 0 0 rgba(123,92,255,0);
+}
+#page-ask > .card:hover::after { opacity: 0; }
+#page-ask > .card:hover::before { opacity: 0.4; }
