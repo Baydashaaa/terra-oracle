@@ -871,6 +871,23 @@ function readPaidQuestion() {
   } catch (e) { return null; }
 }
 
+// localStorage is per-device, so a payment made in another browser — or in a
+// private window — is invisible to it. This asks the Worker, which looks at the
+// chain instead: the payment belongs to the wallet, not to the tab it was made
+// in. Runs on connect, and only when nothing is stored locally.
+async function checkUnusedPayment(wallet) {
+  if (!wallet || readPaidQuestion()) return;
+  if (wallet === ADMIN_WALLET) return;
+  try {
+    const res = await fetch(`${WORKER_URL}/questions/unused-payment?wallet=${wallet}`);
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d || !d.found || !d.txHash) return;
+    savePaidQuestion(d.txHash, wallet);
+    restorePaidQuestion();
+  } catch (e) {}
+}
+
 // Unlocks the form again on load if a paid question was never sent.
 function restorePaidQuestion() {
   const d = readPaidQuestion();
@@ -1039,6 +1056,8 @@ async function connectKeplr() {
     if (typeof updateVerifyBtnPrice === 'function') updateVerifyBtnPrice(_addr);
     document.getElementById('connected-addr').textContent = connectedAddress.slice(0,10)+'...'+connectedAddress.slice(-4);
     document.getElementById('verified-wallet-hidden').value = connectedAddress;
+    // Fire-and-forget: unlocks the form if this wallet already paid elsewhere.
+    if (typeof checkUnusedPayment === 'function') checkUnusedPayment(connectedAddress);
     // Refresh My Bag if open
     if (document.getElementById('page-bag') &&
         document.getElementById('page-bag').classList.contains('active')) {
