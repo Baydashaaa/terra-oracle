@@ -21,10 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `cache: npm` here on purpose: it hard-fails when the repo has no
+      # lockfile, and four small pure-JS packages are not worth that coupling.
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
 
       # Deps come from package.json, which already declares exactly these.
       # --ignore-scripts matters: this job has ATTESTOR_MNEMONIC in scope, and a
@@ -36,7 +37,7 @@ jobs:
             npm ci --ignore-scripts
           else
             echo "::warning::no package-lock.json — installing unpinned versions"
-            npm install --ignore-scripts
+            npm install --ignore-scripts --no-audit --no-fund
           fi
 
       - name: Drain pending REP queue
