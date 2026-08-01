@@ -163,10 +163,74 @@ function getRankBadgeHTML(score) {
   return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
 }
 
+// ── On-chain reputation ─────────────────────────────────────────────────────
+// Read by the visitor's own browser, straight from a public node — no server of
+// ours between the contract and the number on screen. That is the whole point
+// of moving reputation on-chain, so the read should not be proxied either.
+const ORACLE_SCORE_CONTRACT = 'terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls';
+const ORACLE_SCORE_LCD = 'https://terra-classic-lcd.publicnode.com';
+
+// Values are stored in micro-units. Round rather than floor: decay between
+// blocks otherwise turns a freshly granted 40 into a displayed 39.
+async function fetchOnChainScore(wallet) {
+  if (!wallet) return null;
+  try {
+    const q = btoa(JSON.stringify({ score: { address: wallet } }));
+    const res = await fetch(`${ORACLE_SCORE_LCD}/cosmwasm/wasm/v1/contract/${ORACLE_SCORE_CONTRACT}/smart/${q}`);
+    if (!res.ok) return null;
+    const d = (await res.json()).data;
+    if (!d) return null;
+    return {
+      rank:   Math.round(Number(d.lifetime_earned || 0) / 1e6),   // never decays
+      weight: Math.round(Number(d.effective || 0) / 1e6),         // 90-day half-life
+      actions: d.actions || 0,
+    };
+  } catch (e) { return null; }
+}
+window.fetchOnChainScore = fetchOnChainScore;
+
+function oracleScoreTxUrl() {
+  return 'https://finder.terraport.finance/mainnet/address/' + ORACLE_SCORE_CONTRACT;
+}
+window.oracleScoreTxUrl = oracleScoreTxUrl;
+
 // Avatar ring in the rank colour. Returns the border and glow only, so the
 // caller keeps control of size, layout and hover behaviour.
 // INITIATE stays deliberately dim: a ring everyone has signals nothing, and a
 // bright one would make the starting rank look like an achievement.
+async function renderOnChainPanel(wallet, liveRep) {
+  const host = document.getElementById('profile-rep-big');
+  if (!host || !wallet) return;
+
+  let box = document.getElementById('profile-onchain');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'profile-onchain';
+    box.style.cssText = 'margin-top:6px;font-size:11px;line-height:1.5;color:var(--text-dim);text-align:right;';
+    host.parentNode.appendChild(box);
+  }
+  box.textContent = 'checking chain…';
+
+  const s = await fetchOnChainScore(wallet);
+  if (!s) {
+    // A node hiccup should not read as "you have no reputation".
+    box.innerHTML = '<span style="opacity:.7">on-chain figure unavailable</span>';
+    return;
+  }
+
+  const pending = Math.max(0, Math.round(liveRep) - s.rank);
+  const link = '<a href="' + oracleScoreTxUrl() + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">verify ↗</a>';
+  const pendingNote = pending > 0
+    ? '<div style="opacity:.7">' + pending.toLocaleString() + ' REP queued, written within the hour</div>'
+    : '';
+
+  box.innerHTML =
+    '<div><b style="color:var(--green);">' + s.rank.toLocaleString() + '</b> settled on-chain · ' + link + '</div>' +
+    '<div style="opacity:.7">weight ' + s.weight.toLocaleString() + ' — decays with a 90-day half-life</div>' +
+    pendingNote;
+}
+window.renderOnChainPanel = renderOnChainPanel;
+
 function getRankRingCSS(score) {
   const rank = (score === undefined || score === null) ? null : getRank(score);
   if (!rank) return { border: 'rgba(84,147,247,0.2)', shadow: 'none' };
@@ -797,6 +861,11 @@ function renderProfilePage() {
     // Big REP number in the header
     const repBigEl = document.getElementById('profile-rep-big');
     if (repBigEl) repBigEl.textContent = reputation.toLocaleString();
+
+    // Settled figure from the contract, shown next to the live one. They differ
+    // by whatever the attestor has not written yet — an hour at most — and
+    // saying so is better than quietly showing a number that lags.
+    renderOnChainPanel(addr, reputation);
     // Perk badge: current discount, or the NEXT rank that unlocks one
     const perkEl = document.getElementById('profile-next-perk');
     if (perkEl) {
