@@ -1,7 +1,42 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-01T12:45:19.343Z",
+  "_updated": "2026-08-01T14:06:35.027Z",
   "questions": [
+    {
+      "id": "LUNC-SAG32MT",
+      "category": "Community",
+      "text": "Are you satisfied with all the validators for their work on the blockchain?",
+      "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      "walletHash": "sha256:m4x75c2l",
+      "alias": "Anonymous#5C2L",
+      "title": "Seeker",
+      "txHash": "1229D1DE45B2F7FC3FA3EFB7912386D831F3B0ED40F6F82DF734C466142CF9FA",
+      "paymentAmount": 50000,
+      "entries": 1,
+      "pinnedUntil": null,
+      "tags": [
+        "validators",
+        "lunc"
+      ],
+      "poll": [
+        {
+          "text": "Yeah",
+          "votes": 0,
+          "voters": []
+        },
+        {
+          "text": "Noooo",
+          "votes": 0,
+          "voters": []
+        }
+      ],
+      "createdAt": 1785593195,
+      "expiresAt": 1786197995,
+      "votes": 0,
+      "answers": [],
+      "status": "open",
+      "chosenAnswerId": null
+    },
     {
       "id": "LUNC-S7W83UV",
       "category": "Other",
