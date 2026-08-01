@@ -213,23 +213,39 @@ window._walletScores = {};
 // The Worker can see all three sources, so it serves the finished map. This
 // upgrades the badges once it arrives; until then the Q&A-only figure stands in,
 // which is the same behaviour as before rather than an empty badge.
-let _walletScoresUpgraded = false;
+// Kept separately from window._walletScores because buildScoreMap() reassigns
+// that on every questions load, wiping the full figures back to Q&A-only. The
+// visible symptom was a badge that read SEEKER, dropped to INITIATE after
+// navigating away and back, and returned only once chat refreshed.
+let _walletScoresFull = null;
+let _walletScoresAt = 0;
+const WALLET_SCORES_TTL = 60 * 1000;
+
+// Lays the full figures back over whatever buildScoreMap just produced. Safe to
+// call as often as you like — it only touches the map.
+function applyWalletScores() {
+  if (!_walletScoresFull) return false;
+  window._walletScores = Object.assign({}, window._walletScores, _walletScoresFull);
+  return true;
+}
+window.applyWalletScores = applyWalletScores;
 
 async function upgradeWalletScores(force) {
-  if (_walletScoresUpgraded && !force) return;
+  const fresh = _walletScoresFull && (Date.now() - _walletScoresAt) < WALLET_SCORES_TTL;
+  if (fresh && !force) { applyWalletScores(); return; }
+
   const base = (typeof window.WORKER_URL !== 'undefined' && window.WORKER_URL)
     ? window.WORKER_URL
     : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   try {
     const res = await fetch(base + '/rep/scores');
-    if (!res.ok) return;
+    if (!res.ok) { applyWalletScores(); return; }
     const data = await res.json();
-    if (!data || !data.scores) return;
+    if (!data || !data.scores) { applyWalletScores(); return; }
 
-    // Merge rather than replace: a wallet the Worker has not seen yet keeps its
-    // Q&A score instead of dropping to zero.
-    window._walletScores = Object.assign({}, window._walletScores, data.scores);
-    _walletScoresUpgraded = true;
+    _walletScoresFull = data.scores;
+    _walletScoresAt = Date.now();
+    applyWalletScores();
 
     // Redraw whatever is already on screen with the corrected numbers.
     if (typeof renderBoard === 'function') { try { renderBoard(); } catch (e) {} }
@@ -237,7 +253,9 @@ async function upgradeWalletScores(force) {
       try { renderChatMessages(window._chatMsgs); } catch (e) {}
     }
   } catch (e) {
-    // Badges simply stay on the partial figure — no worse than before.
+    // Fall back to the last good copy; badges stay correct rather than
+    // reverting to the partial figure on a single failed request.
+    applyWalletScores();
     console.warn('rank scores unavailable:', e.message);
   }
 }
