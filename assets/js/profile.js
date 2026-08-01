@@ -189,6 +189,45 @@ function buildScoreMap(allQuestions) {
 // Global score map - populated after questions load
 window._walletScores = {};
 
+// ── Full REP for rank badges ────────────────────────────────────────────────
+// buildScoreMap above can only see questions.json, so it knows nothing about
+// chat messages or Draw REP. That made every badge on the site disagree with
+// the profile page: a wallet reading 655 REP / SEEKER on its own profile showed
+// 200 REP / INITIATE in chat and on the board.
+//
+// The Worker can see all three sources, so it serves the finished map. This
+// upgrades the badges once it arrives; until then the Q&A-only figure stands in,
+// which is the same behaviour as before rather than an empty badge.
+let _walletScoresUpgraded = false;
+
+async function upgradeWalletScores(force) {
+  if (_walletScoresUpgraded && !force) return;
+  const base = (typeof window.WORKER_URL !== 'undefined' && window.WORKER_URL)
+    ? window.WORKER_URL
+    : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+  try {
+    const res = await fetch(base + '/rep/scores');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.scores) return;
+
+    // Merge rather than replace: a wallet the Worker has not seen yet keeps its
+    // Q&A score instead of dropping to zero.
+    window._walletScores = Object.assign({}, window._walletScores, data.scores);
+    _walletScoresUpgraded = true;
+
+    // Redraw whatever is already on screen with the corrected numbers.
+    if (typeof renderBoard === 'function') { try { renderBoard(); } catch (e) {} }
+    if (typeof renderChatMessages === 'function' && Array.isArray(window._chatMsgs)) {
+      try { renderChatMessages(window._chatMsgs); } catch (e) {}
+    }
+  } catch (e) {
+    // Badges simply stay on the partial figure — no worse than before.
+    console.warn('rank scores unavailable:', e.message);
+  }
+}
+window.upgradeWalletScores = upgradeWalletScores;
+
 // Legacy function so existing calls don't break
 function getUserTitleFromStats(qCount, upvotes) {
   // approximate reputation from old stats
