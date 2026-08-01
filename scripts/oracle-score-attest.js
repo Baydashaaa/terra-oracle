@@ -24,6 +24,9 @@ const GAS_PRICE = 28.325;
 // lands on a boundary often enough to matter. 5% costs nothing and removes a
 // class of failure that looks like a bug.
 const FEE_HEADROOM = 1.05;
+// Applied to the figure simulation reports. Execution can cost slightly more
+// than the simulated run, and out-of-gas burns the fee and reverts.
+const GAS_HEADROOM = 1.4;
 
 // Everything earned before the seeded snapshot is already reflected in the
 // on-chain balances. Recording those again would pay the same reputation twice,
@@ -34,24 +37,40 @@ const SNAPSHOT_TS = Date.parse('2026-07-31T22:54:04.369Z');
 // secret is configured, and we stop rather than sign with an unexpected key.
 const EXPECTED_ATTESTOR = 'terra1yza5m2dkhnxxrur8cc0qrwwmqztyj54fypwzy8';
 
-// One tx per batch. Larger batches save gas but lose more work when a single
-// message fails, since the whole tx reverts.
-const BATCH_SIZE  = 8;
-const GAS_BASE    = 180_000;
-// Estimated, not simulated. Worth replacing with a real figure from
-// /cosmos/tx/v1beta1/simulate x1.4 — an out-of-gas tx burns the fee and reverts.
-const GAS_PER_MSG = 140_000;
+const BATCH_SIZE = 8;
+// Only used for the provisional tx handed to the simulator; the real limit comes
+// back from simulation.
+const GAS_BASE           = 180_000;
+const GAS_PER_MSG_GUESS  = 140_000;
 
-// An hourly job that can run for hours is a job that overlaps itself. At 8 msgs
-// per batch this caps a single run at 240 grants, which is far above real
-// traffic and still finishes in minutes.
+// An hourly job that can run for hours is a job that overlaps itself.
 const MAX_BATCHES_PER_RUN = 30;
 
-// MUST mirror ATTESTABLE_ACTIONS in the Worker. The attestor key can only record
-// actions the contract prices at zero; a paid action reverts the whole tx. Paid
-// actions are routed to `deferred-rep:` by the Worker and never appear here, but
-// legacy records predating that split still can, so the guard stays.
-const ATTESTABLE_ACTIONS = new Set(['answer', 'upvote']);
+// MUST mirror ATTESTABLE_ACTIONS in the Worker.
+//
+// All five belong here today. `chat`, `question_basic` and `question_priority`
+// carry a price but are configured with `attestor_may_record: true`, which is
+// the contract's explicit allowance for recording an action whose payment still
+// flows outside it. When an action's payment moves into PaidAction, the contract
+// grants the score itself and the action must leave this set in the same deploy
+// — otherwise it is paid twice.
+const ATTESTABLE_ACTIONS = new Set([
+  'answer', 'upvote', 'chat', 'question_basic', 'question_priority',
+]);
+
+// How to read a rejection. Anything unmatched is treated as needing a human,
+// because guessing wrong in the permissive direction loses grants silently.
+//
+// TODO: pin these against src/error.rs rather than matching on prose.
+const DECLINED = [/rate.?limit/i, /daily limit/i];       // chain said no, correctly
+const RETRY    = [/sequence/i, /insufficient fee/i, /out of gas/i,
+                  /tx already exists/i, /mempool is full/i];  // infra, try later
+
+function classify(log) {
+  if (DECLINED.some(re => re.test(log))) return 'declined';
+  if (RETRY.some(re => re.test(log)))    return 'retry';
+  return 'quarantine';
+}
 
 // ── http ────────────────────────────────────────────────────────────────────
 
@@ -59,7 +78,6 @@ async function safeFetch(url, opts = {}, timeoutMs = 20000) {
   return fetch(url, { ...opts, signal: AbortSignal.timeout(timeoutMs) });
 }
 
-// Read-only LCD call with failover. Only for queries — never for broadcast.
 async function lcdGet(path) {
   let lastErr;
   for (const base of LCD_URLS) {
@@ -132,9 +150,8 @@ function buildExecuteMsg(sender, contract, msgObj) {
 // TxRaw, so it is known BEFORE broadcast — which is what lets the queue be
 // marked in-flight with a hash the next run can look up, even if the broadcast
 // response never comes back.
-async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumber, sequence) {
+async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumber, sequence, gasLimit) {
   const enc = s => Buffer.from(s);
-  const gasLimit = GAS_BASE + GAS_PER_MSG * anyMsgs.length;
   const fee = Math.ceil(gasLimit * GAS_PRICE * FEE_HEADROOM); // no coins move, so no burn tax
 
   const txBodyP = Buffer.concat([
@@ -174,7 +191,30 @@ async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumb
   ]);
 
   const txHash = createHash('sha256').update(txRawP).digest('hex').toUpperCase();
-  return { txBytes: txRawP.toString('base64'), txHash };
+  return { txBytes: txRawP.toString('base64'), txHash, fee, gasLimit };
+}
+
+// Runs the tx against a node without publishing it. Costs nothing, so a bad
+// record can be found and closed without ever burning a fee on a revert — and
+// the gas figure comes back measured instead of guessed.
+async function simulate(txBytes) {
+  let lastErr;
+  for (const base of LCD_URLS) {
+    try {
+      const res = await safeFetch(`${base}/cosmos/tx/v1beta1/simulate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tx_bytes: txBytes }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.gas_info?.gas_used) {
+        return { ok: true, gasUsed: parseInt(data.gas_info.gas_used) };
+      }
+      const log = data?.message || data?.error || JSON.stringify(data).slice(0, 400);
+      return { ok: false, log };
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('all LCD endpoints failed to simulate');
 }
 
 // Single endpoint on purpose: retrying a broadcast against a second node after
@@ -196,15 +236,11 @@ async function broadcastRaw(txBytes, expectedHash) {
   const txHash = data?.tx_response?.txhash || data?.txhash;
   if (!txHash) throw new Error('broadcast returned no txhash: ' + JSON.stringify(data).slice(0, 300));
   if (txHash.toUpperCase() !== expectedHash) {
-    // Would mean the local encoding and the node disagree — every in-flight
-    // marker written from now on would point at the wrong tx.
     throw new Error(`hash mismatch: node ${txHash}, local ${expectedHash}`);
   }
   return txHash;
 }
 
-// success | failed | unknown. `unknown` means the node has not seen it yet,
-// which is not the same as it never existing.
 async function txOutcome(txHash) {
   const { status, body } = await lcdGet(`/cosmos/tx/v1beta1/txs/${txHash}`);
   if (status === 404 || !body?.tx_response?.txhash) return { state: 'unknown' };
@@ -213,8 +249,6 @@ async function txOutcome(txHash) {
   return { state: 'success' };
 }
 
-// A tx accepted into the mempool has not executed yet. Marking records as done
-// before the block confirms would drop grants on a failed tx, so we wait.
 async function confirm(txHash) {
   for (let i = 0; i < 12; i++) {
     await new Promise(r => setTimeout(r, 5000));
@@ -269,7 +303,7 @@ async function setStatus(keys, status, txHash, note) {
 // Retried: the call is idempotent Worker-side, and a failure here after a
 // confirmed tx is the one path that could pay twice. If every attempt fails the
 // records stay in-flight and the next run reconciles them against the chain.
-async function markRecorded(keys, txHash) {
+async function markRecorded(keys, txHash, outcome, note) {
   if (!keys.length) return 0;
   let marked = 0;
   for (let i = 0; i < keys.length; i += 200) {
@@ -279,7 +313,7 @@ async function markRecorded(keys, txHash) {
       try {
         const d = await workerFetch('/rep/mark-recorded', {
           method: 'POST',
-          body: JSON.stringify({ keys: chunk, txHash }),
+          body: JSON.stringify({ keys: chunk, txHash, outcome, note }),
         });
         marked += d.marked || 0;
         lastErr = null;
@@ -294,9 +328,6 @@ async function markRecorded(keys, txHash) {
   return marked;
 }
 
-// Records left in-flight by a previous run: the tx was signed and probably sent,
-// but the outcome was never written back. Resolve each against the chain before
-// touching the queue, otherwise they would be re-recorded and paid twice.
 async function reconcileInflight(records) {
   if (!records.length) return;
   console.log(`reconciling ${records.length} in-flight record(s)`);
@@ -307,7 +338,6 @@ async function reconcileInflight(records) {
     if (!byTx.has(r.txHash)) byTx.set(r.txHash, []);
     byTx.get(r.txHash).push(r);
   }
-  // No hash means the marker was written but the tx never got built. Safe to requeue.
   if (noHash.length) {
     await setStatus(noHash.map(r => r.key), 'pending', null, 'in-flight without tx hash');
     console.log(`  ${noHash.length} requeued (no hash)`);
@@ -342,6 +372,12 @@ async function readAccount(sender) {
   };
 }
 
+async function readBalance(addr) {
+  const { body } = await lcdGet(`/cosmos/bank/v1beta1/balances/${addr}`);
+  const c = (body?.balances || []).find(b => b.denom === 'uluna');
+  return c ? BigInt(c.amount) : 0n;
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -351,8 +387,7 @@ async function main() {
   }
   console.log('Oracle Score attestor —', new Date().toISOString());
 
-  // Before the queue is touched: a wrong secret must not get as far as writing
-  // to it.
+  // Before the queue is touched: a wrong secret must not get as far as writing to it.
   const { privateKey, publicKey } = await deriveKeypair(MNEMONIC);
   const sender = pubkeyToAddress(publicKey);
   if (sender !== EXPECTED_ATTESTOR) {
@@ -360,15 +395,23 @@ async function main() {
   }
   console.log(`attestor: ${sender}`);
 
+  // A dry attestor fails every tx on the fee, which reads as a contract problem
+  // in the logs. Say it plainly and early instead.
+  const balance = await readBalance(sender);
+  const luncLeft = Number(balance / 1_000_000n);
+  const grantsLeft = Math.floor(luncLeft / 5);
+  if (grantsLeft < 500) {
+    console.warn(`::warning::attestor balance ${luncLeft} LUNC — roughly ${grantsLeft} more grants. Top it up.`);
+  } else {
+    console.log(`balance: ${luncLeft} LUNC (~${grantsLeft} grants)`);
+  }
+
   const first = await fetchQueue('pending,inflight');
   await reconcileInflight(first.filter(r => r.status === 'inflight'));
 
   const pending = await fetchQueue('pending');
   console.log(`queue: ${pending.length} pending`);
 
-  // A record whose ts cannot be read cannot be placed relative to the snapshot,
-  // and guessing either way is a real risk: too early pays twice, too late
-  // drops a grant. Left queued and reported.
   const tsOf = r => (typeof r.ts === 'number' ? r.ts : Date.parse(r.ts));
   const undated = pending.filter(r => !Number.isFinite(tsOf(r)));
   for (const r of undated) console.warn(`unusable ts on ${r.key} (${JSON.stringify(r.ts)}) — leaving queued`);
@@ -377,8 +420,6 @@ async function main() {
 
   const stale = dated.filter(r => tsOf(r) < SNAPSHOT_TS);
   if (stale.length) {
-    // Already covered by the seed. Clear them so they stop being re-read, but
-    // never record them.
     console.log(`skipping ${stale.length} pre-snapshot record(s)`);
     await markRecorded(stale.map(r => r.key), 'pre-snapshot');
   }
@@ -392,31 +433,75 @@ async function main() {
 
   const acct = await readAccount(sender);
   const accountNumber = acct.accountNumber;
-  // Sequence is tracked locally: SYNC broadcast returns before the node updates
-  // it, so re-reading between batches would give a stale value. It is re-read
-  // from the chain after any failure, where the local value stops being trusted.
   let sequence = acct.sequence;
 
-  let recorded = 0, quarantined = 0, deferred = 0;
+  let recorded = 0, declined = 0, quarantined = 0, deferred = 0;
 
-  // Signs, marks in-flight, sends, waits, marks recorded. Returns true if the
-  // grants landed. The in-flight marker is written before the send so that no
-  // outcome — including the process being killed mid-flight — can leave a
-  // confirmed tx looking like un-recorded work.
-  async function submit(records) {
-    const msgs = records.map(r => buildExecuteMsg(sender, CONTRACT, {
-      record_action: { user: r.wallet, action: r.action, ref_id: r.refId },
-    }));
-    const { txBytes, txHash } = await buildTx(
-      privateKey, publicKey, sender, msgs,
-      `oracle-score:attest:${records.length}`, accountNumber, sequence,
+  const msgsFor = records => records.map(r => buildExecuteMsg(sender, CONTRACT, {
+    record_action: { user: r.wallet, action: r.action, ref_id: r.refId },
+  }));
+
+  async function sign(records, gasLimit) {
+    return buildTx(
+      privateKey, publicKey, sender, msgsFor(records),
+      `oracle-score:attest:${records.length}`, accountNumber, sequence, gasLimit,
     );
+  }
+
+  // Decides what can actually be sent, without sending anything.
+  //
+  // A whole tx reverts on one bad message, so a failing batch says nothing about
+  // which record caused it. Simulation answers that for free: re-simulate one at
+  // a time and whatever fails alone is the culprit. If every record passes alone
+  // but the batch still fails, the limit is cumulative — three answers to the
+  // same question against a daily_limit of 3 — and the only honest read is to
+  // send them separately and let the chain draw the line.
+  async function plan(records) {
+    const provisional = GAS_BASE + GAS_PER_MSG_GUESS * records.length;
+    const { txBytes } = await sign(records, provisional);
+    const sim = await simulate(txBytes);
+    if (sim.ok) {
+      return { mode: 'batch', good: records, bad: [], gasLimit: Math.ceil(sim.gasUsed * GAS_HEADROOM) };
+    }
+    if (records.length === 1) {
+      return { mode: 'batch', good: [], bad: [{ r: records[0], log: sim.log }], gasLimit: 0 };
+    }
+    const good = [], bad = [];
+    for (const r of records) {
+      const one = await plan([r]);
+      if (one.good.length) good.push(r); else bad.push(...one.bad);
+    }
+    if (!good.length) return { mode: 'batch', good: [], bad, gasLimit: 0 };
+    if (good.length === records.length) {
+      return { mode: 'singles', good, bad, gasLimit: 0 };
+    }
+    const retry = await plan(good);
+    return { mode: retry.mode, good: retry.good, bad: [...bad, ...retry.bad], gasLimit: retry.gasLimit };
+  }
+
+  async function send(records, gasLimit) {
+    const { txBytes, txHash, fee } = await sign(records, gasLimit);
     await setStatus(records.map(r => r.key), 'inflight', txHash);
     await broadcastRaw(txBytes, txHash);
     await confirm(txHash);
     sequence++;
     const marked = await markRecorded(records.map(r => r.key), txHash);
-    return { txHash, marked };
+    return { txHash, marked, fee };
+  }
+
+  async function close(r, log) {
+    const verdict = classify(log);
+    if (verdict === 'declined') {
+      await markRecorded([r.key], null, 'declined', log.slice(0, 300));
+      declined++;
+      console.log(`  declined ${r.action} / ${r.wallet.slice(0, 12)} — ${log.slice(0, 120)}`);
+    } else if (verdict === 'retry') {
+      console.warn(`  transient on ${r.key}, staying queued — ${log.slice(0, 120)}`);
+    } else {
+      await setStatus([r.key], 'quarantined', null, log.slice(0, 300));
+      quarantined++;
+      console.error(`  quarantined ${r.key} (${r.action} / ${r.wallet.slice(0, 12)}): ${log.slice(0, 160)}`);
+    }
   }
 
   const batches = [];
@@ -427,43 +512,43 @@ async function main() {
   }
 
   for (let b = 0; b < batches.length; b++) {
-    const batch = batches[b];
+    const label = `batch ${b + 1}/${batches.length}`;
     try {
-      const { txHash, marked } = await submit(batch);
-      recorded += marked;
-      console.log(`batch ${b + 1}/${batches.length}: ${batch.length} msg → ${txHash} (marked ${marked})`);
-    } catch (err) {
-      console.error(`batch ${b + 1}/${batches.length} failed: ${err.message}`);
-      // The whole tx reverts on one bad message, so a failed batch says nothing
-      // about which record caused it. Re-send one at a time: whatever fails
-      // alone is the culprit, and the other seven still get through instead of
-      // waiting behind it forever.
-      sequence = (await readAccount(sender)).sequence;
-      if (batch.length === 1) {
-        await setStatus([batch[0].key], 'quarantined', null, err.message.slice(0, 300));
-        quarantined++;
-        console.error(`  quarantined ${batch[0].key} (${batch[0].action} / ${batch[0].wallet})`);
-        continue;
-      }
-      console.log(`  isolating ${batch.length} record(s) one by one`);
-      for (const r of batch) {
-        try {
-          const { marked } = await submit([r]);
-          recorded += marked;
-        } catch (e2) {
-          sequence = (await readAccount(sender)).sequence;
-          await setStatus([r.key], 'quarantined', null, e2.message.slice(0, 300));
-          quarantined++;
-          console.error(`  quarantined ${r.key} (${r.action} / ${r.wallet}): ${e2.message}`);
+      const p = await plan(batches[b]);
+      for (const bad of p.bad) await close(bad.r, bad.log);
+
+      if (!p.good.length) { console.log(`${label}: nothing sendable`); continue; }
+
+      if (p.mode === 'singles') {
+        console.log(`${label}: cumulative limit, sending ${p.good.length} separately`);
+        for (const r of p.good) {
+          try {
+            const one = await plan([r]);
+            if (!one.good.length) { for (const bad of one.bad) await close(bad.r, bad.log); continue; }
+            const { marked } = await send([r], one.gasLimit);
+            recorded += marked;
+          } catch (e) {
+            sequence = (await readAccount(sender)).sequence;
+            await close(r, e.message);
+          }
+          await new Promise(x => setTimeout(x, 2000));
         }
-        await new Promise(r2 => setTimeout(r2, 2000));
+      } else {
+        const { txHash, marked, fee } = await send(p.good, p.gasLimit);
+        recorded += marked;
+        console.log(`${label}: ${p.good.length} msg → ${txHash} (marked ${marked}, fee ${Math.round(fee / 1e6)} LUNC)`);
       }
+    } catch (err) {
+      // Anything that escapes plan/send is infrastructure, not a bad record:
+      // the local sequence is no longer trustworthy, so re-read it and move on.
+      console.error(`${label} failed: ${err.message}`);
+      sequence = (await readAccount(sender)).sequence;
     }
     await new Promise(r => setTimeout(r, 2000));
   }
 
-  const left = work.length - recorded - quarantined;
-  console.log(`done: ${recorded} recorded, ${quarantined} quarantined, ${left} left pending` +
+  const left = work.length - recorded - declined - quarantined;
+  console.log(`done: ${recorded} recorded, ${declined} declined, ${quarantined} quarantined, ${left} left pending` +
               (deferred ? ` (${deferred} over the per-run cap, next run)` : ''));
   if (quarantined) process.exitCode = 1;
 }
