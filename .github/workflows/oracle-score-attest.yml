@@ -1,0 +1,33 @@
+name: Oracle Score attestor
+
+on:
+  schedule:
+    - cron: '20 * * * *'   # hourly, offset off the hour to avoid runner congestion
+  workflow_dispatch:        # manual runs for testing
+
+# Two overlapping runs would both read the same pending records and try to
+# record them twice, so only one may be in flight at a time.
+concurrency:
+  group: oracle-score-attest
+  cancel-in-progress: false
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm install node-fetch bip39 bip32 tiny-secp256k1
+
+      - name: Drain pending REP queue
+        env:
+          WORKER_URL: https://terra-oracle-questions.vladislav-baydan.workers.dev
+          ACTIONS_SECRET: ${{ secrets.ACTIONS_SECRET }}
+          ATTESTOR_MNEMONIC: ${{ secrets.ATTESTOR_MNEMONIC }}
+          ORACLE_SCORE_CONTRACT: terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls
+        run: node scripts/oracle-score-attest.js
