@@ -58,15 +58,33 @@ const ATTESTABLE_ACTIONS = new Set([
   'answer', 'upvote', 'chat', 'question_basic', 'question_priority',
 ]);
 
-// How to read a rejection. Anything unmatched is treated as needing a human,
+// How to read a rejection. Strings are taken verbatim from src/error.rs; keep
+// them in step with it. Anything unmatched is treated as needing a human,
 // because guessing wrong in the permissive direction loses grants silently.
-//
-// TODO: pin these against src/error.rs rather than matching on prose.
-const DECLINED = [/rate.?limit/i, /daily limit/i];       // chain said no, correctly
-const RETRY    = [/sequence/i, /insufficient fee/i, /out of gas/i,
-                  /tx already exists/i, /mempool is full/i];  // infra, try later
 
+// The contract refused on purpose and no grant was due. Terminal, not an error.
+//   ContractError::RateLimited
+const DECLINED = [/Daily limit reached for this reference/];
+
+// Nothing to do with any particular record — every message in the run would hit
+// these. Isolating record-by-record would walk the entire queue into quarantine
+// over a paused contract or a rotated key, so the run aborts and touches nothing.
+//   ContractError::Unauthorized — sender is not the configured attestor
+//   ContractError::Paused
+const FATAL = [/Unauthorized/, /Contract is paused/];
+
+// Infrastructure, not verdicts. Left queued for the next run.
+const RETRY = [/sequence/i, /insufficient fee/i, /out of gas/i,
+               /tx already exists/i, /mempool is full/i];
+
+// Everything else is specific to one record and permanent until someone looks:
+//   UnknownAction   — the Worker queued an action the contract has no config for
+//   NotFree         — the action moved to PaidAction; recording it now would
+//                     double-pay whoever already paid through the contract
+//   DeltaTooLarge   — configured weight exceeds max_delta
+//   Std(...)        — malformed wallet address and similar
 function classify(log) {
+  if (FATAL.some(re => re.test(log)))    return 'fatal';
   if (DECLINED.some(re => re.test(log))) return 'declined';
   if (RETRY.some(re => re.test(log)))    return 'retry';
   return 'quarantine';
@@ -463,6 +481,9 @@ async function main() {
     if (sim.ok) {
       return { mode: 'batch', good: records, bad: [], gasLimit: Math.ceil(sim.gasUsed * GAS_HEADROOM) };
     }
+    // Checked before any isolation work: a run-wide failure must not be mistaken
+    // for eight bad records in a row.
+    if (classify(sim.log) === 'fatal') throw new Error('FATAL ' + sim.log.slice(0, 300));
     if (records.length === 1) {
       return { mode: 'batch', good: [], bad: [{ r: records[0], log: sim.log }], gasLimit: 0 };
     }
@@ -491,6 +512,7 @@ async function main() {
 
   async function close(r, log) {
     const verdict = classify(log);
+    if (verdict === 'fatal') throw new Error('FATAL ' + log.slice(0, 300));
     if (verdict === 'declined') {
       await markRecorded([r.key], null, 'declined', log.slice(0, 300));
       declined++;
@@ -539,8 +561,11 @@ async function main() {
         console.log(`${label}: ${p.good.length} msg → ${txHash} (marked ${marked}, fee ${Math.round(fee / 1e6)} LUNC)`);
       }
     } catch (err) {
-      // Anything that escapes plan/send is infrastructure, not a bad record:
-      // the local sequence is no longer trustworthy, so re-read it and move on.
+      // A fatal verdict is not this batch's problem and will repeat on every
+      // remaining one. Stop while the queue is still intact.
+      if (err.message.startsWith('FATAL')) throw err;
+      // Anything else that escapes plan/send is infrastructure, not a bad
+      // record: the local sequence is no longer trustworthy, so re-read it.
       console.error(`${label} failed: ${err.message}`);
       sequence = (await readAccount(sender)).sequence;
     }
