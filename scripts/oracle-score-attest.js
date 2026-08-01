@@ -31,7 +31,7 @@ const GAS_HEADROOM = 1.4;
 // Everything earned before the seeded snapshot is already reflected in the
 // on-chain balances. Recording those again would pay the same reputation twice,
 // so the queue is only drained from the snapshot forward.
-const SNAPSHOT_TS = Date.parse('2026-07-31T22:54:04.369Z');
+const SNAPSHOT_TS = Date.parse('2026-08-01T14:47:53.167Z');
 
 // The attestor address the mnemonic must derive. A mismatch means the wrong
 // secret is configured, and we stop rather than sign with an unexpected key.
