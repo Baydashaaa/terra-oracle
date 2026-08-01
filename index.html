@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202607154000">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607254000">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -1368,8 +1368,35 @@
   </label>
  </div>
  <style>
-  #tier-picker .tier-opt:has(input:checked){border-color:var(--accent);background:var(--surface2);}
-  #tier-picker .tier-opt:has(input[value="priority"]:checked){border-color:var(--gold);}
+  /* Selected tariff. A 1px border change was the only signal before, which is
+     easy to miss on a panel this wide — the ring, tint and lift make the choice
+     readable without looking for the radio dot.
+     --tier carries the tariff's own colour so the two rules below stay to
+     geometry and never repeat a hex value. */
+  #tier-picker .tier-opt{--tier:var(--accent);transition:border-color .18s ease,background .18s ease,box-shadow .18s ease,transform .18s ease;}
+  #tier-picker .tier-opt:has(input[value="priority"]){--tier:var(--gold);}
+
+  #tier-picker .tier-opt:hover:not(:has(input:checked)){
+    border-color:color-mix(in srgb,var(--tier) 45%,transparent);
+    transform:translateY(-1px);
+  }
+  #tier-picker .tier-opt:has(input:checked){
+    border-color:var(--tier);
+    background:color-mix(in srgb,var(--tier) 9%,var(--surface2));
+    box-shadow:0 0 0 1px var(--tier),0 8px 24px -10px color-mix(in srgb,var(--tier) 70%,transparent);
+    transform:translateY(-2px);
+  }
+  /* Keyboard focus has to stay visible: the radio itself is 14px and easy to
+     lose once the label is styled this heavily. */
+  #tier-picker .tier-opt:has(input:focus-visible){
+    outline:2px solid color-mix(in srgb,var(--tier) 70%,transparent);
+    outline-offset:2px;
+  }
+  @media (prefers-reduced-motion:reduce){
+    #tier-picker .tier-opt{transition:none;}
+    #tier-picker .tier-opt:hover:not(:has(input:checked)),
+    #tier-picker .tier-opt:has(input:checked){transform:none;}
+  }
 
   /* ── PRIORITY PIN ─────────────────────────────────────────── */
   @keyframes pinBreathe {
