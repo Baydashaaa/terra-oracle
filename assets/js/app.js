@@ -863,11 +863,26 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   const tags = tagsRaw ? tagsRaw.split(',').filter(Boolean) : [];
   const _userTitle = (typeof getUserTitle === 'function' && wallet) ? getUserTitle(wallet) : null;
   const _titleLabel = _userTitle ? _userTitle.name : 'Seeker';
-  // Poll options
-  const _pollRaw = document.getElementById('poll-options-hidden')?.value || '';
-  let pollOptions = [];
-  try { pollOptions = JSON.parse(_pollRaw).filter(o => o.trim()); } catch {}
-  const poll = pollOptions.length >= 2 ? pollOptions.map(o => ({ text: o, votes: 0, voters: [] })) : null;
+  // ── Poll options ──────────────────────────────────────────────────────────
+  // Read straight from the inputs. The hidden field is only ever as good as the
+  // last oninput that fired, so anything that sets a value without firing it —
+  // autofill, a paste handled oddly, a script — leaves the poll silently empty
+  // and the question posts without it. The inputs themselves are what the user
+  // actually sees, so they are the honest source at submit time.
+  let pollOptions = Array.from(
+    document.querySelectorAll('#poll-options-list input[type="text"]')
+  ).map(el => (el.value || '').trim()).filter(Boolean);
+
+  // Fall back to the hidden field if the list is not in the DOM for some reason.
+  if (!pollOptions.length) {
+    try {
+      const raw = document.getElementById('poll-options-hidden')?.value || '';
+      pollOptions = JSON.parse(raw).map(o => String(o).trim()).filter(Boolean);
+    } catch {}
+  }
+  const poll = pollOptions.length >= 2
+    ? pollOptions.slice(0, 5).map(o => ({ text: o, votes: 0, voters: [] }))
+    : null;
 
   try {
     const res = await fetch(`${WORKER_URL}/questions`, {
