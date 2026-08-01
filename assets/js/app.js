@@ -161,6 +161,9 @@ async function loadQuestionsFromWorker() {
     // Build score map for rank badges
     if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
     renderBoard();
+    // buildScoreMap only sees questions.json. Pull the full figure (chat + Draw
+    // included) from the Worker and redraw, so badges match the profile page.
+    if (typeof upgradeWalletScores === 'function') upgradeWalletScores();
     // Prefetch profiles for question/answer authors (background, no re-render)
     if (typeof prefetchProfiles === 'function') {
       const addrs = [];
