@@ -1993,13 +1993,19 @@ function renderChatMessages(msgs) {
     const rankBadge = m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function'
       ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : '';
 
+    // Avatar ring in the rank colour — the same signal as the badge, readable
+    // at a glance while scrolling.
+    const ring = (m.fullAddr && window._walletScores && typeof getRankRingCSS === 'function')
+      ? getRankRingCSS(window._walletScores[m.fullAddr] || 0)
+      : { border: 'rgba(84,147,247,0.2)', shadow: 'none' };
+
     return `
     <div class="chat-page-msg" id="msg-${m.txHash}" style="padding:14px 0;border-bottom:1px solid rgba(30,51,88,0.35);">
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <!-- Avatar (click → profile) -->
-        <div onclick="openUserProfile('${m.fullAddr || ''}')" title="View profile" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.2),rgba(123,92,255,0.25));border:1px solid rgba(84,147,247,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s;"
-          onmouseover="this.style.transform='scale(1.08)';this.style.borderColor='var(--accent)'"
-          onmouseout="this.style.transform='scale(1)';this.style.borderColor='rgba(84,147,247,0.2)'">
+        <div onclick="openUserProfile('${m.fullAddr || ''}')" title="View profile" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(84,147,247,0.2),rgba(123,92,255,0.25));border:2px solid ${ring.border};box-shadow:${ring.shadow};display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s;"
+          onmouseover="this.style.transform='scale(1.08)'"
+          onmouseout="this.style.transform='scale(1)'">
           ${avatarHtml}
         </div>
         <!-- Content -->
