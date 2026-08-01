@@ -160,9 +160,10 @@ async function loadQuestionsFromWorker() {
     _questionsLoaded = true;
     // Build score map for rank badges
     if (typeof buildScoreMap === 'function') window._walletScores = buildScoreMap(questions);
+    // buildScoreMap sees only questions.json, so it just overwrote the full
+    // figures. Put them back before painting, then refresh them in background.
+    if (typeof applyWalletScores === 'function') applyWalletScores();
     renderBoard();
-    // buildScoreMap only sees questions.json. Pull the full figure (chat + Draw
-    // included) from the Worker and redraw, so badges match the profile page.
     if (typeof upgradeWalletScores === 'function') upgradeWalletScores();
     // Prefetch profiles for question/answer authors (background, no re-render)
     if (typeof prefetchProfiles === 'function') {
@@ -2357,6 +2358,10 @@ async function loadChatFromChain() {
     } catch(e) { continue; }
   }
   msgs.sort((a, b) => a.ts - b.ts);
+  // Badges and avatar rings read window._walletScores, which a questions reload
+  // may have reset in the meantime.
+  if (typeof applyWalletScores === 'function') applyWalletScores();
+  if (typeof upgradeWalletScores === 'function') upgradeWalletScores();
   renderChatMessages(msgs);
   // Prefetch profiles for chat authors (background, no re-render)
   if (typeof prefetchProfiles === 'function') {
