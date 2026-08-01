@@ -163,6 +163,21 @@ function getRankBadgeHTML(score) {
   return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
 }
 
+// Avatar ring in the rank colour. Returns the border and glow only, so the
+// caller keeps control of size, layout and hover behaviour.
+// INITIATE stays deliberately dim: a ring everyone has signals nothing, and a
+// bright one would make the starting rank look like an achievement.
+function getRankRingCSS(score) {
+  const rank = (score === undefined || score === null) ? null : getRank(score);
+  if (!rank) return { border: 'rgba(84,147,247,0.2)', shadow: 'none' };
+  const isInitiate = rank.name === 'INITIATE';
+  return {
+    border: isInitiate ? `${rank.color}44` : rank.color,
+    shadow: isInitiate ? 'none' : `0 0 8px ${rank.glow}`,
+  };
+}
+window.getRankRingCSS = getRankRingCSS;
+
 // Build a score map from allQuestions: wallet → {questions, answers, upvotes}
 function buildScoreMap(allQuestions) {
   const map = {};
