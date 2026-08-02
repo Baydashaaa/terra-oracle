@@ -583,11 +583,12 @@ async function loadStatsData() {
       ? window.WORKER_URL
       : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
 
-    const [qStats, chatStats, drawRepData, streakData] = await Promise.all([
+    const [qStats, chatStats, drawRepData, streakData, chain] = await Promise.all([
       typeof fetchQuestionStats === 'function' ? fetchQuestionStats(wallet) : Promise.resolve({ myQuestions: [], myAnswers: [], totalUpvotes: 0 }),
       typeof fetchChatStats     === 'function' ? fetchChatStats(wallet)     : Promise.resolve({ msgCount: 0 }),
       fetch(`${WORKER_URL_LOCAL}/rep/draw?wallet=${wallet}`).then(r => r.ok ? r.json() : { total: 0, history: [] }).catch(() => ({ total: 0, history: [] })),
       fetch(`${WORKER_URL_LOCAL}/streak?wallet=${wallet}`).then(r => r.ok ? r.json() : { multiplier: 1.0 }).catch(() => ({ multiplier: 1.0 })),
+      typeof fetchOnChainScore === 'function' ? fetchOnChainScore(wallet).catch(() => null) : Promise.resolve(null),
     ]);
 
     const { myQuestions = [], myAnswers = [], totalUpvotes = 0, answerUpvotes } = qStats;
@@ -596,15 +597,20 @@ async function loadStatsData() {
     const drawRepTotal   = drawRepData?.total     || 0;
     const drawRepHistory = drawRepData?.history   || [];
 
-    // All-time REP (unified formula — same as calcReputation in profile.js).
-    // Displayed/rank REP is EFFECTIVE REP = base × streak multiplier (canonical
-    // rule in profile.js) — identical to the profile page and leaderboard.
+    // The per-category figures below are an ITEMISATION — they answer "where did
+    // this come from", which the contract cannot, since it stores a balance and
+    // not its provenance. They are not the source of the total.
     const repQuestions = myQuestions.length * 40;
     const repAnswers   = myAnswers.length   * 40;
     const repUpvotes   = scoredUpvotes      * 20;
     const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
-    const baseRep      = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
+
+    // The total comes from the contract. Recomputing it here is what made this
+    // page disagree with the profile; the breakdown may briefly add up to more
+    // while grants sit in the queue, and that is the honest state of things.
+    const estimate     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
+    const baseRep      = chain ? chain.rank : estimate;
     const streakMult   = streakData?.multiplier || 1.0;
     const totalRep     = (typeof getEffectiveRep === 'function') ? getEffectiveRep(baseRep, streakMult) : Math.round(baseRep * streakMult);
 
