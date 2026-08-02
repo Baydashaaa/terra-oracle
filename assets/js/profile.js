@@ -201,9 +201,25 @@ window.oracleScoreTxUrl = oracleScoreTxUrl;
 // caller keeps control of size, layout and hover behaviour.
 // INITIATE stays deliberately dim: a ring everyone has signals nothing, and a
 // bright one would make the starting rank look like an achievement.
-async function renderOnChainPanel(wallet, baseRep, streakMultiplier) {
+// How many grants are queued but not yet written. A count, not a REP figure:
+// pricing the queue would mean reimplementing the contract's weights out here,
+// which is the duplication this whole change exists to remove.
+async function fetchPendingCount(wallet) {
+  const base = (typeof window.WORKER_URL !== 'undefined' && window.WORKER_URL)
+    ? window.WORKER_URL
+    : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+  try {
+    const res = await fetch(base + '/rep/scores');
+    if (!res.ok) return 0;
+    const d = await res.json();
+    return (d && d.pending && d.pending[wallet]) || 0;
+  } catch (e) { return 0; }
+}
+window.fetchPendingCount = fetchPendingCount;
+
+function renderOnChainPanel(chain, streakMultiplier, pendingCount) {
   const host = document.getElementById('profile-rep-big');
-  if (!host || !wallet) return;
+  if (!host) return;
 
   let box = document.getElementById('profile-onchain');
   if (!box) {
@@ -212,33 +228,30 @@ async function renderOnChainPanel(wallet, baseRep, streakMultiplier) {
     box.style.cssText = 'margin-top:6px;font-size:11px;line-height:1.5;color:var(--text-dim);text-align:right;';
     host.parentNode.appendChild(box);
   }
-  box.textContent = 'checking chain…';
 
-  const s = await fetchOnChainScore(wallet);
-  if (!s) {
-    // A node hiccup should not read as "you have no reputation".
-    box.innerHTML = '<span style="opacity:.7">on-chain figure unavailable</span>';
+  if (!chain) {
+    // The number above came from the local estimate, so say so rather than
+    // letting it pass for a settled figure.
+    box.innerHTML = '<span style="opacity:.7">chain unreachable — showing an estimate</span>';
     return;
   }
 
-  // Like for like: both sides are the base figure, before any streak bonus.
-  const pending = Math.max(0, Math.round(baseRep || 0) - s.rank);
-  const mult = streakMultiplier || 1.0;
   const link = '<a href="' + oracleScoreTxUrl() + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">verify ↗</a>';
+  const mult = streakMultiplier || 1.0;
 
-  const pendingNote = pending > 0
-    ? '<div style="opacity:.7">' + pending.toLocaleString() + ' REP queued, written within the hour</div>'
+  const queued = pendingCount > 0
+    ? '<div style="opacity:.7">' + pendingCount + (pendingCount === 1 ? ' action' : ' actions') + ' queued, written within the hour</div>'
     : '';
-  // The streak bonus is a display rule the frontend applies, never something the
-  // contract holds. Saying so stops the two numbers looking like a discrepancy.
+  // Named explicitly so the two figures never look like a discrepancy: the
+  // contract holds the base, the bonus is applied here.
   const multNote = mult > 1.0
     ? '<div style="opacity:.7">streak bonus ×' + mult + ' applied on top, off-chain</div>'
     : '';
 
   box.innerHTML =
-    '<div><b style="color:var(--green);">' + s.rank.toLocaleString() + '</b> settled on-chain · ' + link + '</div>' +
-    '<div style="opacity:.7">weight ' + s.weight.toLocaleString() + ' — decays with a 90-day half-life</div>' +
-    pendingNote + multNote;
+    '<div><b style="color:var(--green);">' + chain.rank.toLocaleString() + '</b> on-chain · ' + link + '</div>' +
+    '<div style="opacity:.7">weight ' + chain.weight.toLocaleString() + ' — decays with a 90-day half-life</div>' +
+    queued + multNote;
 }
 window.renderOnChainPanel = renderOnChainPanel;
 
@@ -848,7 +861,9 @@ function renderProfilePage() {
     fetchChatStats(address).catch(() => ({ msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {}, qaCount: 0 })),
     fetchStreakData(address).catch(() => null),
     fetchDrawRep(address).catch(() => null),
-  ]).then(([qStats, chatStats, streakData, drawRep]) => {
+    fetchOnChainScore(address).catch(() => null),
+    fetchPendingCount(address).catch(() => 0),
+  ]).then(([qStats, chatStats, streakData, drawRep, chain, pendingCount]) => {
     const { myQuestions, myAnswers, totalUpvotes, topAnswers, allQuestions } = qStats;
 
     document.getElementById('stat-questions').textContent = myQuestions.length;
@@ -858,7 +873,12 @@ function renderProfilePage() {
     document.getElementById('stat-messages').textContent = chatStats.msgCount;
 
     // Calculate reputation + rank
-    const baseReputation = calcReputation(qStats, chatStats) + (drawRep?.total || 0);
+    // The contract is the figure. calcReputation stays only as a fallback for
+    // when the chain cannot be reached — six copies of one formula is how the
+    // site ended up showing four different numbers for the same wallet, and the
+    // only way to stop that is for the copies never to be authoritative.
+    const estimate = calcReputation(qStats, chatStats) + (drawRep?.total || 0);
+    const baseReputation = chain ? chain.rank : estimate;
     const streakMultiplier = streakData?.multiplier || 1.0;
     const reputation = getEffectiveRep(baseReputation, streakMultiplier);
     const rank       = getRank(reputation);
@@ -888,7 +908,7 @@ function renderProfilePage() {
     // baseReputation, not `reputation`: the contract stores the unmultiplied
     // figure, so comparing it against a streak-multiplied number would report a
     // permanent shortfall for anyone on a streak.
-    try { renderOnChainPanel(address, baseReputation, streakMultiplier); }
+    try { renderOnChainPanel(chain, streakMultiplier, pendingCount); }
     catch (e) { console.warn('on-chain panel:', e); }
     // Perk badge: current discount, or the NEXT rank that unlocks one
     const perkEl = document.getElementById('profile-next-perk');
