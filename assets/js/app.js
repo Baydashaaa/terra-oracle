@@ -1356,7 +1356,9 @@ async function getQuestionDiscountPct(addr) {
     if (qStats) {
       const nQ = (qStats.myQuestions || []).length;
       const nA = (qStats.myAnswers || []).length;
-      const up = qStats.totalUpvotes || 0;
+      // Only answer upvotes score. Using the combined tally here inflated the
+      // figure the discount is derived from.
+      const up = (qStats.answerUpvotes !== undefined ? qStats.answerUpvotes : qStats.totalUpvotes) || 0;
       rep += nQ * 40 + nA * 40 + up * 20;
     }
     // Chat messages
