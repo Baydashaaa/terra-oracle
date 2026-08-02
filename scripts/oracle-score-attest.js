@@ -48,14 +48,17 @@ const MAX_BATCHES_PER_RUN = 30;
 
 // MUST mirror ATTESTABLE_ACTIONS in the Worker.
 //
-// All five belong here today. `chat`, `question_basic` and `question_priority`
-// carry a price but are configured with `attestor_may_record: true`, which is
-// the contract's explicit allowance for recording an action whose payment still
-// flows outside it. When an action's payment moves into PaidAction, the contract
-// grants the score itself and the action must leave this set in the same deploy
-// — otherwise it is paid twice.
+// `chat`, `question_basic` and `question_priority` carry a price but are
+// configured with `attestor_may_record: true`, which is the contract's explicit
+// allowance for recording an action whose payment still flows outside it. When
+// an action's payment moves into PaidAction, the contract grants the score
+// itself and the action must leave this set in the same deploy — otherwise it is
+// paid twice.
+//
+// `draw` covers NFT mints, whose grant is 25, 125 or 250 by tier. It is the one
+// action here that carries its own amount; see the `amount` handling below.
 const ATTESTABLE_ACTIONS = new Set([
-  'answer', 'upvote', 'chat', 'question_basic', 'question_priority',
+  'answer', 'upvote', 'chat', 'question_basic', 'question_priority', 'draw',
 ]);
 
 // How to read a rejection. Strings are taken verbatim from src/error.rs; keep
@@ -78,11 +81,15 @@ const RETRY = [/sequence/i, /insufficient fee/i, /out of gas/i,
                /tx already exists/i, /mempool is full/i];
 
 // Everything else is specific to one record and permanent until someone looks:
-//   UnknownAction   — the Worker queued an action the contract has no config for
-//   NotFree         — the action moved to PaidAction; recording it now would
-//                     double-pay whoever already paid through the contract
-//   DeltaTooLarge   — configured weight exceeds max_delta
-//   Std(...)        — malformed wallet address and similar
+//   UnknownAction     — the Worker queued an action the contract has no config for
+//   NotFree           — the action moved to PaidAction; recording it now would
+//                       double-pay whoever already paid through the contract
+//   DeltaTooLarge     — the amount, or the configured weight, exceeds max_delta
+//   AmountNotAllowed  — a record carried an amount for an action the contract
+//                       does not mark `variable_amount`. Quarantine is right:
+//                       retrying cannot help and dropping it would hide a real
+//                       disagreement between the Worker and the contract config
+//   Std(...)          — malformed wallet address and similar
 function classify(log) {
   if (FATAL.some(re => re.test(log)))    return 'fatal';
   if (DECLINED.some(re => re.test(log))) return 'declined';
@@ -455,8 +462,16 @@ async function main() {
 
   let recorded = 0, declined = 0, quarantined = 0, deferred = 0;
 
+  // `amount` is only ever present on records the Worker queued for an action the
+  // contract marks `variable_amount`. Sending it for anything else is rejected
+  // outright, so it is passed through exactly as queued rather than defaulted.
   const msgsFor = records => records.map(r => buildExecuteMsg(sender, CONTRACT, {
-    record_action: { user: r.wallet, action: r.action, ref_id: r.refId },
+    record_action: {
+      user: r.wallet,
+      action: r.action,
+      ref_id: r.refId,
+      ...(r.amount ? { amount: String(r.amount) } : {}),
+    },
   }));
 
   async function sign(records, gasLimit) {
