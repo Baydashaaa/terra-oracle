@@ -226,6 +226,7 @@ async function loadLeaderboard() {
       if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
       if (qInPeriod) {
         wallets[q.wallet].questions++;
+        // Shown as upvotes received, but not scored — see calcReputation.
         wallets[q.wallet].upvotesReceived += q.votes || 0;
       }
 
@@ -589,7 +590,8 @@ async function loadStatsData() {
       fetch(`${WORKER_URL_LOCAL}/streak?wallet=${wallet}`).then(r => r.ok ? r.json() : { multiplier: 1.0 }).catch(() => ({ multiplier: 1.0 })),
     ]);
 
-    const { myQuestions = [], myAnswers = [], totalUpvotes = 0 } = qStats;
+    const { myQuestions = [], myAnswers = [], totalUpvotes = 0, answerUpvotes } = qStats;
+    const scoredUpvotes = (answerUpvotes !== undefined) ? answerUpvotes : totalUpvotes;
     const msgCount       = chatStats?.msgCount   || 0;
     const drawRepTotal   = drawRepData?.total     || 0;
     const drawRepHistory = drawRepData?.history   || [];
@@ -599,7 +601,7 @@ async function loadStatsData() {
     // rule in profile.js) — identical to the profile page and leaderboard.
     const repQuestions = myQuestions.length * 40;
     const repAnswers   = myAnswers.length   * 40;
-    const repUpvotes   = totalUpvotes       * 20;
+    const repUpvotes   = scoredUpvotes      * 20;
     const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
     const baseRep      = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
@@ -731,7 +733,9 @@ async function loadStatsData() {
     for (const q of allQuestions) {
       if (!q.wallet || (q.createdAt || 0) < cutoff7d) continue;
       if (!weeklyScores[q.wallet]) weeklyScores[q.wallet] = 0;
-      weeklyScores[q.wallet] += 40 + (q.votes || 0) * 20;
+      // A question scores 40 flat. Its upvotes are not REP anywhere else in the
+      // system, so they must not be here either.
+      weeklyScores[q.wallet] += 40;
       for (const a of q.answers || []) {
         if (!a.wallet) continue;
         if (!weeklyScores[a.wallet]) weeklyScores[a.wallet] = 0;
