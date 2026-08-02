@@ -121,7 +121,10 @@ const TITLES = RANKS.filter(r => r.minScore > 0).map(r => ({
 // qStats: { myQuestions, myAnswers, totalUpvotes }
 // chatStats: { msgCount }
 function calcReputation(qStats, chatStats) {
-  const { myQuestions = [], myAnswers = [], totalUpvotes = 0 } = qStats;
+  // answerUpvotes, not totalUpvotes: question upvotes are displayed but never
+  // scored. Falls back to totalUpvotes only for callers built before the split.
+  const { myQuestions = [], myAnswers = [], answerUpvotes, totalUpvotes = 0 } = qStats;
+  const scoredUpvotes = (answerUpvotes !== undefined) ? answerUpvotes : totalUpvotes;
   const msgCount = chatStats?.msgCount || 0;
 
   // Action Score
@@ -131,7 +134,7 @@ function calcReputation(qStats, chatStats) {
     msgCount * 5;               // Chat: +5 REP per message, no limit
 
   // Quality Score
-  const qualityScore = totalUpvotes * 20; // Upvote received: +20 REP
+  const qualityScore = scoredUpvotes * 20; // Upvote on an answer: +20 REP
 
   return actionScore + qualityScore;
 }
@@ -631,16 +634,23 @@ async function fetchQuestionStats(address) {
       }
     }
 
-    // Count upvotes received on own questions
+    // Upvotes on ANSWERS are the ones that grant REP; the tally above holds
+    // exactly those, so keep it before question votes are folded in.
+    const answerUpvotes = totalUpvotes;
+
+    // Question upvotes count towards the visible "upvotes received" stat but
+    // grant no REP — asking is already paid for with the +40 for the question,
+    // and every other component of the system (the snapshot, the queue,
+    // rep-rewards.js) scores it that way.
     for (const q of myQuestions) {
       totalUpvotes += q.votes || 0;
     }
 
     const topAnswers = myAnswers.filter(a => a.votes >= 3).length;
-    return { myQuestions, myAnswers, totalUpvotes, topAnswers, allQuestions };
+    return { myQuestions, myAnswers, totalUpvotes, answerUpvotes, topAnswers, allQuestions };
   } catch(e) {
     console.warn('fetchQuestionStats failed:', e.message);
-    return { myQuestions: [], myAnswers: [], totalUpvotes: 0, topAnswers: 0, allQuestions: [] };
+    return { myQuestions: [], myAnswers: [], totalUpvotes: 0, answerUpvotes: 0, topAnswers: 0, allQuestions: [] };
   }
 }
 
@@ -834,7 +844,7 @@ function renderProfilePage() {
 
   // Load question stats from worker + chat stats from chain + streak + draw REP in parallel
   Promise.all([
-    fetchQuestionStats(address).catch(() => ({ myQuestions: [], myAnswers: [], totalUpvotes: 0, topAnswers: 0, allQuestions: [] })),
+    fetchQuestionStats(address).catch(() => ({ myQuestions: [], myAnswers: [], totalUpvotes: 0, answerUpvotes: 0, topAnswers: 0, allQuestions: [] })),
     fetchChatStats(address).catch(() => ({ msgCount: 0, entriesEarned: 0, todayMsgs: 0, todayEntries: 0, days: {}, qaCount: 0 })),
     fetchStreakData(address).catch(() => null),
     fetchDrawRep(address).catch(() => null),
