@@ -198,7 +198,7 @@ window.oracleScoreTxUrl = oracleScoreTxUrl;
 // caller keeps control of size, layout and hover behaviour.
 // INITIATE stays deliberately dim: a ring everyone has signals nothing, and a
 // bright one would make the starting rank look like an achievement.
-async function renderOnChainPanel(wallet, liveRep) {
+async function renderOnChainPanel(wallet, baseRep, streakMultiplier) {
   const host = document.getElementById('profile-rep-big');
   if (!host || !wallet) return;
 
@@ -218,16 +218,24 @@ async function renderOnChainPanel(wallet, liveRep) {
     return;
   }
 
-  const pending = Math.max(0, Math.round(liveRep) - s.rank);
+  // Like for like: both sides are the base figure, before any streak bonus.
+  const pending = Math.max(0, Math.round(baseRep || 0) - s.rank);
+  const mult = streakMultiplier || 1.0;
   const link = '<a href="' + oracleScoreTxUrl() + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">verify ↗</a>';
+
   const pendingNote = pending > 0
     ? '<div style="opacity:.7">' + pending.toLocaleString() + ' REP queued, written within the hour</div>'
+    : '';
+  // The streak bonus is a display rule the frontend applies, never something the
+  // contract holds. Saying so stops the two numbers looking like a discrepancy.
+  const multNote = mult > 1.0
+    ? '<div style="opacity:.7">streak bonus ×' + mult + ' applied on top, off-chain</div>'
     : '';
 
   box.innerHTML =
     '<div><b style="color:var(--green);">' + s.rank.toLocaleString() + '</b> settled on-chain · ' + link + '</div>' +
     '<div style="opacity:.7">weight ' + s.weight.toLocaleString() + ' — decays with a 90-day half-life</div>' +
-    pendingNote;
+    pendingNote + multNote;
 }
 window.renderOnChainPanel = renderOnChainPanel;
 
@@ -867,7 +875,11 @@ function renderProfilePage() {
     // saying so is better than quietly showing a number that lags.
     // Not awaited and wrapped: this is a decoration on top of the page, and a
     // slow or failing node must never stop the rest of the profile rendering.
-    try { renderOnChainPanel(address, reputation); } catch (e) { console.warn('on-chain panel:', e); }
+    // baseReputation, not `reputation`: the contract stores the unmultiplied
+    // figure, so comparing it against a streak-multiplied number would report a
+    // permanent shortfall for anyone on a streak.
+    try { renderOnChainPanel(address, baseReputation, streakMultiplier); }
+    catch (e) { console.warn('on-chain panel:', e); }
     // Perk badge: current discount, or the NEXT rank that unlocks one
     const perkEl = document.getElementById('profile-next-perk');
     if (perkEl) {
