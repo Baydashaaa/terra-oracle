@@ -865,7 +865,9 @@ function renderProfilePage() {
     // Settled figure from the contract, shown next to the live one. They differ
     // by whatever the attestor has not written yet — an hour at most — and
     // saying so is better than quietly showing a number that lags.
-    renderOnChainPanel(addr, reputation);
+    // Not awaited and wrapped: this is a decoration on top of the page, and a
+    // slow or failing node must never stop the rest of the profile rendering.
+    try { renderOnChainPanel(address, reputation); } catch (e) { console.warn('on-chain panel:', e); }
     // Perk badge: current discount, or the NEXT rank that unlocks one
     const perkEl = document.getElementById('profile-next-perk');
     if (perkEl) {
