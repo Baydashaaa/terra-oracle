@@ -1341,12 +1341,31 @@ async function getQuestionDiscountPct(addr) {
     }
   } catch(e) {}
 
-  // ── Full base REP = questions*40 + answers*40 + chatMsgs*5 + upvotes*20 + drawRep ──
-  // Weights must match REP_WEIGHTS in the Worker, the profile page and the
-  // on-chain contract config. Answers and upvotes were scored at 15 and 10 here,
-  // which quietly under-ranked people and cost them the fee discount their own
-  // profile page said they had earned.
+  // ── Base REP, from the contract ───────────────────────────────────────────
+  // This decides what someone pays, so it has to be the same number their
+  // profile shows. It used to be recomputed here with its own copy of the
+  // weights, which is how the discount came to disagree with the visible rank.
+  let settled = false;
   try {
+    if (typeof fetchOnChainScore === 'function') {
+      const chain = await fetchOnChainScore(addr);
+      if (chain && chain.rank > 0) {
+        const effOn = (typeof getEffectiveRep === 'function')
+          ? getEffectiveRep(chain.rank, streakMult)
+          : Math.round(chain.rank * streakMult);
+        if (typeof getRank === 'function') {
+          const rk = getRank(effOn);
+          rankD = (rk && rk.discount) ? rk.discount : 0;
+          _rankName = (rk && rk.name) ? rk.name : '';
+        }
+        settled = true;
+      }
+    }
+  } catch (e) {}
+
+  // Fallback only, for when the chain is unreachable. Keeps the page usable;
+  // the weights here must stay in step with the contract config.
+  if (!settled) try {
     let rep = 0;
     // Q&A stats (questions, answers, upvotes)
     let qStats = null;
