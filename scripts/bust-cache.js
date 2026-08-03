@@ -16,9 +16,11 @@
  * it is safe to run on every push.
  */
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+// ESM, matching the rest of scripts/ — the repo sets "type": "module", so a
+// .js file here is a module and require() is not defined in it.
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 
 const ROOT = process.cwd();
 const HTML_FILES = process.argv.slice(2);
