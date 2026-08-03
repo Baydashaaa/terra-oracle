@@ -1,7 +1,39 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-03T15:23:46.865Z",
+  "_updated": "2026-08-03T15:34:48.720Z",
   "questions": [
+    {
+      "id": "LUNC-SDE494U",
+      "category": "Other",
+      "text": "Where is Brian?",
+      "wallet": "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+      "walletHash": "sha256:v5skegx7",
+      "alias": "Anonymous#EGX7",
+      "title": "Seeker",
+      "txHash": "D4BA2F9B24FC7387F75284654DA51991BD0565025872207AEED010AE94A4D6ED",
+      "paymentAmount": 200000,
+      "entries": 4,
+      "pinnedUntil": 1785857688,
+      "tags": [],
+      "poll": [
+        {
+          "text": "In the kitchen?",
+          "votes": 0,
+          "voters": []
+        },
+        {
+          "text": "In the bathroom?",
+          "votes": 0,
+          "voters": []
+        }
+      ],
+      "createdAt": 1785771288,
+      "expiresAt": 1786376088,
+      "votes": 0,
+      "answers": [],
+      "status": "open",
+      "chosenAnswerId": null
+    },
     {
       "id": "LUNC-SDDQ394",
       "category": "Security / Vulnerability",
