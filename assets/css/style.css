@@ -1675,3 +1675,136 @@ canvas {
   .pf-card, .pf-seg { transition: none; }
   .pf-card:hover { transform: none; }
 }
+
+/* ── Protocol Flow ─────────────────────────────────────────────────────────
+   A diagram, not three cards. The section answers one question — where does
+   the LUNC go — and that is a single movement through the system, so cards
+   sitting side by side were the wrong shape for it: they showed three things
+   instead of one.
+
+   It is one SVG rather than positioned HTML because the connectors have to
+   land exactly on the boxes at every width. A viewBox scales the whole picture
+   as a unit; DOM elements joined by absolutely positioned lines drift the
+   moment a font renders a pixel wider. */
+
+.pfv-wrap {
+  /* Breaks out of the 720px column: an arbitrary few pixels wider would read
+     as a broken grid, while the full centred width reads as a deliberate
+     change of register. */
+  width: min(1120px, calc(100vw - 40px));
+  margin-left: 50%;
+  transform: translateX(-50%);
+  margin-top: 28px;
+}
+
+.pfv-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+.pfv-tag {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(160, 140, 255, 0.9);
+  font-weight: 700;
+}
+.pfv-sub { font-size: 12px; color: var(--muted); }
+
+.pfv-card {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(123, 92, 255, 0.12), transparent 60%),
+    #0a1628;
+  border: 1px solid rgba(123, 92, 255, 0.16);
+  border-radius: 16px;
+  padding: 14px 10px 8px;
+  overflow: hidden;
+}
+
+.pfv { width: 100%; height: auto; display: block; font-family: 'Exo 2', sans-serif; }
+
+.pfv-stage {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  fill: var(--muted);
+  text-anchor: middle;
+  font-weight: 700;
+}
+
+.pfv-box {
+  fill: rgba(255, 255, 255, 0.035);
+  stroke: rgba(255, 255, 255, 0.09);
+  stroke-width: 1;
+  transition: fill 0.25s ease, stroke 0.25s ease;
+}
+.pfv-n:hover .pfv-box {
+  fill: color-mix(in srgb, var(--c) 12%, transparent);
+  stroke: color-mix(in srgb, var(--c) 55%, transparent);
+}
+.pfv-t { font-size: 14px; font-weight: 700; fill: var(--text); }
+.pfv-s { font-size: 10.5px; fill: var(--muted); }
+
+/* The static connector — visible even with motion disabled, so the diagram
+   still reads as connected. */
+.pfv-link { fill: none; stroke-width: 2; opacity: 0.9; }
+
+/* The travelling dash on top of it. This is the only animation, and it earns
+   its place: it is what makes the picture read as flow rather than as a chart. */
+.pfv-flow {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 14 210;
+  opacity: 0.95;
+  animation: pfvFlow 3.4s linear infinite;
+}
+@keyframes pfvFlow {
+  from { stroke-dashoffset: 224; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.pfv-pct {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-anchor: middle;
+  opacity: 0.95;
+}
+
+.pfv-loop {
+  fill: none;
+  stroke: rgba(0, 255, 176, 0.4);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 6;
+}
+.pfv-loop-t {
+  font-size: 10.5px;
+  fill: rgba(0, 255, 176, 0.75);
+  text-anchor: middle;
+  font-weight: 600;
+}
+
+/* Below roughly 820px the labels inside the diagram would be unreadable, so it
+   gives way to a plain stacked reading of the same figures rather than being
+   squeezed. */
+.pfv-fallback { display: none; }
+
+@media (max-width: 820px) {
+  .pfv-wrap { width: min(720px, calc(100vw - 32px)); }
+  .pfv { display: none; }
+  .pfv-fallback { display: block; padding: 4px 6px 10px; }
+}
+
+.pfv-f-row { padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.pfv-f-row:first-child { border-top: 0; }
+.pfv-f-t { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.pfv-f-t i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 8px; }
+.pfv-f-d { font-size: 11px; color: var(--muted); line-height: 1.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pfv-flow { animation: none; opacity: 0; }
+  .pfv-box { transition: none; }
+}
