@@ -1146,84 +1146,106 @@
   </div>
  </div>
 
- <!-- ── PROTOCOL FLOW ── -->
- <div class="zk-module" style="--mod-c1:#7B5CFF;--mod-c2:#00D4FF;">
-  <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:24px 26px;">
+  <!-- ── PROTOCOL FLOW ── -->
+ <div class="pf">
+  <div class="pf-head">
+   <div class="pf-tag">&#9672; Protocol Flow</div>
+   <div class="pf-sub">Where every LUNC paid into the protocol goes.</div>
+  </div>
 
-   <div style="font-size:9px;letter-spacing:0.22em;color:rgba(160,140,255,0.9);text-transform:uppercase;margin-bottom:22px;font-family:'Exo 2',sans-serif;">&#9672; Protocol Flow</div>
+  <div class="pf-grid">
 
-   <!-- STREAM 1: Oracle Questions -->
-   <div class="pfx-stream" style="--pc:#7B5CFF;--pt:#a08fff;">
-    <div class="pfx-node"></div>
-    <div class="pfx-title">Oracle Questions</div>
-    <div class="pfx-row">
-     <div class="pfx-chip" style="border-color:rgba(123,92,255,.3);background:rgba(123,92,255,.08);">
-      <div class="v">from 50,000 LUNC</div>
-      <div class="s">per question</div>
+   <!-- Oracle Questions -->
+   <div class="pf-card" style="--pc:#7B5CFF;">
+    <div class="pf-card-top">
+     <div class="pf-ico"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/></svg></div>
+     <div class="pf-name">Oracle Questions</div>
+    </div>
+    <div class="pf-when">Answered by the community &middot; anonymous</div>
+
+    <div class="pf-io">
+     <div class="pf-io-box">
+      <div class="pf-io-k">You pay</div>
+      <div class="pf-io-v">from 50,000 LUNC<small>per question</small></div>
      </div>
-     <span class="pfx-arrow">&rarr;</span>
-     <div class="pfx-chip"><div class="v" style="font-size:11px;color:rgba(0,255,176,.9);">&#127903; +1 to +4 free Weekly entries</div></div>
+     <div class="pf-io-arrow">&rarr;</div>
+     <div class="pf-io-box out">
+      <div class="pf-io-k">You get</div>
+      <div class="pf-io-v">+1 to +4 entries<small>free, in the Weekly Draw</small></div>
+     </div>
     </div>
-    <div class="pfx-bar">
-     <span style="width:50%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);"></span>
-     <span style="width:50%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.15s;"></span>
-    </div>
-    <div class="pfx-legend">
-     <div><i style="background:#a78bfa;"></i>50% &rarr; Weekly Prize Pool</div>
-     <div><i style="background:#E8C840;"></i>50% &rarr; Protocol Treasury</div>
+
+    <div class="pf-split-k">The fee splits</div>
+    <div class="pf-bar">
+     <div class="pf-seg" style="flex:50;background:#7B5CFF;" title="50% to the Weekly Prize Pool">50% Weekly Pool</div>
+     <div class="pf-seg" style="flex:50;background:#E8C840;" title="50% to the Protocol Treasury">50% Treasury</div>
     </div>
    </div>
 
-   <!-- STREAM 2: Daily Draw -->
-   <div class="pfx-stream" style="--pc:#f59e0b;--pt:#fbbf24;">
-    <div class="pfx-node"></div>
-    <div class="pfx-title">Daily Draw &middot; every day 20:00 UTC</div>
-    <div class="pfx-row">
-     <div class="pfx-chip" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08);">
-      <div class="v">NFT Mint</div>
-      <div class="s">Common / Rare / Legendary</div>
+   <!-- Daily Draw -->
+   <div class="pf-card" style="--pc:#00D4FF;">
+    <div class="pf-card-top">
+     <div class="pf-ico"><svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2.5"/><path d="M8.5 6v12M15.5 6v12"/></svg></div>
+     <div class="pf-name">Daily Draw</div>
+    </div>
+    <div class="pf-when">Every day at 20:00 UTC</div>
+
+    <div class="pf-io">
+     <div class="pf-io-box">
+      <div class="pf-io-k">You pay</div>
+      <div class="pf-io-v">NFT Mint<small>Common / Rare / Legendary</small></div>
      </div>
-     <span class="pfx-arrow">&rarr;</span>
-     <div class="pfx-chip" style="border-color:rgba(245,158,11,.25);"><div class="v" style="font-size:12px;color:#fbbf24;">Daily Pool</div></div>
+     <div class="pf-io-arrow">&rarr;</div>
+     <div class="pf-io-box out">
+      <div class="pf-io-k">Feeds</div>
+      <div class="pf-io-v">Daily Pool<small>one winner each day</small></div>
+     </div>
     </div>
-    <div class="pfx-bar">
-     <span style="width:80%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
-     <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.15s;"></span>
-     <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.3s;"></span>
+
+    <div class="pf-split-k">The pool splits</div>
+    <div class="pf-bar">
+     <div class="pf-seg" style="flex:80;background:#00D4FF;" title="80% to the winner">80% Winner</div>
+     <div class="pf-seg thin" style="flex:10;background:#00FFB0;" title="10% seeds the next round"></div>
+     <div class="pf-seg thin" style="flex:10;background:#E8C840;" title="10% to the Treasury"></div>
     </div>
-    <div class="pfx-legend">
-     <div><i style="background:#00ffb0;"></i>&#129351; 80% &rarr; 1 Winner</div>
-     <div><i style="background:#a78bfa;"></i>&#127793; 10% &rarr; Seeds next round</div>
-     <div><i style="background:#E8C840;"></i>&#127963; 10% &rarr; Treasury</div>
+    <div class="pf-legend">
+     <span><i style="background:#00FFB0;"></i>10% seeds next round</span>
+     <span><i style="background:#E8C840;"></i>10% Treasury</span>
     </div>
    </div>
 
-   <!-- STREAM 3: Weekly Draw -->
-   <div class="pfx-stream" style="--pc:#a78bfa;--pt:#c4b5fd;">
-    <div class="pfx-node"></div>
-    <div class="pfx-title">Weekly Draw &middot; every Monday 20:00 UTC</div>
-    <div class="pfx-row">
-     <div class="pfx-chip" style="border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08);">
-      <div class="v">NFT Mint + Questions</div>
-      <div class="s">entries from both</div>
+   <!-- Weekly Draw -->
+   <div class="pf-card" style="--pc:#00FFB0;">
+    <div class="pf-card-top">
+     <div class="pf-ico"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.5V7a3.5 3.5 0 0 0 3 3.4M17 5.5h2.5V7a3.5 3.5 0 0 1-3 3.4"/><path d="M12 14v3.5M9 20h6"/></svg></div>
+     <div class="pf-name">Weekly Draw</div>
+    </div>
+    <div class="pf-when">Every Monday at 20:00 UTC</div>
+
+    <div class="pf-io">
+     <div class="pf-io-box">
+      <div class="pf-io-k">Entries from</div>
+      <div class="pf-io-v">Mints + Questions<small>both count here</small></div>
      </div>
-     <span class="pfx-arrow">&rarr;</span>
-     <div class="pfx-chip" style="border-color:rgba(167,139,250,.25);"><div class="v" style="font-size:12px;color:#c4b5fd;">Weekly Pool</div></div>
+     <div class="pf-io-arrow">&rarr;</div>
+     <div class="pf-io-box out">
+      <div class="pf-io-k">Feeds</div>
+      <div class="pf-io-v">Weekly Pool<small>three winners</small></div>
+     </div>
     </div>
-    <div class="pfx-bar">
-     <span style="width:48%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
-     <span style="width:20%;background:linear-gradient(90deg,#0a9f74,#00e6a0);animation-delay:.12s;"></span>
-     <span style="width:12%;background:linear-gradient(90deg,#0b8a68,#00cc90);animation-delay:.24s;"></span>
-     <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.36s;"></span>
-     <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.48s;"></span>
+
+    <div class="pf-split-k">The pool splits</div>
+    <div class="pf-bar">
+     <div class="pf-seg" style="flex:48;background:#00FFB0;" title="48% to first place">48% 1st</div>
+     <div class="pf-seg" style="flex:20;background:#7B5CFF;" title="20% to second place">20% 2nd</div>
+     <div class="pf-seg thin" style="flex:12;background:#00D4FF;" title="12% to third place"></div>
+     <div class="pf-seg thin" style="flex:10;background:#5A7BA8;" title="10% seeds the next round"></div>
+     <div class="pf-seg thin" style="flex:10;background:#E8C840;" title="10% to the Treasury"></div>
     </div>
-    <div class="pfx-legend">
-     <div><i style="background:#00ffb0;"></i>&#129351; 48% &rarr; 1st</div>
-     <div><i style="background:#00e6a0;"></i>&#129352; 20% &rarr; 2nd</div>
-     <div><i style="background:#00cc90;"></i>&#129353; 12% &rarr; 3rd</div>
-     <div><i style="background:#a78bfa;"></i>&#127793; 10% &rarr; Seeds</div>
-     <div><i style="background:#E8C840;"></i>&#127963; 10% &rarr; Treasury</div>
+    <div class="pf-legend">
+     <span><i style="background:#00D4FF;"></i>12% 3rd</span>
+     <span><i style="background:#5A7BA8;"></i>10% seeds</span>
+     <span><i style="background:#E8C840;"></i>10% Treasury</span>
     </div>
    </div>
 
