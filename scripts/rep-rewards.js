@@ -9,6 +9,8 @@ const WORKER_URL     = process.env.WORKER_URL;
 const ACTIONS_SECRET = process.env.ACTIONS_SECRET;
 const MNEMONIC       = process.env.REWARDS_MNEMONIC;
 const LCD_URL        = 'https://terra-classic-lcd.publicnode.com';
+// Oracle Score — the source of truth for rank. Values are micro-units.
+const ORACLE_SCORE_CONTRACT = 'terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls';
 const CHAIN_ID       = 'columbus-5';
 const GAS_LIMIT      = 300000;
 const GAS_PRICE      = 28.325;
@@ -152,49 +154,44 @@ async function main() {
   if (poolUluna<1_000_000) { console.log('⚠️ Pool too small.'); return; }
 
   // ── All-time REP for rank multipliers ──────────────────────────────────
-  // Rank must be computed on the SAME number the site shows: full all-time
-  // REP (Q&A + chat + draw) × streak multiplier ("effective REP", see the
-  // canonical rules in profile.js). Previously only draw-REP was used here,
-  // which under-ranked active Q&A/chat users and under-paid them.
-  console.log('\n📊 Building all-time REP map (Q&A + chat + draw, × streak)...');
-
-  // One /questions fetch covers Q&A REP for everyone.
-  // Weights MUST match REP_WEIGHTS in the Worker: question 40, answer 40, upvote 20.
-  // Note: this all-time figure only drives the RANK, so it uses flat answer REP —
-  // the degressive scale and the funded-voter gate live in the Worker's weekly
-  // leaderboard, which is what actually decides the payout shares.
-  const qaRep = {};
-  try {
-    const qRes = await safeFetch(`${WORKER_URL}/questions`);
-    if (qRes.ok) {
-      const qData = await qRes.json();
-      for (const q of qData.questions || []) {
-        if (q.wallet) qaRep[q.wallet] = (qaRep[q.wallet] || 0) + 40;
-        for (const a of q.answers || []) {
-          if (a.wallet) qaRep[a.wallet] = (qaRep[a.wallet] || 0) + 40 + (a.votes || 0) * 20;
-        }
-      }
-    }
-  } catch(e) { console.warn('⚠️ Q&A fetch failed (Q&A REP counted as 0):', e.message); }
+  // Rank has to be the same number the site shows, and the site reads it from
+  // the Oracle Score contract. Recomputing it here from the raw sources is how
+  // this script would end up paying by one ranking while people see another —
+  // the exact drift that put six copies of this formula out of step.
+  //
+  // The contract stores the base; the streak multiplier is a display rule the
+  // frontend applies, so it is applied here too and nowhere else.
+  console.log('\n📊 Reading all-time REP from the Oracle Score contract...');
 
   const allTimeRepMap = {};
+  const missing = [];
   await Promise.all(data.topWallets.map(async w => {
-    let draw = 0, chat = 0, streakMult = 1.0;
+    let base = null, streakMult = 1.0;
     try {
-      const r = await safeFetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`);
-      if (r.ok) draw = (await r.json()).total || 0;
-    } catch(e) {}
-    try {
-      const r = await safeFetch(`${WORKER_URL}/chat/count?wallet=${w.wallet}`);
-      if (r.ok) { const d = await r.json(); chat = (d.msgCount || d.total || 0) * 5; }
+      const q = Buffer.from(JSON.stringify({ score: { address: w.wallet } })).toString('base64');
+      const r = await safeFetch(`${LCD_URL}/cosmwasm/wasm/v1/contract/${ORACLE_SCORE_CONTRACT}/smart/${q}`);
+      if (r.ok) {
+        const d = (await r.json()).data;
+        if (d && d.lifetime_earned) base = Math.round(Number(d.lifetime_earned) / 1e6);
+      }
     } catch(e) {}
     try {
       const r = await safeFetch(`${WORKER_URL}/streak?wallet=${w.wallet}`);
       if (r.ok) streakMult = (await r.json()).multiplier || 1.0;
     } catch(e) {}
-    const base = (qaRep[w.wallet] || 0) + chat + draw;
-    allTimeRepMap[w.wallet] = Math.round(base * streakMult); // effective REP — same as site rank
+
+    if (base === null) { missing.push(w.wallet); base = 0; }
+    allTimeRepMap[w.wallet] = Math.round(base * streakMult);
   }));
+
+  // A wallet the chain could not answer for falls to rank multiplier ×1.0,
+  // which underpays rather than overpays. Say so loudly: a node hiccup quietly
+  // costing someone their multiplier is worse than a failed run.
+  if (missing.length) {
+    console.error(`❌ No on-chain score for ${missing.length} wallet(s): ${missing.join(', ')}`);
+    console.error('   Refusing to pay out on figures that may be wrong. Re-run when the node responds.');
+    process.exit(1);
+  }
 
   // Weighted REP = weekly REP × rank multiplier (rank based on all-time REP)
   const weighted = data.topWallets.map(w => {
