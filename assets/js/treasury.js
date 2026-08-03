@@ -64,19 +64,44 @@ async function tFetchPrice() {
 let _countdownTimer = null;
 function tStartCountdowns() {
   if (_countdownTimer) clearInterval(_countdownTimer);
+  // Расписание то же, что в .github/workflows/lottery-draw.yml:
+  // каждый день 20:00 UTC, при этом ПОНЕДЕЛЬНИК уходит в weekly,
+  // а daily в этот день не разыгрывается вовсе.
+  const MONDAY = 1;
+
+  function nextDrawUTC(pool, now) {
+    const d = new Date(now);
+    d.setUTCHours(20, 0, 0, 0);
+    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
+    // шагаем вперёд, пока день не подойдёт пулу
+    for (let i = 0; i < 8; i++) {
+      const isMonday = d.getUTCDay() === MONDAY;
+      if (pool === 'weekly' ? isMonday : !isMonday) return d;
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    return d;
+  }
+
   function tick() {
     const now = new Date();
-    const d = new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),20,0,0));
-    if (d <= now) d.setUTCDate(d.getUTCDate()+1);
-    const dd = d - now;
+
+    // Было: «сегодня 20:00, иначе завтра» — в понедельник это показывало
+    // 20:00 сегодня, хотя daily в понедельник не разыгрывается.
+    const dd = nextDrawUTC('daily', now) - now;
+    const dDays = Math.floor(dd / 86400000);
+    const dRest = dd % 86400000;
     tSet('t-daily-countdown',
-      String(Math.floor(dd/3600000)).padStart(2,'0')+':'+
-      String(Math.floor((dd%3600000)/60000)).padStart(2,'0')+':'+
-      String(Math.floor((dd%60000)/1000)).padStart(2,'0'));
-    const w = new Date(now);
-    const days = (1-w.getUTCDay()+7)%7||7;
-    w.setUTCDate(w.getUTCDate()+days); w.setUTCHours(20,0,0,0);
-    if (w<=now) w.setUTCDate(w.getUTCDate()+7);
+      (dDays > 0 ? dDays + 'd ' : '') +
+      String(Math.floor(dRest/3600000)).padStart(2,'0')+':'+
+      String(Math.floor((dRest%3600000)/60000)).padStart(2,'0')+':'+
+      String(Math.floor((dRest%60000)/1000)).padStart(2,'0'));
+
+    // Было: days = (1-getUTCDay()+7)%7 || 7
+    // В понедельник (1-1+7)%7 = 0, а `|| 7` превращало ноль в неделю —
+    // счётчик перепрыгивал через сегодняшний розыгрыш. Ноль здесь
+    // означает «сегодня», и это правильный ответ; случай «сегодняшние
+    // 20:00 уже прошли» и так закрыт проверкой ниже.
+    const w = nextDrawUTC('weekly', now);
     const wd = w-now;
     const wD = Math.floor(wd/86400000);
     const wH = String(Math.floor((wd%86400000)/3600000)).padStart(2,'0');
