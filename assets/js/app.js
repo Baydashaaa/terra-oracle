@@ -307,6 +307,22 @@ window.addEventListener('popstate', function(e) {
 
 // ─── Treasury logic moved to assets/js/treasury.js ───────────
 
+// ─── EVIDENCE LINK ────────────────────────────────────────────
+// The URL comes from whoever asked the question, so it is untrusted twice over:
+// it lands in an href, where a javascript: scheme would execute, and in HTML,
+// where a quote would break out of the attribute. Only http and https are
+// allowed through, and the text is escaped either way.
+function safeUrl(raw) {
+  try {
+    const u = new URL(String(raw).trim());
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+  } catch (e) { return null; }
+}
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // ─── HASHTAG LOGIC ────────────────────────────────────────────
 let currentTags = [];
 
@@ -421,11 +437,35 @@ function clearSearch() {
   renderBoard();
 }
 
+// ─── BOARD FILTERS ────────────────────────────────────────────
+// The ask form offers eight categories; the board had six chips, and the two
+// lists were never reconciled. "Security / Vulnerability" matched no chip and
+// could only be found under ALL, while MARKET filtered on a category the form
+// has never offered and was therefore always empty.
+//
+// One definition now drives both the chips and the filtering. Every category in
+// the form belongs to exactly one group, so nothing can become unreachable
+// again — the check below fails loudly if a new category is added here and
+// forgotten in the form, or the other way round.
+const BOARD_GROUPS = {
+  security: { label: 'Security',  cats: ['Security / Vulnerability', 'Fraud / Manipulation'] },
+  tech:     { label: 'Tech',      cats: ['Protocol Bug', 'Validator Issue'] },
+  gov:      { label: 'Governance',cats: ['Governance', 'Proposal / Idea'] },
+  comm:     { label: 'Community', cats: ['Community'] },
+  other:    { label: 'Other',     cats: ['Other'] },
+};
+
+function boardGroupOf(category) {
+  for (const [key, g] of Object.entries(BOARD_GROUPS)) {
+    if (g.cats.includes(category)) return key;
+  }
+  return 'other';   // an unknown or legacy category is still findable
+}
+
 function setBoardFilter(cat) {
   boardFilter = cat;
   document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
-  const map = {'all':'filter-all','Governance':'filter-gov','Technical':'filter-tech','Validator Issue':'filter-val','Market':'filter-market','Community':'filter-comm','Security / Vulnerability':'filter-gov','Protocol Bug':'filter-tech','Proposal / Idea':'filter-gov','Fraud / Manipulation':'filter-gov','Other':'filter-all'};
-  if (map[cat]) document.getElementById(map[cat])?.classList.add('active');
+  document.getElementById('filter-' + cat)?.classList.add('active');
   renderBoard();
 }
 
@@ -537,7 +577,9 @@ function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
 
-  let filtered = boardFilter === 'all' ? [...questions] : questions.filter(q => q.category === boardFilter || q.category.includes(boardFilter.replace(/[🗳️⚙️📈🌍⚡]\s*/,'')));
+  let filtered = boardFilter === 'all'
+    ? [...questions]
+    : questions.filter(q => boardGroupOf(q.category || '') === boardFilter);
 
   if (boardSearch) {
     const searchTag = boardSearch.startsWith('#') ? boardSearch.slice(1) : null;
@@ -584,6 +626,12 @@ function renderBoard() {
         <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
       </div>
       ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" onclick="setBoardSearch('#${t}')">#${t}</span>`).join('')}</div>` : ''}
+      ${(() => {
+        const u = q.evidence ? safeUrl(q.evidence) : null;
+        if (!u) return '';
+        const shown = u.length > 58 ? u.slice(0, 58) + '…' : u;
+        return `<div class="q-evidence"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg><a href="${escHtml(u)}" target="_blank" rel="noopener noreferrer">${escHtml(shown)}</a></div>`;
+      })()}
       <div class="q-text">${boardSearch ? q.text.replace(new RegExp('(' + boardSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>') : q.text}</div>
       ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
       <div class="q-footer">
@@ -936,8 +984,18 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   const txHash = document.getElementById('verified-tx-hidden').value;
   const wallet = document.getElementById('verified-wallet-hidden').value;
   const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
+  // Tags only reach `currentTags` on Enter or comma, so anything typed and left
+  // in the box is dropped on submit — the hashtag is visible on screen and
+  // absent from the question. Take the pending text too.
   const tagsRaw = document.getElementById('tags-hidden').value;
   const tags = tagsRaw ? tagsRaw.split(',').filter(Boolean) : [];
+  const _pendingTag = (document.getElementById('tag-raw-input')?.value || '')
+    .replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 20);
+  if (_pendingTag && tags.length < 5 && !tags.includes(_pendingTag)) tags.push(_pendingTag);
+
+  // Evidence link. The field has always been in the form and has never been
+  // read: whatever anyone pasted there was discarded on submit.
+  const evidence = (formData.get('evidence') || '').toString().trim().slice(0, 300);
   const _userTitle = (typeof getUserTitle === 'function' && wallet) ? getUserTitle(wallet) : null;
   const _titleLabel = _userTitle ? _userTitle.name : 'Seeker';
   // ── Poll options ──────────────────────────────────────────────────────────
@@ -965,7 +1023,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
       headers: txHash === 'ADMIN_BYPASS' ? adminHeaders() : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll }),
+      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll, evidence }),
     });
     if (!res.ok) {
       const err = await res.json();
