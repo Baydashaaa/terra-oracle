@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-03T15:34:48.720Z",
+  "_updated": "2026-08-03T23:16:47.971Z",
   "questions": [
     {
       "id": "LUNC-SDE494U",
@@ -23,7 +23,7 @@
         },
         {
           "text": "In the bathroom?",
-          "votes": 0,
+          "votes": 1,
           "voters": []
         }
       ],
@@ -32,7 +32,10 @@
       "votes": 0,
       "answers": [],
       "status": "open",
-      "chosenAnswerId": null
+      "chosenAnswerId": null,
+      "pollVoters": [
+        "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l"
+      ]
     },
     {
       "id": "LUNC-SDDQ394",
