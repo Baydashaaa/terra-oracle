@@ -1599,3 +1599,33 @@ canvas {
   .pfv-flow { animation: none; opacity: 0; }
   .pfv-box { transition: none; }
 }
+
+/* Evidence link on a question card. Small and secondary: it supports the
+   question rather than competing with it, and a long URL is truncated in the
+   markup so it cannot push the card wide on a phone. */
+.q-evidence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  min-width: 0;
+}
+.q-evidence svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.q-evidence a {
+  color: var(--accent2);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.q-evidence a:hover { text-decoration: underline; }
+
