@@ -64,49 +64,24 @@ async function tFetchPrice() {
 let _countdownTimer = null;
 function tStartCountdowns() {
   if (_countdownTimer) clearInterval(_countdownTimer);
-  // Расписание то же, что в .github/workflows/lottery-draw.yml:
-  // каждый день 20:00 UTC, при этом ПОНЕДЕЛЬНИК уходит в weekly,
-  // а daily в этот день не разыгрывается вовсе.
-  const MONDAY = 1;
-
-  function nextDrawUTC(pool, now) {
-    const d = new Date(now);
-    d.setUTCHours(20, 0, 0, 0);
-    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
-    // шагаем вперёд, пока день не подойдёт пулу
-    for (let i = 0; i < 8; i++) {
-      const isMonday = d.getUTCDay() === MONDAY;
-      if (pool === 'weekly' ? isMonday : !isMonday) return d;
-      d.setUTCDate(d.getUTCDate() + 1);
-    }
-    return d;
+  // Расписание и формат отсчёта — в общем файле assets/js/draw-schedule.js.
+  // Он ПОБАЙТОВО тот же, что в репо oracle-draw (draw.terraoracle.io), и должен
+  // грузиться обычным <script> ДО treasury.js. Своей арифметики здесь больше нет:
+  // три независимые копии этой логики и разъехались 3 авг 2026.
+  if (!window.DRAW_SCHEDULE) {
+    console.error('[treasury] assets/js/draw-schedule.js не загружен — счётчики ' +
+      'розыгрыша считать нечем. Проверь порядок <script> в index.html: ' +
+      'draw-schedule.js должен идти ДО treasury.js.');
+    return;
   }
 
   function tick() {
-    const now = new Date();
-
-    // Было: «сегодня 20:00, иначе завтра» — в понедельник это показывало
-    // 20:00 сегодня, хотя daily в понедельник не разыгрывается.
-    const dd = nextDrawUTC('daily', now) - now;
-    const dDays = Math.floor(dd / 86400000);
-    const dRest = dd % 86400000;
-    tSet('t-daily-countdown',
-      (dDays > 0 ? dDays + 'd ' : '') +
-      String(Math.floor(dRest/3600000)).padStart(2,'0')+':'+
-      String(Math.floor((dRest%3600000)/60000)).padStart(2,'0')+':'+
-      String(Math.floor((dRest%60000)/1000)).padStart(2,'0'));
-
-    // Было: days = (1-getUTCDay()+7)%7 || 7
-    // В понедельник (1-1+7)%7 = 0, а `|| 7` превращало ноль в неделю —
-    // счётчик перепрыгивал через сегодняшний розыгрыш. Ноль здесь
-    // означает «сегодня», и это правильный ответ; случай «сегодняшние
-    // 20:00 уже прошли» и так закрыт проверкой ниже.
-    const w = nextDrawUTC('weekly', now);
-    const wd = w-now;
-    const wD = Math.floor(wd/86400000);
-    const wH = String(Math.floor((wd%86400000)/3600000)).padStart(2,'0');
-    const wM = String(Math.floor((wd%3600000)/60000)).padStart(2,'0');
-    tSet('t-weekly-countdown', wD>0 ? `${wD}d ${wH}:${wM}` : `${wH}:${wM}`);
+    var S = window.DRAW_SCHEDULE;
+    // Один и тот же формат для обоих: >24ч → "1d 02:57", иначе → "02:57:23".
+    // Раньше daily печатался с секундами, а weekly без — одинаковое время
+    // выглядело по-разному и читалось как расхождение.
+    tSet('t-daily-countdown',  S.format(S.msToNext('daily')));
+    tSet('t-weekly-countdown', S.format(S.msToNext('weekly')));
   }
   tick(); _countdownTimer = setInterval(tick, 1000);
 }
