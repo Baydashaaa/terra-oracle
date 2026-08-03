@@ -1460,223 +1460,6 @@ canvas {
 #page-ask > .card:hover::before { opacity: 0.4; }
 
 /* ── Protocol Flow ─────────────────────────────────────────────────────────
-   Replaces the stacked pfx- streams. Two things changed and both are on
-   purpose:
-
-   The block breaks out of the 720px column. Widening it by an arbitrary amount
-   would read as a broken grid; taking the full centred width instead reads as a
-   different kind of content, which is what it is — everything above is a card
-   about one thing, this is a map of how money moves.
-
-   The extra width buys a three-column layout. Widening a stacked list gains
-   nothing but longer lines, so the streams sit side by side and become
-   comparable at a glance, which is the whole point of showing them together. */
-
-.pf {
-  /* Centre on the viewport rather than the parent, so the parent's max-width
-     stops constraining it without having to restructure the markup. */
-  width: min(1080px, calc(100vw - 48px));
-  margin-left: 50%;
-  transform: translateX(-50%);
-  margin-top: 26px;
-}
-
-.pf-head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-  padding: 0 4px;
-}
-.pf-tag {
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(160, 140, 255, 0.9);
-  font-weight: 700;
-}
-.pf-sub {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.pf-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.pf-card {
-  --pc: var(--accent);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.028), transparent 60%), #0a1628;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
-  padding: 20px 20px 18px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.3s ease, transform 0.25s ease, box-shadow 0.3s ease;
-}
-/* A hairline in the stream's own colour — enough to tell the three apart
-   without giving each card a different background. */
-.pf-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--pc), transparent 85%);
-  opacity: 0.85;
-}
-.pf-card:hover {
-  border-color: color-mix(in srgb, var(--pc) 45%, transparent);
-  box-shadow: 0 14px 34px -18px color-mix(in srgb, var(--pc) 75%, transparent);
-  transform: translateY(-2px);
-}
-
-.pf-card-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.pf-ico {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  background: color-mix(in srgb, var(--pc) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pc) 32%, transparent);
-}
-.pf-ico svg {
-  width: 15px;
-  height: 15px;
-  stroke: var(--pc);
-  fill: none;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.pf-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.01em;
-}
-.pf-when {
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 16px;
-  padding-left: 40px;
-}
-
-/* in → out, the part people actually scan for */
-.pf-io {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.pf-io-box {
-  flex: 1;
-  min-width: 0;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-.pf-io-box.out {
-  background: color-mix(in srgb, var(--pc) 9%, transparent);
-  border-color: color-mix(in srgb, var(--pc) 28%, transparent);
-}
-.pf-io-k {
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.pf-io-v {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.35;
-}
-.pf-io-v small {
-  display: block;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--muted);
-  margin-top: 2px;
-}
-.pf-io-arrow {
-  align-self: center;
-  color: rgba(160, 180, 210, 0.5);
-  font-size: 15px;
-  flex-shrink: 0;
-}
-
-/* The split. Labels sit on the segments instead of in a legend underneath —
-   a colour key you have to look up twice is why the old version read like a
-   spreadsheet. */
-.pf-split-k {
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 7px;
-}
-.pf-bar {
-  display: flex;
-  height: 26px;
-  border-radius: 7px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-.pf-seg {
-  display: grid;
-  place-items: center;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: #06101f;
-  white-space: nowrap;
-  transition: filter 0.2s ease;
-}
-.pf-seg:hover { filter: brightness(1.12); }
-/* Narrow slices cannot hold a label; the tooltip carries it instead. */
-.pf-seg.thin { font-size: 0; }
-
-.pf-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin-top: 9px;
-}
-.pf-legend span {
-  font-size: 10px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.pf-legend i {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-@media (max-width: 1000px) {
-  .pf-grid { grid-template-columns: 1fr; }
-  .pf { width: min(720px, calc(100vw - 32px)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pf-card, .pf-seg { transition: none; }
-  .pf-card:hover { transform: none; }
-}
-
-/* ── Protocol Flow ─────────────────────────────────────────────────────────
    A diagram, not three cards. The section answers one question — where does
    the LUNC go — and that is a single movement through the system, so cards
    sitting side by side were the wrong shape for it: they showed three things
@@ -1767,11 +1550,19 @@ canvas {
   to   { stroke-dashoffset: 0; }
 }
 
+/* Labels sit on a pill and are drawn last, so a connector passing behind one
+   can never make it unreadable. Their positions are chosen by a clearance
+   search rather than a fixed point on the curve — at a fixed fraction the
+   links leaving a busy node stack their labels on top of each other. */
 .pfv-pct {
   font-size: 10.5px;
   font-weight: 700;
   text-anchor: middle;
-  opacity: 0.95;
+}
+.pfv-lab-bg {
+  fill: #0a1628;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
 }
 
 .pfv-loop {
