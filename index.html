@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=ebb2b01f64">
+  <link rel="stylesheet" href="assets/css/style.css?v=202607154000">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -1254,11 +1254,11 @@
  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
  <div style="display:flex;gap:6px;flex-wrap:wrap;">
  <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
- <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('Governance')">Gov</button>
- <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('Technical')">Tech</button>
- <button class="vote-tab" id="filter-val" onclick="setBoardFilter('Validator Issue')">Validators</button>
- <button class="vote-tab" id="filter-market" onclick="setBoardFilter('Market')">Market</button>
- <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('Community')">Community</button>
+ <button class="vote-tab" id="filter-security" onclick="setBoardFilter('security')">Security</button>
+ <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('tech')">Tech</button>
+ <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('gov')">Gov</button>
+ <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('comm')">Community</button>
+ <button class="vote-tab" id="filter-other" onclick="setBoardFilter('other')">Other</button>
  </div>
  <div style="margin-left:auto;display:flex;gap:6px;">
  <button class="vote-tab active" id="sort-new" onclick="setBoardSort('new')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><path d="M10.6 3.6l1.5 3.8 3.8 1.5-3.8 1.5-1.5 3.8-1.5-3.8L5.3 8.9l3.8-1.5z"/><path d="M17.6 14.4v4.4M15.4 16.6h4.4"/></svg> New</button>
@@ -2370,11 +2370,11 @@
     // Global Worker URL — used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/draw-schedule.js?v=44225cb598"></script>
-  <script src="assets/js/treasury.js?v=7306eae8ab"></script>
-  <script src="assets/js/app.js?v=afd37d7fab"></script>
-  <script src="assets/js/profile.js?v=0e93597628"></script>
-  <script src="assets/js/reputation.js?v=8728f13547"></script>
+  <script src="assets/js/draw-schedule.js?v=202608031720"></script>
+  <script src="assets/js/treasury.js?v=202608041520"></script>
+  <script src="assets/js/app.js?v=202608041530"></script>
+  <script src="assets/js/profile.js?v=202608041530"></script>
+  <script src="assets/js/reputation.js?v=202608041530"></script>
 <script>
 // ── Mobile navigation ──
 function closeMobileMenu() {
@@ -3273,8 +3273,8 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 </script>
 
 <!-- ═══ ORACLE EYE (mascot + feedback) — external module ═══ -->
-<script src="assets/js/oracle-eye.js?v=8a15e51aec"></script>
-<script src="assets/js/oracle-notify.js?v=c271bba776"></script>
+<script src="assets/js/oracle-eye.js?v=10"></script>
+<script src="assets/js/oracle-notify.js?v=3"></script>
 
 
 </body>
