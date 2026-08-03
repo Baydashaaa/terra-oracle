@@ -307,6 +307,15 @@ window.addEventListener('popstate', function(e) {
 
 // ─── Treasury logic moved to assets/js/treasury.js ───────────
 
+// ─── BLOCK EXPLORER ───────────────────────────────────────────
+// One definition for every explorer link on the site. They used to be written
+// out by hand, which is how four of them ended up on /classic/ — a path that is
+// not Terraport Finder's network name and sends people to a different explorer
+// entirely. Terraport Finder serves Terra Classic only, and calls it mainnet.
+const FINDER = 'https://finder.terraport.finance/mainnet';
+const finderTx   = (h) => `${FINDER}/tx/${h}`;
+const finderAddr = (a) => `${FINDER}/address/${a}`;
+
 // ─── EVIDENCE LINK ────────────────────────────────────────────
 // The URL comes from whoever asked the question, so it is untrusted twice over:
 // it lands in an href, where a javascript: scheme would execute, and in HTML,
@@ -1930,7 +1939,7 @@ window.sendChatMessage = async function() {
     window.clearChatReply();
     btn.textContent = 'Send Message →'; btn.disabled = false;
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
-    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraport.finance/classic/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
+    statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraport.finance/mainnet/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
     setTimeout(() => { loadChatFromChain(); }, 8000);
     setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
   } catch(e) {
@@ -2156,7 +2165,7 @@ function renderChatMessages(msgs) {
             <div style="font-size:9px;color:${labelColor};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2px;">${label}</div>
             <div style="font-size:12px;color:var(--muted);">${m.amount} LUNC → Protocol Treasury</div>
           </div>
-          <a href="https://finder.terraport.finance/classic/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
+          <a href="https://finder.terraport.finance/mainnet/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
         </div>
       </div>`;
     }
@@ -2190,7 +2199,7 @@ function renderChatMessages(msgs) {
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
             <span onclick="openUserProfile('${m.fullAddr || ''}')" style="font-size:13px;font-weight:700;color:var(--text);cursor:pointer;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${displayName}</span>
             ${rankBadge}
-            <a href="https://finder.terraport.finance/classic/tx/${m.txHash}" target="_blank"
+            <a href="https://finder.terraport.finance/mainnet/tx/${m.txHash}" target="_blank"
               style="font-size:9px;color:var(--muted);text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0;"
               onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
               🔗 ${m.time}
@@ -2349,7 +2358,7 @@ window.openUserProfile = async function(wallet) {
             <div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:3px;">STREAK 🔥</div>
           </div>
         </div>
-        <a href="https://finder.terraport.finance/classic/address/${wallet}" target="_blank" style="display:block;text-align:center;margin-top:16px;font-size:11px;color:var(--accent);text-decoration:none;">🔗 View wallet on Finder</a>
+        <a href="https://finder.terraport.finance/mainnet/address/${wallet}" target="_blank" style="display:block;text-align:center;margin-top:16px;font-size:11px;color:var(--accent);text-decoration:none;">🔗 View wallet on Finder</a>
       </div>
     </div>`;
   document.body.appendChild(modal);
