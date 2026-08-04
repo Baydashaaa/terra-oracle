@@ -204,12 +204,28 @@ canvas {
     z-index: 100;
   }
 
-  /* Логотип — компактный */
+  /* Логотип — компактный.
+     Здесь был баг: `min-width: unset`. Для min-width initial value = auto,
+     то есть unset даёт РОВНО auto, а auto у флекс-элемента означает «не
+     сжиматься уже своего min-content». Внутри логотипа текст с
+     white-space:nowrap, поэтому блок держал полную ширину «Terra Oracle
+     Classic» и выдавливал #mobile-nav-controls — кнопка Connect наезжала
+     на надпись. Нужен именно 0. */
   .nav-logo {
-    min-width: unset;
+    min-width: 0;
     gap: 6px;
-    flex: 1;
+    flex: 1 1 auto;
+    overflow: hidden;
   }
+  /* Внутренние флекс-обёртки тоже должны уметь сжиматься */
+  .nav-logo > div { min-width: 0; }
+  .nav-logo div[style*="Boldonse"],
+  .nav-logo div[style*="TCO"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Контролы не сжимаются и не уезжают: 44px тач-таргет важнее вордмарка */
+  #mobile-nav-controls { flex: 0 0 auto; }
   .nav-logo img {
     height: 48px !important;
     width: 48px !important;
