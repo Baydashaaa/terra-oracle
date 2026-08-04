@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=d339c82e5a">
+  <link rel="stylesheet" href="assets/css/style.css?v=ebb2b01f64">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -2372,7 +2372,7 @@
   </script>
   <script src="assets/js/draw-schedule.js?v=44225cb598"></script>
   <script src="assets/js/treasury.js?v=7306eae8ab"></script>
-  <script src="assets/js/app.js?v=881e484eca"></script>
+  <script src="assets/js/app.js?v=afd37d7fab"></script>
   <script src="assets/js/profile.js?v=0e93597628"></script>
   <script src="assets/js/reputation.js?v=8728f13547"></script>
 <script>
@@ -2435,10 +2435,15 @@ function updateMobileWalletUI(address) {
       navBtn.style.background = 'rgba(0,200,150,0.12)';
       navBtn.style.borderColor = 'rgba(0,200,150,0.35)';
       navBtn.style.color = '#66ffaa';
+      // Lets CSS drop the address on narrow screens while still showing the
+      // word "Connect" when there is nothing connected yet — the state cannot
+      // be expressed from the label text alone.
+      navBtn.classList.add('is-connected');
     }
   } else {
     if (connectedInfo) connectedInfo.style.display = 'none';
     if (navLabel) navLabel.textContent = 'Connect';
+    if (navBtn) navBtn.classList.remove('is-connected');
     if (navBtn) {
       navBtn.style.background = 'rgba(84,147,247,0.15)';
       navBtn.style.borderColor = 'rgba(84,147,247,0.4)';
@@ -3274,7 +3279,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 
 <!-- ═══ ORACLE EYE (mascot + feedback) — external module ═══ -->
 <script src="assets/js/oracle-eye.js?v=8a15e51aec"></script>
-<script src="assets/js/oracle-notify.js?v=5a427f47c7"></script>
+<script src="assets/js/oracle-notify.js?v=c271bba776"></script>
 
 
 </body>
