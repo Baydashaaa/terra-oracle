@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202608041245">
+  <link rel="stylesheet" href="assets/css/style.css?v=202608041330">
 <style>
 /* ── WALLET PICKER GRID (oracle-draw style) ─────────────────── */
 #wallet-dropdown .wallet-grid {
@@ -442,33 +442,20 @@
 </div>
  <div class="nav-logo" onclick="showPage('home')" role="button" tabindex="0"
  onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('home');}"
- style="cursor:pointer;position:relative;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;outline:none;" title="Go to Home">
- <!-- Radial glow behind logo — height is capped to the navbar's content box
-      (min-height 80px minus 6px padding top/bottom = 68px) and drawn as an
-      ellipse, so the glow spreads sideways but never bleeds past the navbar.
-      Clipping the <nav> itself is not an option: it is overflow:visible on
-      purpose so the wallet dropdown and notification panel can hang below it. -->
- <div style="position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:130px;height:68px;
-   background:radial-gradient(ellipse at center,rgba(120,60,255,0.35) 0%,rgba(60,100,255,0.2) 40%,transparent 70%);
-   pointer-events:none;animation:logoGlow 3s ease-in-out infinite alternate;"></div>
- <div style="display:flex;align-items:center;gap:6px;position:relative;z-index:1;">
- <img src="v1.gif" draggable="false"
- style="height:100px;width:100px;object-fit:contain;flex-shrink:0;margin:-16px 0;mix-blend-mode:lighten;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;"
- width="100" height="100" alt="Terra Oracle Classic">
- <div style="display:flex;flex-direction:column;justify-content:center;">
- <div style="font-family:'Boldonse',sans-serif;font-weight:400;font-size:14px;
- letter-spacing:0.06em;color:#fff;text-transform:uppercase;line-height:1.1;white-space:nowrap;
- text-shadow:0 0 12px rgba(0,0,0,0.9),0 2px 6px rgba(0,0,0,0.8);">
- Terra Oracle <span style="color:#7eb8ff;">Classic</span>
- </div>
- <div style="font-size:9px;color:var(--gold);letter-spacing:0.2em;margin-top:3px;opacity:0.95;white-space:nowrap;
- font-family:'Exo 2',sans-serif;text-shadow:0 0 8px rgba(0,0,0,0.9);">
- TCO · LUNC ECOSYSTEM
- </div>
- </div>
- </div>
- </div>
- <div class="nav-tabs">
+ title="Go to Home">
+ <span class="nav-logo-orb">
+  <img src="v1.gif" draggable="false" width="100" height="100" alt="Terra Oracle Classic">
+ </span>
+ <span class="nav-logo-text">
+  <span class="nav-logo-title">Terra Oracle <span class="nav-logo-accent">Classic</span></span>
+  <span class="nav-logo-sub">TCO &middot; LUNC Ecosystem</span>
+ </span>
+ <svg class="nav-logo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+   stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <polyline points="9 5 16 12 9 19"/>
+ </svg>
+</div>
+<div class="nav-tabs">
  <div class="nav-system" id="nav-system">
  <button class="nav-tab nav-node" onclick="showRepPage('leaderboard')">Reputation</button>
  <button class="nav-tab nav-node" onclick="showPage('board')" data-page="board">Board</button>
