@@ -307,13 +307,20 @@
     injectCss();
 
     var host = null;
-    var mobBar = document.querySelector('.mob-nav-controls');   // Oracle Draw mobile
+
+    // The two sites name their mobile control strip differently — Oracle Draw
+    // uses .mob-nav-controls, Terra Oracle #mobile-nav-controls. Only the first
+    // was checked, so on Terra Oracle's phone layout the bell fell through to
+    // the desktop branch and was placed next to #wallet-wrap, which that
+    // breakpoint hides. The bell existed in the DOM and was simply never seen.
+    var mobBar = document.querySelector('.mob-nav-controls, #mobile-nav-controls');
     var isMobileBar = mobBar && getComputedStyle(mobBar).display !== 'none';
 
     if (isMobileBar) {
       host = document.createElement('div');
       host.className = 'onf-wrap';
-      var ham = mobBar.querySelector('#hamburger-btn');
+      // Sit just left of the menu button on both sites.
+      var ham = mobBar.querySelector('#hamburger-btn, #nav-hamburger, .nav-hamburger');
       if (ham) mobBar.insertBefore(host, ham); else mobBar.appendChild(host);
     } else {
       var anchor = document.getElementById('wallet-wrap');       // both sites (desktop)
@@ -801,6 +808,29 @@
   function boot() {
     mount();
     hookWalletFns();
+
+    // Which strip is visible depends on the viewport, and mount() picks its
+    // anchor once. On a rotate or resize across the breakpoint the bell would
+    // otherwise stay attached to a container that is now hidden.
+    var reflow = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(reflow);
+      reflow = setTimeout(function () {
+        var w = document.querySelector('.onf-wrap');
+        if (!w) return;
+        var visible = w.offsetParent !== null || getComputedStyle(w).position === 'fixed';
+        if (!visible) {
+          var open = elPanel && elPanel.classList.contains('open');
+          w.parentNode.removeChild(w);
+          mounted = false;
+          mount();
+          render();
+          if (open && elPanel) elPanel.classList.add('open');
+        }
+        positionToasts();
+      }, 200);
+    });
+
     setWallet(currentWallet());
     // Sites restore the session at different points during startup, and some
     // define setWalletConnected late — re-check for a while, then settle.
