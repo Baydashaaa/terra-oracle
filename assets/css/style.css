@@ -1664,19 +1664,22 @@ canvas {
    светящийся орб, без круга и без обрезки. */
 .nav-logo-orb{
   position:relative; flex:0 0 auto;
-  width:62px; height:62px;
+  width:74px; height:74px;
   display:grid; place-items:center;
 }
 /* Свечение даётся фильтром по САМОЙ форме знака, а не подложкой.
    Прежний эллипс под орбом читался как пятно на фоне шапки: он
    прямоугольной области и не совпадал с кругом. drop-shadow идёт по
    альфа-каналу гифки (вне круга она прозрачная), поэтому светится ровно
-   круг. Радиус подобран так, чтобы 62 + 8 + 8 = 78px уместились в высоту
-   навбара 80px и ничего не вылезло за полосу. */.nav-logo-orb img{
-  position:relative; width:62px; height:62px; max-width:none;
+   круг. Знак 74px — шапка от него подрастает с 80 до 86px, это нормально:
+   отступ панели уведомлений меряется от живого <nav> в рантайме и
+   подстроится сам. Радиус свечения 7px, то есть 74+14=88 при высоте 86 —
+   за полосу выходит на пару пикселей мягкого края, не больше. */
+.nav-logo-orb img{
+  position:relative; width:74px; height:74px; max-width:none;
   object-fit:contain; mix-blend-mode:lighten;
   -webkit-user-drag:none;
-  filter:drop-shadow(0 0 8px rgba(124,72,255,.55));
+  filter:drop-shadow(0 0 7px rgba(124,72,255,.55));
   /* Базовый файл держит `.nav-logo img { animation: logoPulse 4s ... }` —
      пульсацию drop-shadow. Глушим её здесь, иначе логотип продолжает
      мерцать, даже когда свечение статично. */
@@ -1731,20 +1734,22 @@ canvas {
 
 @media (max-width:768px){
   .nav-logo{ flex:1 1 auto; gap:10px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:50px; height:50px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:60px; height:60px; }
   .nav-logo svg.nav-logo-chev{ width:15px; height:15px; }
   .nav-logo-text{ gap:4px; }
   .nav-logo-title{ font-size:13.5px; letter-spacing:.03em; }
   .nav-logo-sub{ font-size:8px; letter-spacing:.13em; }
 }
 
-/* Первый порог: уходит подпись, освобождая всю строку под название.
-   Убираем её, а не сжимаем текст: акцент-линия держит композицию и одна. */
+/* Подпись «TCO · LUNC Ecosystem» показывается на ВСЕХ ширинах.
+   Раньше я прятал её здесь, считая, что она отнимает место — это была
+   ошибка: строка уже названия, по горизонтали ограничивает именно
+   название. По высоте тоже запас: даже с названием в две строки блок
+   занимает ~46px при 64px мобильной шапки. */
 @media (max-width:430px){
-  .nav-logo-sub{ display:none; }
-  .nav-logo-text{ gap:6px; }
+  .nav-logo-text{ gap:4px; }
   .nav-logo{ gap:9px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:44px; height:44px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:53px; height:53px; }
 }
 
 /* 400px, а не 340: между этими значениями название в одну строку уже не
@@ -1757,5 +1762,9 @@ canvas {
   .nav-logo svg.nav-logo-chev{ display:none; }
   .nav-logo-title{ white-space:normal; line-height:1.06; font-size:12.5px; }
   .nav-logo-rule{ display:none; }
-  .nav-logo-text{ gap:2px; }
+  .nav-logo-text{ gap:3px; }
+  /* Как только название встало в две строки, самой широкой строкой в
+     колонке становится ПОДПИСЬ — поджимаем её, иначе на 330px она
+     упирается в кнопки. */
+  .nav-logo-sub{ font-size:8.5px; letter-spacing:.09em; }
 }
