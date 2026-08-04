@@ -1641,136 +1641,110 @@ canvas {
    wordmark. */
 
 
-/* ══ ЛОГОТИП-КАПСУЛА ═══════════════════════════════════════════════════════
-   Логотип оформлен единой пилюлей и подогнан под навбар: высота капсулы
-   меньше контентной коробки шапки (min-height 80px минус padding 6px = 68px),
-   поэтому ничего не выходит за пределы полосы и не нужен overflow — прежнее
-   сияние-эллипс за пределами коробки убрано вместе с этим.
+/* ══ ЛОГОТИП ═══════════════════════════════════════════════════════════════
+   Знак + текст + акцент-линия. Ни рамок, ни подложки: логотип «одним целым»
+   с шапкой достигается тем, что подложки нет вовсе, а свечение ограничено
+   мягким эллипсом ниже полосы навбара.
 
-   Блок лежит В КОНЦЕ файла намеренно: базовые правила `.nav-logo`,
-   `.nav-logo svg` и `.nav-logo-text` объявлены в минифицированной первой
-   строке, а мобильные — в @media выше по тексту. Одинаковая специфичность
-   решается порядком, поэтому и база, и оба медиазапроса собраны здесь,
-   именно в этой последовательности. Перемещать блок вверх нельзя. */
+   Блок лежит В КОНЦЕ файла намеренно. Базовые `.nav-logo`, `.nav-logo svg` и
+   `.nav-logo-text` объявлены в минифицированной первой строке, мобильные — в
+   @media выше по тексту. Специфичность одинаковая, решает порядок, поэтому
+   база и все медиазапросы собраны здесь, в этой последовательности. */
 
-.nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;                       /* база ставит 300px — капсула лишнего не тянет */
-  padding: 5px 15px 5px 5px;
-  border-radius: 999px;
-  position: relative;
-  cursor: pointer;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-  background:
-    radial-gradient(84px 66px at 7% 50%, rgba(124,72,255,0.42), rgba(124,72,255,0) 72%),
-    linear-gradient(100deg, #2a1a4d 0%, #1a1b38 34%, #101426 68%, #0b0f1a 100%);
-  border: 1px solid rgba(150,120,255,0.20);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 2px 14px rgba(0,0,0,0.45),
-    0 0 22px rgba(110,70,230,0.16);
-  transition: border-color .25s, box-shadow .25s, transform .18s;
-  animation: none;
-}
-.nav-logo:hover {
-  border-color: rgba(160,135,255,0.40);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 2px 16px rgba(0,0,0,0.5),
-    0 0 30px rgba(120,80,255,0.30);
-}
-.nav-logo:active { transform: scale(0.985); }
-.nav-logo:focus-visible { border-color: #7eb8ff; box-shadow: 0 0 0 3px rgba(126,184,255,0.25); }
-
-/* Круг орба. Свой чёрный диск у gif занимает ~70% кадра, поэтому картинка
-   масштабируется в 1.45 раза и подрезается по кругу — край получается ровным. */
-.nav-logo-orb {
-  flex: 0 0 auto;
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid; place-items: center;
-  background: #06060e;
-  box-shadow: 0 0 0 1px rgba(150,120,255,0.22), 0 0 16px rgba(120,70,255,0.35);
-}
-.nav-logo-orb img {
-  width: 67px; height: 67px;
-  max-width: none;
-  object-fit: contain;
-  -webkit-user-drag: none;
-  animation: logoPulse 4s ease-in-out infinite;
+.nav-logo{
+  display:flex; align-items:center; gap:13px;
+  min-width:0;                      /* база ставит 300px */
+  padding:0; border:0; background:none; border-radius:0;
+  position:relative; cursor:pointer; outline:none;
+  -webkit-tap-highlight-color:transparent;
+  animation:none;
 }
 
-.nav-logo-text {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  font-family: 'Exo 2', sans-serif;    /* база ставила Rajdhani — сбрасываем */
-  letter-spacing: normal;
-  text-transform: none;
+/* Знак. Чёрный фон гифки гасится режимом lighten — остаётся только
+   светящийся орб, без круга и без обрезки. */
+.nav-logo-orb{
+  position:relative; flex:0 0 auto;
+  width:50px; height:50px;
+  display:grid; place-items:center;
 }
-.nav-logo-title {
-  font-family: 'Boldonse', sans-serif;
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 1.08;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
-  color: #fff;
-  white-space: nowrap;
+/* Свечение: эллипс ШИРЕ знака, но НИЖЕ контентной коробки шапки (68px),
+   поэтому за полосу ничего не выходит и обрезать ничего не нужно. */
+.nav-logo-orb::before{
+  content:''; position:absolute;
+  width:92px; height:50px; border-radius:50%;
+  background:radial-gradient(ellipse at center,
+    rgba(124,72,255,.30) 0%, rgba(77,163,255,.11) 46%, transparent 72%);
+  pointer-events:none;
+  animation:logoGlowSoft 4.5s ease-in-out infinite alternate;
 }
-.nav-logo-accent {
-  background: linear-gradient(90deg, #4da3ff 0%, #93d4ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: #7eb8ff;                      /* фолбэк, если clip не поддержан */
+.nav-logo-orb img{
+  position:relative; width:50px; height:50px; max-width:none;
+  object-fit:contain; mix-blend-mode:lighten;
+  -webkit-user-drag:none;
 }
-.nav-logo-sub {
-  margin-top: 4px;
-  font-family: 'Exo 2', sans-serif;
-  font-size: 9px;
-  line-height: 1;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold);
-  opacity: 0.95;
-  white-space: nowrap;
-}
-/* Шеврон. Селектор с классом бьёт базовое `.nav-logo svg{width:32px}`. */
-.nav-logo svg.nav-logo-chev {
-  flex: 0 0 auto;
-  width: 15px; height: 15px;
-  color: #4da3ff;
-  opacity: 0.85;
-  filter: none;
-  transition: transform .25s, opacity .25s;
-}
-.nav-logo:hover svg.nav-logo-chev { transform: translateX(3px); opacity: 1; }
-
-@media (max-width: 768px) {
-  .nav-logo {
-    flex: 1 1 auto;
-    gap: 9px;
-    padding: 4px 11px 4px 4px;
-  }
-  .nav-logo-orb { width: 38px; height: 38px; }
-  .nav-logo-orb img { width: 55px; height: 55px; }
-  .nav-logo-title { font-size: 12.5px; letter-spacing: 0.04em; }
-  .nav-logo-sub { font-size: 8px; letter-spacing: 0.12em; margin-top: 3px; }
-  .nav-logo svg.nav-logo-chev { width: 13px; height: 13px; }
-  /* Многоточие только на тексте — картинку и капсулу обрезать нельзя */
-  .nav-logo-title, .nav-logo-sub { overflow: hidden; text-overflow: ellipsis; }
+@keyframes logoGlowSoft{
+  from{ opacity:.75; transform:scale(.97); }
+  to  { opacity:1;   transform:scale(1.03); }
 }
 
-@media (max-width: 380px) {
-  /* Ниже этой ширины первым уступает текст: подпись и шеврон уходят,
-     капсула с орбом и названием остаётся читаемой */
-  .nav-logo-sub { display: none; }
-  .nav-logo svg.nav-logo-chev { display: none; }
-  .nav-logo { padding-right: 12px; }
+.nav-logo-text{
+  display:flex; flex-direction:column; justify-content:center;
+  min-width:0; gap:5px;
+  font-family:'Exo 2',sans-serif;   /* база ставила Rajdhani — сбрасываем */
+  letter-spacing:normal; text-transform:none;
+}
+.nav-logo-title{
+  font-family:'Boldonse',sans-serif; font-weight:400;
+  font-size:15px; line-height:1; letter-spacing:.055em;
+  text-transform:uppercase; color:#fff; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.nav-logo-accent{
+  background:linear-gradient(90deg,#4da3ff 0%,#93d4ff 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:#7eb8ff;                    /* фолбэк, если clip не поддержан */
+}
+/* Акцент-линия — та самая, что даёт логотипу вес без единой рамки */
+.nav-logo-rule{
+  height:1px; width:100%; border-radius:1px;
+  background:linear-gradient(90deg,#7B5CFF 0%,#00D4FF 55%,transparent 100%);
+  opacity:.75;
+}
+/* Регистр НЕ трогаем: пишется ровно как в разметке — «TCO · LUNC Ecosystem».
+   Трекинг под смешанный регистр уменьшен, иначе строка рассыпается. */
+.nav-logo-sub{
+  font-size:9.5px; line-height:1; letter-spacing:.13em;
+  color:var(--gold); opacity:.9; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+
+@media (max-width:768px){
+  .nav-logo{ flex:1 1 auto; gap:10px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:42px; height:42px; }
+  .nav-logo-orb::before{ width:78px; height:44px; }
+  .nav-logo-text{ gap:4px; }
+  .nav-logo-title{ font-size:13px; letter-spacing:.035em; }
+  .nav-logo-sub{ font-size:8px; letter-spacing:.13em; }
+}
+
+/* Первый порог: уходит подпись, освобождая всю строку под название.
+   Убираем её, а не сжимаем текст: акцент-линия держит композицию и одна. */
+@media (max-width:430px){
+  .nav-logo-sub{ display:none; }
+  .nav-logo-text{ gap:6px; }
+  .nav-logo{ gap:9px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:38px; height:38px; }
+  .nav-logo-orb::before{ width:70px; height:40px; }
+}
+
+/* 400px, а не 340: между этими значениями название в одну строку уже не
+   помещается, и срабатывал запасной вариант с многоточием — «TERRA ORACLE
+   CLA…». Многоточие читается как поломка, перенос в две строки — как
+   задумано, поэтому переносим раньше, чем начинает резать.
+   Две строки сами по себе дают композицию, линия становится лишней. */
+@media (max-width:400px){
+  .nav-logo-title{ white-space:normal; line-height:1.06; font-size:12.5px; }
+  .nav-logo-rule{ display:none; }
+  .nav-logo-text{ gap:2px; }
 }
