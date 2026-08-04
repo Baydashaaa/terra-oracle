@@ -701,7 +701,20 @@
     if (!added.length) { refreshBadge(); return; }
 
     var firstRun = !store.init;
-    added.forEach(function (i) { i.read = firstRun; });        // no toast wall on first run
+
+    // On a first run the whole history arrives at once, and marking all of it
+    // read was too blunt: opening the site on a second device — or simply on
+    // the other domain, since localStorage is per-origin — silently swallowed
+    // everything, including a win from an hour ago. The badge then read zero
+    // and the notifications looked broken rather than already-seen.
+    //
+    // Only genuinely old events are pre-read. Anything recent still counts as
+    // unread; toasts stay suppressed on a first run either way, so there is
+    // still no wall of popups.
+    var FIRST_RUN_READ_BEFORE = Math.floor(Date.now() / 1000) - 48 * 3600;
+    added.forEach(function (i) {
+      i.read = firstRun ? ((i.ts || 0) < FIRST_RUN_READ_BEFORE) : false;
+    });
 
     store.items = added.concat(store.items)
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
