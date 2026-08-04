@@ -334,7 +334,19 @@
     elBell.addEventListener('click', function (e) {
       e.stopPropagation();
       var open = elPanel.classList.toggle('open');
-      if (open) render();
+      if (open) {
+        render();
+        // Opening the panel is reading it. The badge used to clear only when a
+        // specific item was clicked or "mark all" was pressed, so someone who
+        // looked at their notifications and reloaded still saw the same count —
+        // which reads as the page ignoring them.
+        //
+        // Marked after a beat so the unread bars are visible for a moment
+        // first: they are the only thing distinguishing what is new.
+        setTimeout(function () {
+          if (elPanel.classList.contains('open')) markAllRead();
+        }, 1200);
+      }
     });
     host.querySelector('#onf-mark').addEventListener('click', function (e) {
       e.stopPropagation();
