@@ -1675,22 +1675,20 @@ canvas {
   background:radial-gradient(ellipse at center,
     rgba(124,72,255,.26) 0%, rgba(77,163,255,.10) 46%, transparent 72%);
   pointer-events:none;
-  /* Только лёгкое дыхание размером. Анимировать ЯРКОСТЬ нельзя: знак идёт
-     с mix-blend-mode:lighten, и когда подсветка под ним разгорается,
-     lighten подменяет тёмные части знака цветом свечения — логотип
-     выглядит выцветшим. Раньше мерцала именно прозрачность. */
-  animation:logoGlowSoft 5s ease-in-out infinite alternate;
+  /* Свечение статичное. Любая анимация здесь мешает: знак идёт с
+     mix-blend-mode:lighten, и когда подсветка под ним меняется,
+     lighten подменяет тёмные части знака — логотип «дышит» яркостью. */
+  animation:none;
 }
 .nav-logo-orb img{
   position:relative; width:58px; height:58px; max-width:none;
   object-fit:contain; mix-blend-mode:lighten;
   -webkit-user-drag:none;
+  /* Базовый файл держит `.nav-logo img { animation: logoPulse 4s ... }` —
+     пульсацию drop-shadow. Глушим её здесь, иначе логотип продолжает
+     мерцать, даже когда свечение статично. */
+  animation:none;
 }
-@keyframes logoGlowSoft{
-  from{ transform:scale(.98); }
-  to  { transform:scale(1.04); }
-}
-
 /* Предохранитель на случай, если в разметке остался старый <svg> шеврона:
    базовое `.nav-logo svg{width:32px}` раздувало его до огромного знака «>».
    В новой разметке svg внутри логотипа нет вовсе. */
