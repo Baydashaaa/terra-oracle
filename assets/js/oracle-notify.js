@@ -196,8 +196,8 @@
          same --onf-top the toasts already measure) and spans the viewport
          rather than the width of the little control strip it is mounted in. */
       '@media (max-width:560px){',
-      '  .onf-panel{position:fixed;top:var(--onf-top,72px);left:12px;right:12px;',
-      '  width:auto;max-width:none;max-height:calc(100vh - var(--onf-top,72px) - 16px);',
+      '  .onf-panel{position:fixed;top:var(--onf-panel-top,72px);left:12px;right:12px;',
+      '  width:auto;max-width:none;max-height:calc(100vh - var(--onf-panel-top,72px) - 16px);',
       '  display:none;flex-direction:column;}',
       '  .onf-panel.open{display:flex;}',
       '  .onf-list{max-height:none;flex:1;min-height:0;}',
@@ -357,10 +357,12 @@
       e.stopPropagation();
       var open = elPanel.classList.toggle('open');
       if (open) {
-        // The panel is pinned to the navbar on mobile, so the measurement has
-        // to be current — the bar's height changes with orientation and with
-        // the page being scrolled.
-        positionToasts();
+        // Hang the panel off the bell itself rather than off a measured navbar
+        // height. Measuring the bar was close but not the same thing: when the
+        // measurement came back short the panel started above the header and
+        // covered it. The bell is inside the header, so its own bottom edge
+        // cannot be above it whatever the layout does.
+        positionPanel();
         render();
         // Opening the panel is reading it. The badge used to clear only when a
         // specific item was clicked or "mark all" was pressed, so someone who
@@ -466,6 +468,20 @@
   // Keep the toast stack tucked just under the navbar. The two sites have
   // different nav heights (and it changes on mobile), so measure rather than
   // hardcode. Config can override with a fixed number.
+  function positionPanel() {
+    if (!elBell || !elPanel) return;
+    var r = elBell.getBoundingClientRect();
+    // Fall back to the toast offset if the bell has no box yet (hidden branch
+    // mid-remount), so the panel never lands at the very top of the screen.
+    var top = r.height ? Math.round(r.bottom + 8) : null;
+    if (top === null) {
+      positionToasts();
+      var v = getComputedStyle(document.documentElement).getPropertyValue('--onf-top');
+      top = parseInt(v, 10) || 72;
+    }
+    document.documentElement.style.setProperty('--onf-panel-top', top + 'px');
+  }
+
   function positionToasts() {
     if (typeof CFG.toastTop === 'number') {
       document.documentElement.style.setProperty('--onf-top', CFG.toastTop + 'px');
@@ -828,6 +844,7 @@
           if (open && elPanel) elPanel.classList.add('open');
         }
         positionToasts();
+        if (elPanel && elPanel.classList.contains('open')) positionPanel();
       }, 200);
     });
 
