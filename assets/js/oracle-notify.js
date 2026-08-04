@@ -189,7 +189,22 @@
       'font-family:"Exo 2",sans-serif;transition:opacity .15s;opacity:.75;}',
       '.onf-mark:hover{opacity:1;}',
 
-      '.onf-list{max-height:min(60vh,400px);overflow-y:auto;scrollbar-width:thin;}',
+      /* On a phone the bell sits inside the mobile nav bar, and an absolutely
+         positioned panel is clipped by whichever ancestor has overflow:hidden
+         — which is what cut the last notification in half. Fixed positioning
+         takes it out of that chain entirely: it hangs from the navbar (the
+         same --onf-top the toasts already measure) and spans the viewport
+         rather than the width of the little control strip it is mounted in. */
+      '@media (max-width:560px){',
+      '  .onf-panel{position:fixed;top:var(--onf-top,72px);left:12px;right:12px;',
+      '  width:auto;max-width:none;max-height:calc(100vh - var(--onf-top,72px) - 16px);',
+      '  display:none;flex-direction:column;}',
+      '  .onf-panel.open{display:flex;}',
+      '  .onf-list{max-height:none;flex:1;min-height:0;}',
+      '}',
+
+      '.onf-list{max-height:min(60vh,400px);overflow-y:auto;scrollbar-width:thin;',
+      '-webkit-overflow-scrolling:touch;}',
       '.onf-item{display:flex;gap:10px;padding:11px 12px;position:relative;',
       'border-bottom:1px solid var(--border,rgba(123,92,255,0.13));cursor:pointer;text-decoration:none;',
       'transition:background 0.15s;}',
@@ -335,6 +350,10 @@
       e.stopPropagation();
       var open = elPanel.classList.toggle('open');
       if (open) {
+        // The panel is pinned to the navbar on mobile, so the measurement has
+        // to be current — the bar's height changes with orientation and with
+        // the page being scrolled.
+        positionToasts();
         render();
         // Opening the panel is reading it. The badge used to clear only when a
         // specific item was clicked or "mark all" was pressed, so someone who
