@@ -1664,7 +1664,7 @@ canvas {
    светящийся орб, без круга и без обрезки. */
 .nav-logo-orb{
   position:relative; flex:0 0 auto;
-  width:50px; height:50px;
+  width:58px; height:58px;
   display:grid; place-items:center;
 }
 /* Свечение: эллипс ШИРЕ знака, но НИЖЕ контентной коробки шапки (68px),
@@ -1673,19 +1673,28 @@ canvas {
   content:''; position:absolute;
   width:92px; height:50px; border-radius:50%;
   background:radial-gradient(ellipse at center,
-    rgba(124,72,255,.30) 0%, rgba(77,163,255,.11) 46%, transparent 72%);
+    rgba(124,72,255,.26) 0%, rgba(77,163,255,.10) 46%, transparent 72%);
   pointer-events:none;
-  animation:logoGlowSoft 4.5s ease-in-out infinite alternate;
+  /* Только лёгкое дыхание размером. Анимировать ЯРКОСТЬ нельзя: знак идёт
+     с mix-blend-mode:lighten, и когда подсветка под ним разгорается,
+     lighten подменяет тёмные части знака цветом свечения — логотип
+     выглядит выцветшим. Раньше мерцала именно прозрачность. */
+  animation:logoGlowSoft 5s ease-in-out infinite alternate;
 }
 .nav-logo-orb img{
-  position:relative; width:50px; height:50px; max-width:none;
+  position:relative; width:58px; height:58px; max-width:none;
   object-fit:contain; mix-blend-mode:lighten;
   -webkit-user-drag:none;
 }
 @keyframes logoGlowSoft{
-  from{ opacity:.75; transform:scale(.97); }
-  to  { opacity:1;   transform:scale(1.03); }
+  from{ transform:scale(.98); }
+  to  { transform:scale(1.04); }
 }
+
+/* Предохранитель на случай, если в разметке остался старый <svg> шеврона:
+   базовое `.nav-logo svg{width:32px}` раздувало его до огромного знака «>».
+   В новой разметке svg внутри логотипа нет вовсе. */
+.nav-logo > svg{ display:none; }
 
 .nav-logo-text{
   display:flex; flex-direction:column; justify-content:center;
@@ -1693,11 +1702,14 @@ canvas {
   font-family:'Exo 2',sans-serif;   /* база ставила Rajdhani — сбрасываем */
   letter-spacing:normal; text-transform:none;
 }
+/* line-height НЕ 1 и БЕЗ overflow:hidden. У Boldonse литеры выходят за
+   em-коробку сверху, и при line-height:1 обрезка срезала им верхушки —
+   именно это было видно в навбаре. Многоточие тут больше не нужно:
+   на узких экранах название переносится в две строки, а не режется. */
 .nav-logo-title{
   font-family:'Boldonse',sans-serif; font-weight:400;
-  font-size:15px; line-height:1; letter-spacing:.055em;
+  font-size:16px; line-height:1.22; letter-spacing:.05em;
   text-transform:uppercase; color:#fff; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
 }
 .nav-logo-accent{
   background:linear-gradient(90deg,#4da3ff 0%,#93d4ff 100%);
@@ -1721,10 +1733,10 @@ canvas {
 
 @media (max-width:768px){
   .nav-logo{ flex:1 1 auto; gap:10px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:42px; height:42px; }
-  .nav-logo-orb::before{ width:78px; height:44px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:46px; height:46px; }
+  .nav-logo-orb::before{ width:84px; height:48px; }
   .nav-logo-text{ gap:4px; }
-  .nav-logo-title{ font-size:13px; letter-spacing:.035em; }
+  .nav-logo-title{ font-size:13.5px; letter-spacing:.03em; }
   .nav-logo-sub{ font-size:8px; letter-spacing:.13em; }
 }
 
@@ -1734,8 +1746,8 @@ canvas {
   .nav-logo-sub{ display:none; }
   .nav-logo-text{ gap:6px; }
   .nav-logo{ gap:9px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:38px; height:38px; }
-  .nav-logo-orb::before{ width:70px; height:40px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:42px; height:42px; }
+  .nav-logo-orb::before{ width:76px; height:44px; }
 }
 
 /* 400px, а не 340: между этими значениями название в одну строку уже не
