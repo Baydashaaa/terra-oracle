@@ -264,8 +264,14 @@
       'font-size:16px;line-height:1;padding:0 2px;transition:color .15s;}',
       '.onf-x:hover{color:var(--text,#e8eeff);}',
 
+      /* ВНИМАНИЕ: правила .onf-panel здесь быть НЕ ДОЛЖНО.
+         Этот блок остался с версии, когда панель висела внизу, и его
+         `top:auto` перебивал `top:var(--onf-panel-top)` из блока 560px выше
+         (та же специфичность, но это правило идёт позже — побеждает оно).
+         При position:fixed + top:auto коробка встаёт на своё статическое
+         место, то есть прямо в полосе контролов навбара, и панель залезала
+         на шапку. Позиционированием панели занимается только блок 560px. */
       '@media (max-width:600px){',
-      '.onf-panel{position:fixed;top:auto;right:8px;left:8px;width:auto;max-width:none;}',
       '.onf-toasts{left:12px;right:12px;bottom:auto;align-items:stretch;}',
       '.onf-toast{width:auto;}',
       '.onf-bell{width:34px;height:34px;}',
