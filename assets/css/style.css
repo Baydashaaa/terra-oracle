@@ -1664,36 +1664,24 @@ canvas {
    светящийся орб, без круга и без обрезки. */
 .nav-logo-orb{
   position:relative; flex:0 0 auto;
-  width:58px; height:58px;
+  width:62px; height:62px;
   display:grid; place-items:center;
 }
-/* Свечение: эллипс ШИРЕ знака, но НИЖЕ контентной коробки шапки (68px),
-   поэтому за полосу ничего не выходит и обрезать ничего не нужно. */
-.nav-logo-orb::before{
-  content:''; position:absolute;
-  width:92px; height:50px; border-radius:50%;
-  background:radial-gradient(ellipse at center,
-    rgba(124,72,255,.26) 0%, rgba(77,163,255,.10) 46%, transparent 72%);
-  pointer-events:none;
-  /* Свечение статичное. Любая анимация здесь мешает: знак идёт с
-     mix-blend-mode:lighten, и когда подсветка под ним меняется,
-     lighten подменяет тёмные части знака — логотип «дышит» яркостью. */
-  animation:none;
-}
-.nav-logo-orb img{
-  position:relative; width:58px; height:58px; max-width:none;
+/* Свечение даётся фильтром по САМОЙ форме знака, а не подложкой.
+   Прежний эллипс под орбом читался как пятно на фоне шапки: он
+   прямоугольной области и не совпадал с кругом. drop-shadow идёт по
+   альфа-каналу гифки (вне круга она прозрачная), поэтому светится ровно
+   круг. Радиус подобран так, чтобы 62 + 8 + 8 = 78px уместились в высоту
+   навбара 80px и ничего не вылезло за полосу. */.nav-logo-orb img{
+  position:relative; width:62px; height:62px; max-width:none;
   object-fit:contain; mix-blend-mode:lighten;
   -webkit-user-drag:none;
+  filter:drop-shadow(0 0 8px rgba(124,72,255,.55));
   /* Базовый файл держит `.nav-logo img { animation: logoPulse 4s ... }` —
      пульсацию drop-shadow. Глушим её здесь, иначе логотип продолжает
      мерцать, даже когда свечение статично. */
   animation:none;
 }
-/* Предохранитель на случай, если в разметке остался старый <svg> шеврона:
-   базовое `.nav-logo svg{width:32px}` раздувало его до огромного знака «>».
-   В новой разметке svg внутри логотипа нет вовсе. */
-.nav-logo > svg{ display:none; }
-
 .nav-logo-text{
   display:flex; flex-direction:column; justify-content:center;
   min-width:0; gap:5px;
@@ -1723,6 +1711,18 @@ canvas {
 }
 /* Регистр НЕ трогаем: пишется ровно как в разметке — «TCO · LUNC Ecosystem».
    Трекинг под смешанный регистр уменьшен, иначе строка рассыпается. */
+/* Стрелка справа. Селектор с классом обязателен: базовое правило
+   `.nav-logo svg{width:32px;height:32px;filter:drop-shadow(...)}` иначе
+   раздувает её до огромного знака «>» — так и вышло, когда выложили
+   только CSS без разметки. */
+.nav-logo svg.nav-logo-chev{
+  flex:0 0 auto; width:17px; height:17px;
+  margin-left:3px;
+  color:#4da3ff; opacity:.8; filter:none;
+  transition:transform .25s, opacity .25s;
+}
+.nav-logo:hover svg.nav-logo-chev{ transform:translateX(3px); opacity:1; }
+
 .nav-logo-sub{
   font-size:9.5px; line-height:1; letter-spacing:.13em;
   color:var(--gold); opacity:.9; white-space:nowrap;
@@ -1731,8 +1731,8 @@ canvas {
 
 @media (max-width:768px){
   .nav-logo{ flex:1 1 auto; gap:10px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:46px; height:46px; }
-  .nav-logo-orb::before{ width:84px; height:48px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:50px; height:50px; }
+  .nav-logo svg.nav-logo-chev{ width:15px; height:15px; }
   .nav-logo-text{ gap:4px; }
   .nav-logo-title{ font-size:13.5px; letter-spacing:.03em; }
   .nav-logo-sub{ font-size:8px; letter-spacing:.13em; }
@@ -1744,8 +1744,7 @@ canvas {
   .nav-logo-sub{ display:none; }
   .nav-logo-text{ gap:6px; }
   .nav-logo{ gap:9px; }
-  .nav-logo-orb, .nav-logo-orb img{ width:42px; height:42px; }
-  .nav-logo-orb::before{ width:76px; height:44px; }
+  .nav-logo-orb, .nav-logo-orb img{ width:44px; height:44px; }
 }
 
 /* 400px, а не 340: между этими значениями название в одну строку уже не
@@ -1754,6 +1753,8 @@ canvas {
    задумано, поэтому переносим раньше, чем начинает резать.
    Две строки сами по себе дают композицию, линия становится лишней. */
 @media (max-width:400px){
+  /* Стрелка уходит первой: на двух строках она только мешает */
+  .nav-logo svg.nav-logo-chev{ display:none; }
   .nav-logo-title{ white-space:normal; line-height:1.06; font-size:12.5px; }
   .nav-logo-rule{ display:none; }
   .nav-logo-text{ gap:2px; }
