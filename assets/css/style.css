@@ -1629,3 +1629,28 @@ canvas {
 }
 .q-evidence a:hover { text-decoration: underline; }
 
+/* ── Mobile header: wallet button, icon only ────────────────────────────────
+   The notification bell took the space the address label was using, and the
+   wallet button started overlapping the logo. The address on that button was
+   never load-bearing: the same address is shown in full inside the wallet
+   drawer, and the button's job here is to be tappable, not to be read.
+   "Connect" still shows when nothing is connected — that word IS the
+   instruction, so it stays. */
+@media (max-width: 560px) {
+  #mobile-wallet-nav-btn.is-connected #mobile-wallet-nav-label { display: none; }
+  #mobile-wallet-nav-btn.is-connected {
+    padding: 7px 9px;
+    gap: 0;
+    border-radius: 50%;
+    aspect-ratio: 1;
+    justify-content: center;
+  }
+  #mobile-wallet-nav-btn.is-connected svg { width: 15px; height: 15px; }
+}
+
+/* Below this the logo has to give way first — shrinking the controls further
+   would make them hard to hit, and a 44px target matters more than a full
+   wordmark. */
+@media (max-width: 380px) {
+  .nav-logo div[style*="TCO"] { display: none; }
+}
