@@ -211,42 +211,8 @@ canvas {
      white-space:nowrap, поэтому блок держал полную ширину «Terra Oracle
      Classic» и выдавливал #mobile-nav-controls — кнопка Connect наезжала
      на надпись. Нужен именно 0. */
-  /* min-width:0 обязателен — без него флекс-элемент не сжимается уже своего
-     min-content, а внутри текст с white-space:nowrap.
-     overflow:hidden здесь НЕЛЬЗЯ: внутри .nav-logo намеренно вылезают за
-     коробку две вещи — сияние-эллипс 130x68 и сам <img>, у которого
-     height:100px при margin:-16px 0. Обрезка превращала логотип в жёсткий
-     прямоугольник с отрезанным верхом. Прячем только текстовую колонку. */
-  .nav-logo {
-    min-width: 0;
-    gap: 6px;
-    flex: 1 1 auto;
-  }
-  .nav-logo > div,
-  .nav-logo > div > div { min-width: 0; }
-  .nav-logo div[style*="Boldonse"],
-  .nav-logo div[style*="TCO"] {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   /* Контролы не сжимаются и не уезжают: 44px тач-таргет важнее вордмарка */
   #mobile-nav-controls { flex: 0 0 auto; }
-  .nav-logo img {
-    height: 48px !important;
-    width: 48px !important;
-    margin: -6px 0 !important;
-  }
-  .nav-logo-text {
-    font-size: 12px;
-  }
-  .nav-logo div[style*="Boldonse"] {
-    font-size: 12px !important;
-    letter-spacing: 0.04em !important;
-  }
-  .nav-logo div[style*="TCO"] {
-    font-size: 8px !important;
-    letter-spacing: 0.12em !important;
-  }
 
   /* Скрываем десктопные табы и кнопки */
   .nav-tabs,
@@ -421,10 +387,6 @@ canvas {
   }
   h1 {
     font-size: 22px;
-  }
-  .nav-logo-text {
-    font-size: 11px;
-    letter-spacing: 0.06em;
   }
 }
 
@@ -1677,6 +1639,138 @@ canvas {
 /* Below this the logo has to give way first — shrinking the controls further
    would make them hard to hit, and a 44px target matters more than a full
    wordmark. */
+
+
+/* ══ ЛОГОТИП-КАПСУЛА ═══════════════════════════════════════════════════════
+   Логотип оформлен единой пилюлей и подогнан под навбар: высота капсулы
+   меньше контентной коробки шапки (min-height 80px минус padding 6px = 68px),
+   поэтому ничего не выходит за пределы полосы и не нужен overflow — прежнее
+   сияние-эллипс за пределами коробки убрано вместе с этим.
+
+   Блок лежит В КОНЦЕ файла намеренно: базовые правила `.nav-logo`,
+   `.nav-logo svg` и `.nav-logo-text` объявлены в минифицированной первой
+   строке, а мобильные — в @media выше по тексту. Одинаковая специфичность
+   решается порядком, поэтому и база, и оба медиазапроса собраны здесь,
+   именно в этой последовательности. Перемещать блок вверх нельзя. */
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;                       /* база ставит 300px — капсула лишнего не тянет */
+  padding: 5px 15px 5px 5px;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  background:
+    radial-gradient(84px 66px at 7% 50%, rgba(124,72,255,0.42), rgba(124,72,255,0) 72%),
+    linear-gradient(100deg, #2a1a4d 0%, #1a1b38 34%, #101426 68%, #0b0f1a 100%);
+  border: 1px solid rgba(150,120,255,0.20);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 2px 14px rgba(0,0,0,0.45),
+    0 0 22px rgba(110,70,230,0.16);
+  transition: border-color .25s, box-shadow .25s, transform .18s;
+  animation: none;
+}
+.nav-logo:hover {
+  border-color: rgba(160,135,255,0.40);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 2px 16px rgba(0,0,0,0.5),
+    0 0 30px rgba(120,80,255,0.30);
+}
+.nav-logo:active { transform: scale(0.985); }
+.nav-logo:focus-visible { border-color: #7eb8ff; box-shadow: 0 0 0 3px rgba(126,184,255,0.25); }
+
+/* Круг орба. Свой чёрный диск у gif занимает ~70% кадра, поэтому картинка
+   масштабируется в 1.45 раза и подрезается по кругу — край получается ровным. */
+.nav-logo-orb {
+  flex: 0 0 auto;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid; place-items: center;
+  background: #06060e;
+  box-shadow: 0 0 0 1px rgba(150,120,255,0.22), 0 0 16px rgba(120,70,255,0.35);
+}
+.nav-logo-orb img {
+  width: 67px; height: 67px;
+  max-width: none;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  animation: logoPulse 4s ease-in-out infinite;
+}
+
+.nav-logo-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  font-family: 'Exo 2', sans-serif;    /* база ставила Rajdhani — сбрасываем */
+  letter-spacing: normal;
+  text-transform: none;
+}
+.nav-logo-title {
+  font-family: 'Boldonse', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.08;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+.nav-logo-accent {
+  background: linear-gradient(90deg, #4da3ff 0%, #93d4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #7eb8ff;                      /* фолбэк, если clip не поддержан */
+}
+.nav-logo-sub {
+  margin-top: 4px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.95;
+  white-space: nowrap;
+}
+/* Шеврон. Селектор с классом бьёт базовое `.nav-logo svg{width:32px}`. */
+.nav-logo svg.nav-logo-chev {
+  flex: 0 0 auto;
+  width: 15px; height: 15px;
+  color: #4da3ff;
+  opacity: 0.85;
+  filter: none;
+  transition: transform .25s, opacity .25s;
+}
+.nav-logo:hover svg.nav-logo-chev { transform: translateX(3px); opacity: 1; }
+
+@media (max-width: 768px) {
+  .nav-logo {
+    flex: 1 1 auto;
+    gap: 9px;
+    padding: 4px 11px 4px 4px;
+  }
+  .nav-logo-orb { width: 38px; height: 38px; }
+  .nav-logo-orb img { width: 55px; height: 55px; }
+  .nav-logo-title { font-size: 12.5px; letter-spacing: 0.04em; }
+  .nav-logo-sub { font-size: 8px; letter-spacing: 0.12em; margin-top: 3px; }
+  .nav-logo svg.nav-logo-chev { width: 13px; height: 13px; }
+  /* Многоточие только на тексте — картинку и капсулу обрезать нельзя */
+  .nav-logo-title, .nav-logo-sub { overflow: hidden; text-overflow: ellipsis; }
+}
+
 @media (max-width: 380px) {
-  .nav-logo div[style*="TCO"] { display: none; }
+  /* Ниже этой ширины первым уступает текст: подпись и шеврон уходят,
+     капсула с орбом и названием остаётся читаемой */
+  .nav-logo-sub { display: none; }
+  .nav-logo svg.nav-logo-chev { display: none; }
+  .nav-logo { padding-right: 12px; }
 }
