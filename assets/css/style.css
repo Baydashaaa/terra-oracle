@@ -211,14 +211,19 @@ canvas {
      white-space:nowrap, поэтому блок держал полную ширину «Terra Oracle
      Classic» и выдавливал #mobile-nav-controls — кнопка Connect наезжала
      на надпись. Нужен именно 0. */
+  /* min-width:0 обязателен — без него флекс-элемент не сжимается уже своего
+     min-content, а внутри текст с white-space:nowrap.
+     overflow:hidden здесь НЕЛЬЗЯ: внутри .nav-logo намеренно вылезают за
+     коробку две вещи — сияние-эллипс 130x68 и сам <img>, у которого
+     height:100px при margin:-16px 0. Обрезка превращала логотип в жёсткий
+     прямоугольник с отрезанным верхом. Прячем только текстовую колонку. */
   .nav-logo {
     min-width: 0;
     gap: 6px;
     flex: 1 1 auto;
-    overflow: hidden;
   }
-  /* Внутренние флекс-обёртки тоже должны уметь сжиматься */
-  .nav-logo > div { min-width: 0; }
+  .nav-logo > div,
+  .nav-logo > div > div { min-width: 0; }
   .nav-logo div[style*="Boldonse"],
   .nav-logo div[style*="TCO"] {
     overflow: hidden;
@@ -1646,17 +1651,17 @@ canvas {
 .q-evidence a:hover { text-decoration: underline; }
 
 /* ── Mobile header: wallet button, icon only ────────────────────────────────
-   Иконка в ОБОИХ состояниях, не только в подключённом. Слово "Connect"
-   оставляли как инструкцию, но именно оно съедало ширину: при отключённом
-   кошельке логотип не помещался и обрезался на «CLASSI». Состояние читается
-   цветом — синий контур «не подключён», зелёный «подключён», — а полный адрес
-   и так показан внутри drawer'а. Кнопке добавлен aria-label/title, чтобы
-   инструкция не пропала для скринридера и длинного тапа.
-
-   !important здесь обязателен: у #mobile-wallet-nav-btn в index.html есть
-   inline-атрибут style с gap, border-radius и padding, а inline сильнее
-   таблицы стилей. Без него из всего блока работал только display:none на
-   подписи — кнопка оставалась овальной с прежними отступами. */
+   The notification bell took the space the address label was using, and the
+   wallet button started overlapping the logo. The address on that button was
+   never load-bearing: the same address is shown in full inside the wallet
+   drawer, and the button's job here is to be tappable, not to be read.
+   "Connect" still shows when nothing is connected — that word IS the
+   instruction, so it stays. */
+/* Обновлено: иконка в ОБОИХ состояниях. Слово "Connect" съедало ширину и
+   логотип не помещался. Состояние читается цветом — синий контур «не
+   подключён», зелёный «подключён»; полный адрес и так есть в drawer'е.
+   !important обязателен: у кнопки в index.html есть inline-атрибут style
+   с gap, border-radius и padding, а inline сильнее таблицы стилей. */
 @media (max-width: 560px) {
   #mobile-wallet-nav-btn #mobile-wallet-nav-label { display: none; }
   #mobile-wallet-nav-btn {
