@@ -1646,22 +1646,27 @@ canvas {
 .q-evidence a:hover { text-decoration: underline; }
 
 /* ── Mobile header: wallet button, icon only ────────────────────────────────
-   The notification bell took the space the address label was using, and the
-   wallet button started overlapping the logo. The address on that button was
-   never load-bearing: the same address is shown in full inside the wallet
-   drawer, and the button's job here is to be tappable, not to be read.
-   "Connect" still shows when nothing is connected — that word IS the
-   instruction, so it stays. */
+   Иконка в ОБОИХ состояниях, не только в подключённом. Слово "Connect"
+   оставляли как инструкцию, но именно оно съедало ширину: при отключённом
+   кошельке логотип не помещался и обрезался на «CLASSI». Состояние читается
+   цветом — синий контур «не подключён», зелёный «подключён», — а полный адрес
+   и так показан внутри drawer'а. Кнопке добавлен aria-label/title, чтобы
+   инструкция не пропала для скринридера и длинного тапа.
+
+   !important здесь обязателен: у #mobile-wallet-nav-btn в index.html есть
+   inline-атрибут style с gap, border-radius и padding, а inline сильнее
+   таблицы стилей. Без него из всего блока работал только display:none на
+   подписи — кнопка оставалась овальной с прежними отступами. */
 @media (max-width: 560px) {
-  #mobile-wallet-nav-btn.is-connected #mobile-wallet-nav-label { display: none; }
-  #mobile-wallet-nav-btn.is-connected {
-    padding: 7px 9px;
-    gap: 0;
-    border-radius: 50%;
+  #mobile-wallet-nav-btn #mobile-wallet-nav-label { display: none; }
+  #mobile-wallet-nav-btn {
+    padding: 7px !important;
+    gap: 0 !important;
+    border-radius: 50% !important;
     aspect-ratio: 1;
     justify-content: center;
   }
-  #mobile-wallet-nav-btn.is-connected svg { width: 15px; height: 15px; }
+  #mobile-wallet-nav-btn svg { width: 16px; height: 16px; }
 }
 
 /* Below this the logo has to give way first — shrinking the controls further
