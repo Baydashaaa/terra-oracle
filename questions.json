@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-05T14:12:22.065Z",
+  "_updated": "2026-08-05T14:12:30.038Z",
   "questions": [
     {
       "id": "LUNC-SDE494U",
@@ -54,7 +54,7 @@
       "poll": [
         {
           "text": "Yes",
-          "votes": 0,
+          "votes": 1,
           "voters": []
         },
         {
@@ -68,7 +68,10 @@
       "votes": 0,
       "answers": [],
       "status": "open",
-      "chosenAnswerId": null
+      "chosenAnswerId": null,
+      "pollVoters": [
+        "terra1zdnanxgsyy8zqpmy3dfgges4xlzdskqsrx6nm3"
+      ]
     },
     {
       "id": "LUNC-SAG32MT",
