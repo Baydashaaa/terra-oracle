@@ -350,10 +350,13 @@ async function upgradeWalletScores(force) {
 window.upgradeWalletScores = upgradeWalletScores;
 
 // Legacy function so existing calls don't break
-function getUserTitleFromStats(qCount, upvotes) {
-  // approximate reputation from old stats
-  const approxScore = qCount * 40 + upvotes * 20;
-  const rank = getRank(approxScore);
+// Takes the score, does not reinvent it. Both earlier versions computed REP
+// here from question and upvote counts — one with its own weights, one with
+// thresholds every wallet cleared at once, which is how every author ended up
+// labelled ASCENDED.
+function getUserTitleFromStats(score) {
+  const rank = getRank(score || 0);
+  if (!rank) return null;
   return {
     name: rank.icon + ' ' + rank.name,
     color: rank.color, bar: rank.bar,
@@ -523,20 +526,13 @@ function getTopAnswerCount(walletAddress) {
 
 function getUserTitle(walletAddress) {
   if (!walletAddress) return null;
-  // Uses local questions array - for real stats use getUserTitleFromStats
-  const qCount = (typeof questions !== 'undefined' ? questions : [])
-    .filter(q => q.wallet === walletAddress || q.fullAddr === walletAddress).length;
-  const upvotes = getTotalUpvotesReceived(walletAddress);
-  return getUserTitleFromStats(qCount, upvotes);
+  // _walletScores is filled from the contract, so the label on a question
+  // matches the rank on the profile and in chat. Missing means zero, which
+  // lands on INITIATE — the right answer for a wallet with no history.
+  const score = (window._walletScores && window._walletScores[walletAddress]) || 0;
+  return getUserTitleFromStats(score);
 }
 
-function getUserTitleFromStats(qCount, upvotes) {
-  let current = null;
-  for (const t of TITLES) {
-    if (qCount >= t.questionsNeeded && upvotes >= t.upvotesNeeded) current = t;
-  }
-  return current;
-}
 
 // Message counting moved to Worker - see POST /chat/message
 
@@ -880,7 +876,12 @@ function renderProfilePage() {
     const estimate = calcReputation(qStats, chatStats) + (drawRep?.total || 0);
     const baseReputation = chain ? chain.rank : estimate;
     const streakMultiplier = streakData?.multiplier || 1.0;
-    const reputation = getEffectiveRep(baseReputation, streakMultiplier);
+    // Rank follows all-time REP alone. Multiplying by the streak made rank
+    // fall when a streak lapsed, which contradicts the promise that your status
+    // stays where you left it — and that promise is why lifetime_earned in the
+    // contract deliberately never decays. The multiplier still counts, for
+    // weekly reward shares and its own 25% question discount.
+    const reputation = baseReputation;
     const rank       = getRank(reputation);
     const nextRank   = getNextRank(reputation);
 
@@ -905,9 +906,8 @@ function renderProfilePage() {
     // saying so is better than quietly showing a number that lags.
     // Not awaited and wrapped: this is a decoration on top of the page, and a
     // slow or failing node must never stop the rest of the profile rendering.
-    // baseReputation, not `reputation`: the contract stores the unmultiplied
-    // figure, so comparing it against a streak-multiplied number would report a
-    // permanent shortfall for anyone on a streak.
+    // These now agree by construction: the displayed figure is the contract's
+    // own, with no multiplier layered on top.
     try { renderOnChainPanel(chain, streakMultiplier, pendingCount); }
     catch (e) { console.warn('on-chain panel:', e); }
     // Perk badge: current discount, or the NEXT rank that unlocks one

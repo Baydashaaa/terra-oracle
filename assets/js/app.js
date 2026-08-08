@@ -1417,11 +1417,10 @@ async function getQuestionDiscountPct(addr) {
     if (typeof fetchOnChainScore === 'function') {
       const chain = await fetchOnChainScore(addr);
       if (chain && chain.rank > 0) {
-        const effOn = (typeof getEffectiveRep === 'function')
-          ? getEffectiveRep(chain.rank, streakMult)
-          : Math.round(chain.rank * streakMult);
+        // All-time REP alone, matching the profile. If these two ever
+        // disagree again, someone pays one rate while seeing another.
         if (typeof getRank === 'function') {
-          const rk = getRank(effOn);
+          const rk = getRank(chain.rank);
           rankD = (rk && rk.discount) ? rk.discount : 0;
           _rankName = (rk && rk.name) ? rk.name : '';
         }
@@ -1460,9 +1459,8 @@ async function getQuestionDiscountPct(addr) {
     // Fallback: if everything above failed, use the partial score map
     if (!rep && window._walletScores && window._walletScores[addr]) rep = window._walletScores[addr];
 
-    // Rank is computed on EFFECTIVE REP (base × streak multiplier) — same as profile/leaderboard.
-    const effRep = (typeof getEffectiveRep === 'function') ? getEffectiveRep(rep, streakMult) : Math.round(rep * streakMult);
-    if (typeof getRank === 'function') { const rk = getRank(effRep); rankD = (rk && rk.discount) ? rk.discount : 0; _rankName = (rk && rk.name) ? rk.name : ''; }
+    // Rank is computed on all-time REP alone — same as profile and leaderboard.
+    if (typeof getRank === 'function') { const rk = getRank(rep); rankD = (rk && rk.discount) ? rk.discount : 0; _rankName = (rk && rk.name) ? rk.name : ''; }
   } catch(e) {}
 
   // Higher of the two, never summed (per docs).

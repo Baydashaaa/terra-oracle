@@ -612,7 +612,9 @@ async function loadStatsData() {
     const estimate     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
     const baseRep      = chain ? chain.rank : estimate;
     const streakMult   = streakData?.multiplier || 1.0;
-    const totalRep     = (typeof getEffectiveRep === 'function') ? getEffectiveRep(baseRep, streakMult) : Math.round(baseRep * streakMult);
+    // The contract's figure as it stands. The streak multiplier belongs to
+    // weekly reward shares, not to the REP total or the rank.
+    const totalRep     = baseRep;
 
     // Update activity grid
     const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
@@ -627,7 +629,7 @@ async function loadStatsData() {
     set('stats-rep-upvotes',     '+' + repUpvotes.toLocaleString()   + ' REP');
     set('stats-rep-chat',        '+' + Math.round(repChat) + ' REP');
     set('stats-rep-draw',        drawRepTotal > 0 ? '+' + drawRepTotal.toLocaleString() + ' REP' : '+0 REP');
-    set('stats-total-rep',       totalRep.toLocaleString() + ' REP' + (streakMult > 1 ? ` · ×${streakMult} streak` : ''));
+    set('stats-total-rep',       totalRep.toLocaleString() + ' REP' + (streakMult > 1 ? ` · ×${streakMult} on weekly rewards` : ''));
 
     // Draw REP section
     const drawEl = document.getElementById('stats-draw-block');
