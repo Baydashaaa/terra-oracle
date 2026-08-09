@@ -204,14 +204,18 @@ async function tLoadRecentTxs(retries = 5) {
 
       // Переводы самому себе не считаем ни в одну, ни в другую сторону
       let rawUluna = 0;
+      // Who the money came from (or went to). This is what tells a question
+      // apart from a draw share when both are 25,000 LUNC.
+      let counterparty = '';
+      let viaEvents = false;
       for (const msg of msgs) {
         const to    = msg.value?.to_address   || msg.to_address   || '';
         const from  = msg.value?.from_address || msg.from_address || '';
         const coins = msg.value?.coins || msg.value?.amount || msg.amount || [];
         const lunc  = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : null;
         if (!lunc) continue;
-        if (dir === 'out') { if (from === wallet && to !== wallet) rawUluna += parseInt(lunc.amount); }
-        else               { if (to === wallet && from !== wallet) rawUluna += parseInt(lunc.amount); }
+        if (dir === 'out') { if (from === wallet && to !== wallet) { rawUluna += parseInt(lunc.amount); counterparty = counterparty || to; } }
+        else               { if (to === wallet && from !== wallet) { rawUluna += parseInt(lunc.amount); counterparty = counterparty || from; } }
       }
 
       // MsgSend ничего не дал → это контрактная транзакция (минт NFT).
@@ -224,6 +228,10 @@ async function tLoadRecentTxs(retries = 5) {
                       : (tx.events && tx.events.length) ? [{ events: tx.events }]
                       : [];
         rawUluna = sumTransferEvents(logSets, wallet, dir);
+        // No MsgSend means the transfer came out of a contract call, and the
+        // only contract paying these wallets is the NFT one. That is a firmer
+        // signal than any amount.
+        if (rawUluna) viaEvents = true;
       }
       // Последний фолбэк — funds контрактного вызова (если логи не пришли)
       if (!rawUluna && dir === 'in') {
@@ -244,36 +252,33 @@ async function tLoadRecentTxs(retries = 5) {
       }
 
       // Classify by destination wallet + amount
+      // A mint reaches these wallets through the NFT contract, so it has no
+      // MsgSend of its own. A draw share comes from a pool wallet. Anything
+      // else arriving from an ordinary address is somebody paying for
+      // something — and that holds whatever the discount was.
+      const fromPool = counterparty === T_WALLETS.daily || counterparty === T_WALLETS.weekly;
       let label;
       if (dir === 'out') {
         label = wallet === T_WALLETS.daily  ? 'Daily draw — prize payout'
               : wallet === T_WALLETS.weekly ? 'Weekly draw — prize payout'
               : (memo || 'Treasury outflow');
-      } else if (wallet === T_WALLETS.treasury) {
-        if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
-          label = 'DAO Chat message';
-        else if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL))
-          label = 'Q&A — Treasury (50%)';
-        else if (memo && memo.toLowerCase().includes('daily'))
-          label = 'Oracle Draw — Daily (10%)';
-        else if (memo && memo.toLowerCase().includes('weekly'))
-          label = 'Oracle Draw — Weekly (10%)';
-        else
-          label = memo || 'Transfer';
-      } else if (wallet === T_WALLETS.weekly) {
-        if (rawUluna >= QA_AMT*(1-TOL) && rawUluna <= QA_AMT*(1+TOL)) {
-          label = 'Q&A — Weekly Pool (50%)';
-        } else {
-          const nftTier = detectNFTTier(rawUluna);
-          label = nftTier
-            ? `Oracle Draw — Weekly NFT | ${nftTier}`
-            : (memo || 'Transfer');
-        }
-      } else if (wallet === T_WALLETS.daily) {
+      } else if (viaEvents) {
         const nftTier = detectNFTTier(rawUluna);
-        label = nftTier
-          ? `Oracle Draw — Daily NFT | ${nftTier}`
-          : (memo || 'Transfer');
+        const pool = wallet === T_WALLETS.weekly ? 'Weekly' : 'Daily';
+        label = nftTier ? `Oracle Draw — ${pool} NFT | ${nftTier}` : `Oracle Draw — ${pool} NFT`;
+      } else if (wallet === T_WALLETS.treasury) {
+        if (fromPool)
+          label = counterparty === T_WALLETS.daily
+            ? 'Oracle Draw — Daily (10%)'
+            : 'Oracle Draw — Weekly (10%)';
+        else if (rawUluna >= CHAT_AMT*(1-TOL) && rawUluna <= CHAT_AMT*(1+TOL))
+          label = 'DAO Chat message';
+        else
+          label = 'Q&A — Treasury';
+      } else if (wallet === T_WALLETS.weekly) {
+        label = fromPool ? (memo || 'Transfer') : 'Q&A — Weekly Pool';
+      } else if (wallet === T_WALLETS.daily) {
+        label = memo || 'Transfer';
       } else {
         label = memo || 'Transfer';
       }
