@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-09T11:47:54.132Z",
+  "_updated": "2026-08-09T11:48:14.173Z",
   "questions": [
     {
       "id": "LUNC-SLQCQ86",
@@ -66,8 +66,10 @@
           "alias": "Anonymous#EGX7",
           "text": "Everything is functional.",
           "createdAt": 1786276028,
-          "votes": 0,
-          "voters": []
+          "votes": 1,
+          "voters": [
+            "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l"
+          ]
         }
       ],
       "status": "answered",
