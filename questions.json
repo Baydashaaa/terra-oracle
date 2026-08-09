@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-05T14:12:30.038Z",
+  "_updated": "2026-08-09T10:25:18.612Z",
   "questions": [
     {
       "id": "LUNC-SDE494U",
@@ -30,7 +30,18 @@
       "createdAt": 1785771288,
       "expiresAt": 1786376088,
       "votes": 0,
-      "answers": [],
+      "answers": [
+        {
+          "id": "ANS-MSLNPC7O",
+          "wallet": "terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55",
+          "walletHash": "sha256:l40a4m55",
+          "alias": "Anonymous#4M55",
+          "text": "bathroom 100%",
+          "createdAt": 1786271118,
+          "votes": 0,
+          "voters": []
+        }
+      ],
       "status": "open",
       "chosenAnswerId": null,
       "pollVoters": [
