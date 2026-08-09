@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-09T12:00:01.057Z",
+  "_updated": "2026-08-09T12:00:30.403Z",
   "questions": [
     {
       "id": "LUNC-SLQCQ86",
@@ -350,8 +350,10 @@
           "alias": "Anonymous#8VGW",
           "text": "nice",
           "createdAt": 1784591634,
-          "votes": 0,
-          "voters": []
+          "votes": 1,
+          "voters": [
+            "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l"
+          ]
         }
       ],
       "status": "open",
