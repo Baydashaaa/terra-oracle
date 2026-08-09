@@ -659,6 +659,7 @@ function renderBoard() {
             <div class="answer-meta">
               ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(a.wallet, a.alias)}</span>`}
               ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : '')}
+              ${a.id === q.chosenAnswerId ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#66ffaa;background:rgba(102,255,170,0.08);border:1px solid rgba(102,255,170,0.35);padding:1px 7px;border-radius:4px;">&#10003; ACCEPTED</span>` : ''}
             </div>
             ${a.replyTo ? `<div style="margin-bottom:8px;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;">
               <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span>&#x21A9;&#xFE0E;</span>${a.replyTo.author}</div>
@@ -676,6 +677,19 @@ function renderBoard() {
                 onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
                 <span style="font-style:normal;font-size:12px;line-height:1;">&#x21A9;&#xFE0E;</span> Reply
               </button>
+              ${(() => {
+                const me = globalWalletAddress || connectedAddress;
+                // Only the person who asked, only once, and never their own
+                // answer — the fee for a question would not cover what REP
+                // converts into.
+                if (!me || me !== q.wallet || q.chosenAnswerId || !a.wallet || a.wallet === me) return '';
+                return `<button
+                  onclick="acceptAnswer('${q.id}','${a.id}')"
+                  style="background:none;border:none;color:rgba(102,255,170,0.6);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;display:inline-flex;align-items:center;gap:4px;"
+                  onmouseover="this.style.color='#66ffaa'" onmouseout="this.style.color='rgba(102,255,170,0.6)'">
+                  &#10003; Accept this answer
+                </button>`;
+              })()}
               ${a.wallet && a.wallet === (globalWalletAddress || connectedAddress) ? `
               <button
                 data-delete-qi="${realQi}"
@@ -721,6 +735,26 @@ document.addEventListener('click', function(e) {
   const aid = btn.getAttribute('data-delete-aid');
   deleteAnswer(qi, aid);
 });
+
+// Marks the answer that helped. Permanent on purpose: a changeable choice
+// would grant REP twice, and taking it back from someone already credited is
+// worse than living with a mistake.
+async function acceptAnswer(questionId, answerId) {
+  if (!confirm('Accept this answer? This cannot be undone, and the author receives REP for it.')) return;
+  try {
+    const res = await fetch(`${WORKER_URL}/answer/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId, answerId, ...(await signAction('answer/accept', questionId + ':' + answerId)) }),
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Failed'); }
+    const q = questions.find(x => x.id === questionId);
+    if (q) { q.chosenAnswerId = answerId; q.status = 'answered'; }
+    renderBoard();
+  } catch (e) {
+    alert('Could not accept: ' + e.message);
+  }
+}
 
 async function deleteAnswer(qi, aid) {
   if (!confirm('Delete your answer? This cannot be undone.')) return;
