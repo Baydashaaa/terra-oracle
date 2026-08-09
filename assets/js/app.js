@@ -1553,6 +1553,22 @@ async function autoPayAndUnlock() {
     alert(getActiveProvider() === 'luncdash' ? VIEW_ONLY_MSG : 'Wallet extension not found. Please reconnect your wallet.');
     return;
   }
+  // Before opening the wallet, check whether this address already paid and
+  // never used it. checkUnusedPayment normally runs only on connect, so a
+  // payment made afterwards — or a double click here — would otherwise be
+  // charged for twice.
+  const _btnText = btn.textContent;
+  btn.textContent = '⏳ Checking...'; btn.disabled = true;
+  try {
+    await checkUnusedPayment(connectedAddress);
+    if (readPaidQuestion()) {
+      restorePaidQuestion();
+      showTxStatus('success', '✅ You already have a paid question credit - form unlocked.');
+      btn.textContent = _btnText; btn.disabled = false;
+      return;
+    }
+  } catch (e) { /* a failed check must not block paying */ }
+
   btn.textContent = '⏳ Opening wallet...'; btn.disabled = true;
   try {
     await enableActive('columbus-5');
