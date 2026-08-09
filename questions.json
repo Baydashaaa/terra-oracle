@@ -1,7 +1,43 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-09T11:33:28.279Z",
+  "_updated": "2026-08-09T11:39:30.238Z",
   "questions": [
+    {
+      "id": "LUNC-SLQCQ86",
+      "category": "Protocol Bug",
+      "text": "Have you noticed any problems?",
+      "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      "walletHash": "sha256:m4x75c2l",
+      "alias": "Anonymous#5C2L",
+      "title": "Seeker",
+      "txHash": "61CEBDD2301DFBB1A526BC1EF0647A9B1C69E55CDF990EF74F81EE77F76B4ED7",
+      "paymentAmount": 50000,
+      "entries": 1,
+      "pinnedUntil": null,
+      "tags": [
+        "terraoracle",
+        "oracledraw"
+      ],
+      "evidence": "https://terraoracle.io/",
+      "poll": [
+        {
+          "text": "Yes",
+          "votes": 0,
+          "voters": []
+        },
+        {
+          "text": "No",
+          "votes": 0,
+          "voters": []
+        }
+      ],
+      "createdAt": 1786275570,
+      "expiresAt": 1786880370,
+      "votes": 0,
+      "answers": [],
+      "status": "open",
+      "chosenAnswerId": null
+    },
     {
       "id": "LUNC-SDE494U",
       "category": "Other",
