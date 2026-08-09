@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-09T11:47:52.046Z",
+  "_updated": "2026-08-09T11:47:54.132Z",
   "questions": [
     {
       "id": "LUNC-SLQCQ86",
@@ -42,8 +42,10 @@
           "alias": "Anonymous#EGX7",
           "text": "Zéro problem",
           "createdAt": 1786275855,
-          "votes": 0,
-          "voters": []
+          "votes": 1,
+          "voters": [
+            "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l"
+          ]
         },
         {
           "id": "ANS-MSLQL8QE",
