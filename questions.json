@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-08-09T11:44:28.067Z",
+  "_updated": "2026-08-09T11:45:17.638Z",
   "questions": [
     {
       "id": "LUNC-SLQCQ86",
@@ -46,11 +46,12 @@
           "voters": []
         }
       ],
-      "status": "open",
-      "chosenAnswerId": null,
+      "status": "answered",
+      "chosenAnswerId": "ANS-MSLQIVLM",
       "pollVoters": [
         "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7"
-      ]
+      ],
+      "acceptedAt": 1786275917
     },
     {
       "id": "LUNC-SDE494U",
