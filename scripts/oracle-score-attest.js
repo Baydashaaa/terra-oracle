@@ -59,6 +59,9 @@ const MAX_BATCHES_PER_RUN = 30;
 // action here that carries its own amount; see the `amount` handling below.
 const ATTESTABLE_ACTIONS = new Set([
   'answer', 'upvote', 'chat', 'question_basic', 'question_priority', 'draw',
+  // Granted to the answer's author when the asker marks it as the one that
+  // helped. Free action, price 0, attestor_may_record true.
+  'answer_accepted',
 ]);
 
 // How to read a rejection. Strings are taken verbatim from src/error.rs; keep
