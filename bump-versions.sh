@@ -8,4 +8,4 @@ for f in assets/js/*.js; do
   h=$(git hash-object "$f" | cut -c1-10)
   sed -i "s|${name}\.js?v=[0-9a-f]*|${name}.js?v=${h}|" index.html
 done
-grep -o 'assets/js/[a-z-]*\.js?v=[0-9a-f]*' index.html
+grep -o 'assets/js/[A-Za-z-]*\.js?v=[0-9a-f]*' index.html

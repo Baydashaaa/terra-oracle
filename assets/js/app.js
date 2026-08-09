@@ -731,7 +731,9 @@ async function deleteAnswer(qi, aid) {
     const res = await fetch(`${WORKER_URL}/answer/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, answerId: aid, wallet: globalWalletAddress }),
+      // Подпись привязана и к вопросу, и к конкретному ответу: подписав
+      // удаление одного, нельзя удалить соседний.
+      body: JSON.stringify({ questionId: q.id, answerId: aid, ...(await signAction('answer/delete', q.id + ':' + aid)) }),
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
     questions[qi].answers.splice(answerIdx, 1);
@@ -786,7 +788,7 @@ async function submitAnswer(qi) {
     const res = await fetch(`${WORKER_URL}/answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, text, wallet, replyTo: replyTo ? { answerId: replyTo.answerId, author: replyTo.author, text: replyTo.text.slice(0,80) } : null }),
+      body: JSON.stringify({ questionId: q.id, text, replyTo: replyTo ? { answerId: replyTo.answerId, author: replyTo.author, text: replyTo.text.slice(0,80) } : null, ...(await signAction('answer', q.id)) }),
     });
     if (!res.ok) throw new Error('Failed to post answer');
     const data = await res.json();
