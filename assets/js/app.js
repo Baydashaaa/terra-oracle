@@ -534,7 +534,7 @@ async function votePoll(qi, optionIdx) {
     const res = await fetch(`${WORKER_URL}/poll-vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, optionIdx, wallet: globalWalletAddress }),
+      body: JSON.stringify({ questionId: q.id, optionIdx, ...(await voteSession()) }),
       signal: AbortSignal.timeout(8000),
     });
     if (res.ok) { q._pollVoting = false; return; }
@@ -869,7 +869,7 @@ async function voteQuestion(qi) {
     const res = await fetch(`${WORKER_URL}/question-vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, wallet: _wallet }),
+      body: JSON.stringify({ questionId: q.id, ...(await voteSession()) }),
       signal: AbortSignal.timeout(8000),
     });
     if (res.ok) { q._voting = false; return; } // confirmed
@@ -914,7 +914,7 @@ async function voteAnswer(qi, ai) {
     const res = await fetch(`${WORKER_URL}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: questions[qi].id, answerId: answer.id, wallet: globalWalletAddress }),
+      body: JSON.stringify({ questionId: questions[qi].id, answerId: answer.id, ...(await voteSession()) }),
       signal: AbortSignal.timeout(8000),
     });
     if (res.ok) { answer._voting = false; return; }
