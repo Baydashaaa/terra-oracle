@@ -1177,7 +1177,12 @@ async function refreshTiersFromChain() {
     }
 
     // The button shows a price, so it has to be redrawn if one changed.
-    if (typeof updateVerifyButtonPrice === 'function') { try { updateVerifyButtonPrice(); } catch (e) {} }
+    // The real name, with the address it needs for the discount. Only when a
+    // wallet is connected — without one there is no price to personalise.
+    const _addr = (typeof connectedAddress !== 'undefined' && connectedAddress) || null;
+    if (_addr && typeof updateVerifyBtnPrice === 'function') {
+      try { updateVerifyBtnPrice(_addr); } catch (e) {}
+    }
   } catch (e) {
     // A node that will not answer must not stop anyone asking a question.
   }
