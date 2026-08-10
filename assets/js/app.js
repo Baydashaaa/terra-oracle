@@ -1132,6 +1132,63 @@ const QUESTION_TIERS = {
 };
 // Reads the tier picker if present. Falls back to Priority so that a page whose
 // HTML has not been updated yet keeps behaving exactly as before.
+// Largest discount any rank or streak grants. The contract stores the price
+// AFTER it — that figure is the floor it will accept — so the full tariff is
+// the floor divided by what is left. Keep this in step with the rank table.
+const MAX_QUESTION_DISCOUNT = 0.25;
+
+const SCORE_CONTRACT_ADDR = 'terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls';
+const SCORE_LCD_URL = 'https://terra-classic-lcd.publicnode.com';
+
+/**
+ * Pull the tariffs from the contract and overwrite the local table.
+ *
+ * The numbers below are a fallback, not the truth: the contract is what
+ * refuses an underpayment, so if the two ever disagree it is this file that is
+ * wrong. Logging the disagreement makes it findable instead of leaving someone
+ * to discover it by being charged.
+ */
+async function refreshTiersFromChain() {
+  try {
+    const q = btoa(JSON.stringify({ actions: {} }));
+    const res = await fetch(`${SCORE_LCD_URL}/cosmwasm/wasm/v1/contract/${SCORE_CONTRACT_ADDR}/smart/${q}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return;
+    const body = await res.json();
+    const list = body?.data?.actions || [];
+
+    const map = { question_basic: 'basic', question_priority: 'priority' };
+    for (const a of list) {
+      const key = map[a.key];
+      if (!key || !a.params) continue;
+
+      const poolLeg = Math.round(Number(a.params.pool_amount) / 1e6);
+      const floor   = Number(a.params.price) / 1e6;
+      const total   = Math.round(floor / (1 - MAX_QUESTION_DISCOUNT));
+      if (!poolLeg || !total) continue;
+
+      const t = QUESTION_TIERS[key];
+      if (t.total !== total || t.poolLeg !== poolLeg) {
+        console.warn(`[tiers] ${key}: page says ${t.total}/${t.poolLeg}, chain says ${total}/${poolLeg} — using the chain`);
+      }
+      t.total = total;
+      t.poolLeg = poolLeg;
+    }
+
+    // The button shows a price, so it has to be redrawn if one changed.
+    if (typeof updateVerifyButtonPrice === 'function') { try { updateVerifyButtonPrice(); } catch (e) {} }
+  } catch (e) {
+    // A node that will not answer must not stop anyone asking a question.
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', refreshTiersFromChain, { once: true });
+} else {
+  refreshTiersFromChain();
+}
+
 function getSelectedTier() {
   const el = document.querySelector('input[name="question-tier"]:checked')
           || document.getElementById('question-tier');
