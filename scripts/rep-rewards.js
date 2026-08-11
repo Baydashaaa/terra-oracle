@@ -21,12 +21,12 @@ const GAS_PRICE      = 28.325;
 // ceiling keeps veterans ahead without making the top unreachable for newcomers.
 const RANKS = [
   { name: 'INITIATE',  minScore: 0,     multiplier: 1.0 },
-  { name: 'SEEKER',    minScore: 500,   multiplier: 1.0 },
-  { name: 'ADEPT',     minScore: 1500,  multiplier: 1.1 },
-  { name: 'ANALYST',   minScore: 4000,  multiplier: 1.2 },
-  { name: 'ORACLE',    minScore: 8000,  multiplier: 1.3 },
-  { name: 'ARCHON',    minScore: 15000, multiplier: 1.4 },
-  { name: 'ASCENDED',  minScore: 30000, multiplier: 1.5 },
+  { name: 'SEEKER',    minScore: 100,   multiplier: 1.0 },
+  { name: 'ADEPT',     minScore: 300,  multiplier: 1.1 },
+  { name: 'ANALYST',   minScore: 800,  multiplier: 1.2 },
+  { name: 'ORACLE',    minScore: 2000,  multiplier: 1.3 },
+  { name: 'ARCHON',    minScore: 5000, multiplier: 1.4 },
+  { name: 'ASCENDED',  minScore: 12000, multiplier: 1.5 },
 ];
 function getRankMultiplier(allTimeRep) {
   let mult = 1.0;
