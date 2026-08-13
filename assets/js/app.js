@@ -204,22 +204,49 @@ async function restoreWalletSession() {
     attempts++;
   }
   if (!window.keplr) return;
-  try {
-    await window.keplr.enable('columbus-5');
-    const signer = window.keplr.getOfflineSigner('columbus-5');
-    const accounts = await signer.getAccounts();
-    if (accounts[0].address === saved) {
-      setWalletConnected(saved);
-    } else {
-      clearWalletSession();
+
+  // Несколько попыток: расширение может быть ещё не готово, а узел —
+  // ответить не с первого раза.
+  for (let i = 0; i < 3; i++) {
+    try {
+      await window.keplr.enable('columbus-5');
+      const signer = window.keplr.getOfflineSigner('columbus-5');
+      const accounts = await signer.getAccounts();
+      const addr = accounts[0] && accounts[0].address;
+      if (!addr) throw new Error('no account');
+
+      // Адрес сменился — значит в Keplr выбран другой счёт. Раньше здесь
+      // стоял clearWalletSession(): человек переключал аккаунт и оказывался
+      // отключённым. Переходим на новый адрес, это и есть его намерение.
+      if (addr !== saved) console.log('[wallet] аккаунт сменился:', saved, '→', addr);
+
+      setWalletConnected(addr);
+      saveWalletSession(addr);   // продлеваем срок при каждом заходе
+      return;
+    } catch (e) {
+      if (i < 2) { await new Promise(r => setTimeout(r, 600)); continue; }
+      // СЕССИЮ НЕ СТИРАЕМ. Раньше здесь был clearWalletSession(), и любая
+      // ошибка — запертый кошелёк, закрытый попап, недоступный узел —
+      // выкидывала пользователя насовсем. Оставляем как есть: следующая
+      // загрузка или клик по кнопке подключат без потери состояния.
+      console.log('[wallet] восстановить сессию не удалось, сессия сохранена:', e && e.message);
     }
-  } catch(e) { clearWalletSession(); }
+  }
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', restoreWalletSession);
 } else {
   restoreWalletSession();
 }
+
+// Keplr шлёт это событие при смене аккаунта и после разблокировки. Раньше
+// обработчика не было вовсе, и сайт оставался с прежним адресом до
+// перезагрузки страницы — вплоть до отправки транзакции не с того кошелька.
+window.addEventListener('keplr_keystorechange', function () {
+  if (typeof getActiveProvider === 'function' && getActiveProvider() !== 'keplr') return;
+  if (!loadWalletSession()) return;   // не подключены — навязываться не надо
+  restoreWalletSession();
+});
 
 // ─── NAVIGATION ───────────────────────────────────────────────
 function _isMobileChat() {
