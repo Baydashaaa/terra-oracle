@@ -1799,24 +1799,80 @@
 </div>
  <div id="votes-list"></div>
 </div>
-<div class="page" id="page-treasury" style="max-width:900px;margin:0 auto;padding:40px 20px 80px;flex-grow:1;">
+<div class="page" id="page-treasury" style="max-width:1360px;margin:0 auto;padding:40px 24px 80px;flex-grow:1;">
 
-  <!-- Header -->
-  <div style="text-align:center;margin-bottom:40px;">
-    <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;">Protocol Finance</div>
+  <style>
+  /* ── Treasury: раскладка ────────────────────────────────────────────────
+     Классы с префиксом tre-, чтобы не пересечься с остальным сайтом.
+     Метки секций повторяют приём главной страницы (.pfv-tag): ромб,
+     разрядка, подзаголовок под ним. */
+  .tre-head { text-align:center; margin-bottom:34px; }
+  .tre-eyebrow { font-size:10px; letter-spacing:.25em; color:var(--gold);
+    text-transform:uppercase; margin-bottom:10px; }
+
+  .tre-sec { margin-bottom:26px; }
+  .tre-sec-tag { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }
+  .tre-sec-tag b { font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--gold); }
+  .tre-sec-tag span { font-size:12px; color:var(--muted); }
+
+  .tre-card { background:rgba(255,255,255,.015); border:1px solid rgba(255,255,255,.06);
+    border-radius:14px; padding:18px 20px; }
+
+  /* Шапка TVL: цифры, график, кнопка — в одну строку на всю ширину */
+  .tre-hero { display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:14px;
+    background:rgba(245,197,24,0.04); border:1px solid rgba(245,197,24,0.15);
+    border-radius:16px; padding:22px 26px; margin-bottom:26px; }
+
+  .tre-pools { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+
+  /* Нижний ярус: распределение и транзакции рядом, а не друг под другом —
+     из-за этого страница и выглядела столбом */
+  .tre-lower { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:1100px) { .tre-lower { grid-template-columns:1fr; } }
+
+  .tre-dist-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .tre-bar { display:flex; height:8px; border-radius:5px; overflow:hidden; }
+  .tre-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px;
+    font-size:10px; color:var(--muted); }
+  .tre-legend i { display:inline-block; width:8px; height:8px; border-radius:2px;
+    margin-right:5px; vertical-align:-1px; }
+
+  .tre-wal { border-radius:12px; padding:14px 16px; border:1px solid rgba(255,255,255,.06);
+    background:rgba(255,255,255,.02); }
+  .tre-wal-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .tre-wal-name { font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+  .tre-wal-pct { font-size:9px; padding:2px 7px; border-radius:20px; }
+  .tre-wal-bal { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:800; line-height:1.1; }
+  .tre-wal-usd { font-size:10px; color:var(--muted); margin-top:2px; }
+  .tre-addr { display:flex; align-items:center; gap:6px; margin-top:10px;
+    font-family:'Rajdhani',sans-serif; font-size:11px; color:var(--muted); }
+  .tre-addr button { background:none; border:none; cursor:pointer; color:var(--muted);
+    padding:2px; line-height:0; }
+  .tre-addr button:hover { color:var(--gold); }
+
+  .tre-txs { max-height:520px; overflow-y:auto; scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.15) transparent; }
+  </style>
+
+  <!-- Заголовок -->
+  <div class="tre-head">
+    <div class="tre-eyebrow">Protocol Finance</div>
     <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(28px,5vw,44px);margin:0 0 10px;">
       Treasury <span style="color:var(--gold);">Dashboard</span>
     </h1>
     <p style="color:var(--muted);font-size:13px;margin:0;">Live on-chain balances · Terra Classic · columbus-5</p>
   </div>
 
-  <!-- Total TVL + refresh -->
-  <div style="display:flex;align-items:center;justify-content:space-between;
-    background:rgba(245,197,24,0.04);border:1px solid rgba(245,197,24,0.15);
-    border-radius:14px;padding:20px 24px;margin-bottom:24px;">
+  <!-- TVL + график + обновление.
+       Вложенность внутри намеренно та же, что была: treasury-chart.js
+       находит #t-total-tvl и поднимается на два уровня, чтобы встроить
+       график между колонкой цифр и колонкой кнопки. -->
+  <div class="tre-hero">
     <div>
       <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Total Protocol TVL</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:800;color:var(--gold);line-height:1;" id="t-total-tvl">-</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:40px;font-weight:800;color:var(--gold);line-height:1;" id="t-total-tvl">-</div>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="t-total-usd">-</div>
       <div id="t-tvl-delta" style="font-size:11px;font-weight:700;margin-top:6px;font-family:Rajdhani,sans-serif;display:none;"></div>
     </div>
@@ -1826,116 +1882,153 @@
         style="background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);
         color:var(--accent);border-radius:8px;padding:8px 18px;
         font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;transition:all 0.2s;">
-        ↻ Refresh
+        &#8635; Refresh
       </button>
     </div>
   </div>
 
-  <!-- 3 wallet cards -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px;">
+  <!-- Пулы -->
+  <div class="tre-sec">
+    <div class="tre-sec-tag"><b>&#9672; Pools</b><span>Where incoming LUNC waits before it is paid out.</span></div>
+    <div class="tre-pools">
 
-    <!-- Protocol Treasury -->
-    <div style="background:var(--surface);border:1px solid rgba(84,147,247,0.2);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#5493f7,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">PROTOCOL TREASURY</span>
-        <span style="font-size:8px;background:rgba(84,147,247,0.1);color:var(--accent);border:1px solid rgba(84,147,247,0.15);border-radius:6px;padding:1px 7px;margin-left:auto;">Q&A · CHAT · DRAW</span>
+      <div class="tre-card">
+        <div class="tre-wal-top">
+          <span class="tre-wal-name" style="color:var(--accent);">Protocol Treasury</span>
+          <span class="tre-wal-pct" style="background:rgba(84,147,247,.12);color:var(--accent);">Q&amp;A · CHAT · DRAW</span>
+        </div>
+        <div class="tre-wal-bal" id="t-oracle-bal">-</div>
+        <div class="tre-wal-usd" id="t-oracle-usd">-</div>
+        <div class="tre-addr">
+          <span>terra1549z…y2kagt</span>
+          <button onclick="tCopyAddr(event,'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt')" title="Copy address">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </div>
       </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-oracle-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-oracle-usd">Loading...</div>
-      <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt" target="_blank" rel="noopener" title="terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt">terra1549z…y2kagt</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-    </div>
 
-    <!-- Daily Draw Pool -->
-    <div style="background:var(--surface);border:1px solid rgba(244,208,63,0.18);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f4d03f,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">DAILY DRAW POOL</span>
-        <span style="font-size:8px;background:rgba(244,208,63,0.08);color:#f4d03f;border:1px solid rgba(244,208,63,0.2);border-radius:6px;padding:1px 7px;margin-left:auto;" id="t-daily-countdown">-</span>
+      <div class="tre-card">
+        <div class="tre-wal-top">
+          <span class="tre-wal-name" style="color:var(--gold);">Daily Draw Pool</span>
+          <span class="tre-wal-pct" style="background:rgba(245,197,24,.12);color:var(--gold);" id="t-daily-countdown">-</span>
+        </div>
+        <div class="tre-wal-bal" id="t-draw-bal">-</div>
+        <div class="tre-wal-usd" id="t-draw-usd">-</div>
+        <div class="tre-addr">
+          <span>terra1amp6…fqa9px</span>
+          <button onclick="tCopyAddr(event,'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px')" title="Copy address">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </div>
       </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-draw-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-draw-usd">Loading...</div>
-      <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px" target="_blank" rel="noopener" title="terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px">terra1amp6…fqa9px</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-    </div>
 
-    <!-- Weekly Draw Pool -->
-    <div style="background:var(--surface);border:1px solid rgba(167,139,250,0.18);border-radius:14px;padding:22px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#a78bfa,transparent);"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);">WEEKLY DRAW POOL</span>
-        <span style="font-size:8px;background:rgba(167,139,250,0.08);color:#a78bfa;border:1px solid rgba(167,139,250,0.2);border-radius:6px;padding:1px 7px;margin-left:auto;" id="t-weekly-countdown">-</span>
+      <div class="tre-card">
+        <div class="tre-wal-top">
+          <span class="tre-wal-name" style="color:#a78bfa;">Weekly Draw Pool</span>
+          <span class="tre-wal-pct" style="background:rgba(167,139,250,.12);color:#a78bfa;" id="t-weekly-countdown">-</span>
+        </div>
+        <div class="tre-wal-bal" id="t-weekly-bal">-</div>
+        <div class="tre-wal-usd" id="t-weekly-usd">-</div>
+        <div class="tre-addr">
+          <span>terra1p5l6…1kz6qz</span>
+          <button onclick="tCopyAddr(event,'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz')" title="Copy address">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </div>
       </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;" id="t-weekly-bal">-</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="t-weekly-usd">Loading...</div>
-      <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz" target="_blank" rel="noopener" title="terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz">terra1p5l6…lkz6qz</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
+
     </div>
   </div>
 
-  <!-- Treasury Distribution -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:24px;">
-    <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;">Treasury Distribution</div>
-    <div style="display:flex;height:8px;border-radius:6px;overflow:hidden;margin-bottom:10px;">
-      <div style="width:25%;background:#66ffaa;"></div>
-      <div style="width:15%;background:#5493f7;"></div>
-      <div style="width:50%;background:#ffd700;"></div>
-      <div style="width:10%;background:#c084fc;"></div>
-    </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:20px;">
-      <span><span style="color:#66ffaa;">■</span> REP Rewards 25%</span>
-      <span><span style="color:#5493f7;">■</span> Reserve 15%</span>
-      <span><span style="color:#ffd700;">■</span> Liquidity 50%</span>
-      <span><span style="color:#c084fc;">■</span> Dev 10%</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">
-      <div style="background:rgba(102,255,170,0.04);border:1px solid rgba(102,255,170,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#66ffaa;">REP REWARDS</span>
-          <span style="font-size:9px;background:rgba(102,255,170,0.1);color:#66ffaa;border-radius:4px;padding:1px 7px;">25%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-rewards-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-rewards-usd">-</div>
-        <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce" target="_blank" rel="noopener" title="terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce">terra1ty6f…w5x4ce</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-      </div>
-      <div style="background:rgba(84,147,247,0.04);border:1px solid rgba(84,147,247,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--accent);">RESERVE</span>
-          <span style="font-size:9px;background:rgba(84,147,247,0.1);color:var(--accent);border-radius:4px;padding:1px 7px;">15%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-reserve-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-reserve-usd">-</div>
-        <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz" target="_blank" rel="noopener" title="terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz">terra10q6s…27a2jz</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-      </div>
-      <div style="background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#ffd700;">LIQUIDITY</span>
-          <span style="font-size:9px;background:rgba(255,215,0,0.1);color:#ffd700;border-radius:4px;padding:1px 7px;">50%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-liquidity-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-liquidity-usd">-</div>
-        <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra1gukarslv6c8n0s2259822l7059putpqxz405su" target="_blank" rel="noopener" title="terra1gukarslv6c8n0s2259822l7059putpqxz405su">terra1guka…z405su</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra1gukarslv6c8n0s2259822l7059putpqxz405su')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-      </div>
-      <div style="background:rgba(192,132,252,0.04);border:1px solid rgba(192,132,252,0.15);border-radius:10px;padding:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#c084fc;">DEVELOPMENT</span>
-          <span style="font-size:9px;background:rgba(192,132,252,0.1);color:#c084fc;border-radius:4px;padding:1px 7px;">10%</span>
-        </div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="t-dev-bal">-</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="t-dev-usd">-</div>
-        <div class="t-addr"><a class="t-addr-link" href="https://finder.terraport.finance/mainnet/address/terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr" target="_blank" rel="noopener" title="terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr">terra17g55…2kktzr</a><button class="t-addr-copy" type="button" title="Copy address" onclick="tCopyAddr(event,'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr')"><svg class="ic-copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.2"/><path d="M5.5 15H4.6A1.6 1.6 0 0 1 3 13.4V4.6A1.6 1.6 0 0 1 4.6 3h8.8A1.6 1.6 0 0 1 15 4.6v.9"/></svg><svg class="ic-ok" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7.5"/></svg></button></div>
-      </div>
-    </div>
-  </div>
+  <!-- Нижний ярус: распределение слева, движение средств справа -->
+  <div class="tre-lower">
 
-  <!-- Recent transactions -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);">Recent Transactions · Protocol Treasury</div>
-      <a href="https://finder.terraport.finance/mainnet/address/terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt"
-        target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;opacity:0.7;">View all →</a>
-    </div>
-    <div id="t-recent-txs" style="font-size:12px;color:var(--muted);text-align:center;padding:20px;">Loading...</div>
-  </div>
+    <div class="tre-sec">
+      <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>How the treasury is split.</span></div>
+      <div class="tre-card">
+        <div class="tre-bar">
+          <i style="flex:25;background:#66ffaa;"></i>
+          <i style="flex:15;background:#5493f7;"></i>
+          <i style="flex:50;background:#f5c518;"></i>
+          <i style="flex:10;background:#c9a0ff;"></i>
+        </div>
+        <div class="tre-legend">
+          <span><i style="background:#66ffaa;"></i>REP Rewards 25%</span>
+          <span><i style="background:#5493f7;"></i>Reserve 15%</span>
+          <span><i style="background:#f5c518;"></i>Liquidity 50%</span>
+          <span><i style="background:#c9a0ff;"></i>Dev 10%</span>
+        </div>
 
+        <div class="tre-dist-cards">
+          <div class="tre-wal" style="border-color:rgba(102,255,170,.18);">
+            <div class="tre-wal-top">
+              <span class="tre-wal-name" style="color:#66ffaa;">REP Rewards</span>
+              <span class="tre-wal-pct" style="background:rgba(102,255,170,.12);color:#66ffaa;">25%</span>
+            </div>
+            <div class="tre-wal-bal" id="t-rewards-bal">-</div>
+            <div class="tre-wal-usd" id="t-rewards-usd">-</div>
+            <div class="tre-addr"><span>terra1ty6f…w5x4ce</span>
+              <button onclick="tCopyAddr(event,'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce')" title="Copy address">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="tre-wal" style="border-color:rgba(84,147,247,.18);">
+            <div class="tre-wal-top">
+              <span class="tre-wal-name" style="color:#5493f7;">Reserve</span>
+              <span class="tre-wal-pct" style="background:rgba(84,147,247,.12);color:#5493f7;">15%</span>
+            </div>
+            <div class="tre-wal-bal" id="t-reserve-bal">-</div>
+            <div class="tre-wal-usd" id="t-reserve-usd">-</div>
+            <div class="tre-addr"><span>terra10q6s…27a2jz</span>
+              <button onclick="tCopyAddr(event,'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz')" title="Copy address">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="tre-wal" style="border-color:rgba(245,197,24,.18);">
+            <div class="tre-wal-top">
+              <span class="tre-wal-name" style="color:#f5c518;">Liquidity</span>
+              <span class="tre-wal-pct" style="background:rgba(245,197,24,.12);color:#f5c518;">50%</span>
+            </div>
+            <div class="tre-wal-bal" id="t-liquidity-bal">-</div>
+            <div class="tre-wal-usd" id="t-liquidity-usd">-</div>
+            <div class="tre-addr"><span>terra1guka…z405su</span>
+              <button onclick="tCopyAddr(event,'terra1gukarslv6c8n0s2259822l7059putpqxz405su')" title="Copy address">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="tre-wal" style="border-color:rgba(201,160,255,.18);">
+            <div class="tre-wal-top">
+              <span class="tre-wal-name" style="color:#c9a0ff;">Development</span>
+              <span class="tre-wal-pct" style="background:rgba(201,160,255,.12);color:#c9a0ff;">10%</span>
+            </div>
+            <div class="tre-wal-bal" id="t-dev-bal">-</div>
+            <div class="tre-wal-usd" id="t-dev-usd">-</div>
+            <div class="tre-addr"><span>terra17g55…2kktzr</span>
+              <button onclick="tCopyAddr(event,'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr')" title="Copy address">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tre-sec">
+      <div class="tre-sec-tag"><b>&#9672; Money movement</b><span>Protocol Treasury · latest transfers.</span></div>
+      <div class="tre-card">
+        <div class="tre-txs" id="t-recent-txs">
+          <div style="color:var(--muted);font-size:12px;padding:20px 0;text-align:center;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 <div class="page" id="page-about">
 
