@@ -375,7 +375,9 @@ async function loadTreasuryData() {
   tSet('t-total-tvl', tFmt(total));
   tSet('t-total-usd', tFmtUsd(total,price));
   tSet('t-last-updated','Updated '+new Date().toLocaleTimeString());
-  tLoadTvlDelta();
+  // Живой итог уходит в дельту: иначе она считается между снимками и после
+  // вечернего розыгрыша расходится с показанным TVL на сумму выплаты.
+  tLoadTvlDelta(total);
 
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
   tLoadRecentTxs();
@@ -408,7 +410,7 @@ window.tCopyAddr = tCopyAddr;
 
 // Изменение TVL за 24 часа. Снимок пишет крон воркера oracle-draw раз в час,
 // поэтому первые сутки после запуска дельты ещё нет — тогда блок просто скрыт.
-async function tLoadTvlDelta() {
+async function tLoadTvlDelta(liveTotal) {
   const el = document.getElementById('t-tvl-delta');
   if (!el) return;
   const W = (typeof O_DRAW_WORKER !== 'undefined' && O_DRAW_WORKER) || 'https://oracle-draw.vladislav-baydan.workers.dev';
@@ -416,24 +418,43 @@ async function tLoadTvlDelta() {
     const r = await fetch(`${W}/treasury-history`, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) { el.style.display = 'none'; return; }
     const d = await r.json();
-    if (d.deltaUluna === null || d.deltaUluna === undefined) { el.style.display = 'none'; return; }
-    const lunc = d.deltaUluna / 1_000_000;
-    const up = d.deltaUluna >= 0;
+
+    // Точка отсчёта — снимок суточной давности. Конец окна — ЖИВОЙ итог со
+    // страницы, а не снимок воркера: тот пишется раз в час и после розыгрыша
+    // отстаёт на сумму выплаты, из-за чего дельта и показанный TVL описывали
+    // разные моменты.
+    const prev = d.prev;
+    if (!prev || typeof prev.uluna !== 'number') { el.style.display = 'none'; return; }
+    const base = (typeof liveTotal === 'number' && liveTotal > 0)
+      ? liveTotal
+      : (d.current && d.current.uluna);
+    if (typeof base !== 'number') { el.style.display = 'none'; return; }
+
+    const deltaUluna = base - prev.uluna;
+    // Фактическое окно, а не константа: при пропущенном снимке подпись
+    // скажет 25h вместо того, чтобы соврать про сутки.
+    const hours = Math.max(1, Math.round((Date.now() - prev.ts) / 3_600_000));
+    const lunc = deltaUluna / 1_000_000;
+    const up = deltaUluna >= 0;
     const color = up ? '#66ffaa' : '#ff8a7a';
     const sign  = up ? '+' : '−';
     const mag   = Math.abs(lunc);
     const val   = mag >= 1_000_000 ? (mag/1_000_000).toFixed(2)+'M'
                 : mag >= 1_000     ? (mag/1_000).toFixed(1)+'K'
                 : Math.round(mag).toString();
+    // Треугольник, а не стрелка. В списке транзакций стрелки означают
+    // направление движения денег (приход рисуется ВНИЗ), здесь — рост или
+    // падение. Одинаковые фигуры с противоположной логикой на одном экране
+    // читались как ошибка.
     const arr = up
-      ? '<path d="M12 19.4V4.6"/><path d="M6.4 10.4 12 4.6l5.6 5.8"/>'
-      : '<path d="M12 4.6v14.8"/><path d="M6.4 13.6 12 19.4l5.6-5.8"/>';
+      ? '<path d="M12 5.5 20.5 19h-17z"/>'
+      : '<path d="M12 18.5 3.5 5h17z"/>';
     el.innerHTML =
-      '<span style="display:inline-flex;align-items:center;gap:4px;color:' + color + ';">' +
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + arr + '</svg>' +
+      '<span style="display:inline-flex;align-items:center;gap:5px;color:' + color + ';">' +
+      '<svg width="11" height="11" viewBox="0 0 24 24" fill="' + color + '" stroke="none">' + arr + '</svg>' +
       sign + val + ' LUNC' +
       '</span>' +
-      '<span style="color:var(--muted);font-weight:600;margin-left:6px;">за 24ч</span>';
+      '<span style="color:var(--muted);font-weight:600;margin-left:6px;">' + hours + 'h</span>';
     el.style.display = 'block';
   } catch (e) {
     el.style.display = 'none';
