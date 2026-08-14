@@ -2,8 +2,10 @@ name: Treasury Distribution
 
 on:
   schedule:
-    # Every Wednesday at 20:00 UTC
-    - cron: '0 20 * * 3'
+    # Каждую среду в 21:00 UTC. Час отступа от розыгрыша: тот работает в
+    # 20:00 и отправляет казне её долю, а распределение считает от баланса —
+    # одновременный запуск делал результат зависящим от того, кто успел первым.
+    - cron: '0 21 * * 3'
   workflow_dispatch:
     # Allow manual trigger from GitHub Actions tab
     inputs:
@@ -33,6 +35,7 @@ jobs:
       - name: Run treasury distribution
         env:
           TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: node scripts/treasury-distribute.js
 
       - name: Log completion

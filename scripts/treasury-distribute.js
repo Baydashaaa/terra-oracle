@@ -93,8 +93,13 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
 }
 
 async function run() {
+  // Холостой прогон: доходим до полного плана и останавливаемся перед
+  // отправкой. Параметр в воркфлоу был объявлен, но не передавался и не
+  // читался — кнопка была, поведения за ней не было.
+  const DRY = /^(1|true|yes)$/i.test(process.env.DRY_RUN || '');
+
   const mnemonic = process.env.TREASURY_MNEMONIC;
-  if (!mnemonic) throw new Error('TREASURY_MNEMONIC not set');
+  if (!mnemonic && !DRY) throw new Error('TREASURY_MNEMONIC not set');
 
   console.log('=== Treasury Distribution ===');
   console.log(`Date: ${new Date().toISOString()}`);
@@ -131,15 +136,36 @@ async function run() {
   // Крупнейшей доле — остаток: так округления никуда не пропадают
   amounts[ORDER[ORDER.length - 1]] = distributable - assigned;
 
-  console.log('\nPlan:');
+  const planTax = Object.values(amounts).reduce((s, x) => s + Math.ceil(x * TAX_RATE), 0);
+  const planSpend = Object.values(amounts).reduce((s, x) => s + x, 0) + planTax + 4 * gasFee;
+
+  console.log(DRY ? '\n=== DRY RUN — nothing will be sent ===\nPlan:' : '\nPlan:');
   for (const [key, amt] of Object.entries(amounts)) {
     console.log(`  ${key.padEnd(12)} ${DISTRIBUTION[key]*100}%  →  ${(amt/1_000_000).toLocaleString()} LUNC  →  ${WALLETS[key]}`);
   }
+  const L = n => (n / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  console.log(`\n  distributable ${L(distributable)} LUNC`);
+  console.log(`  transfer tax  ${L(planTax)} LUNC  (0.5% of each transfer)`);
+  console.log(`  gas           ${L(4 * gasFee)} LUNC  (4 × ${L(gasFee)})`);
+  console.log(`  total spend   ${L(planSpend)} LUNC of ${L(Number(balance))} LUNC`);
+  console.log(`  left on wallet ${L(Number(balance) - planSpend)} LUNC`);
 
-  const { privateKey, publicKey } = await deriveKeypair(mnemonic);
-  const sender = pubkeyToAddress(publicKey);
-  if (sender !== WALLETS.treasury) throw new Error(`Address mismatch: got ${sender}`);
-  console.log(`\nSigner: ${sender}`);
+  // Адрес подписанта сверяем и в холостом прогоне: несовпадение мнемоники —
+  // ровно та ошибка, которую хочется поймать заранее, а не в среду.
+  let privateKey = null, publicKey = null, sender = null;
+  if (mnemonic) {
+    ({ privateKey, publicKey } = await deriveKeypair(mnemonic));
+    sender = pubkeyToAddress(publicKey);
+    if (sender !== WALLETS.treasury) throw new Error(`Address mismatch: got ${sender}`);
+    console.log(`\nSigner: ${sender}`);
+  } else {
+    console.log('\nSigner: (no mnemonic — signature check skipped)');
+  }
+
+  if (DRY) {
+    console.log('\n=== DRY RUN — nothing sent ===');
+    process.exit(0);
+  }
 
   // Fetch account ONCE up front. sendTokens needs accountNumber + sequence;
   // we increment sequence manually per tx (BROADCAST_MODE_SYNC returns before
