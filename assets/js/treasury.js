@@ -383,6 +383,21 @@ async function loadTreasuryData() {
   setWallet('t-dev-bal',      't-dev-usd',      devB);
   setWallet('t-circuit-bal',  't-circuit-usd',  cB);
 
+  // Фактическая доля считается от суммы ЧЕТЫРЁХ распределяемых кошельков, а
+  // не от всего TVL: 25/15/50/10 описывают раздел казны, а не долю в
+  // протоколе. Дорожка показывает факт, засечка в разметке — план.
+  const distTotal = (rB||0)+(resB||0)+(liqB||0)+(devB||0);
+  const setShare = (barId, pctId, bal) => {
+    const pct = distTotal > 0 ? ((bal||0) / distTotal) * 100 : 0;
+    tSet(pctId, pct.toFixed(1) + '% actual');
+    const bar = document.getElementById(barId);
+    if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + '%';
+  };
+  setShare('t-rewards-bar',   't-rewards-pct',   rB);
+  setShare('t-reserve-bar',   't-reserve-pct',   resB);
+  setShare('t-liquidity-bar', 't-liquidity-pct', liqB);
+  setShare('t-dev-bar',       't-dev-pct',       devB);
+
   // Circuit добавлен в состав TVL: пул зон и кошелёк выкупа держат такие же
   // деньги протокола. На графике это даёт ступеньку в момент выкатки — смена
   // состава, а не ошибка данных.

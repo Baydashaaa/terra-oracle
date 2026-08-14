@@ -1833,12 +1833,6 @@
   @media (max-width:1100px) { .tre-lower { grid-template-columns:1fr; } }
 
   .tre-dist-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
-  .tre-bar { display:flex; height:8px; border-radius:5px; overflow:hidden; }
-  .tre-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px;
-    font-size:10px; color:var(--muted); }
-  .tre-legend i { display:inline-block; width:8px; height:8px; border-radius:2px;
-    margin-right:5px; vertical-align:-1px; }
-
   .tre-wal { border-radius:12px; padding:14px 16px; border:1px solid rgba(255,255,255,.06);
     background:rgba(255,255,255,.02); }
   .tre-wal-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -1851,6 +1845,29 @@
   .tre-addr button { background:none; border:none; cursor:pointer; color:var(--muted);
     padding:2px; line-height:0; }
   .tre-addr button:hover { color:var(--gold); }
+
+  .tre-rows { display:flex; flex-direction:column; gap:18px; }
+  .tre-row-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px; }
+  .tre-row-name { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#cfd6e4; }
+  .tre-row-name i { display:inline-block; width:8px; height:8px; border-radius:2px;
+    margin-right:8px; vertical-align:0; }
+  .tre-row-amt { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:800; }
+  /* Дорожка: заливка — факт, вертикальная засечка — план. */
+  .tre-row-track { position:relative; height:8px; border-radius:5px;
+    background:rgba(255,255,255,.05); overflow:visible; }
+  .tre-row-track i { display:block; height:100%; border-radius:5px; opacity:.85;
+    transition:width .5s ease; }
+  .tre-row-track b { position:absolute; top:-3px; bottom:-3px; width:2px;
+    background:rgba(255,255,255,.6); border-radius:1px; }
+  .tre-row-foot { display:flex; align-items:center; gap:12px; margin-top:6px;
+    font-size:10px; color:var(--muted); }
+  .tre-row-foot > span:first-child { font-family:'Rajdhani',sans-serif;
+    font-size:12px; font-weight:700; }
+  .tre-row-addr { margin-left:auto; font-family:'Rajdhani',sans-serif;
+    display:inline-flex; align-items:center; gap:5px; }
+  .tre-row-addr button { background:none; border:none; cursor:pointer;
+    color:var(--muted); padding:1px; line-height:0; }
+  .tre-row-addr button:hover { color:var(--gold); }
 
   .tre-tco { display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
   .tre-tco-figs { display:flex; gap:34px; }
@@ -2002,75 +2019,75 @@
     <div class="tre-sec">
       <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>How the treasury is split.</span></div>
       <div class="tre-card">
-        <div class="tre-bar">
-          <i style="flex:25;background:#66ffaa;"></i>
-          <i style="flex:15;background:#5493f7;"></i>
-          <i style="flex:50;background:#f5c518;"></i>
-          <i style="flex:10;background:#c9a0ff;"></i>
+        <div class="tre-rows">
+        <div class="tre-row">
+          <div class="tre-row-top">
+            <span class="tre-row-name"><i style="background:#66ffaa;"></i>REP Rewards</span>
+            <span class="tre-row-amt" id="t-rewards-bal">-</span>
+          </div>
+          <div class="tre-row-track">
+            <i id="t-rewards-bar" style="width:0%;background:#66ffaa;"></i>
+            <b style="left:25%;" title="target 25%"></b>
+          </div>
+          <div class="tre-row-foot">
+            <span id="t-rewards-pct" style="color:#66ffaa;">-</span>
+            <span>target 25% · <span id="t-rewards-usd">-</span></span>
+            <span class="tre-row-addr">terra1ty6f…w5x4ce
+              <button onclick="tCopyAddr(event,'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce')" title="Copy address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+            </span>
+          </div>
         </div>
-        <div class="tre-legend">
-          <span><i style="background:#66ffaa;"></i>REP Rewards 25%</span>
-          <span><i style="background:#5493f7;"></i>Reserve 15%</span>
-          <span><i style="background:#f5c518;"></i>Liquidity 50%</span>
-          <span><i style="background:#c9a0ff;"></i>Dev 10%</span>
+        <div class="tre-row">
+          <div class="tre-row-top">
+            <span class="tre-row-name"><i style="background:#5493f7;"></i>Reserve</span>
+            <span class="tre-row-amt" id="t-reserve-bal">-</span>
+          </div>
+          <div class="tre-row-track">
+            <i id="t-reserve-bar" style="width:0%;background:#5493f7;"></i>
+            <b style="left:15%;" title="target 15%"></b>
+          </div>
+          <div class="tre-row-foot">
+            <span id="t-reserve-pct" style="color:#5493f7;">-</span>
+            <span>target 15% · <span id="t-reserve-usd">-</span></span>
+            <span class="tre-row-addr">terra10q6s…27a2jz
+              <button onclick="tCopyAddr(event,'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz')" title="Copy address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+            </span>
+          </div>
         </div>
-
-        <div class="tre-dist-cards">
-          <div class="tre-wal" style="border-color:rgba(102,255,170,.18);">
-            <div class="tre-wal-top">
-              <span class="tre-wal-name" style="color:#66ffaa;">REP Rewards</span>
-              <span class="tre-wal-pct" style="background:rgba(102,255,170,.12);color:#66ffaa;">25%</span>
-            </div>
-            <div class="tre-wal-bal" id="t-rewards-bal">-</div>
-            <div class="tre-wal-usd" id="t-rewards-usd">-</div>
-            <div class="tre-addr"><span>terra1ty6f…w5x4ce</span>
-              <button onclick="tCopyAddr(event,'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce')" title="Copy address">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-            </div>
+        <div class="tre-row">
+          <div class="tre-row-top">
+            <span class="tre-row-name"><i style="background:#f5c518;"></i>Liquidity</span>
+            <span class="tre-row-amt" id="t-liquidity-bal">-</span>
           </div>
-
-          <div class="tre-wal" style="border-color:rgba(84,147,247,.18);">
-            <div class="tre-wal-top">
-              <span class="tre-wal-name" style="color:#5493f7;">Reserve</span>
-              <span class="tre-wal-pct" style="background:rgba(84,147,247,.12);color:#5493f7;">15%</span>
-            </div>
-            <div class="tre-wal-bal" id="t-reserve-bal">-</div>
-            <div class="tre-wal-usd" id="t-reserve-usd">-</div>
-            <div class="tre-addr"><span>terra10q6s…27a2jz</span>
-              <button onclick="tCopyAddr(event,'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz')" title="Copy address">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-            </div>
+          <div class="tre-row-track">
+            <i id="t-liquidity-bar" style="width:0%;background:#f5c518;"></i>
+            <b style="left:50%;" title="target 50%"></b>
           </div>
-
-          <div class="tre-wal" style="border-color:rgba(245,197,24,.18);">
-            <div class="tre-wal-top">
-              <span class="tre-wal-name" style="color:#f5c518;">Liquidity</span>
-              <span class="tre-wal-pct" style="background:rgba(245,197,24,.12);color:#f5c518;">50%</span>
-            </div>
-            <div class="tre-wal-bal" id="t-liquidity-bal">-</div>
-            <div class="tre-wal-usd" id="t-liquidity-usd">-</div>
-            <div class="tre-addr"><span>terra1guka…z405su</span>
-              <button onclick="tCopyAddr(event,'terra1gukarslv6c8n0s2259822l7059putpqxz405su')" title="Copy address">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-            </div>
+          <div class="tre-row-foot">
+            <span id="t-liquidity-pct" style="color:#f5c518;">-</span>
+            <span>target 50% · <span id="t-liquidity-usd">-</span></span>
+            <span class="tre-row-addr">terra1guka…z405su
+              <button onclick="tCopyAddr(event,'terra1gukarslv6c8n0s2259822l7059putpqxz405su')" title="Copy address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+            </span>
           </div>
-
-          <div class="tre-wal" style="border-color:rgba(201,160,255,.18);">
-            <div class="tre-wal-top">
-              <span class="tre-wal-name" style="color:#c9a0ff;">Development</span>
-              <span class="tre-wal-pct" style="background:rgba(201,160,255,.12);color:#c9a0ff;">10%</span>
-            </div>
-            <div class="tre-wal-bal" id="t-dev-bal">-</div>
-            <div class="tre-wal-usd" id="t-dev-usd">-</div>
-            <div class="tre-addr"><span>terra17g55…2kktzr</span>
-              <button onclick="tCopyAddr(event,'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr')" title="Copy address">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-            </div>
+        </div>
+        <div class="tre-row">
+          <div class="tre-row-top">
+            <span class="tre-row-name"><i style="background:#c9a0ff;"></i>Development</span>
+            <span class="tre-row-amt" id="t-dev-bal">-</span>
           </div>
+          <div class="tre-row-track">
+            <i id="t-dev-bar" style="width:0%;background:#c9a0ff;"></i>
+            <b style="left:10%;" title="target 10%"></b>
+          </div>
+          <div class="tre-row-foot">
+            <span id="t-dev-pct" style="color:#c9a0ff;">-</span>
+            <span>target 10% · <span id="t-dev-usd">-</span></span>
+            <span class="tre-row-addr">terra17g55…2kktzr
+              <button onclick="tCopyAddr(event,'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr')" title="Copy address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+            </span>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -2508,7 +2525,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=9c77f51aa0"></script>
-  <script src="assets/js/treasury.js?v=202608141040"></script>
+  <script src="assets/js/treasury.js?v=202608141100"></script>
   <script src="assets/js/treasury-chart.js?v=202608141040"></script>
   <script src="assets/js/signAction.js?v=b40331b9da"></script>
   <script src="assets/js/app.js?v=202608131610"></script>
