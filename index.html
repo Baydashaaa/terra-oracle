@@ -1852,6 +1852,19 @@
     padding:2px; line-height:0; }
   .tre-addr button:hover { color:var(--gold); }
 
+  .tre-tco { display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
+  .tre-tco-figs { display:flex; gap:34px; }
+  .tre-tco-curve { flex:1 1 260px; min-width:220px; }
+  .tre-tco-curve-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .tre-tco-lbl { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .tre-tco-val { font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:800;
+    color:#38d9d0; line-height:1.1; margin-top:3px; }
+  .tre-tco-sub { font-size:10px; color:var(--muted); margin-top:3px; }
+  .tre-tco-pct { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:800; color:#38d9d0; }
+  .tre-curve-track { height:7px; border-radius:5px; background:rgba(255,255,255,.06); overflow:hidden; }
+  .tre-curve-track i { display:block; height:100%; border-radius:5px;
+    background:linear-gradient(90deg,#38d9d0,#7ee7e0); transition:width .5s ease; }
+
   .tre-txs { max-height:520px; overflow-y:auto; scrollbar-width:thin;
     scrollbar-color:rgba(255,255,255,.15) transparent; }
   </style>
@@ -1937,6 +1950,49 @@
         </div>
       </div>
 
+      <div class="tre-card">
+        <div class="tre-wal-top">
+          <span class="tre-wal-name" style="color:#38d9d0;">Circuit Pool</span>
+          <span class="tre-wal-pct" style="background:rgba(56,217,208,.12);color:#38d9d0;" id="t-circuit-zones">-</span>
+        </div>
+        <div class="tre-wal-bal" id="t-circuit-bal">-</div>
+        <div class="tre-wal-usd" id="t-circuit-usd">-</div>
+        <div class="tre-addr">
+          <span>terra1lkcs…40a4m55</span>
+          <button onclick="tCopyAddr(event,'terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55')" title="Copy address">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Доли TCO: узкая полоса, а не ещё две карточки. Слева накопленное,
+       справа движение бондинг-кривой к порогу листинга. -->
+  <div class="tre-sec">
+    <div class="tre-sec-tag"><b>&#9672; TCO buyback</b><span>12% of every Circuit round becomes TCO — half distributed, half burned.</span></div>
+    <div class="tre-card tre-tco">
+      <div class="tre-tco-figs">
+        <div>
+          <div class="tre-tco-lbl">Awaiting purchase</div>
+          <div class="tre-tco-val" id="t-tco-buy">-</div>
+          <div class="tre-tco-sub">LUNC on the buyback wallet</div>
+        </div>
+        <div>
+          <div class="tre-tco-lbl">Held for burn</div>
+          <div class="tre-tco-val" style="color:#ff8a7a;" id="t-tco-burn">-</div>
+          <div class="tre-tco-sub">TCO waiting for the whitelist</div>
+        </div>
+      </div>
+      <div class="tre-tco-curve">
+        <div class="tre-tco-curve-top">
+          <span class="tre-tco-lbl">Bonding curve</span>
+          <span class="tre-tco-pct" id="t-curve-pct">-</span>
+        </div>
+        <div class="tre-curve-track"><i id="t-curve-bar" style="width:0%"></i></div>
+        <div class="tre-tco-sub" id="t-curve-note">-</div>
+      </div>
     </div>
   </div>
 
@@ -2452,7 +2508,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=9c77f51aa0"></script>
-  <script src="assets/js/treasury.js?v=202608140745"></script>
+  <script src="assets/js/treasury.js?v=202608140830"></script>
   <script src="assets/js/treasury-chart.js?v=202608140800"></script>
   <script src="assets/js/signAction.js?v=b40331b9da"></script>
   <script src="assets/js/app.js?v=202608131610"></script>

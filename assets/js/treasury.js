@@ -7,7 +7,16 @@ const T_WALLETS = {
   reserve:   'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz', // Reserve 15%
   liquidity: 'terra1gukarslv6c8n0s2259822l7059putpqxz405su', // Liquidity 50%
   dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr', // Development 10%
+  // Circuit. Пул зон — такие же деньги протокола, как daily и weekly, и
+  // входит в TVL. Кошелёк выкупа копит LUNC до порога покупки TCO и тоже
+  // входит. Кошелёк сжигания держит TCO, а не LUNC, — в TVL НЕ входит.
+  circuit:   'terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55', // Circuit Pool
+  tcoBuy:    'terra1x3axkacpes4d8q2svfeneqdtv8rvcvccrn66j5', // TCO buyback
+  tcoBurn:   'terra10zptfez4jdvakrhu58q4nqj2te7mnpewqhu27a', // TCO held for burn
 };
+const T_TCO_TOKEN = 'terra1566znlxwke0kp9jkhe6qgapsmcfdmc7k9czh380tlx80va8zlsgqzvjtfp';
+const T_TCO_BOND  = 'terra1xnejslpfa398nn2mexv34y8737fcq998zz4dsnq74qn464lu9m4s604du5';
+const T_DRAW_WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
 const T_LCD = [
   // Раньше первым стоял terra-classic.publicnode.com — это RPC-хост, REST API
   // он не отдаёт. Каждый из семи запросов баланса сначала бился о него впустую.
@@ -347,7 +356,7 @@ async function loadTreasuryData() {
   const btn = document.getElementById('t-refresh-btn');
   if (btn) { btn.textContent='Loading…'; btn.disabled=true; }
 
-  const [price, tB, dB, wB, rB, resB, liqB, devB] = await Promise.all([
+  const [price, tB, dB, wB, rB, resB, liqB, devB, cB, buyB] = await Promise.all([
     tFetchPrice(),
     tFetchBal(T_WALLETS.treasury),
     tFetchBal(T_WALLETS.daily),
@@ -356,6 +365,8 @@ async function loadTreasuryData() {
     tFetchBal(T_WALLETS.reserve),
     tFetchBal(T_WALLETS.liquidity),
     tFetchBal(T_WALLETS.dev),
+    tFetchBal(T_WALLETS.circuit),
+    tFetchBal(T_WALLETS.tcoBuy),
   ]);
 
   const setWallet = (balId, usdId, bal) => {
@@ -370,8 +381,12 @@ async function loadTreasuryData() {
   setWallet('t-reserve-bal',  't-reserve-usd',  resB);
   setWallet('t-liquidity-bal','t-liquidity-usd',liqB);
   setWallet('t-dev-bal',      't-dev-usd',      devB);
+  setWallet('t-circuit-bal',  't-circuit-usd',  cB);
 
-  const total = (tB||0)+(dB||0)+(wB||0)+(rB||0)+(resB||0)+(liqB||0)+(devB||0);
+  // Circuit добавлен в состав TVL: пул зон и кошелёк выкупа держат такие же
+  // деньги протокола. На графике это даёт ступеньку в момент выкатки — смена
+  // состава, а не ошибка данных.
+  const total = (tB||0)+(dB||0)+(wB||0)+(rB||0)+(resB||0)+(liqB||0)+(devB||0)+(cB||0)+(buyB||0);
   tSet('t-total-tvl', tFmt(total));
   tSet('t-total-usd', tFmtUsd(total,price));
   tSet('t-last-updated','Updated '+new Date().toLocaleTimeString());
@@ -379,8 +394,55 @@ async function loadTreasuryData() {
   // вечернего розыгрыша расходится с показанным TVL на сумму выплаты.
   tLoadTvlDelta(total);
 
+  tSet('t-tco-buy', buyB !== null ? tFmt(buyB) : 'Error');
+  tLoadCircuitStrip();
+
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
   tLoadRecentTxs();
+}
+
+// Полоса TCO: сколько зон продано, сколько TCO лежит до сжигания и насколько
+// бондинг-кривая заполнена. Три независимых запроса — падение любого не должно
+// ронять остальные, поэтому каждый в своём try.
+async function tLoadCircuitStrip() {
+  const smart = async (contract, msg) => {
+    const q = btoa(JSON.stringify(msg));
+    for (const node of T_LCD) {
+      try {
+        const r = await fetch(`${node}/cosmwasm/wasm/v1/contract/${contract}/smart/${q}`,
+                              { signal: AbortSignal.timeout(8000) });
+        const d = await r.json();
+        if (d.data !== undefined) return d.data;
+      } catch (e) { /* следующий узел */ }
+    }
+    return null;
+  };
+
+  try {
+    const r = await fetch(`${T_DRAW_WORKER}/circuit/state`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const d = await r.json();
+      tSet('t-circuit-zones', d.sold + '/' + d.maxZones);
+    }
+  } catch (e) { /* бейдж останется прочерком */ }
+
+  try {
+    const b = await smart(T_TCO_TOKEN, { balance: { address: T_WALLETS.tcoBurn } });
+    // У TCO шесть знаков, как у LUNC, поэтому формат тот же
+    if (b && b.balance !== undefined) tSet('t-tco-burn', tFmt(Number(b.balance)));
+  } catch (e) { /* прочерк */ }
+
+  try {
+    const info = await smart(T_TCO_BOND, { info: {} });
+    if (info && info.completion_percentage !== undefined) {
+      const pct = Number(info.completion_percentage) * 100;
+      tSet('t-curve-pct', pct.toFixed(1) + '%');
+      const bar = document.getElementById('t-curve-bar');
+      if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + '%';
+      const raised = Number(info.vault_native || 0) / 1e6;
+      tSet('t-curve-note', tFmt(Number(info.vault_native || 0)) + ' of 37.5M LUNC raised');
+    }
+  } catch (e) { /* прочерк */ }
 }
 // Копирование адреса кошелька. Clipboard API недоступен вне защищённого
 // контекста и в части встроенных браузеров кошельков, поэтому есть запасной
