@@ -23,6 +23,11 @@ const GAS_LIMIT   = 300000;
 const GAS_PRICE   = 28.325;
 const GAS_RESERVE = 500_000_000n;
 const MIN_BALANCE = 100_000_000_000n;
+// Налог на перевод берётся СВЕРХ суммы и растёт вместе с ней. Раньше он не
+// учитывался вовсе: раздавался весь остаток за вычетом фиксированных 500 LUNC,
+// и на последний перевод денег не хватало. Пять выплат разработке подряд
+// упали именно так.
+const TAX_RATE = 0.005;
 
 async function safeFetch(url, opts = {}) {
   const ctrl = new AbortController();
@@ -101,11 +106,30 @@ async function run() {
 
   if (balance < MIN_BALANCE) { console.log('Below minimum (100,000 LUNC). Skipping.'); process.exit(0); }
 
-  const distributable = balance - GAS_RESERVE;
+  // Сколько можно раздать, чтобы хватило на всё.
+  //
+  // Расход = сумма переводов + налог 0.5% с каждого + газ за четыре штуки.
+  // Отсюда: distributable × 1.005 + 4×газ + запас ≤ balance.
+  //
+  // Раньше здесь стояло `balance - GAS_RESERVE`, то есть налог не учитывался
+  // совсем, и последний перевод в очереди всегда оставался без покрытия.
+  const gasFee = Math.ceil(GAS_LIMIT * GAS_PRICE);
+  const budget = Number(balance) - 4 * gasFee - Number(GAS_RESERVE);
+  const distributable = Math.floor(budget / (1 + TAX_RATE));
+  if (distributable <= 0) throw new Error('Balance too small to cover fees');
+
+  // Порядок — от мелкой доли к крупной. Если денег всё же не хватит, не
+  // пройдёт наименьшая, а не десять процентов бюджета разработки.
+  const ORDER = ['dev', 'reserve', 'rewards', 'liquidity'];
+
   const amounts = {};
-  for (const [key, pct] of Object.entries(DISTRIBUTION)) {
-    amounts[key] = Math.floor(Number(distributable) * pct);
+  let assigned = 0;
+  for (const key of ORDER.slice(0, -1)) {
+    amounts[key] = Math.floor(distributable * DISTRIBUTION[key]);
+    assigned += amounts[key];
   }
+  // Крупнейшей доле — остаток: так округления никуда не пропадают
+  amounts[ORDER[ORDER.length - 1]] = distributable - assigned;
 
   console.log('\nPlan:');
   for (const [key, amt] of Object.entries(amounts)) {
@@ -127,7 +151,9 @@ async function run() {
   console.log(`Account #${accountNumber}, starting sequence ${sequence}`);
 
   let ok = 0;
-  for (const [key, to] of [['rewards',WALLETS.rewards],['reserve',WALLETS.reserve],['liquidity',WALLETS.liquidity],['dev',WALLETS.dev]]) {
+  const failed = [];
+  for (const key of ORDER) {
+    const to = WALLETS[key];
     const amount = amounts[key];
     if (!amount || amount <= 0) continue;
     console.log(`\nSending ${(amount/1_000_000).toLocaleString()} LUNC → ${key} (seq ${sequence})...`);
@@ -136,10 +162,22 @@ async function run() {
       console.log(`  OK: ${txHash}`);
       ok++;
       sequence++;   // advance for next tx (only on success)
-    } catch(e) { console.error(`  FAILED: ${e.message}`); }
+    } catch(e) {
+      console.error(`  FAILED: ${e.message}`);
+      failed.push(`${key}: ${e.message}`);
+    }
     await new Promise(r => setTimeout(r, 6000));
   }
   console.log(`\n=== Done: ${ok}/4 successful ===`);
+
+  // Раньше здесь скрипт молча заканчивался успехом даже при провалах, и
+  // Actions три месяца показывал зелёные галочки поверх непрошедших выплат
+  // разработке. Теперь неудача видна сразу.
+  if (failed.length) {
+    console.error(`\n${failed.length} transfer(s) failed:`);
+    for (const f of failed) console.error('  ' + f);
+    process.exit(1);
+  }
 }
 
 run().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
