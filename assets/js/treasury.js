@@ -94,6 +94,43 @@ function tStartCountdowns() {
   }
   tick(); _countdownTimer = setInterval(tick, 1000);
 }
+// Сумма uluna из событий transfer в логах транзакции. Для минта NFT
+// (MsgExecuteContract) это единственное место, где видно движение монет —
+// в самом сообщении LUNC не лежит. amount приходит строкой "N uluna" или
+// "Nuluna", иногда несколько монет через запятую.
+function sumTransferEvents(logs, wallet, dir) {
+  if (!Array.isArray(logs)) return 0;
+  const wantKey = dir === 'out' ? 'sender' : 'recipient';
+  let total = 0;
+  for (const lg of logs) {
+    for (const ev of (lg.events || [])) {
+      if (ev.type !== 'transfer') continue;
+      // Атрибуты идут плоским списком recipient/sender/amount, повторяясь
+      // тройками. Проходим окном по 3.
+      const a = ev.attributes || [];
+      for (let i = 0; i < a.length; i++) {
+        if (a[i].key !== 'amount') continue;
+        // ближайшие recipient и sender до этого amount
+        let recipient = null, sender = null;
+        for (let j = i; j >= 0; j--) {
+          if (!sender && a[j].key === 'sender') sender = a[j].value;
+          if (!recipient && a[j].key === 'recipient') recipient = a[j].value;
+          if (sender && recipient) break;
+        }
+        const party = wantKey === 'sender' ? sender : recipient;
+        const other = wantKey === 'sender' ? recipient : sender;
+        if (party !== wallet) continue;
+        if (other === wallet) continue; // самому себе
+        for (const part of String(a[i].value).split(',')) {
+          const m = part.trim().match(/^(\d+)\s*uluna$/);
+          if (m) total += parseInt(m[1]);
+        }
+      }
+    }
+  }
+  return total;
+}
+
 async function tLoadRecentTxs(retries = 5) {
   const el = document.getElementById('t-recent-txs');
   if (!el) {
@@ -108,43 +145,6 @@ async function tLoadRecentTxs(retries = 5) {
     'https://terra-classic-fcd.publicnode.com',
     'https://columbus-fcd.terra.dev',
   ];
-
-  // Сумма uluna из событий transfer в логах транзакции. Для минта NFT
-  // (MsgExecuteContract) это единственное место, где видно движение монет —
-  // в самом сообщении LUNC не лежит. amount приходит строкой "N uluna" или
-  // "Nuluna", иногда несколько монет через запятую.
-  function sumTransferEvents(logs, wallet, dir) {
-    if (!Array.isArray(logs)) return 0;
-    const wantKey = dir === 'out' ? 'sender' : 'recipient';
-    let total = 0;
-    for (const lg of logs) {
-      for (const ev of (lg.events || [])) {
-        if (ev.type !== 'transfer') continue;
-        // Атрибуты идут плоским списком recipient/sender/amount, повторяясь
-        // тройками. Проходим окном по 3.
-        const a = ev.attributes || [];
-        for (let i = 0; i < a.length; i++) {
-          if (a[i].key !== 'amount') continue;
-          // ближайшие recipient и sender до этого amount
-          let recipient = null, sender = null;
-          for (let j = i; j >= 0; j--) {
-            if (!sender && a[j].key === 'sender') sender = a[j].value;
-            if (!recipient && a[j].key === 'recipient') recipient = a[j].value;
-            if (sender && recipient) break;
-          }
-          const party = wantKey === 'sender' ? sender : recipient;
-          const other = wantKey === 'sender' ? recipient : sender;
-          if (party !== wallet) continue;
-          if (other === wallet) continue; // самому себе
-          for (const part of String(a[i].value).split(',')) {
-            const m = part.trim().match(/^(\d+)\s*uluna$/);
-            if (m) total += parseInt(m[1]);
-          }
-        }
-      }
-    }
-    return total;
-  }
 
   // dir: 'in' — что пришло на кошелёк, 'out' — что с него ушло
   async function fetchTxsFor(wallet, limit, dir) {
@@ -383,20 +383,14 @@ async function loadTreasuryData() {
   setWallet('t-dev-bal',      't-dev-usd',      devB);
   setWallet('t-circuit-bal',  't-circuit-usd',  cB);
 
-  // Фактическая доля считается от суммы ЧЕТЫРЁХ распределяемых кошельков, а
-  // не от всего TVL: 25/15/50/10 описывают раздел казны, а не долю в
-  // протоколе. Дорожка показывает факт, засечка в разметке — план.
-  const distTotal = (rB||0)+(resB||0)+(liqB||0)+(devB||0);
-  const setShare = (barId, pctId, bal) => {
-    const pct = distTotal > 0 ? ((bal||0) / distTotal) * 100 : 0;
-    tSet(pctId, pct.toFixed(1) + '% actual');
-    const bar = document.getElementById(barId);
-    if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + '%';
-  };
-  setShare('t-rewards-bar',   't-rewards-pct',   rB);
-  setShare('t-reserve-bar',   't-reserve-pct',   resB);
-  setShare('t-liquidity-bar', 't-liquidity-pct', liqB);
-  setShare('t-dev-bar',       't-dev-pct',       devB);
+  // Доли считаются по ПОСТУПЛЕНИЯМ, а не по остаткам: план 25/15/50/10
+  // управляет входящим потоком, а остаток уменьшается расходами. Считать
+  // долю остатка и подписывать её «actual» значило бы обвинять кошелёк
+  // разработки в недоборе ровно за то, что с него тратили.
+  //
+  // Запрос тяжелее остальных (четыре поиска по LCD), поэтому не ждём его:
+  // страница уже наполнена, полосы дорисуются сами.
+  tLoadDistributionFlow();
 
   // Circuit добавлен в состав TVL: пул зон и кошелёк выкупа держат такие же
   // деньги протокола. На графике это даёт ступеньку в момент выкатки — смена
@@ -479,6 +473,80 @@ async function tLoadCircuitStrip() {
     }
   } catch (e) { /* прочерк */ }
 }
+
+// Сумма ПОСТУПЛЕНИЙ на кошелёк за период. Тот же способ, которым страница
+// тянет список операций: поиск по LCD и сумма событий transfer.
+//
+// Возвращает { uluna, count, capped }. capped=true означает, что лимит
+// выборки упёрся раньше начала периода, то есть данные неполные — об этом
+// надо сказать вслух, а не показывать заниженную сумму как точную.
+async function tInflowSince(wallet, sinceMs, limit = 100) {
+  const q = encodeURIComponent(`transfer.recipient='${wallet}'`);
+  for (const lcd of T_LCD) {
+    try {
+      const url = `${lcd}/cosmos/tx/v1beta1/txs?query=${q}&pagination.limit=${limit}&order_by=2`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const metas = d.tx_responses || [];
+      if (!metas.length) return { uluna: 0, count: 0, capped: false };
+
+      let total = 0, n = 0, oldest = Infinity;
+      for (const m of metas) {
+        const ts = m.timestamp ? Date.parse(m.timestamp) : 0;
+        if (ts) oldest = Math.min(oldest, ts);
+        if (ts < sinceMs) continue;
+        // Старые ноды кладут события в logs[], новые — плоско в events
+        const logs = (m.logs && m.logs.length) ? m.logs : [{ events: m.events || [] }];
+        const amt = sumTransferEvents(logs, wallet, 'in');
+        if (amt > 0) { total += amt; n++; }
+      }
+      return { uluna: total, count: n, capped: metas.length >= limit && oldest > sinceMs };
+    } catch (e) { /* следующий узел */ }
+  }
+  return null;
+}
+
+// Доли по поступлениям за период. Именно этим управляет план 25/15/50/10 —
+// в отличие от остатков, которые уменьшаются расходами.
+async function tLoadDistributionFlow(days = 30) {
+  const since = Date.now() - days * 24 * 3600 * 1000;
+  const keys = [
+    ['rewards',   T_WALLETS.rewards,   25],
+    ['reserve',   T_WALLETS.reserve,   15],
+    ['liquidity', T_WALLETS.liquidity, 50],
+    ['dev',       T_WALLETS.dev,       10],
+  ];
+
+  const res = await Promise.all(keys.map(([, addr]) => tInflowSince(addr, since)));
+  const ok = res.every((x) => x !== null);
+  if (!ok) {
+    keys.forEach(([k]) => tSet('t-' + k + '-pct', 'inflow unavailable'));
+    return;
+  }
+
+  const total = res.reduce((s, x) => s + x.uluna, 0);
+  const capped = res.some((x) => x.capped);
+
+  keys.forEach(([k, , plan], i) => {
+    const share = total > 0 ? (res[i].uluna / total) * 100 : 0;
+    tSet('t-' + k + '-pct', total > 0
+      ? share.toFixed(1) + '% of ' + days + 'd inflow'
+      : 'no inflow in ' + days + 'd');
+    const bar = document.getElementById('t-' + k + '-bar');
+    if (bar) bar.style.width = Math.min(100, share).toFixed(1) + '%';
+  });
+
+  const note = document.getElementById('t-dist-note');
+  if (note) {
+    note.textContent = total > 0
+      ? (capped
+          ? 'Bars: share of the last ' + days + ' days of inflow. The sample hit its limit, so the window is shorter than ' + days + ' days.'
+          : 'Bars: share of the last ' + days + ' days of inflow · ' + tFmt(total) + ' LUNC distributed. Marks show the target split.')
+      : 'No inflow to the distribution wallets in the last ' + days + ' days.';
+  }
+}
+
 // Копирование адреса кошелька. Clipboard API недоступен вне защищённого
 // контекста и в части встроенных браузеров кошельков, поэтому есть запасной
 // путь через скрытое textarea + execCommand.

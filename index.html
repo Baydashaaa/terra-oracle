@@ -1869,6 +1869,9 @@
     color:var(--muted); padding:1px; line-height:0; }
   .tre-row-addr button:hover { color:var(--gold); }
 
+  .tre-dist-note { margin-top:16px; padding-top:14px; font-size:10px; color:var(--muted);
+    line-height:1.6; border-top:1px solid rgba(255,255,255,.05); }
+
   .tre-tco { display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
   .tre-tco-figs { display:flex; gap:34px; }
   .tre-tco-curve { flex:1 1 260px; min-width:220px; }
@@ -2017,7 +2020,7 @@
   <div class="tre-lower">
 
     <div class="tre-sec">
-      <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>How the treasury is split.</span></div>
+      <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>The plan governs incoming funds — bars show where the inflow actually went.</span></div>
       <div class="tre-card">
         <div class="tre-rows">
         <div class="tre-row">
@@ -2089,6 +2092,7 @@
           </div>
         </div>
         </div>
+        <div class="tre-dist-note" id="t-dist-note">Measuring the last 30 days of inflow…</div>
       </div>
     </div>
 
@@ -2525,7 +2529,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=9c77f51aa0"></script>
-  <script src="assets/js/treasury.js?v=202608141100"></script>
+  <script src="assets/js/treasury.js?v=202608141130"></script>
   <script src="assets/js/treasury-chart.js?v=202608141040"></script>
   <script src="assets/js/signAction.js?v=b40331b9da"></script>
   <script src="assets/js/app.js?v=202608131610"></script>
