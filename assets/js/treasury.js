@@ -387,6 +387,10 @@ async function loadTreasuryData() {
   // деньги протокола. На графике это даёт ступеньку в момент выкатки — смена
   // состава, а не ошибка данных.
   const total = (tB||0)+(dB||0)+(wB||0)+(rB||0)+(resB||0)+(liqB||0)+(devB||0)+(cB||0)+(buyB||0);
+  // График берёт отсюда сегодняшнюю точку. Без этого он рисовал последний
+  // СНИМОК воркера и подписывал его «now», расходясь с заголовком на сумму,
+  // изменившуюся с прошлого часа.
+  window.__tvlTotalUluna = total;
   tSet('t-total-tvl', tFmt(total));
   tSet('t-total-usd', tFmtUsd(total,price));
   tSet('t-last-updated','Updated '+new Date().toLocaleTimeString());
@@ -394,7 +398,7 @@ async function loadTreasuryData() {
   // вечернего розыгрыша расходится с показанным TVL на сумму выплаты.
   tLoadTvlDelta(total);
 
-  tSet('t-tco-buy', buyB !== null ? tFmt(buyB) : 'Error');
+  tSetTco('t-tco-buy', buyB, '#38d9d0');
   tLoadCircuitStrip();
 
   if (btn) { btn.textContent='↻ Refresh'; btn.disabled=false; }
@@ -404,6 +408,22 @@ async function loadTreasuryData() {
 // Полоса TCO: сколько зон продано, сколько TCO лежит до сжигания и насколько
 // бондинг-кривая заполнена. Три независимых запроса — падение любого не должно
 // ронять остальные, поэтому каждый в своём try.
+// Ноль — это «ещё не накопилось», а не число, которым надо кричать. Крупный
+// цветной 0 читался как поломка, поэтому пустое значение приглушается.
+function tSetTco(id, uluna, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!uluna || uluna <= 0) {
+    el.textContent = '—';
+    el.style.color = 'var(--muted)';
+    el.style.opacity = '.65';
+  } else {
+    el.textContent = tFmt(uluna);
+    el.style.color = color;
+    el.style.opacity = '1';
+  }
+}
+
 async function tLoadCircuitStrip() {
   const smart = async (contract, msg) => {
     const q = btoa(JSON.stringify(msg));
@@ -429,7 +449,7 @@ async function tLoadCircuitStrip() {
   try {
     const b = await smart(T_TCO_TOKEN, { balance: { address: T_WALLETS.tcoBurn } });
     // У TCO шесть знаков, как у LUNC, поэтому формат тот же
-    if (b && b.balance !== undefined) tSet('t-tco-burn', tFmt(Number(b.balance)));
+    if (b && b.balance !== undefined) tSetTco('t-tco-burn', Number(b.balance), '#ff8a7a');
   } catch (e) { /* прочерк */ }
 
   try {

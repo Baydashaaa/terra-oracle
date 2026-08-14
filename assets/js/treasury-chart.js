@@ -61,7 +61,14 @@
   .tvc-ranges button.on { color:${GOLD}; border-color:rgba(245,197,24,.55);
     background:rgba(245,197,24,.07); }
   .tvc-plot { position:relative; }
-  .tvc-plot svg { display:block; width:100%; height:64px; overflow:visible; }
+  .tvc-plot svg { display:block; width:100%; height:132px; overflow:visible; }
+  /* Точка последнего значения вынесена из SVG: при preserveAspectRatio="none"
+     единицы viewBox растягиваются по осям по-разному, и <circle> превращался
+     в сплющенный эллипс. */
+  .tvc-dot { position:absolute; width:7px; height:7px; border-radius:50%;
+    transform:translate(-50%,-50%); pointer-events:none; }
+  .tvc-dot::after { content:''; position:absolute; inset:-4px; border-radius:50%;
+    background:inherit; opacity:.25; }
   .tvc-empty { font-size:11px; color:${MUTED}; padding:22px 0; text-align:center; }
   .tvc-tip {
     position:absolute; pointer-events:none; opacity:0; transition:opacity .12s;
@@ -128,14 +135,27 @@
 
   /* ── отрисовка ─────────────────────────────────────────────────────────── */
 
+  // Ряд плюс сегодняшняя точка из живого итога, если он посчитан. Без неё
+  // график заканчивался последним СНИМКОМ и подписывал его «now».
+  function seriesWithLive() {
+    const live = window.__tvlTotalUluna;
+    if (typeof live !== 'number' || live <= 0 || !allPoints.length) return allPoints;
+    const last = allPoints[allPoints.length - 1];
+    // Снимок свежее пяти минут — живая точка его заменяет, а не добавляется
+    const fresh = Date.now() - last.ts < 5 * 60 * 1000;
+    const head = fresh ? allPoints.slice(0, -1) : allPoints;
+    return head.concat([{ ts: Date.now(), uluna: live, live: true }]);
+  }
+
   function visiblePoints() {
+    // Имя намеренно не allPoints: затенять модульную переменную одноимённой
+    // локальной — верный способ запутаться при следующей правке.
+    const series = seriesWithLive();
     const r = RANGES.find((x) => x.id === range);
-    if (!r || !r.ms) return allPoints;
+    if (!r || !r.ms) return series;
     const from = Date.now() - r.ms;
-    const sel = allPoints.filter((p) => p.ts >= from);
-    // В коротком диапазоне может не остаться точек — тогда показываем всё,
-    // иначе пользователь видит пустоту и думает, что сломалось.
-    return sel.length >= 2 ? sel : allPoints;
+    const sel = series.filter((p) => p.ts >= from);
+    return sel.length >= 2 ? sel : series;
   }
 
   function draw() {
@@ -177,10 +197,17 @@
         `<path d="${area}" fill="url(#tvcFill)"/>` +
         `<path d="${line}" fill="none" stroke="${stroke}" stroke-width=".7" ` +
               `stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` +
-        `<circle cx="${px(last.ts).toFixed(2)}" cy="${py(last.uluna).toFixed(2)}" r="1.1" fill="${stroke}"/>` +
+
         `<line id="tvc-guide" x1="0" y1="0" x2="0" y2="${H}" stroke="${stroke}" ` +
               `stroke-width=".4" stroke-dasharray="1 1.4" opacity="0" vector-effect="non-scaling-stroke"/>` +
       `</svg>`;
+
+    const dot = document.createElement('div');
+    dot.className = 'tvc-dot';
+    dot.style.background = stroke;
+    dot.style.left = (px(last.ts) / W * 100) + '%';
+    dot.style.top = (py(last.uluna) / H * 100) + '%';
+    plot.appendChild(dot);
 
     $('tvc-from').textContent = fmtWhen(pts[0].ts);
     $('tvc-to').textContent = 'now · ' + fmtLunc(last.uluna) + ' LUNC';
