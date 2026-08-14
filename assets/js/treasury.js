@@ -474,14 +474,18 @@ async function tLoadCircuitStrip() {
   } catch (e) { /* прочерк */ }
 }
 
-// Сумма ПОСТУПЛЕНИЙ на кошелёк за период. Тот же способ, которым страница
-// тянет список операций: поиск по LCD и сумма событий transfer.
+// Раздел казны за период — по ОТПРАВКАМ с кошелька казны.
 //
-// Возвращает { uluna, count, capped }. capped=true означает, что лимит
-// выборки упёрся раньше начала периода, то есть данные неполные — об этом
-// надо сказать вслух, а не показывать заниженную сумму как точную.
-async function tInflowSince(wallet, sinceMs, limit = 100) {
-  const q = encodeURIComponent(`transfer.recipient='${wallet}'`);
+// Раньше здесь был поиск по `transfer.recipient` для каждого из четырёх
+// адресов. На publicnode этот индекс неполон: для кошелька разработки он
+// возвращал одну апрельскую транзакцию, хотя переводы шли регулярно. Доли
+// остальных трёх при этом нормировались на сумму без четвёртого и выходили
+// завышенными. Поиск по отправителю те же переводы находит полностью.
+//
+// Так и правильнее по смыслу: план 25/15/50/10 описывает раздел КАЗНЫ, а не
+// любые поступления на адрес.
+async function tDistributionOutflow(sinceMs, limit = 100) {
+  const q = encodeURIComponent(`transfer.sender='${T_WALLETS.treasury}'`);
   for (const lcd of T_LCD) {
     try {
       const url = `${lcd}/cosmos/tx/v1beta1/txs?query=${q}&pagination.limit=${limit}&order_by=2`;
@@ -489,26 +493,33 @@ async function tInflowSince(wallet, sinceMs, limit = 100) {
       if (!r.ok) continue;
       const d = await r.json();
       const metas = d.tx_responses || [];
-      if (!metas.length) return { uluna: 0, count: 0, capped: false };
+      const bodies = d.txs || [];
+      if (!metas.length) continue;
 
-      let total = 0, n = 0, oldest = Infinity;
-      for (const m of metas) {
-        const ts = m.timestamp ? Date.parse(m.timestamp) : 0;
+      const sums = {};
+      let oldest = Infinity;
+      for (let i = 0; i < metas.length; i++) {
+        const ts = metas[i].timestamp ? Date.parse(metas[i].timestamp) : 0;
         if (ts) oldest = Math.min(oldest, ts);
         if (ts < sinceMs) continue;
-        // Старые ноды кладут события в logs[], новые — плоско в events
-        const logs = (m.logs && m.logs.length) ? m.logs : [{ events: m.events || [] }];
-        const amt = sumTransferEvents(logs, wallet, 'in');
-        if (amt > 0) { total += amt; n++; }
+        if (metas[i].code) continue;                    // неуспешные не считаем
+        const msgs = ((bodies[i] || {}).body || {}).messages || [];
+        for (const m of msgs) {
+          const to = m.to_address;
+          if (!to) continue;
+          for (const c of (m.amount || [])) {
+            if (c.denom !== 'uluna') continue;
+            sums[to] = (sums[to] || 0) + Number(c.amount || 0);
+          }
+        }
       }
-      return { uluna: total, count: n, capped: metas.length >= limit && oldest > sinceMs };
+      // Лимит упёрся раньше начала периода — окно короче заявленного
+      return { sums, capped: metas.length >= limit && oldest > sinceMs };
     } catch (e) { /* следующий узел */ }
   }
   return null;
 }
 
-// Доли по поступлениям за период. Именно этим управляет план 25/15/50/10 —
-// в отличие от остатков, которые уменьшаются расходами.
 async function tLoadDistributionFlow(days = 30) {
   const since = Date.now() - days * 24 * 3600 * 1000;
   const keys = [
@@ -518,21 +529,20 @@ async function tLoadDistributionFlow(days = 30) {
     ['dev',       T_WALLETS.dev,       10],
   ];
 
-  const res = await Promise.all(keys.map(([, addr]) => tInflowSince(addr, since)));
-  const ok = res.every((x) => x !== null);
-  if (!ok) {
-    keys.forEach(([k]) => tSet('t-' + k + '-pct', 'inflow unavailable'));
+  const res = await tDistributionOutflow(since);
+  if (!res) {
+    keys.forEach(([k]) => tSet('t-' + k + '-pct', 'flow unavailable'));
     return;
   }
 
-  const total = res.reduce((s, x) => s + x.uluna, 0);
-  const capped = res.some((x) => x.capped);
+  const got = keys.map(([, addr]) => res.sums[addr] || 0);
+  const total = got.reduce((s, x) => s + x, 0);
 
-  keys.forEach(([k, , plan], i) => {
-    const share = total > 0 ? (res[i].uluna / total) * 100 : 0;
+  keys.forEach(([k], i) => {
+    const share = total > 0 ? (got[i] / total) * 100 : 0;
     tSet('t-' + k + '-pct', total > 0
-      ? share.toFixed(1) + '% of ' + days + 'd inflow'
-      : 'no inflow in ' + days + 'd');
+      ? share.toFixed(1) + '% of ' + days + 'd split'
+      : 'no split in ' + days + 'd');
     const bar = document.getElementById('t-' + k + '-bar');
     if (bar) bar.style.width = Math.min(100, share).toFixed(1) + '%';
   });
@@ -540,10 +550,11 @@ async function tLoadDistributionFlow(days = 30) {
   const note = document.getElementById('t-dist-note');
   if (note) {
     note.textContent = total > 0
-      ? (capped
-          ? 'Bars: share of the last ' + days + ' days of inflow. The sample hit its limit, so the window is shorter than ' + days + ' days.'
-          : 'Bars: share of the last ' + days + ' days of inflow · ' + tFmt(total) + ' LUNC distributed. Marks show the target split.')
-      : 'No inflow to the distribution wallets in the last ' + days + ' days.';
+      ? 'Bars: how the treasury split its outgoing funds over the last ' + days +
+        ' days · ' + tFmt(total) + ' distributed' +
+        (res.capped ? ' (sample hit its limit, the window may be shorter)' : '') +
+        '. Marks show the target split.'
+      : 'The treasury has not distributed anything in the last ' + days + ' days.';
   }
 }
 
