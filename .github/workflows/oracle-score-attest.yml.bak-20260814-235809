@@ -25,7 +25,7 @@ jobs:
       # lockfile, and four small pure-JS packages are not worth that coupling.
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
       # Deps come from package.json, which already declares exactly these.
       # --ignore-scripts matters: this job has ATTESTOR_MNEMONIC in scope, and a
