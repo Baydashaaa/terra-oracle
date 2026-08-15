@@ -595,6 +595,21 @@
             go:    'board',
           });
         });
+
+        // Мой ответ приняли. Уведомление идёт автору ответа: автор вопроса
+        // нажал кнопку сам и напоминания не ждёт. ts — момент принятия, иначе
+        // старый ответ, принятый сегодня, попал бы в «прочитанные» на первом
+        // запуске (там всё старше 48 часов помечается прочитанным).
+        if (q.chosenAnswerId && myAnswerIds[q.chosenAnswerId]) {
+          out.push({
+            id:    'acc:' + q.chosenAnswerId,
+            kind:  'acc',
+            ts:    toSec(q.acceptedAt) || toSec(q.createdAt),
+            title: 'Your answer was accepted',
+            body:  '+60 REP · ' + (q.text || '').slice(0, 120),
+            go:    'board',
+          });
+        }
       });
       return out;
     });
