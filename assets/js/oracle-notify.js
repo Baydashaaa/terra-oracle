@@ -44,6 +44,9 @@
     dailyReminder: false,  // daily fires every 24h — off by default, weekly only
     toastGap:     12,      // gap between the navbar and the first toast
     toastTop:     null,    // fixed top offset in px; null = measure the navbar
+    // Абсолютные: этот файл работает и на домене Terra Oracle, где Circuit нет
+    proofsUrl:    'https://draw.terraoracle.io/rewards-proofs.json',
+    drawSite:     'https://draw.terraoracle.io/',
   }, window.ORACLE_NOTIFY_CONFIG || {});
 
   // Chat lives on-chain: messages are 5,000 LUNC transfers to the Treasury with
@@ -685,6 +688,62 @@
       });
   }
 
+  // Circuit — раунд разыгрался. Слитые из-за недобора раунды в историю не
+  // пишутся вовсе, так что сюда попадают только настоящие розыгрыши.
+  function fetchCircuitRounds(w) {
+    return getJSON(CFG.drawWorker + '/circuit/history?limit=20').then(function (d) {
+      var rounds = (d && Array.isArray(d.rounds)) ? d.rounds : [];
+      var out = [];
+      rounds.forEach(function (r) {
+        if (!r || r.status !== 'closed') return;
+        var mine = 0;
+        (r.blocks || []).forEach(function (b) {
+          if (b && b.wallet === w) mine += (b.to - b.from + 1);
+        });
+        if (!mine) return;                       // раунд не мой
+        var won = r.winner === w;
+        var prize = (r.split && r.split.prize) ? lunc(r.split.prize) : null;
+        out.push({
+          id:    'circ:' + r.roundId,
+          kind:  won ? 'win' : 'circ',
+          ts:    toSec(r.closedAt),
+          title: won
+                   ? (prize ? ('You won ' + prize + ' LUNC in Circuit') : 'You won the Circuit round')
+                   : 'Circuit round drawn',
+          body:  'Zone ' + r.winnerZone + ' of ' + r.sold + ' · you held ' +
+                 mine + (mine === 1 ? ' zone' : ' zones'),
+          link:  r.txWinner ? ('https://finder.terraport.finance/mainnet/tx/' + r.txWinner) : null,
+        });
+      });
+      return out;
+    });
+  }
+
+  // Circuit — опубликована эпоха, в которой мне что-то начислено.
+  //
+  // Уведомляем о СОБЫТИИ (эпоха вышла), а не о состоянии («есть что забрать»):
+  // у состояния нет момента, к которому привязать id, и оно держалось бы до
+  // получения награды, всплывая каждую минуту. Сумму и пруф проверяет панель
+  // Claim — дублировать её запрос к контракту здесь незачем.
+  function fetchCircuitRewards(w) {
+    return getJSON(CFG.proofsUrl + '?t=' + Date.now()).then(function (d) {
+      if (!d) return [];                         // эпоха ещё не запускалась
+      var mine = (d.proofs || {})[w];
+      if (!mine || !mine.amount) return [];
+      var tag = (d.epoch !== undefined && d.epoch !== null)
+                  ? String(d.epoch)
+                  : (d.root || String(mine.amount));
+      return [{
+        id:    'claim:' + tag,
+        kind:  'claim',
+        ts:    toSec(d.generatedAt || d.publishedAt) || Math.floor(Date.now() / 1000),
+        title: 'Circuit rewards ready to claim',
+        body:  lunc(mine.amount) + ' TCO allocated in total',
+        link:  CFG.drawSite,
+      }];
+    });
+  }
+
   // ── Draw broadcasts (schedule is deterministic — no backend needed) ────────
   // Daily closes at 20:00 UTC, weekly on Monday 20:00 UTC — the same boundary
   // used by the worker's getCurrentRoundId().
@@ -800,8 +859,10 @@
       fetchChatReplies(wallet).catch(function () { return []; }),
       fetchDrawReminders(wallet).catch(function () { return []; }),
       fetchDrawResults(wallet).catch(function () { return []; }),
+      fetchCircuitRounds(wallet).catch(function () { return []; }),
+      fetchCircuitRewards(wallet).catch(function () { return []; }),
     ]).then(function (res) {
-      merge([].concat(res[0], res[1], res[2], res[3], res[4]).filter(Boolean));
+      merge([].concat(res[0], res[1], res[2], res[3], res[4], res[5], res[6]).filter(Boolean));
     });
   }
 
