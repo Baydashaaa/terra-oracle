@@ -1,9 +1,9 @@
 /* ════════════════════════════════════════════════════════════════
-   ORACLE EYE — animated mascot + feedback widget (self-contained)
+   ORACLE EYE - animated mascot + feedback widget (self-contained)
    ----------------------------------------------------------------
    Drop-in module. Include on any page with:
      <script src="assets/js/oracle-eye.js?v=1"></script>
-   It injects its own styles, floating button and modal — no other
+   It injects its own styles, floating button and modal - no other
    markup needed. Works on terraoracle.io and draw.terraoracle.io.
 
    Sends feedback to the Oracle Eye worker (Telegram). Keeps all the
@@ -212,13 +212,13 @@
     _btnEye.lid  = bwrap.querySelector('.oe-lid');
     _btnEye.glow = bwrap.querySelector('.oe-glow');
 
-    // idle loops — modal eye
+    // idle loops - modal eye
     setInterval(function () { if (!_busy && isOpen()) blink(_modalEye); }, 3600);
     var tk = 0;
     setInterval(function () { if (_busy || !isOpen()) return; tk++; moveIris(_modalEye, Math.sin(tk / 2) * 5, 0); }, 1500);
     setInterval(function () { if (_modalEye.glow) _modalEye.glow.style.opacity = (0.55 + Math.random() * 0.35).toFixed(2); }, 900);
 
-    // idle loops — button eye (always, subtle)
+    // idle loops - button eye (always, subtle)
     setInterval(function () { if (!isOpen()) blink(_btnEye); }, 4200);
     setInterval(function () { if (_btnEye.glow) _btnEye.glow.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2); }, 1100);
 

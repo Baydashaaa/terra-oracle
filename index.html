@@ -346,9 +346,9 @@
    Во встроенном браузере Keplr окно ниже, чем в Safari, и при раскрытом
    разделе REPUTATION содержимое переставало влезать. Меню выравнивалось по
    центру и не имело собственной прокрутки, поэтому лишнее уходило вверх под
-   шапку — верхний пункт (Board) становился недоступен.
+   шапку - верхний пункт (Board) становился недоступен.
    Прижимаем содержимое к верху и включаем прокрутку внутри самого меню.
-   Единица dvh учитывает свёрнутую адресную строку, vh — нет, поэтому vh
+   Единица dvh учитывает свёрнутую адресную строку, vh - нет, поэтому vh
    идёт первым как фолбэк для движков без поддержки dvh.                   */
 @media (max-width: 900px), (hover: none) {
   .nav-mobile-drawer {
@@ -365,18 +365,18 @@
 </style>
 <style id="android-paint-fix">
 /* ══ Android: полноэкранные композитные слои ══════════════════════════════
-   Симптом: контент есть в DOM и кликается, но не отрисован — чёрные полосы,
-   пропавшие карточки, «появляется после скролла». Причина — фиксированные
+   Симптом: контент есть в DOM и кликается, но не отрисован - чёрные полосы,
+   пропавшие карточки, «появляется после скролла». Причина - фиксированные
    слои во весь вьюпорт поверх очень длинного документа:
-     #energy-field  — position:fixed + анимация opacity/scale (перерисовка
+     #energy-field  - position:fixed + анимация opacity/scale (перерисовка
                       всего экрана каждый кадр);
-     #noise-overlay — position:fixed + тайл SVG feTurbulence 200×200.
+     #noise-overlay - position:fixed + тайл SVG feTurbulence 200×200.
    Существующий блок «Disable heavy GPU effects» их не отключал.           */
 @media (max-width: 900px), (hover: none) {
   #energy-field,
   #noise-overlay { display: none !important; }
 
-  /* Пульсация логотипа десктопного героя — тоже полноэкранный перерисовщик */
+  /* Пульсация логотипа десктопного героя - тоже полноэкранный перерисовщик */
   #hero-stage img { animation: none !important; }
 
   /* Ничто не должно создавать композитный слой размером с документ */
@@ -394,11 +394,11 @@
 // ONLY #page-home has class="page active" hardcoded in the static markup.
 // app.js sits near the very end of <body> (not deferred), so on a direct
 // load/refresh of e.g. /reputation the browser fully parses+paints this
-// large document — Home visible per the static markup — LONG before JS at
+// large document - Home visible per the static markup - LONG before JS at
 // the bottom ever runs showPage()/showRepPage() to switch it. That's the
 // "flash of Home, then switches after ~1s" symptom.
 // Fix: run synchronously HERE, before any .page div below is parsed, and
-// inject a style override so the CORRECT page is what gets painted first —
+// inject a style override so the CORRECT page is what gets painted first -
 // zero flash, independent of how long the rest of the page takes to load.
 (function () {
   try {
@@ -718,7 +718,7 @@
   <!-- TOKEN label -->
   <div class="mobile-section-label">Token</div>
 
-  <!-- TCO Token block — same redesign as desktop (animated coin + tiles) -->
+  <!-- TCO Token block - same redesign as desktop (animated coin + tiles) -->
   <div class="mobile-tco-block">
     <div class="mobile-tco-bar"></div>
     <div class="mobile-tco-inner">
@@ -733,7 +733,7 @@
             <span style="font-weight:800;font-size:15px;color:#fff;font-family:'Rajdhani',sans-serif;letter-spacing:.03em;">TCO Token</span>
             <span class="tcox-badge">Coming Soon</span>
           </div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55;">Terra Classic Oracle &mdash; native governance &amp; reward token. Earned by participating, staked for more.</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55;">Terra Classic Oracle - native governance &amp; reward token. Earned by participating, staked for more.</div>
           <div class="tcox-grid">
             <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
               <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
@@ -764,7 +764,7 @@
   <!-- FLOW label -->
   <div class="mobile-section-label">Protocol Flow</div>
 
-  <!-- Protocol Flow — same pfx redesign as desktop (spine, nodes, split bars) -->
+  <!-- Protocol Flow - same pfx redesign as desktop (spine, nodes, split bars) -->
   <div class="mobile-flow-block">
     <div class="mobile-flow-bar"></div>
     <div class="mobile-flow-header">◈ Protocol Flow</div>
@@ -968,7 +968,7 @@
     <div class="oc3-head">
      <div class="oc3-kicker">&#9670; How It All Connects</div>
      <div class="oc3-title">One loop. <em>Every action pays forward.</em></div>
-     <div class="oc3-sub">The Oracle Cycle resets every Monday &mdash; and the top players split the Treasury.</div>
+     <div class="oc3-sub">The Oracle Cycle resets every Monday - and the top players split the Treasury.</div>
     </div>
     <div class="oc3-body">
      <div class="oc3-reactor">
@@ -996,7 +996,7 @@
       </div>
       <div class="oc3-step" style="--nc:#E8C840;--nc2:#fde68a;">
        <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></div><div class="oc3-name">Enter the Draw</div><div class="oc3-idx">03</div></div>
-       <div class="oc3-more"><div class="oc3-desc">Mint an Oracle Mask &mdash; win LUNC prizes, stack bonus REP, keep the collectible.</div>
+       <div class="oc3-more"><div class="oc3-desc">Mint an Oracle Mask - win LUNC prizes, stack bonus REP, keep the collectible.</div>
        <div class="oc3-tags"><span>LUNC Prizes</span><span>+REP</span><span>NFT</span></div></div>
        <div class="oc3-bar"></div>
       </div>
@@ -1014,7 +1014,7 @@
 
 <style id="oc3-ring-color">
 /* ── Кольца реактора наследуют цвет активного модуля ──────────────────────
-   Единственный источник правды — --rc / --rc2 на .oc3-reactor.
+   Единственный источник правды - --rc / --rc2 на .oc3-reactor.
    JS ставит только их, всё остальное подхватывается по наследованию.       */
 .oc3-reactor{ --rc:#7B5CFF; --rc2:#c4b5fd; }
 
@@ -1056,7 +1056,7 @@
     var prog = document.getElementById('oc3prog');
     var reactor = document.querySelector('.oc3-reactor');
 
-    // Цвет берём из --nc / --nc2 самого шага — второго списка цветов больше нет
+    // Цвет берём из --nc / --nc2 самого шага - второго списка цветов больше нет
     function stepColors(el) {
       var cs = getComputedStyle(el);
       return {
@@ -1106,7 +1106,7 @@
       <span style="font-weight:800;font-size:16px;color:#fff;font-family:'Exo 2',sans-serif;letter-spacing:.03em;">TCO Token</span>
       <span class="tcox-badge">Coming Soon</span>
      </div>
-     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle — native governance &amp; reward token of the ecosystem. Earned by participating, staked for more.</div>
+     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle - native governance &amp; reward token of the ecosystem. Earned by participating, staked for more.</div>
      <div class="tcox-grid">
       <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
        <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
@@ -1196,15 +1196,15 @@
 
    <div class="pfv-fallback">
     <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#7B5CFF;"></i>Oracle Questions &mdash; from 50,000 LUNC</div>
+     <div class="pfv-f-t"><i style="background:#7B5CFF;"></i>Oracle Questions - from 50,000 LUNC</div>
      <div class="pfv-f-d">Half funds the Weekly Pool and earns you 1&ndash;4 free entries; half goes to the Treasury.</div>
     </div>
     <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#00D4FF;"></i>DAO Chat &mdash; 5,000 LUNC per message</div>
+     <div class="pfv-f-t"><i style="background:#00D4FF;"></i>DAO Chat - 5,000 LUNC per message</div>
      <div class="pfv-f-d">All of it to the Treasury. Every tenth message earns a free Weekly entry.</div>
     </div>
     <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#00FFB0;"></i>NFT Mints &mdash; Common / Rare / Legendary</div>
+     <div class="pfv-f-t"><i style="background:#00FFB0;"></i>NFT Mints - Common / Rare / Legendary</div>
      <div class="pfv-f-d">Feeds the Daily Pool and adds entries to the Weekly Draw.</div>
     </div>
     <div class="pfv-f-row">
@@ -1354,7 +1354,7 @@
  </div>
  <style>
   /* Selected tariff. A 1px border change was the only signal before, which is
-     easy to miss on a panel this wide — the ring, tint and lift make the choice
+     easy to miss on a panel this wide - the ring, tint and lift make the choice
      readable without looking for the radio dot.
      --tier carries the tariff's own colour so the two rules below stay to
      geometry and never repeat a hex value. */
@@ -1428,7 +1428,7 @@
   }
   .badge-pin .pin-time{ display:none; }
 
-  /* neon timer — sits next to the gold chip on the dark card, so the glow reads */
+  /* neon timer - sits next to the gold chip on the dark card, so the glow reads */
   .pin-timer{
     display:inline-flex; align-items:center; gap:5px; margin-left:6px;
     font-family:'Rajdhani',sans-serif; font-weight:600; font-size:11px;
@@ -1819,7 +1819,7 @@
   .tre-card { background:rgba(255,255,255,.015); border:1px solid rgba(255,255,255,.06);
     border-radius:14px; padding:18px 20px; }
 
-  /* Шапка TVL: цифры, график, кнопка — в одну строку на всю ширину */
+  /* Шапка TVL: цифры, график, кнопка - в одну строку на всю ширину */
   .tre-hero { display:flex; align-items:center; justify-content:space-between;
     flex-wrap:wrap; gap:14px;
     background:rgba(245,197,24,0.04); border:1px solid rgba(245,197,24,0.15);
@@ -1827,7 +1827,7 @@
 
   .tre-pools { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
 
-  /* Нижний ярус: распределение и транзакции рядом, а не друг под другом —
+  /* Нижний ярус: распределение и транзакции рядом, а не друг под другом -
      из-за этого страница и выглядела столбом */
   .tre-lower { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
   @media (max-width:1100px) { .tre-lower { grid-template-columns:1fr; } }
@@ -1852,7 +1852,7 @@
   .tre-row-name i { display:inline-block; width:8px; height:8px; border-radius:2px;
     margin-right:8px; vertical-align:0; }
   .tre-row-amt { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:800; }
-  /* Дорожка: заливка — факт, вертикальная засечка — план. */
+  /* Дорожка: заливка - факт, вертикальная засечка - план. */
   .tre-row-track { position:relative; height:8px; border-radius:5px;
     background:rgba(255,255,255,.05); overflow:visible; }
   .tre-row-track i { display:block; height:100%; border-radius:5px; opacity:.85;
@@ -1991,7 +1991,7 @@
   <!-- Доли TCO: узкая полоса, а не ещё две карточки. Слева накопленное,
        справа движение бондинг-кривой к порогу листинга. -->
   <div class="tre-sec">
-    <div class="tre-sec-tag"><b>&#9672; TCO buyback</b><span>12% of every Circuit round becomes TCO — half distributed, half burned.</span></div>
+    <div class="tre-sec-tag"><b>&#9672; TCO buyback</b><span>12% of every Circuit round becomes TCO - half distributed, half burned.</span></div>
     <div class="tre-card tre-tco">
       <div class="tre-tco-figs">
         <div>
@@ -2020,7 +2020,7 @@
   <div class="tre-lower">
 
     <div class="tre-sec">
-      <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>The plan governs incoming funds — bars show where the inflow actually went.</span></div>
+      <div class="tre-sec-tag"><b>&#9672; Distribution</b><span>The plan governs incoming funds - bars show where the inflow actually went.</span></div>
       <div class="tre-card">
         <div class="tre-rows">
         <div class="tre-row">
@@ -2252,7 +2252,7 @@
   <!-- PROFILE CARD -->
   <div class="card pf-card" style="margin-bottom:20px;">
     <div class="pf-row">
-      <!-- Generative "Oracle face" avatar — deterministic from wallet hash -->
+      <!-- Generative "Oracle face" avatar - deterministic from wallet hash -->
       <div class="pf-ava-wrap">
         <div class="pf-ava-ring" id="profile-ava-ring"></div>
         <div class="pf-ava" id="profile-avatar"></div>
@@ -2525,7 +2525,7 @@
 
   <!-- Логика -->
   <script>
-    // Global Worker URL — used by profile.js, reputation.js, treasury.js
+    // Global Worker URL - used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=9c77f51aa0"></script>
@@ -2596,7 +2596,7 @@ function updateMobileWalletUI(address) {
       navBtn.style.borderColor = 'rgba(0,200,150,0.35)';
       navBtn.style.color = '#66ffaa';
       // Lets CSS drop the address on narrow screens while still showing the
-      // word "Connect" when there is nothing connected yet — the state cannot
+      // word "Connect" when there is nothing connected yet - the state cannot
       // be expressed from the label text alone.
       navBtn.classList.add('is-connected');
     }
@@ -2840,8 +2840,8 @@ document.addEventListener('DOMContentLoaded', () => {
 let pollOptions = [];
 
 // The inputs are the source of truth, not the array. The array only survives
-// between renders, and anything that fails to write back to it — as the old
-// inline oninput did — left the typed text visible on screen but absent from
+// between renders, and anything that fails to write back to it - as the old
+// inline oninput did - left the typed text visible on screen but absent from
 // the data, so questions posted with no poll at all.
 function syncPollFromDOM() {
   const list = document.getElementById('poll-options-list');
@@ -3437,7 +3437,7 @@ document.getElementById('luncdash-modal').addEventListener('click', function(e) 
 });
 </script>
 
-<!-- ═══ ORACLE EYE (mascot + feedback) — external module ═══ -->
+<!-- ═══ ORACLE EYE (mascot + feedback) - external module ═══ -->
 <script src="assets/js/oracle-eye.js?v=c5a6075551"></script>
 <script src="assets/js/oracle-notify.js?v=202608151756"></script>
 

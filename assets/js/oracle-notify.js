@@ -1,6 +1,6 @@
 /* ============================================================================
  * oracle-notify.js  ·  v1.2.1
- * Terra Oracle / Oracle Draw — unified notification system (phase 1)
+ * Terra Oracle / Oracle Draw - unified notification system (phase 1)
  * ----------------------------------------------------------------------------
  * WHAT IT DOES
  *   · Bell button in the header with an unread badge
@@ -8,7 +8,7 @@
  *   · Toasts (bottom-right) for events that arrive while the page is open
  *   · Read/unread state in localStorage, per wallet, per device
  *
- * SOURCES (phase 1 — no backend changes required)
+ * SOURCES (phase 1 - no backend changes required)
  *   · Wins            → oracle-draw worker   GET /my-wins?wallet=
  *   · Answers to you  → terra-oracle worker  GET /questions   (KV-cached)
  *                       covers both "answer on my question" and
@@ -41,7 +41,7 @@
     toastMs:      7000,    // auto-dismiss delay
     chatLimit:    50,      // chat txs pulled per poll (matches the site's own)
     remindMins:   60,      // "draw in X minutes" reminder lead time
-    dailyReminder: false,  // daily fires every 24h — off by default, weekly only
+    dailyReminder: false,  // daily fires every 24h - off by default, weekly only
     toastGap:     12,      // gap between the navbar and the first toast
     toastTop:     null,    // fixed top offset in px; null = measure the navbar
     // Абсолютные: этот файл работает и на домене Terra Oracle, где Circuit нет
@@ -150,7 +150,7 @@
 
       '.onf-wrap{position:relative;display:inline-flex;flex:none;align-items:center;}',
 
-      /* Bell — same geometry/typography as .wallet-btn */
+      /* Bell - same geometry/typography as .wallet-btn */
       '.onf-bell{position:relative;display:inline-flex;align-items:center;justify-content:center;',
       'width:36px;height:36px;padding:0;border-radius:8px;cursor:pointer;',
       'background:transparent;border:1px solid rgba(123,92,255,0.4);',
@@ -165,7 +165,7 @@
       '.onf-bell.has-unread{border-color:rgba(244,208,63,0.55);color:var(--gold,#f4d03f);',
       'animation:onfPulse 2.4s ease-in-out infinite;}',
 
-      /* Badge — Rajdhani numerals, gold like the rest of the "value" accents */
+      /* Badge - Rajdhani numerals, gold like the rest of the "value" accents */
       '.onf-badge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;',
       'display:none;align-items:center;justify-content:center;border-radius:5px;',
       'background:linear-gradient(135deg,#f4d03f,#e8a020);color:#141a28;',
@@ -173,7 +173,7 @@
       'box-shadow:0 0 10px rgba(244,208,63,0.55);}',
       '.onf-bell.has-unread .onf-badge{display:flex;}',
 
-      /* Panel — .wallet-dropdown recipe */
+      /* Panel - .wallet-dropdown recipe */
       '.onf-panel{position:absolute;top:calc(100% + 8px);right:0;width:330px;max-width:calc(100vw - 24px);',
       'background:var(--surface,#0d1424);border:1px solid var(--border,rgba(123,92,255,0.22));',
       'border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.55);',
@@ -181,7 +181,7 @@
       '.onf-panel.open{display:block;animation:onfDrop 0.18s ease;}',
       '.onf-head{display:flex;align-items:center;justify-content:space-between;gap:8px;',
       'padding:10px 12px 9px;border-bottom:1px solid var(--border,rgba(123,92,255,0.22));position:relative;overflow:hidden;}',
-      /* thin scanline sweep across the header — echoes the site\'s sci-fi motion */
+      /* thin scanline sweep across the header - echoes the site\'s sci-fi motion */
       '.onf-head::after{content:"";position:absolute;left:0;bottom:-1px;width:25%;height:1px;',
       'background:linear-gradient(90deg,transparent,var(--accent,#7C5CFF),transparent);',
       'animation:onfSweep 3.6s linear infinite;opacity:.7;}',
@@ -194,7 +194,7 @@
 
       /* On a phone the bell sits inside the mobile nav bar, and an absolutely
          positioned panel is clipped by whichever ancestor has overflow:hidden
-         — which is what cut the last notification in half. Fixed positioning
+         - which is what cut the last notification in half. Fixed positioning
          takes it out of that chain entirely: it hangs from the navbar (the
          same --onf-top the toasts already measure) and spans the viewport
          rather than the width of the little control strip it is mounted in. */
@@ -245,7 +245,7 @@
       '.onf-empty{padding:28px 14px;text-align:center;color:var(--muted,#6B7AA6);font-size:11px;',
       'letter-spacing:.06em;}',
 
-      /* Toasts — glass card with a colored edge, matching .glass-btn surfaces.
+      /* Toasts - glass card with a colored edge, matching .glass-btn surfaces.
          Anchored top-right under the navbar; --onf-top is measured from the
          real <nav> at runtime so both sites get the right offset. */
       '.onf-toasts{position:fixed;right:18px;top:var(--onf-top,92px);z-index:9500;display:flex;',
@@ -270,7 +270,7 @@
       /* ВНИМАНИЕ: правила .onf-panel здесь быть НЕ ДОЛЖНО.
          Этот блок остался с версии, когда панель висела внизу, и его
          `top:auto` перебивал `top:var(--onf-panel-top)` из блока 560px выше
-         (та же специфичность, но это правило идёт позже — побеждает оно).
+         (та же специфичность, но это правило идёт позже - побеждает оно).
          При position:fixed + top:auto коробка встаёт на своё статическое
          место, то есть прямо в полосе контролов навбара, и панель залезала
          на шапку. Позиционированием панели занимается только блок 560px. */
@@ -317,7 +317,7 @@
 
     var host = null;
 
-    // The two sites name their mobile control strip differently — Oracle Draw
+    // The two sites name their mobile control strip differently - Oracle Draw
     // uses .mob-nav-controls, Terra Oracle #mobile-nav-controls. Only the first
     // was checked, so on Terra Oracle's phone layout the bell fell through to
     // the desktop branch and was placed next to #wallet-wrap, which that
@@ -375,7 +375,7 @@
         render();
         // Opening the panel is reading it. The badge used to clear only when a
         // specific item was clicked or "mark all" was pressed, so someone who
-        // looked at their notifications and reloaded still saw the same count —
+        // looked at their notifications and reloaded still saw the same count -
         // which reads as the page ignoring them.
         //
         // Marked after a beat so the unread bars are visible for a moment
@@ -546,7 +546,7 @@
       .catch(function () { clearTimeout(to); return null; });
   }
 
-  // Wins — oracle-draw worker. No prize amount is stored per winner yet, so we
+  // Wins - oracle-draw worker. No prize amount is stored per winner yet, so we
   // report pool + place and link to the on-chain draw tx.
   function fetchWins(w) {
     return getJSON(CFG.drawWorker + '/my-wins?wallet=' + encodeURIComponent(w)).then(function (d) {
@@ -568,7 +568,7 @@
     });
   }
 
-  // Answers — terra-oracle worker. Two cases from one payload:
+  // Answers - terra-oracle worker. Two cases from one payload:
   //   1) somebody answered a question I asked
   //   2) somebody replied to an answer I wrote (answer.replyTo)
   function fetchAnswers(w) {
@@ -600,7 +600,7 @@
         });
 
         // Мой ответ приняли. Уведомление идёт автору ответа: автор вопроса
-        // нажал кнопку сам и напоминания не ждёт. ts — момент принятия, иначе
+        // нажал кнопку сам и напоминания не ждёт. ts - момент принятия, иначе
         // старый ответ, принятый сегодня, попал бы в «прочитанные» на первом
         // запуске (там всё старше 48 часов помечается прочитанным).
         if (q.chosenAnswerId && myAnswerIds[q.chosenAnswerId]) {
@@ -618,7 +618,7 @@
     });
   }
 
-  // Chat replies — read straight off-chain through the draw worker's tx proxy
+  // Chat replies - read straight off-chain through the draw worker's tx proxy
   // (same source the chat page itself uses, so no new backend). We look for
   // messages whose memo reply-prefix points at one of MY message txHashes.
   function fetchChatReplies(w) {
@@ -688,7 +688,7 @@
       });
   }
 
-  // Circuit — раунд разыгрался. Слитые из-за недобора раунды в историю не
+  // Circuit - раунд разыгрался. Слитые из-за недобора раунды в историю не
   // пишутся вовсе, так что сюда попадают только настоящие розыгрыши.
   function fetchCircuitRounds(w) {
     return getJSON(CFG.drawWorker + '/circuit/history?limit=20').then(function (d) {
@@ -719,12 +719,12 @@
     });
   }
 
-  // Circuit — опубликована эпоха, в которой мне что-то начислено.
+  // Circuit - опубликована эпоха, в которой мне что-то начислено.
   //
   // Уведомляем о СОБЫТИИ (эпоха вышла), а не о состоянии («есть что забрать»):
   // у состояния нет момента, к которому привязать id, и оно держалось бы до
   // получения награды, всплывая каждую минуту. Сумму и пруф проверяет панель
-  // Claim — дублировать её запрос к контракту здесь незачем.
+  // Claim - дублировать её запрос к контракту здесь незачем.
   function fetchCircuitRewards(w) {
     return getJSON(CFG.proofsUrl + '?t=' + Date.now()).then(function (d) {
       if (!d) return [];                         // эпоха ещё не запускалась
@@ -744,8 +744,8 @@
     });
   }
 
-  // ── Draw broadcasts (schedule is deterministic — no backend needed) ────────
-  // Daily closes at 20:00 UTC, weekly on Monday 20:00 UTC — the same boundary
+  // ── Draw broadcasts (schedule is deterministic - no backend needed) ────────
+  // Daily closes at 20:00 UTC, weekly on Monday 20:00 UTC - the same boundary
   // used by the worker's getCurrentRoundId().
   function roundInfo(pool) {
     var now = new Date();
@@ -782,14 +782,14 @@
           body:  myEntries
                    ? ('You have ' + myEntries + ' ' + (myEntries === 1 ? 'entry' : 'entries') + ' · ' +
                       ((st && st.totalEntries) || 0) + ' total')
-                   : 'You have no entries yet — mint to join',
+                   : 'You have no entries yet - mint to join',
           go:    'draw',
         }];
       });
     })).then(function (arrs) { return [].concat.apply([], arrs); });
   }
 
-  // Draw results — served from the snapshot /round-complete writes, so it stays
+  // Draw results - served from the snapshot /round-complete writes, so it stays
   // readable after the round rolls over. Winners already get a personal "You
   // won" from /my-wins, so here we only tell everyone else how it ended.
   function fetchDrawResults(w) {
@@ -825,8 +825,8 @@
     var firstRun = !store.init;
 
     // On a first run the whole history arrives at once, and marking all of it
-    // read was too blunt: opening the site on a second device — or simply on
-    // the other domain, since localStorage is per-origin — silently swallowed
+    // read was too blunt: opening the site on a second device - or simply on
+    // the other domain, since localStorage is per-origin - silently swallowed
     // everything, including a win from an hour ago. The badge then read zero
     // and the notifications looked broken rather than already-seen.
     //
@@ -932,7 +932,7 @@
 
     setWallet(currentWallet());
     // Sites restore the session at different points during startup, and some
-    // define setWalletConnected late — re-check for a while, then settle.
+    // define setWalletConnected late - re-check for a while, then settle.
     var tries = 0;
     var iv = setInterval(function () {
       hookWalletFns();

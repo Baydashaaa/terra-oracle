@@ -118,7 +118,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE RESPONSIVE — added for phones
+   MOBILE RESPONSIVE - added for phones
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Canvas: никогда не шире контейнера ── */
@@ -204,12 +204,12 @@ canvas {
     z-index: 100;
   }
 
-  /* Логотип — компактный.
+  /* Логотип - компактный.
      Здесь был баг: `min-width: unset`. Для min-width initial value = auto,
      то есть unset даёт РОВНО auto, а auto у флекс-элемента означает «не
      сжиматься уже своего min-content». Внутри логотипа текст с
      white-space:nowrap, поэтому блок держал полную ширину «Terra Oracle
-     Classic» и выдавливал #mobile-nav-controls — кнопка Connect наезжала
+     Classic» и выдавливал #mobile-nav-controls - кнопка Connect наезжала
      на надпись. Нужен именно 0. */
   /* Контролы не сжимаются и не уезжают: 44px тач-таргет важнее вордмарка */
   #mobile-nav-controls { flex: 0 0 auto; }
@@ -391,7 +391,7 @@ canvas {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ZK NETWORK SYSTEM — новые стили
+   ZK NETWORK SYSTEM - новые стили
    ═══════════════════════════════════════════════════════════ */
 
 /* ── NAV scanner line ── */
@@ -419,7 +419,7 @@ canvas {
   transform: translateY(-3px);
 }
 
-/* Module top status bar — removed */
+/* Module top status bar - removed */
 .zk-module-bar,
 .zk-module-bar-fast {
   display: none !important;
@@ -459,7 +459,7 @@ canvas {
   50%      { opacity: 1;   transform: scale(1.2); }
 }
 
-/* Scanline on hover — removed */
+/* Scanline on hover - removed */
 
 /* ── ORACLE DRAW STAR CARD ── */
 .zk-module-star {
@@ -478,7 +478,7 @@ canvas {
     inset 0 0 40px rgba(0,212,255,0.06) !important;
 }
 
-/* Shimmer sweep — removed */
+/* Shimmer sweep - removed */
 .zk-star-shimmer {
   display: none !important;
 }
@@ -510,7 +510,7 @@ canvas {
 
 
 /* ═══════════════════════════════════════════════════════════
-   HERO GRID LAYOUT — 2×2 cards + center
+   HERO GRID LAYOUT - 2×2 cards + center
    ═══════════════════════════════════════════════════════════ */
 
 /* Override page max-width only for home */
@@ -519,7 +519,7 @@ canvas {
   padding: 0 !important;
 }
 
-/* Cards in hero grid — fixed width so they stay proportional */
+/* Cards in hero grid - fixed width so they stay proportional */
 #page-home .zk-module {
   width: 100%;
 }
@@ -548,7 +548,7 @@ canvas {
   }
 }
 
-/* ── TCO + Protocol Flow — compact, no full-width stretch ── */
+/* ── TCO + Protocol Flow - compact, no full-width stretch ── */
 #page-home > div[style*="max-width:720px"] {
   box-sizing: border-box;
 }
@@ -564,7 +564,7 @@ canvas {
   }
 }
 
-/* Protocol flow pills — don't let them overflow */
+/* Protocol flow pills - don't let them overflow */
 #page-home div[style*="flex-wrap:wrap"] {
   max-width: 100%;
 }
@@ -572,10 +572,10 @@ canvas {
 
 
 /* ═══════════════════════════════════════════════════════════
-   HERO CENTER TEXT ANIMATIONS — slow, smooth, premium
+   HERO CENTER TEXT ANIMATIONS - slow, smooth, premium
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Eyebrow label — fade in ── */
+/* ── Eyebrow label - fade in ── */
 .hero-eyebrow {
   font-size: 9px;
   letter-spacing: 0.32em;
@@ -589,7 +589,7 @@ canvas {
 
 
 
-/* ── H1 "Terra Oracle" — gradient flow + glow pulse ── */
+/* ── H1 "Terra Oracle" - gradient flow + glow pulse ── */
 .hero-h1 {
   font-family: 'Rajdhani', sans-serif;
   font-weight: 800;
@@ -608,13 +608,13 @@ canvas {
                     drop-shadow(0 0 28px rgba(0,212,255,0.15)); }
 }
 
-/* "Terra" — белый, всегда */
+/* "Terra" - белый, всегда */
 .hero-h1-terra {
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
 }
 
-/* "Oracle" — gradient flow */
+/* "Oracle" - gradient flow */
 .hero-h1-oracle {
   background: linear-gradient(
     90deg,
@@ -635,7 +635,7 @@ canvas {
   100% { background-position: 300% center; }
 }
 
-/* ── H1-sub "Classic" — delayed gradient + stronger glow ── */
+/* ── H1-sub "Classic" - delayed gradient + stronger glow ── */
 .hero-h1-sub {
   font-family: 'Rajdhani', sans-serif;
   font-weight: 800;
@@ -670,7 +670,7 @@ canvas {
                     drop-shadow(0 0 44px rgba(168,85,247,0.3)); }
 }
 
-/* ── Подзаголовок — reveal (clip-path wipe + fade) ── */
+/* ── Подзаголовок - reveal (clip-path wipe + fade) ── */
 .hero-sub {
   font-size: 12px;
   color: rgba(255,255,255,0.42);
@@ -688,7 +688,7 @@ canvas {
   100% { opacity: 1; clip-path: inset(0 0%   0 0); }
 }
 
-/* ── Мелкий текст Q&A — shimmer (редко, медленно) ── */
+/* ── Мелкий текст Q&A - shimmer (редко, медленно) ── */
 .hero-micro {
   font-size: 10px;
   color: rgba(180,200,230,0.38);
@@ -728,7 +728,7 @@ canvas {
   letter-spacing: 0.08em;
 }
 
-/* ── TCO pill — fade in last + subtle pulse ── */
+/* ── TCO pill - fade in last + subtle pulse ── */
 .hero-tco-pill {
   display: inline-flex;
   align-items: center;
@@ -767,42 +767,42 @@ canvas {
   transition: color 0.35s ease, text-shadow 0.35s ease, opacity 0.35s ease;
 }
 
-/* Tag — чуть заметнее */
+/* Tag - чуть заметнее */
 .zk-module:hover .zk-module-tag {
   opacity: 1;
   letter-spacing: 0.26em;
 }
 
-/* Заголовок — чистый белый + мягкий ореол */
+/* Заголовок - чистый белый + мягкий ореол */
 .zk-module:hover .zk-module-title {
   color: #ffffff !important;
   text-shadow: 0 0 16px rgba(255,255,255,0.18);
 }
 
-/* Описание — светлее */
+/* Описание - светлее */
 .zk-module:hover .zk-module-desc {
   color: #b0c8e4 !important;
 }
 
-/* CTA стрелка — ярче + свечение в цвете */
+/* CTA стрелка - ярче + свечение в цвете */
 .zk-module:hover .zk-module-cta {
   filter: brightness(1.4);
   text-shadow: 0 0 12px currentColor;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CARD PERIMETER PULSE — импульс по периметру карточек
+   CARD PERIMETER PULSE - импульс по периметру карточек
    ═══════════════════════════════════════════════════════════ */
 
 .zk-module {
   position: relative;
 }
 
-/* Perimeter pulse — удалён */
+/* Perimeter pulse - удалён */
 
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE UX OPTIMIZATION — объединённый блок, без дублей
+   MOBILE UX OPTIMIZATION - объединённый блок, без дублей
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Все мобильные элементы скрыты на десктопе ── */
@@ -814,7 +814,7 @@ canvas {
 .mobile-secondary-cards,
 .mobile-section-label { display: none !important; }
 
-/* На мобиле — включаем нужные */
+/* На мобиле - включаем нужные */
 @media (max-width: 900px) {
   .mobile-hero { display: flex !important; }
   .mobile-home-sections { display: block !important; }
@@ -882,7 +882,7 @@ canvas {
   #hero-stage { display: none !important; }
   #page-home > div[style*="max-width:720px"] { display: none !important; }
 
-  /* .mobile-hero-logo удалён — заменён на .mobile-hero-bg-logo */
+  /* .mobile-hero-logo удалён - заменён на .mobile-hero-bg-logo */
   .mobile-hero-eyebrow {
     font-size: 9px; letter-spacing: 0.3em; color: var(--gold);
     text-transform: uppercase; font-family: 'Exo 2',sans-serif;
@@ -1081,7 +1081,7 @@ canvas {
   .mobile-flow-pill.green { background: rgba(0,255,176,0.05); border-color: rgba(0,255,176,0.12); color: rgba(0,255,176,0.9); }
   .mobile-flow-pill.blue { background: rgba(0,212,255,0.06); border-color: rgba(0,212,255,0.15); color: rgba(0,212,255,0.9); }
 
-  /* sticky bottom bar — отключён */
+  /* sticky bottom bar - отключён */
 
   /* ── MENU STAGGER ANIMATIONS ── */
   .nav-mobile-drawer.open .nav-tab,
@@ -1115,11 +1115,11 @@ canvas {
 
 
 /* ═══════════════════════════════════════════════════════
-   ANDROID / MOBILE FIX — scroll jank + card visibility
+   ANDROID / MOBILE FIX - scroll jank + card visibility
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px), (hover: none) {
 
-  /* Perimeter pulse — удалён глобально */
+  /* Perimeter pulse - удалён глобально */
 
   /* Shimmer and module bar already removed globally */
 
@@ -1149,7 +1149,7 @@ canvas {
     -webkit-backface-visibility: hidden !important;
   }
 
-  /* Remove hover transforms — touch devices trigger them and cause jank */
+  /* Remove hover transforms - touch devices trigger them and cause jank */
   .zk-module:hover {
     transform: none !important;
     box-shadow: none !important;
@@ -1202,7 +1202,7 @@ canvas {
 .pfx-legend i{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
 /* ═══════════════════════════════════════════════════════════
-   HOME: Oracle Cycle — reactor + auto-playing steps
+   HOME: Oracle Cycle - reactor + auto-playing steps
    ═══════════════════════════════════════════════════════════ */
 @keyframes oc3Rot { to { transform: rotate(360deg); } }
 
@@ -1336,10 +1336,10 @@ canvas {
 .vp-card{ position:relative; background:rgba(14,18,32,.9); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:24px 26px; overflow:hidden; margin-bottom:20px; }
 .vp-card::before{ content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--vc),transparent); }
 /* ── Адреса кошельков на странице Treasury ──────────────────────────────────
-   Были 9px, прозрачность .5 и word-break:break-all — строка рвалась посреди
+   Были 9px, прозрачность .5 и word-break:break-all - строка рвалась посреди
    адреса на два куска и читалась как технический мусор. При этом именно
    адрес и есть доказательство, что цифры настоящие.
-   Теперь: обрезка по краям (начало и хвост — то, по чему адрес и сверяют),
+   Теперь: обрезка по краям (начало и хвост - то, по чему адрес и сверяют),
    ссылка на обозреватель и кнопка копирования. Полный адрес в title.        */
 .t-addr{
   display:flex; align-items:center; gap:8px;
@@ -1369,12 +1369,12 @@ canvas {
 .vp-card-closed{ opacity:.72; }
 
 /* ── Завершённое голосование ────────────────────────────────────────────────
-   Активная и закрытая карточки различались только прозрачностью .72 — этого
+   Активная и закрытая карточки различались только прозрачностью .72 - этого
    не хватало, полоса кворума в обеих одинаково переливалась бегущим бликом
    vpSweep и обе читались как «идёт прямо сейчас».
    Гасим у закрытых всю «живую» атрибутику: бегущий блик, цветную полосу
    кворума и цветную планку слева. Результаты голосования при этом остаются
-   в цвете — они и есть содержимое закрытой карточки.                        */
+   в цвете - они и есть содержимое закрытой карточки.                        */
 .vp-card-closed .vp-q-fill::after{ display:none; }
 .vp-card-closed .vp-q-fill{ background:rgba(255,255,255,.22); }
 .vp-card-closed::before{ background:linear-gradient(180deg,rgba(255,255,255,.22),transparent); }
@@ -1383,7 +1383,7 @@ canvas {
   border-color:rgba(255,255,255,.14);
   color:var(--muted);
 }
-/* Диагональная штриховка по фону — спокойный, но однозначный признак архива */
+/* Диагональная штриховка по фону - спокойный, но однозначный признак архива */
 .vp-card-closed::after{
   content:'';
   position:absolute; inset:0;
@@ -1443,8 +1443,8 @@ canvas {
 #page-ask > .card:hover::before { opacity: 0.4; }
 
 /* ── Protocol Flow ─────────────────────────────────────────────────────────
-   A diagram, not three cards. The section answers one question — where does
-   the LUNC go — and that is a single movement through the system, so cards
+   A diagram, not three cards. The section answers one question - where does
+   the LUNC go - and that is a single movement through the system, so cards
    sitting side by side were the wrong shape for it: they showed three things
    instead of one.
 
@@ -1514,7 +1514,7 @@ canvas {
 .pfv-t { font-size: 14px; font-weight: 700; fill: var(--text); }
 .pfv-s { font-size: 10.5px; fill: var(--muted); }
 
-/* The static connector — visible even with motion disabled, so the diagram
+/* The static connector - visible even with motion disabled, so the diagram
    still reads as connected. */
 .pfv-link { fill: none; stroke-width: 2; opacity: 0.9; }
 
@@ -1535,7 +1535,7 @@ canvas {
 
 /* Labels sit on a pill and are drawn last, so a connector passing behind one
    can never make it unreadable. Their positions are chosen by a clearance
-   search rather than a fixed point on the curve — at a fixed fraction the
+   search rather than a fixed point on the curve - at a fixed fraction the
    links leaving a busy node stack their labels on top of each other. */
 .pfv-pct {
   font-size: 10.5px;
@@ -1617,10 +1617,10 @@ canvas {
    wallet button started overlapping the logo. The address on that button was
    never load-bearing: the same address is shown in full inside the wallet
    drawer, and the button's job here is to be tappable, not to be read.
-   "Connect" still shows when nothing is connected — that word IS the
+   "Connect" still shows when nothing is connected - that word IS the
    instruction, so it stays. */
 /* Обновлено: иконка в ОБОИХ состояниях. Слово "Connect" съедало ширину и
-   логотип не помещался. Состояние читается цветом — синий контур «не
+   логотип не помещался. Состояние читается цветом - синий контур «не
    подключён», зелёный «подключён»; полный адрес и так есть в drawer'е.
    !important обязателен: у кнопки в index.html есть inline-атрибут style
    с gap, border-radius и padding, а inline сильнее таблицы стилей. */
@@ -1636,7 +1636,7 @@ canvas {
   #mobile-wallet-nav-btn svg { width: 16px; height: 16px; }
 }
 
-/* Below this the logo has to give way first — shrinking the controls further
+/* Below this the logo has to give way first - shrinking the controls further
    would make them hard to hit, and a 44px target matters more than a full
    wordmark. */
 
@@ -1647,7 +1647,7 @@ canvas {
    мягким эллипсом ниже полосы навбара.
 
    Блок лежит В КОНЦЕ файла намеренно. Базовые `.nav-logo`, `.nav-logo svg` и
-   `.nav-logo-text` объявлены в минифицированной первой строке, мобильные — в
+   `.nav-logo-text` объявлены в минифицированной первой строке, мобильные - в
    @media выше по тексту. Специфичность одинаковая, решает порядок, поэтому
    база и все медиазапросы собраны здесь, в этой последовательности. */
 
@@ -1660,7 +1660,7 @@ canvas {
   animation:none;
 }
 
-/* Знак. Чёрный фон гифки гасится режимом lighten — остаётся только
+/* Знак. Чёрный фон гифки гасится режимом lighten - остаётся только
    светящийся орб, без круга и без обрезки. */
 .nav-logo-orb{
   position:relative; flex:0 0 auto;
@@ -1671,16 +1671,16 @@ canvas {
    Прежний эллипс под орбом читался как пятно на фоне шапки: он
    прямоугольной области и не совпадал с кругом. drop-shadow идёт по
    альфа-каналу гифки (вне круга она прозрачная), поэтому светится ровно
-   круг. Знак 74px — шапка от него подрастает с 80 до 86px, это нормально:
+   круг. Знак 74px - шапка от него подрастает с 80 до 86px, это нормально:
    отступ панели уведомлений меряется от живого <nav> в рантайме и
-   подстроится сам. Радиус свечения 7px, то есть 74+14=88 при высоте 86 —
+   подстроится сам. Радиус свечения 7px, то есть 74+14=88 при высоте 86 -
    за полосу выходит на пару пикселей мягкого края, не больше. */
 .nav-logo-orb img{
   position:relative; width:74px; height:74px; max-width:none;
   object-fit:contain; mix-blend-mode:lighten;
   -webkit-user-drag:none;
   filter:drop-shadow(0 0 7px rgba(124,72,255,.55));
-  /* Базовый файл держит `.nav-logo img { animation: logoPulse 4s ... }` —
+  /* Базовый файл держит `.nav-logo img { animation: logoPulse 4s ... }` -
      пульсацию drop-shadow. Глушим её здесь, иначе логотип продолжает
      мерцать, даже когда свечение статично. */
   animation:none;
@@ -1688,11 +1688,11 @@ canvas {
 .nav-logo-text{
   display:flex; flex-direction:column; justify-content:center;
   min-width:0; gap:5px;
-  font-family:'Exo 2',sans-serif;   /* база ставила Rajdhani — сбрасываем */
+  font-family:'Exo 2',sans-serif;   /* база ставила Rajdhani - сбрасываем */
   letter-spacing:normal; text-transform:none;
 }
 /* line-height НЕ 1 и БЕЗ overflow:hidden. У Boldonse литеры выходят за
-   em-коробку сверху, и при line-height:1 обрезка срезала им верхушки —
+   em-коробку сверху, и при line-height:1 обрезка срезала им верхушки -
    именно это было видно в навбаре. Многоточие тут больше не нужно:
    на узких экранах название переносится в две строки, а не режется. */
 .nav-logo-title{
@@ -1706,17 +1706,17 @@ canvas {
   -webkit-text-fill-color:transparent;
   color:#7eb8ff;                    /* фолбэк, если clip не поддержан */
 }
-/* Акцент-линия — та самая, что даёт логотипу вес без единой рамки */
+/* Акцент-линия - та самая, что даёт логотипу вес без единой рамки */
 .nav-logo-rule{
   height:1px; width:100%; border-radius:1px;
   background:linear-gradient(90deg,#7B5CFF 0%,#00D4FF 55%,transparent 100%);
   opacity:.75;
 }
-/* Регистр НЕ трогаем: пишется ровно как в разметке — «TCO · LUNC Ecosystem».
+/* Регистр НЕ трогаем: пишется ровно как в разметке - «TCO · LUNC Ecosystem».
    Трекинг под смешанный регистр уменьшен, иначе строка рассыпается. */
 /* Стрелка справа. Селектор с классом обязателен: базовое правило
    `.nav-logo svg{width:32px;height:32px;filter:drop-shadow(...)}` иначе
-   раздувает её до огромного знака «>» — так и вышло, когда выложили
+   раздувает её до огромного знака «>» - так и вышло, когда выложили
    только CSS без разметки. */
 .nav-logo svg.nav-logo-chev{
   flex:0 0 auto; width:17px; height:17px;
@@ -1742,7 +1742,7 @@ canvas {
 }
 
 /* Подпись «TCO · LUNC Ecosystem» показывается на ВСЕХ ширинах.
-   Раньше я прятал её здесь, считая, что она отнимает место — это была
+   Раньше я прятал её здесь, считая, что она отнимает место - это была
    ошибка: строка уже названия, по горизонтали ограничивает именно
    название. По высоте тоже запас: даже с названием в две строки блок
    занимает ~46px при 64px мобильной шапки. */
@@ -1753,8 +1753,8 @@ canvas {
 }
 
 /* 400px, а не 340: между этими значениями название в одну строку уже не
-   помещается, и срабатывал запасной вариант с многоточием — «TERRA ORACLE
-   CLA…». Многоточие читается как поломка, перенос в две строки — как
+   помещается, и срабатывал запасной вариант с многоточием - «TERRA ORACLE
+   CLA…». Многоточие читается как поломка, перенос в две строки - как
    задумано, поэтому переносим раньше, чем начинает резать.
    Две строки сами по себе дают композицию, линия становится лишней. */
 @media (max-width:400px){
@@ -1764,7 +1764,7 @@ canvas {
   .nav-logo-rule{ display:none; }
   .nav-logo-text{ gap:3px; }
   /* Как только название встало в две строки, самой широкой строкой в
-     колонке становится ПОДПИСЬ — поджимаем её, иначе на 330px она
+     колонке становится ПОДПИСЬ - поджимаем её, иначе на 330px она
      упирается в кнопки. */
   .nav-logo-sub{ font-size:8.5px; letter-spacing:.09em; }
 }

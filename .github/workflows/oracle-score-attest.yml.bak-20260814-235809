@@ -36,7 +36,7 @@ jobs:
           if [ -f package-lock.json ]; then
             npm ci --ignore-scripts
           else
-            echo "::warning::no package-lock.json — installing unpinned versions"
+            echo "::warning::no package-lock.json - installing unpinned versions"
             npm install --ignore-scripts --no-audit --no-fund
           fi
 

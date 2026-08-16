@@ -1,15 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   TREASURY — график TVL
+   TREASURY - график TVL
    ---------------------------------------------------------------------------
    Встраивается в блок «Total Protocol TVL» сам: находит #t-total-tvl,
    поднимается до карточки и вставляет себя между цифрами и кнопкой Refresh.
-   Разметку index.html править не нужно — только добавить <script>.
+   Разметку index.html править не нужно - только добавить <script>.
 
    Данные: GET /treasury-series воркера oracle-draw. Почасовые точки за
    последние двое суток, дальше по одной на календарный день UTC.
 
    Почему свой SVG, а не библиотека: график нужен один, точек меньше сотни,
-   а любая библиотека — это лишние 50–200 КБ и чужая типографика поверх
+   а любая библиотека - это лишние 50–200 КБ и чужая типографика поверх
    аккуратно собранной темы сайта.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -89,7 +89,7 @@
     if (mounted) return true;
     const anchor = $('t-total-tvl');
     if (!anchor) return false;
-    // Карточка TVL — родитель колонки с цифрами
+    // Карточка TVL - родитель колонки с цифрами
     const hero = anchor.parentElement && anchor.parentElement.parentElement;
     if (!hero) return false;
 
@@ -141,7 +141,7 @@
     const live = window.__tvlTotalUluna;
     if (typeof live !== 'number' || live <= 0 || !allPoints.length) return allPoints;
     const last = allPoints[allPoints.length - 1];
-    // Снимок свежее пяти минут — живая точка его заменяет, а не добавляется
+    // Снимок свежее пяти минут - живая точка его заменяет, а не добавляется
     const fresh = Date.now() - last.ts < 5 * 60 * 1000;
     const head = fresh ? allPoints.slice(0, -1) : allPoints;
     return head.concat([{ ts: Date.now(), uluna: live, live: true }]);
@@ -149,7 +149,7 @@
 
   function visiblePoints() {
     // Имя намеренно не allPoints: затенять модульную переменную одноимённой
-    // локальной — верный способ запутаться при следующей правке.
+    // локальной - верный способ запутаться при следующей правке.
     const series = seriesWithLive();
     const r = RANGES.find((x) => x.id === range);
     if (!r || !r.ms) return series;
@@ -164,7 +164,7 @@
     const pts = visiblePoints();
 
     if (pts.length < 2) {
-      plot.innerHTML = '<div class="tvc-empty">History is still building — the first points ' +
+      plot.innerHTML = '<div class="tvc-empty">History is still building - the first points ' +
                        'appear within a few hours.</div>';
       $('tvc-from').textContent = '';
       $('tvc-to').textContent = '';
@@ -261,7 +261,7 @@
   }
 
   function boot() {
-    // Страница казны — вкладка SPA, блок может появиться позже загрузки.
+    // Страница казны - вкладка SPA, блок может появиться позже загрузки.
     if (!mount()) { setTimeout(boot, 400); return; }
     load();
     setInterval(load, 5 * 60 * 1000);

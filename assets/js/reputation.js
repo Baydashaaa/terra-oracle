@@ -95,7 +95,7 @@ function renderRepPage(tab) {
         clearInterval(poll);
         loadStatsData();
       } else if (attempts >= 20) {
-        clearInterval(poll); // give up after 4s — show connect prompt
+        clearInterval(poll); // give up after 4s - show connect prompt
       }
     }, 200);
   }
@@ -121,7 +121,7 @@ function renderLeaderboardHTML() {
         padding:6px 14px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.22);border-radius:8px;">
         <span style="font-size:10px;color:var(--muted);letter-spacing:0.04em;">Resets in</span>
         <span id="lb-timer-value" style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:800;
-          color:var(--accent);letter-spacing:0.04em;">—</span>
+          color:var(--accent);letter-spacing:0.04em;">-</span>
       </div>
     </div>
     <div id="leaderboard-list">
@@ -145,7 +145,7 @@ function switchLeaderboardPeriod(period) {
   loadLeaderboard();
 }
 
-// ── Weekly reset countdown — synced with REP Rewards payout ──
+// ── Weekly reset countdown - synced with REP Rewards payout ──
 // Payout runs every Tuesday 20:00 UTC (rep-rewards.js GitHub Action).
 function getNextPayoutDate() {
   const now = new Date();
@@ -226,7 +226,7 @@ async function loadLeaderboard() {
       if (!wallets[q.wallet]) wallets[q.wallet] = { wallet: q.wallet, alias: q.alias || ('Anonymous#' + q.wallet.slice(-4).toUpperCase()), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
       if (qInPeriod) {
         wallets[q.wallet].questions++;
-        // Shown as upvotes received, but not scored — see calcReputation.
+        // Shown as upvotes received, but not scored - see calcReputation.
         wallets[q.wallet].upvotesReceived += q.votes || 0;
       }
 
@@ -261,7 +261,7 @@ async function loadLeaderboard() {
           if (!n.wallet) continue;
           if (_lbPeriod === 'weekly') {
             const mintTs = n.usedAt ? new Date(n.usedAt).getTime() / 1000 : 0;
-            if (mintTs < cutoff) continue; // older than this week — skip
+            if (mintTs < cutoff) continue; // older than this week - skip
           }
           if (!wallets[n.wallet]) {
             wallets[n.wallet] = { wallet: n.wallet, alias: 'Anonymous#' + n.wallet.slice(-4).toUpperCase(), questions: 0, answers: 0, upvotesGiven: 0, upvotesReceived: 0 };
@@ -343,7 +343,7 @@ function renderLeaderboardPage(page) {
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   // Render a fixed number of slots so the board looks full even with few
-  // contributors. Empty slots show an inviting "open spot" — NOT a loading skeleton.
+  // contributors. Empty slots show an inviting "open spot" - NOT a loading skeleton.
   const VISUAL_MIN_SLOTS = 10;
   const slotCount = page === 0 ? Math.max(VISUAL_MIN_SLOTS, slice.length) : slice.length;
   const slots = Array.from({ length: slotCount }, (_, i) => {
@@ -358,7 +358,7 @@ function renderLeaderboardPage(page) {
       { c: '#cd7f32', rgba: '205,127,50' },   // bronze
     ];
     const ms = globalIdx < 3 ? MEDAL_STYLES[globalIdx] : null;
-    // Медаль рисуется вектором с номером места внутри — цвет берётся из
+    // Медаль рисуется вектором с номером места внутри - цвет берётся из
     // MEDAL_STYLES, поэтому определение переехало сюда, ниже него.
     // Места с 4-го остаются текстовыми (#4, #5 …), как и были.
     const medal = ms
@@ -370,7 +370,7 @@ function renderLeaderboardPage(page) {
       : `#${globalIdx + 1}`;
 
     if (!w) {
-      // Empty slot — an inviting "open spot", not a loading skeleton.
+      // Empty slot - an inviting "open spot", not a loading skeleton.
       return `
         <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
           background:transparent;border:1px dashed var(--border);
@@ -378,10 +378,10 @@ function renderLeaderboardPage(page) {
           <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
             color:var(--muted);min-width:32px;text-align:center;opacity:0.6;">${medal}</div>
           <div style="flex:1;">
-            <div style="font-size:12px;color:var(--muted);opacity:0.7;">Open spot — be a contributor</div>
+            <div style="font-size:12px;color:var(--muted);opacity:0.7;">Open spot - be a contributor</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--muted);opacity:0.5;">—</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--muted);opacity:0.5;">-</div>
             <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;opacity:0.6;">REP</div>
           </div>
         </div>`;
@@ -597,7 +597,7 @@ async function loadStatsData() {
     const drawRepTotal   = drawRepData?.total     || 0;
     const drawRepHistory = drawRepData?.history   || [];
 
-    // The per-category figures below are an ITEMISATION — they answer "where did
+    // The per-category figures below are an ITEMISATION - they answer "where did
     // this come from", which the contract cannot, since it stores a balance and
     // not its provenance. They are not the source of the total.
     const repQuestions = myQuestions.length * 40;

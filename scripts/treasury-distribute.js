@@ -1,5 +1,5 @@
 // ─── TREASURY DISTRIBUTION SCRIPT ───────────────────────────
-// Pure HTTP + bip39/bip32/tiny-secp256k1 — no cosmjs, no feather.js
+// Pure HTTP + bip39/bip32/tiny-secp256k1 - no cosmjs, no feather.js
 // Distributes Protocol Treasury balance to 4 wallets:
 //   25% → REWARDS_WALLET   (REP weekly rewards)
 //   15% → RESERVE_WALLET   (protocol stability buffer)
@@ -95,7 +95,7 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
 async function run() {
   // Холостой прогон: доходим до полного плана и останавливаемся перед
   // отправкой. Параметр в воркфлоу был объявлен, но не передавался и не
-  // читался — кнопка была, поведения за ней не было.
+  // читался - кнопка была, поведения за ней не было.
   const DRY = /^(1|true|yes)$/i.test(process.env.DRY_RUN || '');
 
   const mnemonic = process.env.TREASURY_MNEMONIC;
@@ -123,7 +123,7 @@ async function run() {
   const distributable = Math.floor(budget / (1 + TAX_RATE));
   if (distributable <= 0) throw new Error('Balance too small to cover fees');
 
-  // Порядок — от мелкой доли к крупной. Если денег всё же не хватит, не
+  // Порядок - от мелкой доли к крупной. Если денег всё же не хватит, не
   // пройдёт наименьшая, а не десять процентов бюджета разработки.
   const ORDER = ['dev', 'reserve', 'rewards', 'liquidity'];
 
@@ -133,13 +133,13 @@ async function run() {
     amounts[key] = Math.floor(distributable * DISTRIBUTION[key]);
     assigned += amounts[key];
   }
-  // Крупнейшей доле — остаток: так округления никуда не пропадают
+  // Крупнейшей доле - остаток: так округления никуда не пропадают
   amounts[ORDER[ORDER.length - 1]] = distributable - assigned;
 
   const planTax = Object.values(amounts).reduce((s, x) => s + Math.ceil(x * TAX_RATE), 0);
   const planSpend = Object.values(amounts).reduce((s, x) => s + x, 0) + planTax + 4 * gasFee;
 
-  console.log(DRY ? '\n=== DRY RUN — nothing will be sent ===\nPlan:' : '\nPlan:');
+  console.log(DRY ? '\n=== DRY RUN - nothing will be sent ===\nPlan:' : '\nPlan:');
   for (const [key, amt] of Object.entries(amounts)) {
     console.log(`  ${key.padEnd(12)} ${DISTRIBUTION[key]*100}%  →  ${(amt/1_000_000).toLocaleString()} LUNC  →  ${WALLETS[key]}`);
   }
@@ -150,7 +150,7 @@ async function run() {
   console.log(`  total spend   ${L(planSpend)} LUNC of ${L(Number(balance))} LUNC`);
   console.log(`  left on wallet ${L(Number(balance) - planSpend)} LUNC`);
 
-  // Адрес подписанта сверяем и в холостом прогоне: несовпадение мнемоники —
+  // Адрес подписанта сверяем и в холостом прогоне: несовпадение мнемоники -
   // ровно та ошибка, которую хочется поймать заранее, а не в среду.
   let privateKey = null, publicKey = null, sender = null;
   if (mnemonic) {
@@ -159,11 +159,11 @@ async function run() {
     if (sender !== WALLETS.treasury) throw new Error(`Address mismatch: got ${sender}`);
     console.log(`\nSigner: ${sender}`);
   } else {
-    console.log('\nSigner: (no mnemonic — signature check skipped)');
+    console.log('\nSigner: (no mnemonic - signature check skipped)');
   }
 
   if (DRY) {
-    console.log('\n=== DRY RUN — nothing sent ===');
+    console.log('\n=== DRY RUN - nothing sent ===');
     process.exit(0);
   }
 

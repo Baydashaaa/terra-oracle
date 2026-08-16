@@ -92,7 +92,7 @@ const RANKS = [
 // ── Canonical discount & effective-REP rules (SINGLE SOURCE OF TRUTH) ────────
 // Used by profile.js, reputation.js and app.js so rank, displayed REP and the
 // actual charged question price always agree. Per the protocol docs:
-//   1. The streak REP multiplier applies to your total base REP — this
+//   1. The streak REP multiplier applies to your total base REP - this
 //      "effective REP" is the displayed reputation AND the score ranks use.
 //   2. When both a rank discount and the 7-day-streak discount (25%) are
 //      available, the HIGHER one applies. They do NOT stack.
@@ -167,7 +167,7 @@ function getRankBadgeHTML(score) {
 }
 
 // ── On-chain reputation ─────────────────────────────────────────────────────
-// Read by the visitor's own browser, straight from a public node — no server of
+// Read by the visitor's own browser, straight from a public node - no server of
 // ours between the contract and the number on screen. That is the whole point
 // of moving reputation on-chain, so the read should not be proxied either.
 const ORACLE_SCORE_CONTRACT = 'terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls';
@@ -232,7 +232,7 @@ function renderOnChainPanel(chain, streakMultiplier, pendingCount) {
   if (!chain) {
     // The number above came from the local estimate, so say so rather than
     // letting it pass for a settled figure.
-    box.innerHTML = '<span style="opacity:.7">chain unreachable — showing an estimate</span>';
+    box.innerHTML = '<span style="opacity:.7">chain unreachable - showing an estimate</span>';
     return;
   }
 
@@ -250,7 +250,7 @@ function renderOnChainPanel(chain, streakMultiplier, pendingCount) {
 
   box.innerHTML =
     '<div><b style="color:var(--green);">' + chain.rank.toLocaleString() + '</b> on-chain · ' + link + '</div>' +
-    '<div style="opacity:.7">weight ' + chain.weight.toLocaleString() + ' — decays with a 90-day half-life</div>' +
+    '<div style="opacity:.7">weight ' + chain.weight.toLocaleString() + ' - decays with a 90-day half-life</div>' +
     queued + multNote;
 }
 window.renderOnChainPanel = renderOnChainPanel;
@@ -310,7 +310,7 @@ let _walletScoresAt = 0;
 const WALLET_SCORES_TTL = 60 * 1000;
 
 // Lays the full figures back over whatever buildScoreMap just produced. Safe to
-// call as often as you like — it only touches the map.
+// call as often as you like - it only touches the map.
 function applyWalletScores() {
   if (!_walletScoresFull) return false;
   window._walletScores = Object.assign({}, window._walletScores, _walletScoresFull);
@@ -351,7 +351,7 @@ window.upgradeWalletScores = upgradeWalletScores;
 
 // Legacy function so existing calls don't break
 // Takes the score, does not reinvent it. Both earlier versions computed REP
-// here from question and upvote counts — one with its own weights, one with
+// here from question and upvote counts - one with its own weights, one with
 // thresholds every wallet cleared at once, which is how every author ended up
 // labelled ASCENDED.
 function getUserTitleFromStats(score) {
@@ -528,7 +528,7 @@ function getUserTitle(walletAddress) {
   if (!walletAddress) return null;
   // _walletScores is filled from the contract, so the label on a question
   // matches the rank on the profile and in chat. Missing means zero, which
-  // lands on INITIATE — the right answer for a wallet with no history.
+  // lands on INITIATE - the right answer for a wallet with no history.
   const score = (window._walletScores && window._walletScores[walletAddress]) || 0;
   return getUserTitleFromStats(score);
 }
@@ -571,7 +571,7 @@ function saveProfileData(address, data) {
 }
 
 async function syncProfileToWorker(address, data) {
-  // Disabled — fully anonymous, no profile sync
+  // Disabled - fully anonymous, no profile sync
 }
 
 async function loadProfileFromWorker(address) {
@@ -580,7 +580,7 @@ async function loadProfileFromWorker(address) {
     const res = await fetch(`${WORKER_URL}/profile?wallet=${address}`);
     if (!res.ok) return null;
     const data = await res.json();
-    // Anonymous — don't load or cache nickname/avatar
+    // Anonymous - don't load or cache nickname/avatar
     return null;
   } catch(e) {
     console.warn('Profile load from worker failed:', e.message);
@@ -589,17 +589,17 @@ async function loadProfileFromWorker(address) {
 }
 
 function getProfileNickname(address) {
-  // Fully anonymous — no nicknames
+  // Fully anonymous - no nicknames
   return null;
 }
 
 function getProfileAvatar(address) {
-  // Fully anonymous — no avatars
+  // Fully anonymous - no avatars
   return null;
 }
 
 function getDisplayName(address) {
-  // Fully anonymous — wallet address only
+  // Fully anonymous - wallet address only
   if (!address) return 'Anonymous';
   return address.slice(0, 8) + '...' + address.slice(-4);
 }
@@ -648,7 +648,7 @@ async function fetchQuestionStats(address) {
     const answerUpvotes = totalUpvotes;
 
     // Question upvotes count towards the visible "upvotes received" stat but
-    // grant no REP — asking is already paid for with the +40 for the question,
+    // grant no REP - asking is already paid for with the +40 for the question,
     // and every other component of the system (the snapshot, the queue,
     // rep-rewards.js) scores it that way.
     for (const q of myQuestions) {
@@ -769,7 +769,7 @@ function renderStreakBlock(streakData) {
 // ── Generative "Oracle face" avatar ──────────────────────────────────────
 // Deterministic from the wallet address: orbit angles, colors and particle
 // positions are derived from a simple string hash, so every wallet gets a
-// unique but STABLE identicon — recognizable identity with zero deanonymization.
+// unique but STABLE identicon - recognizable identity with zero deanonymization.
 function _avaHash(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
@@ -824,9 +824,9 @@ function renderProfilePage() {
   const address = globalWalletAddress;
   if (!address) return;
 
-  // Anonymous profile — wallet address only, no nickname/avatar
+  // Anonymous profile - wallet address only, no nickname/avatar
   const topCount = getTopAnswerCount(address);
-  // Wallet address — show full address
+  // Wallet address - show full address
   const walletShortEl = document.getElementById('profile-wallet-short');
   if (walletShortEl) walletShortEl.textContent = address;
 
@@ -870,7 +870,7 @@ function renderProfilePage() {
 
     // Calculate reputation + rank
     // The contract is the figure. calcReputation stays only as a fallback for
-    // when the chain cannot be reached — six copies of one formula is how the
+    // when the chain cannot be reached - six copies of one formula is how the
     // site ended up showing four different numbers for the same wallet, and the
     // only way to stop that is for the copies never to be authoritative.
     const estimate = calcReputation(qStats, chatStats) + (drawRep?.total || 0);
@@ -878,7 +878,7 @@ function renderProfilePage() {
     const streakMultiplier = streakData?.multiplier || 1.0;
     // Rank follows all-time REP alone. Multiplying by the streak made rank
     // fall when a streak lapsed, which contradicts the promise that your status
-    // stays where you left it — and that promise is why lifetime_earned in the
+    // stays where you left it - and that promise is why lifetime_earned in the
     // contract deliberately never decays. The multiplier still counts, for
     // weekly reward shares and its own 25% question discount.
     const reputation = baseReputation;
@@ -902,7 +902,7 @@ function renderProfilePage() {
     if (repBigEl) repBigEl.textContent = reputation.toLocaleString();
 
     // Settled figure from the contract, shown next to the live one. They differ
-    // by whatever the attestor has not written yet — an hour at most — and
+    // by whatever the attestor has not written yet - an hour at most - and
     // saying so is better than quietly showing a number that lags.
     // Not awaited and wrapped: this is a decoration on top of the page, and a
     // slow or failing node must never stop the rest of the profile rendering.
@@ -1225,7 +1225,7 @@ function toggleProfileEdit() {
 }
 
 function saveProfile() {
-  // Profiles are fully anonymous — no nickname saving
+  // Profiles are fully anonymous - no nickname saving
 }
 
 // ─── AVATAR ───────────────────────────────────────────────────
@@ -1234,11 +1234,11 @@ function triggerAvatarUpload() {
 }
 
 function handleAvatarUpload(event) {
-  // Disabled — fully anonymous
+  // Disabled - fully anonymous
 }
 
 function removeAvatar() {
-  // Disabled — fully anonymous
+  // Disabled - fully anonymous
 }
 
 // ─── PATCH: показывать никнейм вместо Anonymous#xxxx ─────────

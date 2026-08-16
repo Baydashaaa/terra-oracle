@@ -1,6 +1,6 @@
 // scripts/streak-payout.js
 // Runs every hour via GitHub Actions
-// Pure HTTP — no cosmjs, no feather.js
+// Pure HTTP - no cosmjs, no feather.js
 
 import fetch from 'node-fetch';
 import { createHmac, createHash } from 'crypto';
@@ -209,7 +209,7 @@ async function main() {
   let successCount = 0, failCount = 0;
 
   // Read account ONCE; increment sequence manually per tx (SYNC broadcast
-  // returns before the node updates sequence — re-reading between fast sends
+  // returns before the node updates sequence - re-reading between fast sends
   // gives a stale value → "account sequence mismatch").
   const accRes2 = await safeFetch(`${LCD_URL}/cosmos/auth/v1beta1/accounts/${sender}`);
   const acct2   = (await accRes2.json())?.account || {};

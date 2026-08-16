@@ -1,6 +1,6 @@
 // scripts/rep-rewards.js
 // Runs every Tuesday 20:00 UTC via GitHub Actions
-// Pure HTTP — no cosmjs, no feather.js
+// Pure HTTP - no cosmjs, no feather.js
 
 import fetch from 'node-fetch';
 import { createHash } from 'crypto';
@@ -9,7 +9,7 @@ const WORKER_URL     = process.env.WORKER_URL;
 const ACTIONS_SECRET = process.env.ACTIONS_SECRET;
 const MNEMONIC       = process.env.REWARDS_MNEMONIC;
 const LCD_URL        = 'https://terra-classic-lcd.publicnode.com';
-// Oracle Score — the source of truth for rank. Values are micro-units.
+// Oracle Score - the source of truth for rank. Values are micro-units.
 const ORACLE_SCORE_CONTRACT = 'terra1pj6t6v4czktz7znzq8xk2ny2yh7pdwen4jw8z4zz86zrac6ur9vqqkwcls';
 const CHAIN_ID       = 'columbus-5';
 const GAS_LIMIT      = 300000;
@@ -132,12 +132,12 @@ async function main() {
   const data = await res.json();
 
   console.log(`📊 Participants: ${data.totalParticipants} / min ${data.minParticipants}`);
-  if (!data.eligible) { console.log(`⏳ ROLLOVER — not enough participants.`); return; }
+  if (!data.eligible) { console.log(`⏳ ROLLOVER - not enough participants.`); return; }
   console.log(`✅ Eligible! Top ${data.topWallets.length} wallets.`);
 
   const { privateKey, publicKey } = await deriveKeypair(MNEMONIC);
   const sender = pubkeyToAddress(publicKey);
-  // Safety: same address check the treasury script does — refuse to pay out
+  // Safety: same address check the treasury script does - refuse to pay out
   // from an unexpected wallet if the wrong mnemonic is configured.
   const EXPECTED_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
   if (sender !== EXPECTED_REWARDS_WALLET) throw new Error(`Address mismatch: mnemonic derives ${sender}, expected ${EXPECTED_REWARDS_WALLET}`);
@@ -156,7 +156,7 @@ async function main() {
   // ── All-time REP for rank multipliers ──────────────────────────────────
   // Rank has to be the same number the site shows, and the site reads it from
   // the Oracle Score contract. Recomputing it here from the raw sources is how
-  // this script would end up paying by one ranking while people see another —
+  // this script would end up paying by one ranking while people see another -
   // the exact drift that put six copies of this formula out of step.
   //
   // The contract stores the base; the streak multiplier is a display rule the

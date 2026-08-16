@@ -1,12 +1,12 @@
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
 // ── Safe profile helpers (defined in profile.js, may load later) ──────────
 function _getDisplayName(address, fallback) {
-  // Fully anonymous — show only wallet address, no nicknames
+  // Fully anonymous - show only wallet address, no nicknames
   if (!address) return 'Anonymous';
   return address.slice(0, 8) + '...' + address.slice(-4);
 }
 function _getProfileAvatar(address) {
-  // Fully anonymous — no avatars
+  // Fully anonymous - no avatars
   return null;
 }
 
@@ -79,7 +79,7 @@ const WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev'
 // Каждое 10-е оплаченное сообщение в DAO Chat даёт бесплатную Weekly-entry.
 const CHAT_MSGS_PER_ENTRY = 10;
 
-// Обновляет полоску прогресса над полем ввода чата. total — общее число
+// Обновляет полоску прогресса над полем ввода чата. total - общее число
 // сообщений кошелька (из /chat/count). Если total не передан, тянет сам.
 async function updateChatEntryProgress(total) {
   const box = document.getElementById('chat-entry-progress');
@@ -205,7 +205,7 @@ async function restoreWalletSession() {
   }
   if (!window.keplr) return;
 
-  // Несколько попыток: расширение может быть ещё не готово, а узел —
+  // Несколько попыток: расширение может быть ещё не готово, а узел -
   // ответить не с первого раза.
   for (let i = 0; i < 3; i++) {
     try {
@@ -215,7 +215,7 @@ async function restoreWalletSession() {
       const addr = accounts[0] && accounts[0].address;
       if (!addr) throw new Error('no account');
 
-      // Адрес сменился — значит в Keplr выбран другой счёт. Раньше здесь
+      // Адрес сменился - значит в Keplr выбран другой счёт. Раньше здесь
       // стоял clearWalletSession(): человек переключал аккаунт и оказывался
       // отключённым. Переходим на новый адрес, это и есть его намерение.
       if (addr !== saved) console.log('[wallet] аккаунт сменился:', saved, '→', addr);
@@ -226,7 +226,7 @@ async function restoreWalletSession() {
     } catch (e) {
       if (i < 2) { await new Promise(r => setTimeout(r, 600)); continue; }
       // СЕССИЮ НЕ СТИРАЕМ. Раньше здесь был clearWalletSession(), и любая
-      // ошибка — запертый кошелёк, закрытый попап, недоступный узел —
+      // ошибка - запертый кошелёк, закрытый попап, недоступный узел -
       // выкидывала пользователя насовсем. Оставляем как есть: следующая
       // загрузка или клик по кнопке подключат без потери состояния.
       console.log('[wallet] восстановить сессию не удалось, сессия сохранена:', e && e.message);
@@ -241,10 +241,10 @@ if (document.readyState === 'loading') {
 
 // Keplr шлёт это событие при смене аккаунта и после разблокировки. Раньше
 // обработчика не было вовсе, и сайт оставался с прежним адресом до
-// перезагрузки страницы — вплоть до отправки транзакции не с того кошелька.
+// перезагрузки страницы - вплоть до отправки транзакции не с того кошелька.
 window.addEventListener('keplr_keystorechange', function () {
   if (typeof getActiveProvider === 'function' && getActiveProvider() !== 'keplr') return;
-  if (!loadWalletSession()) return;   // не подключены — навязываться не надо
+  if (!loadWalletSession()) return;   // не подключены - навязываться не надо
   restoreWalletSession();
 });
 
@@ -336,7 +336,7 @@ window.addEventListener('popstate', function(e) {
 
 // ─── BLOCK EXPLORER ───────────────────────────────────────────
 // One definition for every explorer link on the site. They used to be written
-// out by hand, which is how four of them ended up on /classic/ — a path that is
+// out by hand, which is how four of them ended up on /classic/ - a path that is
 // not Terraport Finder's network name and sends people to a different explorer
 // entirely. Terraport Finder serves Terra Classic only, and calls it mainnet.
 const FINDER = 'https://finder.terraport.finance/mainnet';
@@ -393,12 +393,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Removes the temporary <style id="fouc-fix"> injected at the very top of
   // <body> (see index.html) that forces the correct page visible on first
   // paint before this script has a chance to run. It uses !important, which
-  // — if left in place — permanently overrides every later class-based page
+  // - if left in place - permanently overrides every later class-based page
   // switch: clicking any nav tab would keep showing whatever page the user
   // had originally loaded/refreshed on, since #id{display:...!important}
   // always beats .page.active{display:block} regardless of which page later
   // gets the "active" class. Must be called exactly once, right after the
-  // real routing below has taken over — never left in the DOM permanently.
+  // real routing below has taken over - never left in the DOM permanently.
   function removeFoucFix() {
     const el = document.getElementById('fouc-fix');
     if (el) el.remove();
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof showRepPage === 'function') showRepPage(tab, true);
     removeFoucFix();
   } else if (savedPage === 'profile') {
-    // profile.js loads after app.js — wait for openProfile to be defined
+    // profile.js loads after app.js - wait for openProfile to be defined
     if (typeof openProfile === 'function') {
       openProfile(true);
       removeFoucFix();
@@ -481,7 +481,7 @@ function clearSearch() {
 //
 // One definition now drives both the chips and the filtering. Every category in
 // the form belongs to exactly one group, so nothing can become unreachable
-// again — the check below fails loudly if a new category is added here and
+// again - the check below fails loudly if a new category is added here and
 // forgotten in the form, or the other way round.
 const BOARD_GROUPS = {
   security: { label: 'Security',  cats: ['Security / Vulnerability', 'Fraud / Manipulation'] },
@@ -587,7 +587,7 @@ async function votePoll(qi, optionIdx) {
 // ── Priority pin countdown ───────────────────────────────────────────────────
 // The remaining pin time is what makes a Priority question read as a paid,
 // expiring slot rather than a static badge. Only the text nodes are updated on
-// each tick — a full renderBoard() happens once, when a pin actually expires.
+// each tick - a full renderBoard() happens once, when a pin actually expires.
 function pinTimeLeft(sec) {
   if (sec <= 0) return '';
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
@@ -707,7 +707,7 @@ function renderBoard() {
               ${(() => {
                 const me = globalWalletAddress || connectedAddress;
                 // Only the person who asked, only once, and never their own
-                // answer — the fee for a question would not cover what REP
+                // answer - the fee for a question would not cover what REP
                 // converts into.
                 if (!me || me !== q.wallet || q.chosenAnswerId || !a.wallet || a.wallet === me) return '';
                 return `<button
@@ -891,7 +891,7 @@ async function voteQuestion(qi) {
     renderBoard();
   };
 
-  // Sync to worker — only keep the vote if the server confirms it
+  // Sync to worker - only keep the vote if the server confirms it
   try {
     const res = await fetch(`${WORKER_URL}/question-vote`, {
       method: 'POST',
@@ -900,15 +900,15 @@ async function voteQuestion(qi) {
       signal: AbortSignal.timeout(8000),
     });
     if (res.ok) { q._voting = false; return; } // confirmed
-    // Server rejected — read reason
+    // Server rejected - read reason
     let err = {}; try { err = await res.json(); } catch(e) {}
     q._voting = false;
-    if (err.error === 'Already voted') return; // already counted on server — keep voted state
+    if (err.error === 'Already voted') return; // already counted on server - keep voted state
     rollback();
     if (err.error === 'Cannot vote your own question') alert('You cannot vote your own question');
     else alert('Your vote could not be submitted. Please try again.');
   } catch(e) {
-    // Network failure — vote did NOT reach the server
+    // Network failure - vote did NOT reach the server
     q._voting = false;
     rollback();
     alert('Your vote could not be submitted (network issue). Please try again.');
@@ -936,7 +936,7 @@ async function voteAnswer(qi, ai) {
     renderBoard();
   };
 
-  // Persist to worker — only keep if confirmed
+  // Persist to worker - only keep if confirmed
   try {
     const res = await fetch(`${WORKER_URL}/vote`, {
       method: 'POST',
@@ -991,8 +991,8 @@ function readPaidQuestion() {
   } catch (e) { return null; }
 }
 
-// localStorage is per-device, so a payment made in another browser — or in a
-// private window — is invisible to it. This asks the Worker, which looks at the
+// localStorage is per-device, so a payment made in another browser - or in a
+// private window - is invisible to it. This asks the Worker, which looks at the
 // chain instead: the payment belongs to the wallet, not to the tab it was made
 // in. Runs on connect, and only when nothing is stored locally.
 async function checkUnusedPayment(wallet) {
@@ -1027,7 +1027,7 @@ function restorePaidQuestion() {
   form.style.display = 'block';
 
   if (typeof showTxStatus === 'function') {
-    showTxStatus('success', '✅ You have a paid question that was never sent. The form is unlocked — no need to pay again.');
+    showTxStatus('success', '✅ You have a paid question that was never sent. The form is unlocked - no need to pay again.');
   }
 }
 if (typeof document !== 'undefined') {
@@ -1057,7 +1057,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   const wallet = document.getElementById('verified-wallet-hidden').value;
   const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
   // Tags only reach `currentTags` on Enter or comma, so anything typed and left
-  // in the box is dropped on submit — the hashtag is visible on screen and
+  // in the box is dropped on submit - the hashtag is visible on screen and
   // absent from the question. Take the pending text too.
   const tagsRaw = document.getElementById('tags-hidden').value;
   const tags = tagsRaw ? tagsRaw.split(',').filter(Boolean) : [];
@@ -1072,8 +1072,8 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   const _titleLabel = _userTitle ? _userTitle.name : 'Seeker';
   // ── Poll options ──────────────────────────────────────────────────────────
   // Read straight from the inputs. The hidden field is only ever as good as the
-  // last oninput that fired, so anything that sets a value without firing it —
-  // autofill, a paste handled oddly, a script — leaves the poll silently empty
+  // last oninput that fired, so anything that sets a value without firing it -
+  // autofill, a paste handled oddly, a script - leaves the poll silently empty
   // and the question posts without it. The inputs themselves are what the user
   // actually sees, so they are the honest source at submit time.
   let pollOptions = Array.from(
@@ -1147,7 +1147,7 @@ function adminHeaders() {
 // ── Question tariffs ─────────────────────────────────────────────────────────
 // MUST match QUESTION_TIERS in the Worker. The Worker derives entries from the
 // VERIFIED on-chain pool leg, so these numbers are the source of truth for what
-// the wallet is asked to sign — never send the amount to the Worker as a claim.
+// the wallet is asked to sign - never send the amount to the Worker as a claim.
 //
 //   Basic     50,000 = 25,000 pool  + 25,000 treasury  → +1 entry
 //   Priority 200,000 = 100,000 pool + 100,000 treasury → +4 entries + 24h pin
@@ -1160,7 +1160,7 @@ const QUESTION_TIERS = {
 // Reads the tier picker if present. Falls back to Priority so that a page whose
 // HTML has not been updated yet keeps behaving exactly as before.
 // Largest discount any rank or streak grants. The contract stores the price
-// AFTER it — that figure is the floor it will accept — so the full tariff is
+// AFTER it - that figure is the floor it will accept - so the full tariff is
 // the floor divided by what is left. Keep this in step with the rank table.
 const MAX_QUESTION_DISCOUNT = 0.25;
 
@@ -1197,7 +1197,7 @@ async function refreshTiersFromChain() {
 
       const t = QUESTION_TIERS[key];
       if (t.total !== total || t.poolLeg !== poolLeg) {
-        console.warn(`[tiers] ${key}: page says ${t.total}/${t.poolLeg}, chain says ${total}/${poolLeg} — using the chain`);
+        console.warn(`[tiers] ${key}: page says ${t.total}/${t.poolLeg}, chain says ${total}/${poolLeg} - using the chain`);
       }
       t.total = total;
       t.poolLeg = poolLeg;
@@ -1205,7 +1205,7 @@ async function refreshTiersFromChain() {
 
     // The button shows a price, so it has to be redrawn if one changed.
     // The real name, with the address it needs for the discount. Only when a
-    // wallet is connected — without one there is no price to personalise.
+    // wallet is connected - without one there is no price to personalise.
     const _addr = (typeof connectedAddress !== 'undefined' && connectedAddress) || null;
     if (_addr && typeof updateVerifyBtnPrice === 'function') {
       try { updateVerifyBtnPrice(_addr); } catch (e) {}
@@ -1428,7 +1428,7 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
   const sequence      = parseInt(acct.sequence || '0');
 
   const totalAmount = amount1 + amount2;
-  // Gas scales with memo length (WritePerByte). 400k was too tight — long
+  // Gas scales with memo length (WritePerByte). 400k was too tight - long
   // questions hit out-of-gas at ~403k. 600k gives comfortable headroom.
   const gasLimit = 600000;
   const gasFee   = Math.ceil(gasLimit * 28.325);
@@ -1514,7 +1514,7 @@ async function sendTwoMsgsDirect(fromAddr, to1, amount1, to2, amount2, memo, cha
 
 // ── Shared discount calc (canonical, per protocol docs) ──────────────────────
 // 1. Streak is fetched first: it provides both the 7-day discount (25%) and the
-//    REP multiplier. Effective REP = base REP × streak multiplier — the SAME
+//    REP multiplier. Effective REP = base REP × streak multiplier - the SAME
 //    number the profile page and leaderboard display, so rank always matches.
 // 2. Final discount = the HIGHER of rank discount vs streak discount (they do
 //    NOT stack). Canonical rules live in profile.js (combineDiscounts et al.).
@@ -1584,7 +1584,7 @@ async function getQuestionDiscountPct(addr) {
     // Fallback: if everything above failed, use the partial score map
     if (!rep && window._walletScores && window._walletScores[addr]) rep = window._walletScores[addr];
 
-    // Rank is computed on all-time REP alone — same as profile and leaderboard.
+    // Rank is computed on all-time REP alone - same as profile and leaderboard.
     if (typeof getRank === 'function') { const rk = getRank(rep); rankD = (rk && rk.discount) ? rk.discount : 0; _rankName = (rk && rk.name) ? rk.name : ''; }
   } catch(e) {}
 
@@ -1598,7 +1598,7 @@ async function getQuestionDiscountPct(addr) {
 
 // Update the verify button text with the user's real (discounted) price.
 // Also fills the price panel above the button: base (struck through), the
-// personal price, and a badge explaining WHY (streak vs rank) — driven by
+// personal price, and a badge explaining WHY (streak vs rank) - driven by
 // the breakdown stashed in getQuestionDiscountPct._last.
 async function updateVerifyBtnPrice(addr) {
   try {
@@ -1644,7 +1644,7 @@ async function autoPayAndUnlock() {
   }
   // Before opening the wallet, check whether this address already paid and
   // never used it. checkUnusedPayment normally runs only on connect, so a
-  // payment made afterwards — or a double click here — would otherwise be
+  // payment made afterwards - or a double click here - would otherwise be
   // charged for twice.
   const _btnText = btn.textContent;
   btn.textContent = '⏳ Checking...'; btn.disabled = true;
@@ -1670,7 +1670,7 @@ async function autoPayAndUnlock() {
     const discountPct = await getQuestionDiscountPct(sender);
 
     // Discount is % of the tariff total, subtracted from the Treasury leg only.
-    // Pool leg is fixed per tariff — it is what the Worker matches on.
+    // Pool leg is fixed per tariff - it is what the Worker matches on.
     const tier         = getSelectedTier();
     const treasuryBase = tier.total - tier.poolLeg;
     const toWeekly     = tier.poolLeg * 1e6;                                   // always fixed
@@ -1683,7 +1683,7 @@ async function autoPayAndUnlock() {
       ? ` (${discountPct}% off - saved ${discountAmt.toLocaleString()} LUNC)`
       : '';
 
-    // Single TX with two MsgSend — one signature
+    // Single TX with two MsgSend - one signature
     const txHash = await sendTwoMsgsDirect(
       sender,
       WEEKLY_DRAW_WALLET, toWeekly,
@@ -1744,7 +1744,7 @@ async function verifyTX() {
     }
   }
   // Loosest tariff floor: Basic pays 25,000 to the pool + a discounted Treasury
-  // leg. This is only a UX pre-check — the Worker re-verifies the exact pool leg
+  // leg. This is only a UX pre-check - the Worker re-verifies the exact pool leg
   // on-chain and is the authority on which tariff (and how many entries) applies.
   const MIN_ACCEPTED = 25000 * 1e6;
   if (foundAmount < MIN_ACCEPTED) { showTxStatus('error', `❌ Invalid payment. Expected 25,000+ LUNC to Oracle wallets. Found: ${(foundAmount/1000000).toLocaleString()} LUNC.`); return; }
@@ -1832,7 +1832,7 @@ window.connectWallet = async function(type) {
       alert('Galaxy Station connection failed: ' + (e.message || e));
     }
   } else if (type === 'station' || type === 'station-mobile') {
-    // Terra Station — uses window.station (same API as Galaxy Station)
+    // Terra Station - uses window.station (same API as Galaxy Station)
     const stationWallet = window.station;
     if (!stationWallet) {
       if (confirm('Terra Station not found. Install Terra Station?')) window.open('https://chrome.google.com/webstore/detail/terra-station/aiifbnbfobpmeekipheeijimdpnlpgpp', '_blank');
@@ -1921,7 +1921,7 @@ function setWalletConnected(address) {
   // Обновляем My Bag при подключении кошелька
   renderOracleBag();
 
-  // Если открыта вкладка Your Stats — загружаем данные
+  // Если открыта вкладка Your Stats - загружаем данные
   setTimeout(() => {
     if (typeof loadStatsData === 'function') {
       const repPage = document.getElementById('page-reputation');
@@ -2098,7 +2098,7 @@ const FCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
 ];
 
-// Ключ реакции — по-прежнему сам эмодзи: под ним реакции лежат в KV воркера
+// Ключ реакции - по-прежнему сам эмодзи: под ним реакции лежат в KV воркера
 // и приходят из /chat/reactions. Меняется только отрисовка, поэтому все уже
 // поставленные реакции сохраняются. Добавлены Dislike и Angry.
 const CHAT_REACTIONS = [
@@ -2133,7 +2133,7 @@ async function loadChatReactions(txHashes) {
       const row = document.getElementById('reactions-' + h);
       if (row) row.outerHTML = buildReactionsRow(h);
     }
-  } catch(e) { /* network issue — keep whatever we had */ }
+  } catch(e) { /* network issue - keep whatever we had */ }
 }
 
 async function toggleReaction(txHash, emoji) {
@@ -2317,7 +2317,7 @@ function renderChatMessages(msgs) {
     const rankBadge = m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function'
       ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : '';
 
-    // Avatar ring in the rank colour — the same signal as the badge, readable
+    // Avatar ring in the rank colour - the same signal as the badge, readable
     // at a glance while scrolling.
     const ring = (m.fullAddr && window._walletScores && typeof getRankRingCSS === 'function')
       ? getRankRingCSS(window._walletScores[m.fullAddr] || 0)
@@ -2382,7 +2382,7 @@ function renderChatMessages(msgs) {
 
 // ── Chat participants panel (desktop side + mobile drawer) ───────────────────
 function renderChatParticipants(msgs) {
-  // "Recently active" — wallets that posted in the last 24 hours.
+  // "Recently active" - wallets that posted in the last 24 hours.
   // Fully on-chain: derived from message timestamps, no tracking server.
   const DAY_MS = 24 * 60 * 60 * 1000;
   const cutoff = Date.now() - DAY_MS;
@@ -2392,7 +2392,7 @@ function renderChatParticipants(msgs) {
   for (const m of [...msgs].sort((a, b) => (b.ts || 0) - (a.ts || 0))) {
     const w = m.fullAddr;
     if (!w || !w.startsWith('terra1')) continue;
-    if ((m.ts || 0) < cutoff) continue;       // older than 24h — skip
+    if ((m.ts || 0) < cutoff) continue;       // older than 24h - skip
     if (seen.has(w)) continue;
     seen.add(w); wallets.push(w);
   }
@@ -2523,7 +2523,7 @@ window.openUserProfile = async function(wallet) {
     setText('up-streak', (d && d.currentStreak ? d.currentStreak : 0) + 'd');
   }).catch(() => setText('up-streak', '0d'));
 
-  // NFT count — query the CW721 contracts directly via LCD (fast, no Paco/CORS).
+  // NFT count - query the CW721 contracts directly via LCD (fast, no Paco/CORS).
   // Sums Daily + Weekly Oracle Mask collections owned by this wallet.
   (async () => {
     const LCD = 'https://terra-classic-lcd.publicnode.com';
@@ -2544,7 +2544,7 @@ window.openUserProfile = async function(wallet) {
       const total = counts.reduce((s, n) => s + n, 0);
       setText('up-nfts', total.toLocaleString());
     } catch(e) {
-      setText('up-nfts', '—');
+      setText('up-nfts', '-');
     }
   })();
 };
@@ -2555,7 +2555,7 @@ async function loadChatFromChain() {
   if (!cachedMsgs.length) {
     container.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div style="font-size:22px;margin-bottom:10px;">⏳</div><div style="color:var(--muted);font-size:12px;">Loading messages from blockchain...</div></div>`;
   }
-  // Use Oracle Draw Worker proxy — bypasses CORS/DNS issues and falls back across multiple nodes server-side
+  // Use Oracle Draw Worker proxy - bypasses CORS/DNS issues and falls back across multiple nodes server-side
   let txList = null;
   try {
     const ctrl = new AbortController();
@@ -2614,18 +2614,18 @@ async function loadChatFromChain() {
       const txMeta = txResponses[i];     // has txhash, timestamp
       const rawMemo = txBody?.body?.memo || '';
       if (!rawMemo || rawMemo.trim() === '') continue;
-      // Fix emoji: LCD may return UTF-8 bytes misread as Latin-1 — re-decode
+      // Fix emoji: LCD may return UTF-8 bytes misread as Latin-1 - re-decode
       let memo = rawMemo;
       try {
         const bytes = Uint8Array.from(rawMemo, c => c.charCodeAt(0) & 0xFF);
         const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
         if (decoded !== rawMemo) memo = decoded;
       } catch(e) { /* keep original if not valid UTF-8 sequence */ }
-      // Try base64 decode — system memos are sometimes base64-encoded
+      // Try base64 decode - system memos are sometimes base64-encoded
       try {
         const b64decoded = decodeURIComponent(escape(atob(memo.trim())));
         if (b64decoded && b64decoded.length > 0) memo = b64decoded;
-      } catch(e) { /* not base64 — keep as-is */ }
+      } catch(e) { /* not base64 - keep as-is */ }
       const txMsgs = txBody?.body?.messages || [];
       let sender = null, luncAmount = 0;
       for (const msg of txMsgs) {
@@ -2642,7 +2642,7 @@ async function loadChatFromChain() {
         }
       }
       if (!sender || luncAmount < CHAT_MIN_ULUNA) continue;
-      // Filter out system/admin wallets — their transfers are not chat messages
+      // Filter out system/admin wallets - their transfers are not chat messages
       const SYSTEM_WALLETS = [
         'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
         'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
@@ -2651,7 +2651,7 @@ async function loadChatFromChain() {
         'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION
       ];
       if (SYSTEM_WALLETS.includes(sender)) continue;
-      // Block amounts far above 5,000 LUNC (±2% tolerance for tax) — not chat payments
+      // Block amounts far above 5,000 LUNC (±2% tolerance for tax) - not chat payments
       if (luncAmount > 5200000000) continue;
       const short = sender.slice(0, 10) + '...' + sender.slice(-4);
       const luncFormatted = (luncAmount / 1000000).toLocaleString(undefined, {maximumFractionDigits: 0});
@@ -2840,7 +2840,7 @@ async function loadVotesFromWorker() {
 
 // Static demo votes removed: they existed only in the frontend (not in the
 // worker KV), so /votes/cast returned 404 "Vote not found" and users saw a
-// fake "network issue" error. All votes now come from the worker (/votes) —
+// fake "network issue" error. All votes now come from the worker (/votes) -
 // create real proposals via the admin panel instead.
 const VOTES_DATA = [
 ];
@@ -2865,7 +2865,7 @@ function renderVotes() {
   const filtered = currentVoteFilter === 'all' ? VOTES_DATA : VOTES_DATA.filter(v => v.type === currentVoteFilter);
   if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px;">No votes in this category yet.</div>'; return; }
 
-  // Per-type color scheme (accent + winner colors) — mirrors home-page style.
+  // Per-type color scheme (accent + winner colors) - mirrors home-page style.
   const TYPE = {
     weekly:  { vc:'#7B5CFF', vc2:'#c4b5fd', label:'Weekly',  ico:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' },
     monthly: { vc:'#E8C840', vc2:'#fde68a', label:'Monthly', ico:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01"/>' },
@@ -3153,7 +3153,7 @@ async function castVote(voteId, optionIdx) {
   if (vote._voting) return; // guard against double-click while a vote is in flight
   vote._voting = true;
 
-  // Optimistic update — show it immediately, but be ready to roll back.
+  // Optimistic update - show it immediately, but be ready to roll back.
   const prevVotes  = vote.options[optionIdx].votes;
   const prevTotal  = vote.totalVotes;
   vote.options[optionIdx].votes++; vote.totalVotes++; vote.userVoted = optionIdx;
@@ -3161,7 +3161,7 @@ async function castVote(voteId, optionIdx) {
   if (vote.isMonthlyLiquidity && vote.voteKey) { try { localStorage.setItem(vote.voteKey, JSON.stringify({ totalVotes: vote.totalVotes, options: vote.options.map(o => o.votes) })); } catch(e) {} }
   renderVotes();
 
-  // Persist to Worker — the server is the source of truth. Only KEEP the vote
+  // Persist to Worker - the server is the source of truth. Only KEEP the vote
   // if the server confirms it; otherwise roll back so the count stays honest.
   try {
     const res = await fetch(`${WORKER_URL}/votes/cast`, {
@@ -3195,7 +3195,7 @@ async function castVote(voteId, optionIdx) {
     rejection._serverReason = serverErr;
     throw rejection;
   } catch (e) {
-    // Roll back — the vote did NOT register on the server.
+    // Roll back - the vote did NOT register on the server.
     vote.options[optionIdx].votes = prevVotes;
     vote.totalVotes = prevTotal;
     vote.userVoted = null;
@@ -3212,7 +3212,7 @@ async function castVote(voteId, optionIdx) {
 }
 
 
-// ── MY BAG (Terra Oracle) — реальные данные с Oracle Draw ──────────────────────
+// ── MY BAG (Terra Oracle) - реальные данные с Oracle Draw ──────────────────────
 
 const O_NFT_API_BASE = 'https://nft.lunc.tools/api';
 const O_DRAW_WORKER  = 'https://oracle-draw.vladislav-baydan.workers.dev';
@@ -3233,12 +3233,12 @@ function oExtractTokenId(n) {
   return String(n.token_id || n.id || n.tokenId || n.nft_id || '');
 }
 // Подпись NFT. Контрактные id вида common-5 раньше сюда не попадали и
-// уходили в последнюю ветку как "#common-5" — тир дублировался с надписью
+// уходили в последнюю ветку как "#common-5" - тир дублировался с надписью
 // над карточкой. Формат приведён к тому же виду, что на draw.terraoracle.io.
 // Контракт:  common-5              → "Common #5"
 // Наследие Paco: Common_0952…_ETME5 → "ETME5"
 function oFormatNFTLabel(tokenId) {
-  if (!tokenId) return '—';
+  if (!tokenId) return '-';
   const str = String(tokenId);
   const m = str.match(/^(common|rare|legendary)-(\d+)$/i);
   if (m) {
@@ -3322,7 +3322,7 @@ function renderOracleBag() {
 async function loadOracleBagNFTs(wallet) {
   const el = id => document.getElementById(id);
 
-  // NFTs go through the Draw Worker proxy (/owned-nfts) — same SWR cache as
+  // NFTs go through the Draw Worker proxy (/owned-nfts) - same SWR cache as
   // the draw site: instant from KV after the first ever load, background
   // refresh, no more waiting on the slow marketplace API. Direct Paco call
   // remains as a last-resort fallback below.
@@ -3345,7 +3345,7 @@ async function loadOracleBagNFTs(wallet) {
     } catch(e) { pacoError = 'Invalid response'; }
   } else {
     pacoError = nftResult.reason?.message || 'API error';
-    // Worker proxy failed — last resort: Paco directly with a generous timeout.
+    // Worker proxy failed - last resort: Paco directly with a generous timeout.
     try {
       const direct = await oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 1, 18000);
       if (direct.ok) {
@@ -3466,7 +3466,7 @@ async function renderOracleBagFromNFTs(wallet, allNFTs, meta = {}) {
     if (wr.status === 'fulfilled' && wr.value.ok) weeklyEntries = (await wr.value.json()).myEntries || 0;
   } catch(e) {}
 
-  // Fetch wins from Draw Worker — count unique rounds
+  // Fetch wins from Draw Worker - count unique rounds
   let totalWon = 0, wonDaily = 0, wonWeekly = 0;
   try {
     const wr = await oFetch(`${O_DRAW_WORKER}/my-wins?wallet=${wallet}`, {}, 2);
@@ -3539,7 +3539,7 @@ async function renderOracleBagFromNFTs(wallet, allNFTs, meta = {}) {
           const pool = (h.pool||'daily');
           const won  = h.won
             ? '<span style="color:#66ffaa;font-weight:700;">Won</span>'
-            : '<span style="color:var(--muted);">—</span>';
+            : '<span style="color:var(--muted);">-</span>';
           return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
             <td style="padding:12px 14px;color:var(--muted);font-size:12px;">${date}</td>
             <td style="padding:12px 14px;">

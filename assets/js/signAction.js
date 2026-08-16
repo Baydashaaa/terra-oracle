@@ -1,7 +1,7 @@
 /**
  * Client half of the ADR-36 check. Add to assets/js/ and load before app.js.
  *
- * The wallet shows a plain-text prompt and returns a signature — no gas, no
+ * The wallet shows a plain-text prompt and returns a signature - no gas, no
  * transaction, nothing written to the chain. What it proves is the one thing
  * the Worker could not check before: that the request really comes from the
  * key that owns the address it claims.
@@ -41,7 +41,7 @@ window.signAction = signAction;
 // ── Vote session ────────────────────────────────────────────────────────────
 // Votes are frequent, capped and low-value, so asking the wallet to sign each
 // one would cost more in friction than it buys in safety. One prompt covers a
-// bounded window instead. Answers, deletes and accepts stay signed per action —
+// bounded window instead. Answers, deletes and accepts stay signed per action -
 // they are rare and cannot be undone.
 const VOTE_SESSION_KEY = 'oracle.voteSession';
 const VOTE_SESSION_MS = 12 * 60 * 60 * 1000;

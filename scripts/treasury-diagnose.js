@@ -1,4 +1,4 @@
-// DIAGNOSTIC ONLY — does NOT send funds. Verifies signature locally + via node simulate.
+// DIAGNOSTIC ONLY - does NOT send funds. Verifies signature locally + via node simulate.
 import fetch from 'node-fetch';
 import { createHash } from 'crypto';
 
@@ -36,7 +36,7 @@ async function main(){
   const sequence = parseInt(a.sequence ?? a.base_account?.sequence ?? '0');
   console.log('\nParsed accountNumber:', accountNumber, '| sequence:', sequence);
 
-  // sign a tiny test tx (1 uluna to self) — DO NOT broadcast, only simulate
+  // sign a tiny test tx (1 uluna to self) - DO NOT broadcast, only simulate
   const enc = s => Buffer.from(s);
   const amountUluna = 1;
   const coinP=Buffer.concat([encodeField(1,2,enc('uluna')),encodeField(2,2,enc(String(amountUluna)))]);

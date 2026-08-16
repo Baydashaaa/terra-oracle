@@ -1,7 +1,7 @@
 // scripts/oracle-score-attest.js
 // Drains the Worker's pending-rep queue into the on-chain Oracle Score contract.
 // Runs hourly via GitHub Actions. Pure HTTP + hand-rolled protobuf, same approach
-// as rep-rewards.js — no cosmjs.
+// as rep-rewards.js - no cosmjs.
 
 import { createHash } from 'crypto';
 
@@ -12,7 +12,7 @@ const CONTRACT       = process.env.ORACLE_SCORE_CONTRACT;
 
 // A single endpoint is a single point of failure for the whole hour. These are
 // tried in order; the first one that answers wins. Broadcast deliberately does
-// NOT rotate — see broadcastRaw().
+// NOT rotate - see broadcastRaw().
 const LCD_URLS = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terrarebels.net',
@@ -52,7 +52,7 @@ const MAX_BATCHES_PER_RUN = 30;
 // configured with `attestor_may_record: true`, which is the contract's explicit
 // allowance for recording an action whose payment still flows outside it. When
 // an action's payment moves into PaidAction, the contract grants the score
-// itself and the action must leave this set in the same deploy — otherwise it is
+// itself and the action must leave this set in the same deploy - otherwise it is
 // paid twice.
 //
 // `draw` covers NFT mints, whose grant is 25, 125 or 250 by tier. It is the one
@@ -72,10 +72,10 @@ const ATTESTABLE_ACTIONS = new Set([
 //   ContractError::RateLimited
 const DECLINED = [/Daily limit reached for this reference/];
 
-// Nothing to do with any particular record — every message in the run would hit
+// Nothing to do with any particular record - every message in the run would hit
 // these. Isolating record-by-record would walk the entire queue into quarantine
 // over a paused contract or a rotated key, so the run aborts and touches nothing.
-//   ContractError::Unauthorized — sender is not the configured attestor
+//   ContractError::Unauthorized - sender is not the configured attestor
 //   ContractError::Paused
 const FATAL = [/Unauthorized/, /Contract is paused/];
 
@@ -84,15 +84,15 @@ const RETRY = [/sequence/i, /insufficient fee/i, /out of gas/i,
                /tx already exists/i, /mempool is full/i];
 
 // Everything else is specific to one record and permanent until someone looks:
-//   UnknownAction     — the Worker queued an action the contract has no config for
-//   NotFree           — the action moved to PaidAction; recording it now would
+//   UnknownAction     - the Worker queued an action the contract has no config for
+//   NotFree           - the action moved to PaidAction; recording it now would
 //                       double-pay whoever already paid through the contract
-//   DeltaTooLarge     — the amount, or the configured weight, exceeds max_delta
-//   AmountNotAllowed  — a record carried an amount for an action the contract
+//   DeltaTooLarge     - the amount, or the configured weight, exceeds max_delta
+//   AmountNotAllowed  - a record carried an amount for an action the contract
 //                       does not mark `variable_amount`. Quarantine is right:
 //                       retrying cannot help and dropping it would hide a real
 //                       disagreement between the Worker and the contract config
-//   Std(...)          — malformed wallet address and similar
+//   Std(...)          - malformed wallet address and similar
 function classify(log) {
   if (FATAL.some(re => re.test(log)))    return 'fatal';
   if (DECLINED.some(re => re.test(log))) return 'declined';
@@ -159,7 +159,7 @@ function pubkeyToAddress(pubkey) {
 function encodeVarint(n) { n = Number(n); const b = []; while (n > 127) { b.push((n & 0x7f) | 0x80); n = Math.floor(n / 128); } b.push(n & 0x7f); return Buffer.from(b); }
 function encodeField(f, w, d) { const t = encodeVarint((f << 3) | w); if (w === 2) { return Buffer.concat([t, encodeVarint(d.length), d]); } return t; }
 
-// cosmwasm.wasm.v1.MsgExecuteContract — sender 1, contract 2, msg 3, funds 5.
+// cosmwasm.wasm.v1.MsgExecuteContract - sender 1, contract 2, msg 3, funds 5.
 // Funds is omitted entirely: RecordAction carries no payment.
 function buildExecuteMsg(sender, contract, msgObj) {
   const enc = s => Buffer.from(s);
@@ -175,7 +175,7 @@ function buildExecuteMsg(sender, contract, msgObj) {
 }
 
 // Builds and signs, but does not send. The tx hash is sha256 of the encoded
-// TxRaw, so it is known BEFORE broadcast — which is what lets the queue be
+// TxRaw, so it is known BEFORE broadcast - which is what lets the queue be
 // marked in-flight with a hash the next run can look up, even if the broadcast
 // response never comes back.
 async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumber, sequence, gasLimit) {
@@ -223,7 +223,7 @@ async function buildTx(privateKey, publicKey, sender, anyMsgs, memo, accountNumb
 }
 
 // Runs the tx against a node without publishing it. Costs nothing, so a bad
-// record can be found and closed without ever burning a fee on a revert — and
+// record can be found and closed without ever burning a fee on a revert - and
 // the gas figure comes back measured instead of guessed.
 async function simulate(txBytes) {
   let lastErr;
@@ -413,7 +413,7 @@ async function main() {
     console.error('Missing env: WORKER_URL, ACTIONS_SECRET, ATTESTOR_MNEMONIC, ORACLE_SCORE_CONTRACT');
     process.exit(1);
   }
-  console.log('Oracle Score attestor —', new Date().toISOString());
+  console.log('Oracle Score attestor -', new Date().toISOString());
 
   // Before the queue is touched: a wrong secret must not get as far as writing to it.
   const { privateKey, publicKey } = await deriveKeypair(MNEMONIC);
@@ -429,7 +429,7 @@ async function main() {
   const luncLeft = Number(balance / 1_000_000n);
   const grantsLeft = Math.floor(luncLeft / 5);
   if (grantsLeft < 500) {
-    console.warn(`::warning::attestor balance ${luncLeft} LUNC — roughly ${grantsLeft} more grants. Top it up.`);
+    console.warn(`::warning::attestor balance ${luncLeft} LUNC - roughly ${grantsLeft} more grants. Top it up.`);
   } else {
     console.log(`balance: ${luncLeft} LUNC (~${grantsLeft} grants)`);
   }
@@ -442,7 +442,7 @@ async function main() {
 
   const tsOf = r => (typeof r.ts === 'number' ? r.ts : Date.parse(r.ts));
   const undated = pending.filter(r => !Number.isFinite(tsOf(r)));
-  for (const r of undated) console.warn(`unusable ts on ${r.key} (${JSON.stringify(r.ts)}) — leaving queued`);
+  for (const r of undated) console.warn(`unusable ts on ${r.key} (${JSON.stringify(r.ts)}) - leaving queued`);
 
   const dated = pending.filter(r => Number.isFinite(tsOf(r)));
 
@@ -454,7 +454,7 @@ async function main() {
 
   const fresh = dated.filter(r => tsOf(r) >= SNAPSHOT_TS);
   const unknown = fresh.filter(r => !ATTESTABLE_ACTIONS.has(r.action));
-  for (const r of unknown) console.warn(`non-attestable action "${r.action}" — leaving ${r.key} queued`);
+  for (const r of unknown) console.warn(`non-attestable action "${r.action}" - leaving ${r.key} queued`);
 
   const work = fresh.filter(r => ATTESTABLE_ACTIONS.has(r.action));
   if (!work.length) { console.log('nothing to record'); return; }
@@ -489,8 +489,8 @@ async function main() {
   // A whole tx reverts on one bad message, so a failing batch says nothing about
   // which record caused it. Simulation answers that for free: re-simulate one at
   // a time and whatever fails alone is the culprit. If every record passes alone
-  // but the batch still fails, the limit is cumulative — three answers to the
-  // same question against a daily_limit of 3 — and the only honest read is to
+  // but the batch still fails, the limit is cumulative - three answers to the
+  // same question against a daily_limit of 3 - and the only honest read is to
   // send them separately and let the chain draw the line.
   async function plan(records) {
     const provisional = GAS_BASE + GAS_PER_MSG_GUESS * records.length;
@@ -534,9 +534,9 @@ async function main() {
     if (verdict === 'declined') {
       await markRecorded([r.key], null, 'declined', log.slice(0, 300));
       declined++;
-      console.log(`  declined ${r.action} / ${r.wallet.slice(0, 12)} — ${log.slice(0, 120)}`);
+      console.log(`  declined ${r.action} / ${r.wallet.slice(0, 12)} - ${log.slice(0, 120)}`);
     } else if (verdict === 'retry') {
-      console.warn(`  transient on ${r.key}, staying queued — ${log.slice(0, 120)}`);
+      console.warn(`  transient on ${r.key}, staying queued - ${log.slice(0, 120)}`);
     } else {
       await setStatus([r.key], 'quarantined', null, log.slice(0, 300));
       quarantined++;
