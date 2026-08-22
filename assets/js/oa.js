@@ -216,9 +216,14 @@
     }
     if (!hit) return;
 
-    // opening the picker and then picking a wallet is one intent
+    // Already connected: this tap opens the account menu, it is not an
+    // intent to connect. Counting it would inflate visitor -> click.
+    if (wallet) return;
+
+    // Opening the picker and then choosing a wallet is one intent. On a phone
+    // that takes well over three seconds, so the window has to be generous.
     var now = Date.now();
-    if (now - lastConnectClick < 3000) return;
+    if (now - lastConnectClick < 30000) return;
     lastConnectClick = now;
     track('connect_click');
   }, true);
