@@ -185,17 +185,42 @@
     pageview();
   }
 
-  // Connect Wallet click. Explicit hook first: put data-oa="connect" on the
-  // buttons. The text match is a fallback so nothing is missed on day one.
+  // Connect Wallet click.
+  // The text match alone is not enough: on both sites the wallet picker markup
+  // lives inside the button, so textContent carries the whole dropdown.
+  var ID_RE = /wallet[-_]?(btn|label|nav|picker|connect)|connect[-_]?wallet/i;
+  var FN_RE = /connectWallet|WalletPicker|connectKeplr|connectStation|connectGalaxy|openWallet/i;
+  var lastConnectClick = 0;
+
+  function looksLikeConnect(el) {
+    if (!el || !el.getAttribute) return false;
+    var da = el.getAttribute('data-oa');
+    if (da === 'connect') return true;
+    if (da === 'ignore') return false;
+    if (ID_RE.test(el.id || '')) return true;
+    if (FN_RE.test(el.getAttribute('onclick') || '')) return true;
+    return false;
+  }
+
   document.addEventListener('click', function (e) {
-    var el = e.target && e.target.closest ? e.target.closest('button, a, [role="button"]') : null;
-    if (!el) return;
-    if (el.getAttribute('data-oa') === 'connect') { track('connect_click'); return; }
-    if (el.getAttribute('data-oa') === 'ignore') return;
-    var text = (el.textContent || '').trim().toLowerCase();
-    if (text.length < 40 && /connect\s*wallet|connexion|подключить/.test(text)) {
-      track('connect_click');
+    var node = e.target;
+    // the clicked node's own text - short, unlike the whole button
+    var own = (node && node.textContent || '').trim().toLowerCase();
+    var hit = own.length < 30 &&
+              /connect\s*wallet|^connect$|connexion|подключить/.test(own);
+
+    for (var i = 0; node && i < 5; i++) {
+      if (node.getAttribute && node.getAttribute('data-oa') === 'ignore') return;
+      if (looksLikeConnect(node)) { hit = true; break; }
+      node = node.parentElement;
     }
+    if (!hit) return;
+
+    // opening the picker and then picking a wallet is one intent
+    var now = Date.now();
+    if (now - lastConnectClick < 3000) return;
+    lastConnectClick = now;
+    track('connect_click');
   }, true);
 
   window.addEventListener('visibilitychange', function () {
