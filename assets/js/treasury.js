@@ -419,7 +419,9 @@ async function loadTreasuryData() {
 // ронять остальные, поэтому каждый в своём try.
 // Ноль - это «ещё не накопилось», а не число, которым надо кричать. Крупный
 // цветной 0 читался как поломка, поэтому пустое значение приглушается.
-function tSetTco(id, uluna, color) {
+// unit: tFmt подписывает всё как LUNC, но кошелёк сжигания держит TCO -
+// число там правильное, единица была чужой.
+function tSetTco(id, uluna, color, unit) {
   const el = document.getElementById(id);
   if (!el) return;
   if (!uluna || uluna <= 0) {
@@ -427,7 +429,7 @@ function tSetTco(id, uluna, color) {
     el.style.color = 'var(--muted)';
     el.style.opacity = '.65';
   } else {
-    el.textContent = tFmt(uluna);
+    el.textContent = unit ? tFmt(uluna).replace(/LUNC/, unit) : tFmt(uluna);
     el.style.color = color;
     el.style.opacity = '1';
   }
@@ -458,7 +460,7 @@ async function tLoadCircuitStrip() {
   try {
     const b = await smart(T_TCO_TOKEN, { balance: { address: T_WALLETS.tcoBurn } });
     // У TCO шесть знаков, как у LUNC, поэтому формат тот же
-    if (b && b.balance !== undefined) tSetTco('t-tco-burn', Number(b.balance), '#ff8a7a');
+    if (b && b.balance !== undefined) tSetTco('t-tco-burn', Number(b.balance), '#ff8a7a', 'TCO');
   } catch (e) { /* прочерк */ }
 
   try {
