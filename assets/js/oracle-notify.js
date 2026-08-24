@@ -119,14 +119,28 @@
       var raw = localStorage.getItem(LS_PREFIX + wallet);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s && Array.isArray(s.items)) return s;
+        if (s && Array.isArray(s.items)) {
+          // seen хранит id ВСЕГО, что человек уже видел, и живёт дольше ленты.
+          // Раньше дедуп шёл против items, а items усекается: Circuit добавлял
+          // по восемь записей в сутки, старые победы выпадали за край, приходили
+          // снова и всплывали тостами повторно - в августе так воскресали
+          // майские. Первый заход на новый код переносит текущую ленту в seen,
+          // иначе все тридцать записей разом сочтутся новыми.
+          if (!Array.isArray(s.seen)) {
+            s.seen = s.items.map(function (i) { return i.id; }).filter(Boolean);
+          }
+          return s;
+        }
       }
     } catch (e) {}
-    return { init: false, items: [] };   // init=false → first run for this wallet
+    return { init: false, items: [], seen: [] };   // init=false → first run for this wallet
   }
   function saveStore(wallet, store) {
     try {
       store.items = store.items.slice(0, Math.max(CFG.maxItems, 30));
+      // seen усекается отдельно и с большим запасом: это память о показанном,
+      // а не лента. Пятисот хватает на пару месяцев любой активности.
+      if (Array.isArray(store.seen)) store.seen = store.seen.slice(0, 500);
       localStorage.setItem(LS_PREFIX + wallet, JSON.stringify(store));
     } catch (e) {}
   }
@@ -701,7 +715,11 @@
           if (b && b.wallet === w) mine += (b.to - b.from + 1);
         });
         if (!mine) return;                       // раунд не мой
-        var won = r.winner === w;
+        // Circuit тянет раунд каждые три часа, и проигрыши забивали ленту
+        // целиком. Результат чужого раунда видно на доске - уведомление
+        // остаётся только за своей победой.
+        if (r.winner !== w) return;
+        var won = true;
         var prize = (r.split && r.split.prize) ? lunc(r.split.prize) : null;
         out.push({
           id:    'circ:' + r.roundId,
@@ -817,7 +835,9 @@
   // ── Poll cycle ────────────────────────────────────────────────────────────
   function merge(fresh) {
     var known = {};
+    if (!Array.isArray(store.seen)) store.seen = [];
     store.items.forEach(function (i) { known[i.id] = true; });
+    store.seen.forEach(function (id) { known[id] = true; });
 
     var added = fresh.filter(function (i) { return i.id && !known[i.id]; });
     if (!added.length) { refreshBadge(); return; }
@@ -840,6 +860,7 @@
 
     store.items = added.concat(store.items)
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    store.seen = added.map(function (i) { return i.id; }).concat(store.seen);
     store.init = true;
     saveStore(wallet, store);
 
