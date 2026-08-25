@@ -515,7 +515,8 @@ function renderStatsHTML(isConnected) {
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/></svg> Accepted: <strong style="color:var(--text);">+60 REP</strong> each ·
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes: <strong style="color:var(--text);">+20 REP</strong> each ·
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint &middot;
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#38d9d0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #38d9d088);"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg> Circuit: <strong style="color:#38d9d0;">+2 to 6.5 REP</strong> per round played
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
@@ -901,6 +902,7 @@ function renderHowItWorksHTML() {
           ['Ask a question',      '+40 REP per question',              'var(--accent)'],
           ['Answer a question',   '+40 REP per answer',                '#66ffaa'      ],
           ['Answer accepted',     '+60 REP when chosen',               '#66ffaa'      ],
+          ['Circuit round',       '+2 to 6.5 REP per round',           '#38d9d0'      ],
           ['Upvote received',     '+20 REP per upvote',                '#ffd700'      ],
           ['Chat message',        '+5 REP per message',                '#c084fc'      ],
           ['Mint Common NFT',     '+25 REP per mint',                  '#9ca3af'      ],
