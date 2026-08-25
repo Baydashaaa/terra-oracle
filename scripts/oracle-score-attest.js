@@ -62,6 +62,10 @@ const ATTESTABLE_ACTIONS = new Set([
   // Granted to the answer's author when the asker marks it as the one that
   // helped. Free action, price 0, attestor_may_record true.
   'answer_accepted',
+  // Circuit: one grant per round per wallet, carrying its own amount. The
+  // contract's rate limit is keyed (day, user, ref_id) with daily_limit 1, so
+  // a round can only ever be credited once even if the queue replays it.
+  'circuit',
 ]);
 
 // How to read a rejection. Strings are taken verbatim from src/error.rs; keep
