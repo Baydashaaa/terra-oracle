@@ -2533,7 +2533,23 @@
   <script src="assets/js/treasury.js?v=202608231320"></script>
   <script src="assets/js/treasury-chart.js?v=202608141040"></script>
   <script src="assets/js/signAction.js?v=b40331b9da"></script>
-  <script src="assets/js/app.js?v=202608222211"></script>
+  <!-- app.js разрезан на части 28 авг 2026. ПОРЯДОК МЕНЯТЬ НЕЛЬЗЯ:
+       в коде есть операторы верхнего уровня и объявления const/let,
+       порядок повторяет исходный файл строка в строку.
+       Атрибутов нет, как у исходного app.js - не добавлять defer/async,
+       иначе куски уедут после profile.js и reputation.js.
+       Не ставить type="module": 10 функций вызываются из inline on*=
+       и должны остаться глобальными.
+       Тот же порядок продублирован в dev/_verify_split.cjs -->
+  <script src="assets/js/app/core.js?v=202608282100"></script>
+  <script src="assets/js/app/nav.js?v=202608282100"></script>
+  <script src="assets/js/app/board.js?v=202608282100"></script>
+  <script src="assets/js/app/ask.js?v=202608282100"></script>
+  <script src="assets/js/app/sign.js?v=202608282100"></script>
+  <script src="assets/js/app/wallet.js?v=202608282100"></script>
+  <script src="assets/js/app/chat.js?v=202608282100"></script>
+  <script src="assets/js/app/vote.js?v=202608282100"></script>
+  <script src="assets/js/app/hooks.js?v=202608282100"></script>
   <script src="assets/js/profile.js?v=b2968a5cfa"></script>
   <script src="assets/js/reputation.js?v=202608251900"></script>
 <script>
