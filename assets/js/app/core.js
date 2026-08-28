@@ -127,6 +127,24 @@ window.updateChatEntryProgress = updateChatEntryProgress;
 let questions = [];
 let _questionsLoaded = false;
 
+// renderBoard живёт в board.js, который грузится ПОСЛЕ этого файла. Пока всё
+// лежало в одном app.js, вызов работал за счёт подъёма объявлений; теперь между
+// файлами есть сетевая пауза, и ответ воркера успевает вернуться раньше, чем
+// board.js выполнится - отсюда была ReferenceError на проде 28 авг 2026.
+// Ждать здесь нельзя: запрос к воркеру должен стартовать как можно раньше.
+// Поэтому ждём не запрос, а саму функцию: отложенные и обычные скрипты
+// выполняются целиком ДО события DOMContentLoaded, значит после него она точно
+// объявлена. Соседние вызовы (buildScoreMap, applyWalletScores) уже сделаны в
+// таком же духе - через typeof, потому что живут в profile.js и reputation.js.
+function _renderBoardWhenReady() {
+  if (typeof renderBoard === 'function') { renderBoard(); return; }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof renderBoard === 'function') renderBoard();
+    }, { once: true });
+  }
+}
+
 async function loadQuestionsFromWorker() {
   try {
     const res = await fetch(`${WORKER_URL}/questions`);
@@ -163,7 +181,7 @@ async function loadQuestionsFromWorker() {
     // buildScoreMap sees only questions.json, so it just overwrote the full
     // figures. Put them back before painting, then refresh them in background.
     if (typeof applyWalletScores === 'function') applyWalletScores();
-    renderBoard();
+    _renderBoardWhenReady();
     if (typeof upgradeWalletScores === 'function') upgradeWalletScores();
     // Prefetch profiles for question/answer authors (background, no re-render)
     if (typeof prefetchProfiles === 'function') {
@@ -178,7 +196,7 @@ async function loadQuestionsFromWorker() {
     console.warn('Failed to load questions from worker:', e.message);
     questions = [];
     _questionsLoaded = true;
-    renderBoard();
+    _renderBoardWhenReady();
   }
 }
 
