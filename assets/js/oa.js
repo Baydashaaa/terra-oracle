@@ -1,6 +1,10 @@
 /**
  * Oracle Stats - front end collector.
  *
+ * v4: tracks in-app route changes (the sites are single page apps, so the
+ * first load used to be the only pageview) and clicks on outbound links
+ * (X, Telegram, GitHub, partners).
+ *
  * Deliberately NOT called analytics.js / tracker.js: those names are on public
  * ad-blocker lists and would be dropped for a noticeable share of visitors.
  *
@@ -173,10 +177,23 @@
   // ------------------------------------------------------------------
   // automatic bits
   // ------------------------------------------------------------------
+  // Path as a human would name it: route without the query string.
+  function page() {
+    var h = location.hash || '';
+    var q = h.indexOf('?');
+    if (q !== -1) h = h.slice(0, q);
+    var path = (location.pathname || '/') + h;
+    return path.length > 120 ? path.slice(0, 120) : path;
+  }
+
+  var lastPage = '';
+
   function pageview() {
-    if (sentPageview) return;
+    var p = page();
+    if (p === lastPage) return;   // same route, not a new view
+    lastPage = p;
     sentPageview = true;
-    track('pageview', { p: location.pathname + (location.hash || '') });
+    track('pageview', { p: p });
   }
 
   if (document.readyState === 'loading') {
@@ -184,6 +201,20 @@
   } else {
     pageview();
   }
+
+  // Both sites are single page apps: the route changes without a reload, so
+  // without these listeners every visit would look like one page.
+  window.addEventListener('hashchange', pageview);
+  window.addEventListener('popstate', pageview);
+  ['pushState', 'replaceState'].forEach(function (m) {
+    var orig = history[m];
+    if (typeof orig !== 'function') return;
+    history[m] = function () {
+      var r = orig.apply(this, arguments);
+      setTimeout(pageview, 0);
+      return r;
+    };
+  });
 
   // Connect Wallet click.
   // The text match alone is not enough: on both sites the wallet picker markup
@@ -202,7 +233,29 @@
     return false;
   }
 
+  // Where we send people: X, Telegram, GitHub, partner sites. The other half
+  // of the funnel - traffic we hand away.
+  var OWN_HOST = /(^|\.)terraoracle\.io$/i;
+
   document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (a) {
+      var href = a.getAttribute('href') || '';
+      if (/^https?:/i.test(href)) {
+        try {
+          var u = new URL(href, location.href);
+          if (u.hostname && !OWN_HOST.test(u.hostname)) {
+            track('outbound', {
+              h: u.hostname.replace(/^www\./, '').slice(0, 40),
+              p: page(),
+              u: (u.pathname + u.search).slice(0, 60)
+            });
+            flush();
+          }
+        } catch (er) {}
+      }
+    }
+
     var node = e.target;
     // the clicked node's own text - short, unlike the whole button
     var own = (node && node.textContent || '').trim().toLowerCase();
