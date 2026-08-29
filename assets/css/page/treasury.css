@@ -1,0 +1,86 @@
+  /* ── Treasury: раскладка ────────────────────────────────────────────────
+     Классы с префиксом tre-, чтобы не пересечься с остальным сайтом.
+     Метки секций повторяют приём главной страницы (.pfv-tag): ромб,
+     разрядка, подзаголовок под ним. */
+  .tre-head { text-align:center; margin-bottom:34px; }
+  .tre-eyebrow { font-size:10px; letter-spacing:.25em; color:var(--gold);
+    text-transform:uppercase; margin-bottom:10px; }
+
+  .tre-sec { margin-bottom:26px; }
+  .tre-sec-tag { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }
+  .tre-sec-tag b { font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--gold); }
+  .tre-sec-tag span { font-size:12px; color:var(--muted); }
+
+  .tre-card { background:rgba(255,255,255,.015); border:1px solid rgba(255,255,255,.06);
+    border-radius:14px; padding:18px 20px; }
+
+  /* Шапка TVL: цифры, график, кнопка - в одну строку на всю ширину */
+  .tre-hero { display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:14px;
+    background:rgba(245,197,24,0.04); border:1px solid rgba(245,197,24,0.15);
+    border-radius:16px; padding:22px 26px; margin-bottom:26px; }
+
+  .tre-pools { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+
+  /* Нижний ярус: распределение и транзакции рядом, а не друг под другом -
+     из-за этого страница и выглядела столбом */
+  .tre-lower { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:1100px) { .tre-lower { grid-template-columns:1fr; } }
+
+  .tre-dist-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .tre-wal { border-radius:12px; padding:14px 16px; border:1px solid rgba(255,255,255,.06);
+    background:rgba(255,255,255,.02); }
+  .tre-wal-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .tre-wal-name { font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+  .tre-wal-pct { font-size:9px; padding:2px 7px; border-radius:20px; }
+  .tre-wal-bal { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:800; line-height:1.1; }
+  .tre-wal-usd { font-size:10px; color:var(--muted); margin-top:2px; }
+  .tre-addr { display:flex; align-items:center; gap:6px; margin-top:10px;
+    font-family:'Rajdhani',sans-serif; font-size:11px; color:var(--muted); }
+  .tre-addr button { background:none; border:none; cursor:pointer; color:var(--muted);
+    padding:2px; line-height:0; }
+  .tre-addr button:hover { color:var(--gold); }
+
+  .tre-rows { display:flex; flex-direction:column; gap:18px; }
+  .tre-row-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px; }
+  .tre-row-name { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#cfd6e4; }
+  .tre-row-name i { display:inline-block; width:8px; height:8px; border-radius:2px;
+    margin-right:8px; vertical-align:0; }
+  .tre-row-amt { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:800; }
+  /* Дорожка: заливка - факт, вертикальная засечка - план. */
+  .tre-row-track { position:relative; height:8px; border-radius:5px;
+    background:rgba(255,255,255,.05); overflow:visible; }
+  .tre-row-track i { display:block; height:100%; border-radius:5px; opacity:.85;
+    transition:width .5s ease; }
+  .tre-row-track b { position:absolute; top:-3px; bottom:-3px; width:2px;
+    background:rgba(255,255,255,.6); border-radius:1px; }
+  .tre-row-foot { display:flex; align-items:center; gap:12px; margin-top:6px;
+    font-size:10px; color:var(--muted); }
+  .tre-row-foot > span:first-child { font-family:'Rajdhani',sans-serif;
+    font-size:12px; font-weight:700; }
+  .tre-row-addr { margin-left:auto; font-family:'Rajdhani',sans-serif;
+    display:inline-flex; align-items:center; gap:5px; }
+  .tre-row-addr button { background:none; border:none; cursor:pointer;
+    color:var(--muted); padding:1px; line-height:0; }
+  .tre-row-addr button:hover { color:var(--gold); }
+
+  .tre-dist-note { margin-top:16px; padding-top:14px; font-size:10px; color:var(--muted);
+    line-height:1.6; border-top:1px solid rgba(255,255,255,.05); }
+
+  .tre-tco { display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
+  .tre-tco-figs { display:flex; gap:34px; }
+  .tre-tco-curve { flex:1 1 260px; min-width:220px; }
+  .tre-tco-curve-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .tre-tco-lbl { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .tre-tco-val { font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:800;
+    color:#38d9d0; line-height:1.1; margin-top:3px; }
+  .tre-tco-sub { font-size:10px; color:var(--muted); margin-top:3px; }
+  .tre-tco-pct { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:800; color:#38d9d0; }
+  .tre-curve-track { height:7px; border-radius:5px; background:rgba(255,255,255,.06); overflow:hidden; }
+  .tre-curve-track i { display:block; height:100%; border-radius:5px;
+    background:linear-gradient(90deg,#38d9d0,#7ee7e0); transition:width .5s ease; }
+
+  .tre-txs { max-height:520px; overflow-y:auto; scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.15) transparent; }
+  

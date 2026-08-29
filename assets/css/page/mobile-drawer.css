@@ -1,0 +1,20 @@
+/* ══ Выдвижное меню не помещалось в короткий вьюпорт ═══════════════════════
+   Во встроенном браузере Keplr окно ниже, чем в Safari, и при раскрытом
+   разделе REPUTATION содержимое переставало влезать. Меню выравнивалось по
+   центру и не имело собственной прокрутки, поэтому лишнее уходило вверх под
+   шапку - верхний пункт (Board) становился недоступен.
+   Прижимаем содержимое к верху и включаем прокрутку внутри самого меню.
+   Единица dvh учитывает свёрнутую адресную строку, vh - нет, поэтому vh
+   идёт первым как фолбэк для движков без поддержки dvh.                   */
+@media (max-width: 900px), (hover: none) {
+  .nav-mobile-drawer {
+    justify-content: flex-start !important;
+    align-content: flex-start !important;
+    max-height: calc(100vh - 68px);
+    max-height: calc(100dvh - 68px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

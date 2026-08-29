@@ -1,0 +1,15 @@
+/* ── Animated orbs ─────────────────────────────── */
+@keyframes orbFloat1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(60px, -80px) scale(1.08); }
+  66%  { transform: translate(-40px, 40px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes orbFloat2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-70px, 60px) scale(1.05); }
+  66%  { transform: translate(50px, -30px) scale(0.92); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.orb-1 { animation: orbFloat1 18s ease-in-out infinite; }
+.orb-2 { animation: orbFloat2 22s ease-in-out infinite; }

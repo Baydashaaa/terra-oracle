@@ -1,0 +1,17 @@
+/* ── Кольца реактора наследуют цвет активного модуля ──────────────────────
+   Единственный источник правды - --rc / --rc2 на .oc3-reactor.
+   JS ставит только их, всё остальное подхватывается по наследованию.       */
+.oc3-reactor{ --rc:#7B5CFF; --rc2:#c4b5fd; }
+
+.oc3-reactor svg circle{ transition:stroke .5s ease, opacity .5s ease; }
+.oc3-reactor .oc3-r-base{ stroke:var(--rc);  opacity:.13; }
+.oc3-reactor .oc3-r1    { stroke:var(--rc);  opacity:.42; }
+.oc3-reactor .oc3-r2    { stroke:var(--rc2); opacity:.34; }
+
+/* Пользовательские свойства наследуются внутрь <defs>, поэтому стопы
+   градиента красятся тем же значением без вмешательства JS. */
+.oc3-reactor #oc3gs1{ stop-color:var(--rc);  transition:stop-color .5s ease; }
+.oc3-reactor #oc3gs2{ stop-color:var(--rc2); transition:stop-color .5s ease; }
+
+.oc3-reactor .oc3-prog{ filter:drop-shadow(0 0 7px var(--rc)); transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), filter .5s ease; }
+.oc3-core-num{ transition:color .5s ease; }

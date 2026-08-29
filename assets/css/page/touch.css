@@ -1,0 +1,19 @@
+@media (max-width: 768px), (hover: none) {
+
+
+  @media (max-width: 768px) {
+    #mobile-nav-controls { display: flex !important; }
+  }
+  /* Disable heavy GPU effects on mobile */
+  .orb-1, .orb-2 { display: none !important; }
+  #bg-canvas { display: none !important; }
+  #cursor-energy { display: none !important; }
+  #nav-scanner-light { display: none !important; }
+  /* Disable blur filters that cause white flicker */
+  * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  /* Disable heavy animations */
+  .orb-1, .orb-2, #nav-scanner-light { animation: none !important; }
+  /* Simple solid nav background instead of blur */
+  nav { background: rgba(3,7,15,0.98) !important; }
+  footer { background: rgba(4,10,20,0.98) !important; }
+}
