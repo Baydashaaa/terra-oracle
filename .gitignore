@@ -1,3 +1,4 @@
 *.bak-*
 patch-*.py
 treasury-section.html
+*.bak
