@@ -471,7 +471,14 @@ async function tLoadCircuitStrip() {
       const bar = document.getElementById('t-curve-bar');
       if (bar) bar.style.width = Math.min(100, pct).toFixed(1) + '%';
       const raised = Number(info.vault_native || 0) / 1e6;
-      tSet('t-curve-note', tFmt(Number(info.vault_native || 0)) + ' of 37.5M LUNC raised');
+      const tcoLunc = Number(info.price || 0);
+      const luncUsd = await tFetchPrice();
+      let note = tFmt(Number(info.vault_native || 0)) + ' of 37.5M LUNC raised';
+      if (tcoLunc > 0) {
+        note += ' \u00b7 1 TCO = ' + tcoLunc.toFixed(4) + ' LUNC';
+        if (luncUsd > 0) note += ' \u2248 $' + (tcoLunc * luncUsd).toFixed(8);
+      }
+      tSet('t-curve-note', note);
     }
   } catch (e) { /* прочерк */ }
 }
