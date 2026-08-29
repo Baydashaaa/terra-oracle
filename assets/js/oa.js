@@ -58,6 +58,22 @@
     return s;
   }
 
+  // Our own visits ruin every rate on the dashboard. Open any page with
+  // ?oa=off once on each device we use, and this browser stops reporting.
+  // ?oa=on turns it back on.
+  try {
+    var q = (location.search || '') + (location.hash || '');
+    if (/[?&]oa=off\b/.test(q)) localStorage.setItem('oa_off', '1');
+    if (/[?&]oa=on\b/.test(q)) localStorage.removeItem('oa_off');
+    if (localStorage.getItem('oa_off')) {
+      window.oa = {
+        track: function () {}, wallet: function () {}, pool: function () {},
+        _state: function () { return { off: true }; }
+      };
+      return;
+    }
+  } catch (e) {}
+
   var vid = '';
   try {
     vid = readCookie(COOKIE);
@@ -161,6 +177,7 @@
     track: track,
     pool: function (p) { if (p === 'daily' || p === 'weekly') pool = p; },
     wallet: function (address, opts) {
+      if (abandonTimer) { clearTimeout(abandonTimer); abandonTimer = null; }
       if (!address) { wallet = null; return; }
       var changed = wallet && wallet !== address;
       wallet = String(address);
@@ -245,6 +262,7 @@
   var ID_RE = /wallet[-_]?(btn|label|nav|picker|connect)|connect[-_]?wallet/i;
   var FN_RE = /connectWallet|WalletPicker|connectKeplr|connectStation|connectGalaxy|openWallet/i;
   var lastConnectClick = 0;
+  var abandonTimer = null;
 
   function looksLikeConnect(el) {
     if (!el || !el.getAttribute) return false;
@@ -301,7 +319,35 @@
     var now = Date.now();
     if (now - lastConnectClick < 30000) return;
     lastConnectClick = now;
-    track('connect_click');
+
+    // Which wallet was chosen, read off the button itself so app.js needs no
+    // changes. The picker buttons carry onclick="connectWallet('keplr')".
+    var provider = null;
+    var probe = e.target;
+    for (var d = 0; probe && d < 5 && !provider; d++) {
+      var oc = (probe.getAttribute && probe.getAttribute('onclick')) || '';
+      var m = oc.match(/connect(?:Wallet)?\(\s*['\"]([a-z0-9_-]+)['\"]/i) ||
+              oc.match(/connect(Keplr|Station|Galaxystation)/i);
+      if (m) provider = String(m[1]).toLowerCase();
+      else if (probe.getAttribute && probe.getAttribute('data-wallet')) {
+        provider = String(probe.getAttribute('data-wallet')).toLowerCase();
+      }
+      probe = probe.parentElement;
+    }
+
+    var hasExt = !!(window.keplr || window.station || window.galaxyStation);
+    track('connect_click', { w: provider || 'unknown', k: hasExt ? 1 : 0 });
+
+    // The biggest hole in the funnel is between pressing Connect and a wallet
+    // actually arriving. If nothing arrives, say so instead of losing them
+    // silently. hasExt tells an install problem from a refusal.
+    if (abandonTimer) clearTimeout(abandonTimer);
+    abandonTimer = setTimeout(function () {
+      abandonTimer = null;
+      if (wallet) return;
+      track('connect_abandoned', { w: provider || 'unknown', k: hasExt ? 1 : 0 });
+      flush();
+    }, 60000);
   }, true);
 
   window.addEventListener('visibilitychange', function () {
