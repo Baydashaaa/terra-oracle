@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/assets/js/oa.js?v=784a0f8a6b" defer></script>
+  <script src="/assets/js/oa.js?v=6cf79fe0db" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
        slash) to resolve against site root, regardless of the SPA path shown
@@ -1920,7 +1920,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=02321a6b89"></script>
-  <script src="assets/js/treasury.js?v=8a6f927abe"></script>
+  <script src="assets/js/treasury.js?v=eaa9647c0e"></script>
   <script src="assets/js/treasury-chart.js?v=b29ef4dffe"></script>
   <script src="assets/js/signAction.js?v=f72ef609e3"></script>
   <!-- app.js разрезан на части 28 авг 2026. ПОРЯДОК МЕНЯТЬ НЕЛЬЗЯ:
@@ -1941,7 +1941,7 @@
   <script src="assets/js/app/vote.js?v=a458955e1c"></script>
   <script src="assets/js/app/hooks.js?v=408ad07d36"></script>
   <script src="assets/js/profile.js?v=0f7a860eb3"></script>
-  <script src="assets/js/reputation.js?v=07b7cf5b5d"></script>
+  <script src="assets/js/reputation.js?v=618da27cd2"></script>
 <script src="assets/js/page/mobile-nav.js?v=1179055d90"></script>
 
 

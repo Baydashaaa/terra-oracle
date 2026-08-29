@@ -306,13 +306,35 @@ async function loadLeaderboard() {
       await Promise.all(fetches);
     } catch(e) {}
 
+    // REP берётся с контракта Oracle Score тем же путём, что и на Your Stats.
+    // Свой пересчёт по счётчикам не знает ни лесенки ответов (1-3 по 40,
+    // 4-10 по 10), ни дневного лимита апвоутов, поэтому расходился с цепью.
+    let chainMap = {};
+    try {
+      const sr = await fetch(`${WORKER_URL}/rep/scores`);
+      if (sr.ok) {
+        const sd = await sr.json();
+        chainMap = sd.onchain || {};
+      }
+    } catch(e) {}
+
     const ranked = Object.values(wallets).map(w => {
       const drawRep  = drawRepMap[w.wallet] || 0;
       const chatRep  = chatRepMap[w.wallet] || 0;
       const multiplier = streakMap[w.wallet] || 1.0;
-      const baseScore = w.questions * 40 + w.answers * 40 + (w.upvotesReceived || 0) * 20 + chatRep + drawRep;
-      const score = Math.round(baseScore * multiplier);
-      const rank  = typeof getRank === 'function' ? getRank(score) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
+      // Пожизненный счёт с цепи. Он же задаёт ранг в обоих режимах: ранг - это
+      // накопленная репутация, а не результат недели.
+      const chainScore = chainMap[w.wallet];
+      // Периодная сумма по счётчикам. Множителя стрика тут нет: он относится к
+      // доле в недельных наградах, а не к самому REP и не к рангу.
+      const periodScore = Math.round(
+        w.questions * 40 + w.answers * 40 + (w.upvotesReceived || 0) * 20 + chatRep + drawRep
+      );
+      const score = (_lbPeriod === 'weekly')
+        ? periodScore
+        : (chainScore !== undefined ? chainScore : periodScore);
+      const forRank = (chainScore !== undefined) ? chainScore : score;
+      const rank  = typeof getRank === 'function' ? getRank(forRank) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
       return { ...w, score, drawRep, chatRep, multiplier, rank };
     }).filter(w => w.score > 0).sort((a, b) => b.score - a.score).slice(0, 50);
 
