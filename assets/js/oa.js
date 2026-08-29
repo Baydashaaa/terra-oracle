@@ -196,11 +196,34 @@
     track('pageview', { p: p });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', pageview);
-  } else {
+  // The routers on both sites rewrite the route a moment after load, so an
+  // immediate pageview records "/" and then the real page - two rows for one
+  // visit. Wait a beat and record where the visitor actually landed.
+  var firstTimer = null;
+
+  function firstPageview() {
+    if (firstTimer) { clearTimeout(firstTimer); firstTimer = null; }
     pageview();
   }
+
+  function scheduleFirst() {
+    if (firstTimer) return;
+    firstTimer = setTimeout(firstPageview, 350);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleFirst);
+  } else {
+    scheduleFirst();
+  }
+
+  // Left before the timer fired: record what we have rather than nothing.
+  // Registered here, ahead of the flush handlers at the end of this file, so
+  // the event is queued before the queue is sent.
+  window.addEventListener('pagehide', firstPageview);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') firstPageview();
+  });
 
   // Both sites are single page apps: the route changes without a reload, so
   // without these listeners every visit would look like one page.
