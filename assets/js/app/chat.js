@@ -102,13 +102,10 @@ window.sendChatMessage = async function() {
 const CHAT_WALLET = TREASURY_WALLET;
 const CHAT_HISTORY_WALLET = TREASURY_WALLET;
 const CHAT_MIN_ULUNA = 5000000000;
-// FIX 4 обещал два разных узла для настоящего fallback, но оба пункта списка
-// были одним и тем же адресом - резерва не существовало. 28 авг 2026 второй
-// заменён на реальный запасной узел.
-const FCD_NODES = [
-  'https://terra-classic-lcd.publicnode.com',
-  'https://terra-classic-lcd.hexxagon.io',
-];
+// FIX 4 объявлял здесь FCD_NODES «для настоящего fallback», но оба пункта были
+// одним и тем же адресом, а сама константа не использовалась НИ РАЗУ - ни здесь,
+// ни в одном файле репо. Удалена 28 авг 2026: перебор узлов теперь живёт там,
+// где он и должен быть, в воркере oracle-chat.
 
 // Ключ реакции - по-прежнему сам эмодзи: под ним реакции лежат в KV воркера
 // и приходят из /chat/reactions. Меняется только отрисовка, поэтому все уже
