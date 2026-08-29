@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/assets/js/oa.js?v=3" defer></script>
+  <script src="/assets/js/oa.js?v=6cf79fe0db" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
        slash) to resolve against site root, regardless of the SPA path shown
@@ -21,17 +21,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Stalinist+One&family=Boldonse&display=swap" rel="stylesheet">
 
   <!-- Стили -->
-  <link rel="stylesheet" href="assets/css/style.css?v=202608041800">
-  <link rel="stylesheet" href="assets/css/page/wallet-picker.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/logo-glow.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/layout.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/touch.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/mobile-drawer.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/android-paint.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/oc3-ring.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/tariffs.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/treasury.css?v=202608290030">
-  <link rel="stylesheet" href="assets/css/page/orbs.css?v=202608290030">
+  <link rel="stylesheet" href="assets/css/style.css?v=41e7f960d7">
+  <link rel="stylesheet" href="assets/css/page/wallet-picker.css?v=6948fc153c">
+  <link rel="stylesheet" href="assets/css/page/logo-glow.css?v=c0c5b25568">
+  <link rel="stylesheet" href="assets/css/page/layout.css?v=91fd8ccc52">
+  <link rel="stylesheet" href="assets/css/page/touch.css?v=e473ca367d">
+  <link rel="stylesheet" href="assets/css/page/mobile-drawer.css?v=61bda13320">
+  <link rel="stylesheet" href="assets/css/page/android-paint.css?v=611b191a0c">
+  <link rel="stylesheet" href="assets/css/page/oc3-ring.css?v=1634e8c3b7">
+  <link rel="stylesheet" href="assets/css/page/tariffs.css?v=1d695bac71">
+  <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
+  <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
 
 
   <!-- Charts -->
@@ -67,7 +67,7 @@
   <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
-<script src="assets/js/page/anti-fouc.js?v=202608290030"></script>
+<script src="assets/js/page/anti-fouc.js?v=a3607324b6"></script>
 
 <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <!-- Parallax layer 3: energy cursor reactive -->
@@ -666,7 +666,7 @@
 
 
 
-  <script src="assets/js/page/mobile-hero.js?v=202608290030"></script>
+  <script src="assets/js/page/mobile-hero.js?v=49051a957a"></script>
 
   <!-- Protocol sections below -->
  <div style="max-width:720px;margin:0 auto;padding:16px 24px 80px;position:relative;z-index:1;">
@@ -1919,10 +1919,10 @@
     // Global Worker URL - used by profile.js, reputation.js, treasury.js
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
-  <script src="assets/js/draw-schedule.js?v=9c77f51aa0"></script>
-  <script src="assets/js/treasury.js?v=202608231320"></script>
-  <script src="assets/js/treasury-chart.js?v=202608141040"></script>
-  <script src="assets/js/signAction.js?v=b40331b9da"></script>
+  <script src="assets/js/draw-schedule.js?v=02321a6b89"></script>
+  <script src="assets/js/treasury.js?v=eaa9647c0e"></script>
+  <script src="assets/js/treasury-chart.js?v=b29ef4dffe"></script>
+  <script src="assets/js/signAction.js?v=f72ef609e3"></script>
   <!-- app.js разрезан на части 28 авг 2026. ПОРЯДОК МЕНЯТЬ НЕЛЬЗЯ:
        в коде есть операторы верхнего уровня и объявления const/let,
        порядок повторяет исходный файл строка в строку.
@@ -1931,31 +1931,31 @@
        Не ставить type="module": 10 функций вызываются из inline on*=
        и должны остаться глобальными.
        Тот же порядок продублирован в dev/_verify_split.cjs -->
-  <script src="assets/js/app/core.js?v=202608282215"></script>
-  <script src="assets/js/app/nav.js?v=202608282100"></script>
-  <script src="assets/js/app/board.js?v=202608282100"></script>
-  <script src="assets/js/app/ask.js?v=202608282100"></script>
-  <script src="assets/js/app/sign.js?v=202608282100"></script>
-  <script src="assets/js/app/wallet.js?v=202608282100"></script>
-  <script src="assets/js/app/chat.js?v=202608282330"></script>
-  <script src="assets/js/app/vote.js?v=202608282100"></script>
-  <script src="assets/js/app/hooks.js?v=202608282100"></script>
-  <script src="assets/js/profile.js?v=b2968a5cfa"></script>
-  <script src="assets/js/reputation.js?v=202608251900"></script>
-<script src="assets/js/page/mobile-nav.js?v=202608290030"></script>
+  <script src="assets/js/app/core.js?v=1d01b73d61"></script>
+  <script src="assets/js/app/nav.js?v=6a89ab8f17"></script>
+  <script src="assets/js/app/board.js?v=b4db68752c"></script>
+  <script src="assets/js/app/ask.js?v=ef86abd7c6"></script>
+  <script src="assets/js/app/sign.js?v=7c4ac60e6a"></script>
+  <script src="assets/js/app/wallet.js?v=ef5e559c60"></script>
+  <script src="assets/js/app/chat.js?v=8ab2273947"></script>
+  <script src="assets/js/app/vote.js?v=a458955e1c"></script>
+  <script src="assets/js/app/hooks.js?v=408ad07d36"></script>
+  <script src="assets/js/profile.js?v=0f7a860eb3"></script>
+  <script src="assets/js/reputation.js?v=618da27cd2"></script>
+<script src="assets/js/page/mobile-nav.js?v=1179055d90"></script>
 
 
-<script src="assets/js/page/starfield.js?v=202608290030"></script>
+<script src="assets/js/page/starfield.js?v=5c48d0d9d0"></script>
 
-<script src="assets/js/page/parallax.js?v=202608290030"></script>
-
-
+<script src="assets/js/page/parallax.js?v=6f729d3925"></script>
 
 
 
-<script src="assets/js/page/poll-options.js?v=202608290030"></script>
 
-<script src="assets/js/page/accordion.js?v=202608290030"></script>
+
+<script src="assets/js/page/poll-options.js?v=b8e86b7b36"></script>
+
+<script src="assets/js/page/accordion.js?v=7598275f22"></script>
 
 <!-- MOBILE CONNECTED MODAL -->
 <div id="mobile-connected-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center;">
@@ -2012,7 +2012,7 @@
   </div>
 </div>
 
-<script src="assets/js/page/wallet-qr.js?v=202608290030"></script>
+<script src="assets/js/page/wallet-qr.js?v=a5f50c3c2a"></script>
 
 <!-- MOBILE WALLET MODAL -->
 <div id="mobile-wallet-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:flex-end;justify-content:center;">
@@ -2070,9 +2070,9 @@
   </div>
 </div>
 
-<script src="assets/js/page/mobile-rep-menu.js?v=202608290030"></script>
+<script src="assets/js/page/mobile-rep-menu.js?v=19fc25e04b"></script>
 
-<script src="assets/js/page/mobile-wallet.js?v=202608290030"></script>
+<script src="assets/js/page/mobile-wallet.js?v=c68d700ad2"></script>
 
 <!-- LUNCDASH INPUT MODAL -->
 <div id="luncdash-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;">
@@ -2087,11 +2087,11 @@
   </div>
 </div>
 
-<script src="assets/js/page/luncdash.js?v=202608290030"></script>
+<script src="assets/js/page/luncdash.js?v=2052753373"></script>
 
 <!-- ═══ ORACLE EYE (mascot + feedback) - external module ═══ -->
-<script src="assets/js/oracle-eye.js?v=c5a6075551"></script>
-<script src="assets/js/oracle-notify.js?v=202608241620"></script>
+<script src="assets/js/oracle-eye.js?v=3cf89cd2e9"></script>
+<script src="assets/js/oracle-notify.js?v=d99e586143"></script>
 
 
 </body>
