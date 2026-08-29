@@ -102,10 +102,12 @@ window.sendChatMessage = async function() {
 const CHAT_WALLET = TREASURY_WALLET;
 const CHAT_HISTORY_WALLET = TREASURY_WALLET;
 const CHAT_MIN_ULUNA = 5000000000;
-// FIX 4: два разных FCD узла для настоящего fallback
+// FIX 4 обещал два разных узла для настоящего fallback, но оба пункта списка
+// были одним и тем же адресом - резерва не существовало. 28 авг 2026 второй
+// заменён на реальный запасной узел.
 const FCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
-  'https://terra-classic-lcd.publicnode.com',
+  'https://terra-classic-lcd.hexxagon.io',
 ];
 
 // Ключ реакции - по-прежнему сам эмодзи: под ним реакции лежат в KV воркера
@@ -570,37 +572,48 @@ async function loadChatFromChain() {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 12000);
+    // Было: /proxy-txs воркера oracle-draw. Он отдавал последние 50 транзакций
+    // кошелька и глубже не смотрел, а на тот же кошелёк идут выплаты Circuit
+    // (восемь в сутки с 20 авг 2026) и переводы казны. 28 авг из 50 записей
+    // сообщений было НОЛЬ, самая старая доступная - от 6 августа, и чат
+    // показывал "No messages yet". Параметр limit воркер игнорировал: при 100,
+    // 200 и 500 приходили те же 50.
+    // Стало: воркер oracle-chat листает историю постранично, пока не наберёт
+    // нужное число именно сообщений, и отдаёт их уже отобранными.
     const res = await fetch(
-      `https://oracle-draw.vladislav-baydan.workers.dev/proxy-txs?wallet=${CHAT_HISTORY_WALLET}&limit=50`,
+      `https://oracle-chat.vladislav-baydan.workers.dev/chat-msgs?limit=40`,
       { signal: ctrl.signal }
     );
     clearTimeout(timer);
     if (res.ok) {
       const body = await res.json();
-      // Worker returns FCD-shape: { txs: [{ txhash, timestamp, tx: { value: { memo, msg } } }] }
-      // Convert to LCD-shape that the parser below expects (txs[] + tx_responses[])
-      const rawTxs = body.txs || [];
+      // oracle-chat отдаёт уже отобранные сообщения:
+      //   { msgs: [{ txhash, timestamp, sender, amount, memo }] }
+      // Приводим к LCD-виду, который ждёт разбор ниже (txs[] + tx_responses[]),
+      // чтобы весь остальной код - починка эмодзи, ответы, реакции, фильтры -
+      // остался без изменений.
+      const rawMsgs = body.msgs || [];
       txList = {
-        txs: rawTxs.map(t => ({
+        txs: rawMsgs.map(m => ({
           body: {
-            memo: t.tx?.value?.memo || '',
-            messages: (t.tx?.value?.msg || []).map(m => ({
+            memo: m.memo || '',
+            messages: [{
               '@type': '/cosmos.bank.v1beta1.MsgSend',
-              from_address: m.value?.from_address || '',
-              to_address:   m.value?.to_address   || '',
-              amount:       m.value?.amount        || [],
-            })),
+              from_address: m.sender || '',
+              to_address:   CHAT_WALLET,
+              amount:       [{ denom: 'uluna', amount: String(m.amount || 0) }],
+            }],
           },
         })),
-        tx_responses: rawTxs.map(t => ({
-          txhash:    t.txhash || '',
-          timestamp: t.timestamp || '',
-          code:      t.code || 0,
+        tx_responses: rawMsgs.map(m => ({
+          txhash:    m.txhash || '',
+          timestamp: m.timestamp || '',
+          code:      0,
         })),
       };
     }
   } catch(e) {
-    console.warn('Chat: Worker proxy failed:', e.message);
+    console.warn('Chat: oracle-chat worker failed:', e.message);
   }
   if (!txList) {
     if (!cachedMsgs.length) {
