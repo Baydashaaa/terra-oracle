@@ -58,8 +58,10 @@
   var SYSTEM_WALLETS  = [
     'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
     'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
-    'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', // DAILY
-    'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz', // WEEKLY
+    'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', // DAILY (кошелёк до 31 авг 2026, оставлен ради истории)
+    'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz', // WEEKLY (кошелёк до 31 авг 2026, оставлен ради истории)
+    'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm', // DAILY pool contract
+    'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8', // WEEKLY pool contract
     'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p', // COLLECTION
   ];
 

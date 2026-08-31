@@ -666,8 +666,8 @@ async function loadChatFromChain() {
       const SYSTEM_WALLETS = [
         'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
         'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
-        'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px',  // DAILY
-        'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz',  // WEEKLY
+        'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm',  // DAILY pool contract
+        'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8',  // WEEKLY pool contract
         'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION
       ];
       if (SYSTEM_WALLETS.includes(sender)) continue;
@@ -700,8 +700,8 @@ async function loadChatFromChain() {
 
 
 // ── POOL MILESTONE BANNER ─────────────────────────────────────────────────
-const DAILY_POOL_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';
-const WEEKLY_POOL_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
+const DAILY_POOL_WALLET  = 'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm';
+const WEEKLY_POOL_WALLET = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8';
 
 const POOL_MILESTONES = [
   { min: 5000000,    label: '💎 JACKPOT TERRITORY', color: '#00ffff', glow: 'rgba(0,255,255,0.3)',   bg: 'rgba(0,255,255,0.06)',   border: 'rgba(0,255,255,0.25)'  },
@@ -795,7 +795,7 @@ setInterval(loadChatFromChain, 60000); // 60s poll - reduced from 30s for perfor
   setInterval(() => {
     // Refresh pool balance silently
     if (typeof fetchPoolBalance === 'function') {
-      fetchPoolBalance('terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz').catch(() => {});
+      fetchPoolBalance('terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8').catch(() => {});
     }
     // Refresh questions if on home/ask page
     if (typeof loadQuestionsFromWorker === 'function') {
