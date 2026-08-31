@@ -2648,8 +2648,8 @@ async function loadChatFromChain() {
       const SYSTEM_WALLETS = [
         'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
         'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
-        'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm',  // DAILY pool contract
-        'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8',  // WEEKLY pool contract
+        'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px',  // DAILY
+        'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz',  // WEEKLY
         'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION
       ];
       if (SYSTEM_WALLETS.includes(sender)) continue;
@@ -2682,8 +2682,8 @@ async function loadChatFromChain() {
 
 
 // ── POOL MILESTONE BANNER ─────────────────────────────────────────────────
-const DAILY_POOL_WALLET  = 'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm';
-const WEEKLY_POOL_WALLET = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8';
+const DAILY_POOL_WALLET  = 'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px';
+const WEEKLY_POOL_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
 
 const POOL_MILESTONES = [
   { min: 5000000,    label: '💎 JACKPOT TERRITORY', color: '#00ffff', glow: 'rgba(0,255,255,0.3)',   bg: 'rgba(0,255,255,0.06)',   border: 'rgba(0,255,255,0.25)'  },
@@ -2777,7 +2777,7 @@ setInterval(loadChatFromChain, 60000); // 60s poll - reduced from 30s for perfor
   setInterval(() => {
     // Refresh pool balance silently
     if (typeof fetchPoolBalance === 'function') {
-      fetchPoolBalance('terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8').catch(() => {});
+      fetchPoolBalance('terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz').catch(() => {});
     }
     // Refresh questions if on home/ask page
     if (typeof loadQuestionsFromWorker === 'function') {
@@ -3216,7 +3216,6 @@ async function castVote(voteId, optionIdx) {
 
 // ── MY BAG (Terra Oracle) - реальные данные с Oracle Draw ──────────────────────
 
-const O_NFT_API_BASE = 'https://nft.lunc.tools/api';
 const O_DRAW_WORKER  = 'https://oracle-draw.vladislav-baydan.workers.dev';
 const O_BAG_CACHE_KEY = 'oracle_bag_cache_v1';
 const O_BAG_CACHE_TTL = 5 * 60 * 1000;
@@ -3324,14 +3323,15 @@ function renderOracleBag() {
 async function loadOracleBagNFTs(wallet) {
   const el = id => document.getElementById(id);
 
-  // NFTs go through the Draw Worker proxy (/owned-nfts) - same SWR cache as
-  // the draw site: instant from KV after the first ever load, background
-  // refresh, no more waiting on the slow marketplace API. Direct Paco call
-  // remains as a last-resort fallback below.
-  // Single attempt: the worker already retries 3× internally against Paco.
-  // A second browser-side attempt used to double the worst-case wait.
+  // Токены берём прямо из контракта Oracle Mask через OracleNFT: маркетплейс
+  // nft.lunc.tools отключён 31 авг 2026, и прокси воркера /owned-nfts ходил
+  // именно туда. getContractTokensLegacy отдаёт тот же формат, что раньше
+  // приходил от Paco (slug, token_id, name, tier), поэтому разбор ниже не
+  // меняется. Статистика раундов по-прежнему идёт через воркер.
   const [nftResult, dailyStatsResult, weeklyStatsResult] = await Promise.allSettled([
-    oFetch(`${O_DRAW_WORKER}/owned-nfts?wallet=${wallet}`, {}, 1, 42000),
+    (window.OracleNFT && typeof OracleNFT.getContractTokensLegacy === 'function')
+      ? OracleNFT.getContractTokensLegacy(wallet)
+      : Promise.reject(new Error('oracle-nft-client.js не загружен')),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=daily`, {}, 2),
     oFetch(`${O_DRAW_WORKER}/round-stats?pool=weekly`, {}, 2),
   ]);
@@ -3339,24 +3339,13 @@ async function loadOracleBagNFTs(wallet) {
   let allNFTs = null, pacoError = null;
   let dailyActiveWallets = new Set(), weeklyActiveWallets = new Set();
 
-  if (nftResult.status === 'fulfilled' && nftResult.value.ok) {
-    try {
-      const data = await nftResult.value.json();
-      allNFTs = Array.isArray(data) ? data : data.nfts || data.data || data.tokens || [];
-      oSaveBagCache(wallet, allNFTs);
-    } catch(e) { pacoError = 'Invalid response'; }
+  if (nftResult.status === 'fulfilled' && Array.isArray(nftResult.value)) {
+    allNFTs = nftResult.value;
+    oSaveBagCache(wallet, allNFTs);
   } else {
-    pacoError = nftResult.reason?.message || 'API error';
-    // Worker proxy failed - last resort: Paco directly with a generous timeout.
-    try {
-      const direct = await oFetch(`${O_NFT_API_BASE}/owned-nfts/${wallet}`, {}, 1, 18000);
-      if (direct.ok) {
-        const data = await direct.json();
-        allNFTs = Array.isArray(data) ? data : (data.nfts || data.data || data.tokens || []);
-        oSaveBagCache(wallet, allNFTs);
-        pacoError = null;
-      }
-    } catch(e2) {}
+    // Пустой ответ от узла и отказ узла - разные вещи, но обе оставляют
+    // экран без данных: показываем кеш, как и раньше при отказе Paco.
+    pacoError = nftResult.reason?.message || 'Contract query failed';
   }
 
   if (dailyStatsResult.status === 'fulfilled' && dailyStatsResult.value.ok) {
