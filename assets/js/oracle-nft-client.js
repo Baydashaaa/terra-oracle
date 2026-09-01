@@ -12,10 +12,13 @@
     // Боевой контракт Oracle Mask на columbus-5 (code_id 11546)
     contract: 'terra1hcsq79vmcqxr97sv720yw6scvyknssx62ufsa4rwlmv02gyft43s46uaqx',
     // LCD-ноды Terra Classic; перебираются по кругу при ошибке
+    // Проверено 1 сентября 2026: из прежних резервов не отвечал ни один -
+    // у hexxagon другой хостнейм, terraclassic.community отдаёт 404. Список
+    // сверен с реестром cosmos/chain-registry.
     lcd: [
       'https://terra-classic-lcd.publicnode.com',
-      'https://lcd-terra-classic.hexxagon.io',
-      'https://terraclassic.community/cosmos',
+      'https://lcd.terra-classic.hexxagon.io',
+      'https://terraclassic-mainnet-lcd.autostake.com',
     ],
     denom: 'uluna',
     timeoutMs: 10000,
