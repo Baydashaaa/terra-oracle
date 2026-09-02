@@ -5,6 +5,15 @@
 import fetch from 'node-fetch';
 import { createHmac, createHash } from 'crypto';
 
+// Записи, созданные до 1 сентября 2026, указывают на прежний операторский
+// кошелёк недельного пула. Деньги на нём в розыгрыше больше не участвуют,
+// поэтому такие выплаты переадресуются на контракт.
+const WEEKLY_WALLET_LEGACY = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
+const WEEKLY_POOL          = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8';
+function payoutTarget(to) {
+  return to === WEEKLY_WALLET_LEGACY ? WEEKLY_POOL : to;
+}
+
 const WORKER_URL     = process.env.WORKER_URL;
 const ACTIONS_SECRET = process.env.ACTIONS_SECRET;
 const MNEMONIC       = process.env.RESERVE_MNEMONIC;
@@ -221,7 +230,7 @@ async function main() {
       console.log(`\n⏳ ${payout.wallet.slice(0,20)}... milestone=${payout.milestone} amount=${(payout.amount/1e6).toFixed(3)} LUNC`);
 
       const txHash = await sendTokens(
-        privateKey, publicKey, sender, payout.to,
+        privateKey, publicKey, sender, payoutTarget(payout.to),
         payout.amount,
         `streak:milestone:${payout.milestone}`,
         accountNumber, sequence

@@ -1126,7 +1126,14 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
 // ─── PROTOCOL WALLETS ─────────────────────────────────────────
 const ADMIN_WALLET    = 'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6';
 const TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt'; // Protocol Treasury wallet
-const WEEKLY_DRAW_WALLET = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'; // Weekly Draw Pool
+// Оплата вопроса идёт на КОНТРАКТ пула, а не на прежний операторский кошелёк
+// (переезд 1 сентября 2026). Деньги ложатся на баланс контракта; при ближайшем
+// расчёте они входят в carry (carry = баланс минус выплаченное), а из carry - в
+// пот следующего раунда. То есть спонсорские средства попадают в приз со
+// сдвигом на один раунд, но без единого ручного перевода.
+const WEEKLY_DRAW_WALLET = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8'; // Weekly Draw Pool (контракт)
+// Прежний адрес: оплаты до 1 сентября 2026 проверяются по нему.
+const WEEKLY_DRAW_WALLET_LEGACY = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
 
@@ -1740,7 +1747,11 @@ async function verifyTX() {
       const coins = val.amount || [];
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
       // Accept payment to Treasury OR Weekly Pool (split payment - either tx is valid proof)
-      if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
+      // Старый адрес пула тоже принимаем: в момент перехода у кого-то
+      // могла остаться открытой прежняя версия страницы.
+      if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET ||
+           toAddr === (typeof WEEKLY_DRAW_WALLET_LEGACY !== 'undefined' ? WEEKLY_DRAW_WALLET_LEGACY : '') ||
+           toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount += parseInt(lunc.amount);
       }
     }

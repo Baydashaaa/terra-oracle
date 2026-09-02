@@ -452,7 +452,11 @@ async function verifyTX() {
       const coins = val.amount || [];
       const lunc = Array.isArray(coins) ? coins.find(c => c.denom === 'uluna') : (coins.denom === 'uluna' ? coins : null);
       // Accept payment to Treasury OR Weekly Pool (split payment - either tx is valid proof)
-      if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET || toAddr === PROTOCOL_WALLET) && lunc) {
+      // Старый адрес пула тоже принимаем: в момент перехода у кого-то
+      // могла остаться открытой прежняя версия страницы.
+      if ((toAddr === TREASURY_WALLET || toAddr === WEEKLY_DRAW_WALLET ||
+           toAddr === (typeof WEEKLY_DRAW_WALLET_LEGACY !== 'undefined' ? WEEKLY_DRAW_WALLET_LEGACY : '') ||
+           toAddr === PROTOCOL_WALLET) && lunc) {
         foundAmount += parseInt(lunc.amount);
       }
     }
