@@ -799,15 +799,30 @@
 <div class="page" id="page-board" style="min-height:60vh;">
  <div class="board-header">
  <div>
- <div class="board-title">Active Questions</div>
+ <div class="board-title" id="board-title">Active Questions</div>
  <div class="board-count" id="board-count">Loading...</div>
  </div>
  <!-- Ask переехал сюда из верхнего меню: в навбаре только места, куда можно
       прийти, а действия живут кнопкой внутри своего места. Когда появятся
       рынки, рядом встанут вкладки, и надпись будет меняться по вкладке. -->
- <button class="btn btn-primary btn-sm" onclick="showPage('ask')"
+ <button class="btn btn-primary btn-sm" id="board-action" onclick="showPage('ask')"
    style="flex-shrink:0;white-space:nowrap;">Ask a question</button>
  </div>
+
+ <!-- Рынки и вопросы - родственники: и там, и там человек спрашивает
+      сообщество, разница только в том, чем платят за ответ. Поэтому не два
+      пункта меню, а две вкладки одного места. Счётчики работают приманкой:
+      видно, что в соседней вкладке тоже что-то происходит. -->
+ <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+  <button class="vote-tab" id="board-tab-markets" onclick="switchBoardTab('markets')">Markets</button>
+  <button class="vote-tab active" id="board-tab-questions" onclick="switchBoardTab('questions')">Questions</button>
+  <button class="vote-tab" id="board-tab-resolved" onclick="switchBoardTab('resolved')">Settled</button>
+ </div>
+
+ <div id="board-pane-markets" style="display:none;"><div id="markets-list"></div></div>
+ <div id="board-pane-resolved" style="display:none;"><div id="resolved-list"></div></div>
+
+ <div id="board-pane-questions">
  <div style="position:relative;margin-bottom:14px;">
  <input type="text" id="board-search" placeholder="Search questions..."
  oninput="setBoardSearch(this.value)"
@@ -838,6 +853,7 @@
  </div>
  </div>
  <div id="questions-list"></div>
+ </div>
 </div>
 <div class="page" id="page-ask">
  <div class="page-header">
@@ -1944,6 +1960,7 @@
   <script src="assets/js/app/wallet.js?v=ef5e559c60"></script>
   <script src="assets/js/app/chat.js?v=566973314d"></script>
   <script src="assets/js/app/vote.js?v=49c846dc66"></script>
+  <script src="assets/js/app/markets.js?v=46f65aba63"></script>
   <script src="assets/js/app/hooks.js?v=408ad07d36"></script>
   <script src="assets/js/profile.js?v=0f7a860eb3"></script>
   <script src="assets/js/reputation.js?v=07b7cf5b5d"></script>
