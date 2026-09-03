@@ -113,13 +113,12 @@
  <div class="nav-system" id="nav-system">
  <button class="nav-tab nav-node" onclick="showRepPage('leaderboard')">Reputation</button>
  <button class="nav-tab nav-node" onclick="showPage('board')" data-page="board">Board</button>
- <button class="nav-tab nav-node" onclick="showPage('ask')" data-page="ask">Ask</button>
  <button class="nav-tab nav-node" onclick="showPage('chat')" data-page="chat">Chat</button>
  <button class="nav-tab nav-node" onclick="showPage('vote')" data-page="vote">Vote</button>
  <button class="nav-tab nav-node" onclick="showPage('about')" data-page="about">About</button>
- <button class="nav-tab nav-node" onclick="showPage('bag',event)" data-page="bag" style="color:#f4d03f;">My Bag</button>
  <svg class="nav-lines" id="nav-lines" style="display:none;"></svg>
  </div>
+ <button class="nav-tab" onclick="showPage('bag',event)" data-page="bag" style="color:#f4d03f;flex-shrink:0;">My Bag</button>
  <div class="wallet-btn-wrap" id="wallet-wrap" style="min-width:130px;flex-shrink:0;">
  <button class="wallet-btn glass-btn" id="wallet-main-btn" onclick="toggleWalletDropdown()">
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -237,8 +236,7 @@
 <div class="nav-mobile-drawer" id="nav-mobile-drawer">
 
  <button class="nav-tab" onclick="mobileNavGo('board')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7B5CFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #7B5CFF88);"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 5V3h8v2"/><path d="M8 11h8M8 15h5"/></svg> Board</button>
- <button class="nav-tab" onclick="mobileNavGo('ask')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Ask</button>
- <button class="nav-tab" onclick="mobileNavGo('chat')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/></svg> Chat</button>
+  <button class="nav-tab" onclick="mobileNavGo('chat')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/></svg> Chat</button>
  <button class="nav-tab" onclick="mobileNavGo('vote')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B8CFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #5B8CFF88);"><path d="M3.4 9.6 12 4.4l8.6 5.2"/><path d="M6 9.9v7.6M10 9.9v7.6M14 9.9v7.6M18 9.9v7.6"/><path d="M3.6 20.4h16.8"/></svg> Vote</button>
  <button class="nav-tab" onclick="mobileNavGo('about')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8h.01"/></svg> About</button>
  <button class="nav-tab" onclick="mobileNavGo('bag')" style="color:#f4d03f;">My Bag</button>
@@ -804,6 +802,11 @@
  <div class="board-title">Active Questions</div>
  <div class="board-count" id="board-count">Loading...</div>
  </div>
+ <!-- Ask переехал сюда из верхнего меню: в навбаре только места, куда можно
+      прийти, а действия живут кнопкой внутри своего места. Когда появятся
+      рынки, рядом встанут вкладки, и надпись будет меняться по вкладке. -->
+ <button class="btn btn-primary btn-sm" onclick="showPage('ask')"
+   style="flex-shrink:0;white-space:nowrap;">Ask a question</button>
  </div>
  <div style="position:relative;margin-bottom:14px;">
  <input type="text" id="board-search" placeholder="Search questions..."
