@@ -11,7 +11,7 @@
 
 // Подставить адрес боевого экземпляра при запуске. Тестовый:
 // terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58
-const PROPHECY_CONTRACT = '';
+const PROPHECY_CONTRACT = 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58';
 
 const PROPHECY_LCD = [
   'https://terra-classic-lcd.publicnode.com',
