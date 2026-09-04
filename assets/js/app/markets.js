@@ -40,6 +40,17 @@ const METRIC_PATHS = {
   proposal_passed: (p) => `/cosmos/gov/v1beta1/proposals/${p}`,
 };
 
+/**
+ * Экранирование. На сайте розыгрыша такая функция лежит в app.js, здесь её
+ * нет, и вызов внутри try превращал ReferenceError в "Chain unavailable":
+ * сообщение указывало на узел, хотя виноват был скрипт.
+ */
+function mktEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 let boardTab = 'questions';
 let openMarketId = null;
 let betSide = true;
@@ -153,11 +164,11 @@ function marketCard(m) {
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
         <span style="font-size:11px;font-weight:600;color:${color};border:1px solid ${color}55;
                      background:${color}18;padding:3px 9px;border-radius:8px;">
-          ${escHTML(m.category)}${chain ? ' · settles itself' : ''}</span>
+          ${mktEsc(m.category)}${chain ? ' · settles itself' : ''}</span>
         <span style="font-size:12px;color:var(--muted);margin-left:auto;">${status}</span>
       </div>
       <div style="font-size:17px;font-weight:600;line-height:1.3;margin-bottom:12px;">
-        ${escHTML(m.question)}</div>
+        ${mktEsc(m.question)}</div>
       <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
         <div><div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;color:#22d3ee;">
           ${pct}%</div>
@@ -173,7 +184,7 @@ function marketCard(m) {
         </div>
       </div>
       ${m.reading ? `<div style="margin-top:12px;font-size:11.5px;color:var(--muted);
-        border-top:1px solid var(--border);padding-top:10px;">${escHTML(m.reading)}</div>` : ''}
+        border-top:1px solid var(--border);padding-top:10px;">${mktEsc(m.reading)}</div>` : ''}
     </div>
   </div>`;
 }
@@ -263,21 +274,21 @@ window.submitClaim = submitClaim;
 function verifyBlock(m) {
   if (!m.spec.metric) {
     return `<div style="font-size:13.5px;color:var(--muted);line-height:1.7;">
-      Resolved by people against a stated criterion:<br>${escHTML(m.spec.criterion)}</div>`;
+      Resolved by people against a stated criterion:<br>${mktEsc(m.spec.criterion)}</div>`;
   }
   const path = (METRIC_PATHS[m.spec.metric] || (() => ''))(m.spec.param || '');
   const cmd = `curl -s -H "x-cosmos-block-height: ${m.spec.height}" \\\n  "${PROPHECY_LCD[0]}${path}"`;
   const cond = m.spec.comparator
-    ? `${escHTML(m.spec.comparator)} <code>${escHTML(m.spec.threshold)}</code>`
+    ? `${mktEsc(m.spec.comparator)} <code>${mktEsc(m.spec.threshold)}</code>`
     : 'proposal passes';
   return `
     <div style="display:grid;grid-template-columns:160px 1fr;gap:8px 16px;font-size:13.5px;">
-      <div style="color:var(--muted);">Metric</div><div>${escHTML(m.spec.metric)}${m.spec.param ? ' · ' + escHTML(m.spec.param) : ''}</div>
+      <div style="color:var(--muted);">Metric</div><div>${mktEsc(m.spec.metric)}${m.spec.param ? ' · ' + mktEsc(m.spec.param) : ''}</div>
       <div style="color:var(--muted);">Condition</div><div>${cond}</div>
       <div style="color:var(--muted);">Block height</div><div><code>${m.spec.height}</code></div>
     </div>
     <pre style="background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;
-      padding:14px;overflow-x:auto;font-size:12px;color:#9fb4d8;margin:12px 0 0;">${escHTML(cmd)}</pre>
+      padding:14px;overflow-x:auto;font-size:12px;color:#9fb4d8;margin:12px 0 0;">${mktEsc(cmd)}</pre>
     <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
       The contract stored this the moment the market opened, so what you check now is the
       question people actually bet on.</div>`;
@@ -370,19 +381,19 @@ async function openProphecyMarket(id) {
         Proposed: ${m.outcome ? 'YES' : 'NO'}</div>
       <div style="font-size:13px;color:var(--muted);margin-top:4px;">
         Payouts stay shut until the challenge window closes. Until then the reading can be disputed.</div>
-      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:8px;">${escHTML(m.reading)}</div>` : ''}
+      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:8px;">${mktEsc(m.reading)}</div>` : ''}
     </div>`;
   } else if (m.status === 'settled') {
     banner = `<div style="border:1px solid rgba(34,211,238,.4);background:rgba(34,211,238,.1);
       border-radius:14px;padding:16px 18px;margin-bottom:14px;">
       <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;">
         Settled: ${m.outcome ? 'YES' : 'NO'}</div>
-      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:6px;">${escHTML(m.reading)}</div>` : ''}
+      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:6px;">${mktEsc(m.reading)}</div>` : ''}
     </div>`;
   } else if (m.status === 'void') {
     banner = `<div style="border:1px solid var(--border);border-radius:14px;padding:16px 18px;
       margin-bottom:14px;color:var(--muted);font-size:13.5px;">
-      Void. Every stake goes back untouched.${m.reading ? '<br>' + escHTML(m.reading) : ''}</div>`;
+      Void. Every stake goes back untouched.${m.reading ? '<br>' + mktEsc(m.reading) : ''}</div>`;
   }
 
   host.innerHTML = `
@@ -394,12 +405,12 @@ async function openProphecyMarket(id) {
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
         <span style="font-size:11.5px;font-weight:600;color:${color};border:1px solid ${color}55;
           background:${color}18;padding:3px 10px;border-radius:8px;">
-          ${escHTML(m.category)}${m.spec.metric ? ' · settles itself' : ''}</span>
+          ${mktEsc(m.category)}${m.spec.metric ? ' · settles itself' : ''}</span>
         <span style="margin-left:auto;font-family:'Rajdhani',sans-serif;font-weight:700;
           font-size:16px;color:#f4d03f;">${left ? 'closes in ' + left : ''}</span>
       </div>
       <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:27px;
-        line-height:1.2;margin-bottom:16px;">${escHTML(m.question)}</div>
+        line-height:1.2;margin-bottom:16px;">${mktEsc(m.question)}</div>
       <div style="display:flex;height:66px;border-radius:14px;overflow:hidden;
         border:1px solid var(--border);margin-bottom:14px;">
         <div style="flex:0 0 ${pct}%;display:flex;flex-direction:column;justify-content:center;
