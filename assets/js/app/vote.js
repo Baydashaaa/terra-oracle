@@ -146,7 +146,7 @@ window.adminStartVote = async function(voteId) {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
       headers: adminHeaders(),
-      body: JSON.stringify({ id: voteId, action: 'start' }),
+      body: JSON.stringify(await adminBody('votes/toggle', voteId + ':start', { id: voteId, action: 'start' })),
       signal: AbortSignal.timeout(6000),
     });
     await loadVotesFromWorker();
@@ -163,7 +163,7 @@ window.adminStopVote = async function(voteId) {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
       headers: adminHeaders(),
-      body: JSON.stringify({ id: voteId, action: 'stop' }),
+      body: JSON.stringify(await adminBody('votes/toggle', voteId + ':stop', { id: voteId, action: 'stop' })),
       signal: AbortSignal.timeout(6000),
     });
     await loadVotesFromWorker();
@@ -287,7 +287,7 @@ window.adminCreateVote = async function() {
     const res = await fetch(`${WORKER_URL}/votes`, {
       method: 'POST',
       headers: adminHeaders(),
-      body: JSON.stringify({ title, desc, type, durationMs, quorum, source, options: opts }),
+      body: JSON.stringify(await adminBody('votes/create', String(title).slice(0,120), { title, desc, type, durationMs, quorum, source, options: opts })),
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json();
@@ -315,7 +315,7 @@ window.adminDeleteVote = async function(voteId) {
     await fetch(`${WORKER_URL}/votes`, {
       method: 'DELETE',
       headers: adminHeaders(),
-      body: JSON.stringify({ id: voteId }),
+      body: JSON.stringify(await adminBody('votes/delete', voteId, { id: voteId })),
       signal: AbortSignal.timeout(6000),
     });
     showAdminToast('🗑 Vote deleted', 'red');

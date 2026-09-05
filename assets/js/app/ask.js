@@ -135,7 +135,9 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
       headers: txHash === 'ADMIN_BYPASS' ? adminHeaders() : { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll, evidence }),
+      body: JSON.stringify(txHash === 'ADMIN_BYPASS'
+        ? await adminBody('question/admin', 'ADMIN_BYPASS', { id: ref, category, text, wallet, txHash, tags, poll, evidence })
+        : { id: ref, category, text, wallet, txHash, tags, poll, evidence }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -195,6 +197,20 @@ function getAdminSecret(forceAsk) {
 }
 function clearAdminSecret() { _adminSecret = ''; }
 window.clearAdminSecret = clearAdminSecret;
+// Подписывает админ-действие кошельком (ADR-36). Подпись привязана к самому
+// действию и к его объекту, поэтому перехваченный запрос нельзя переиграть как
+// другой. Если кошелёк подписать не смог, уходим на прежний путь с общим
+// секретом - воркер его пока принимает, но это временно.
+async function adminBody(action, refId, payload) {
+  try {
+    return { ...payload, ...(await signAction(action, refId)) };
+  } catch (e) {
+    console.warn('[admin] не удалось подписать, запасной путь через секрет:', e.message);
+    return payload;
+  }
+}
+window.adminBody = adminBody;
+
 function adminHeaders() {
   return { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET, 'X-Admin-Secret': getAdminSecret() };
 }
