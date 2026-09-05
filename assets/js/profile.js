@@ -1193,11 +1193,11 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
       <div class="history-item">
         <div class="history-item-meta">
           <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Answer</span>
-          <span>on question ${a.questionId}</span>
+          <span>on question ${escHtml(a.questionId)}</span>
           ${a.votes >= 3 ? '<span style="color:var(--gold);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #E8C84088);"><path d="M12 3.6l2.55 5.2 5.75.84-4.15 4.05.98 5.71L12 16.7l-5.13 2.7.98-5.71L3.7 9.64l5.75-.84z"/></svg> Top Answer</span>' : ''}
         </div>
-        <div class="history-item-text" style="font-size:13px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${(a.questionText||'').slice(0,80)}..."</div>
-        <div class="history-item-text">${a.text.slice(0,200)}${a.text.length > 200 ? '...' : ''}</div>
+        <div class="history-item-text" style="font-size:13px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${escHtml(String(a.questionText||'').slice(0,80))}..."</div>
+        <div class="history-item-text">${escHtml(String(a.text).slice(0,200))}${a.text.length > 200 ? '...' : ''}</div>
         <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${a.votes || 0} upvotes</div>
       </div>
     `).join('');
@@ -1207,11 +1207,11 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
       <div class="history-item">
         <div class="history-item-meta">
           <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Question</span>
-          <span>${q.category}</span>
-          <span>${q.time}</span>
-          <span class="q-ref">${q.id}</span>
+          <span>${escHtml(q.category)}</span>
+          <span>${escHtml(q.time)}</span>
+          <span class="q-ref">${escHtml(q.id)}</span>
         </div>
-        <div class="history-item-text">${q.text.slice(0,200)}${q.text.length > 200 ? '...' : ''}</div>
+        <div class="history-item-text">${escHtml(String(q.text).slice(0,200))}${q.text.length > 200 ? '...' : ''}</div>
         <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${q.votes || 0} votes · <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> ${q.answers?.length || 0} answers</div>
       </div>
     `).join('');

@@ -178,16 +178,23 @@ const PROTOCOL_WALLET = ADMIN_WALLET;
 // ── Admin secret (pairs with worker env ADMIN_SECRET) ────────────────────────
 // The admin wallet address is public (it's in this file), so the worker also
 // requires a shared secret in the X-Admin-Secret header for admin endpoints.
-// Asked once via prompt, then kept in localStorage on the admin's browser.
+//
+// Секрет НЕ хранится в localStorage: оттуда его читает любой чужой скрипт,
+// попавший на страницу, и живёт он там вечно. Держим только в памяти вкладки -
+// закрыл вкладку, секрета нет. Это временная мера: цель - вообще убрать общий
+// секрет и подписывать админ-действия кошельком (ADR-36, signAction).
+let _adminSecret = '';
+// Разовая чистка ранее сохранённого значения у тех, кто уже вводил секрет.
+try { localStorage.removeItem('admin_secret'); } catch(e) {}
+
 function getAdminSecret(forceAsk) {
-  let s = null;
-  try { s = localStorage.getItem('admin_secret'); } catch(e) {}
-  if ((!s || forceAsk) && connectedAddress === ADMIN_WALLET) {
-    s = (prompt('Enter admin secret (must match the worker ADMIN_SECRET variable):') || '').trim();
-    if (s) { try { localStorage.setItem('admin_secret', s); } catch(e) {} }
+  if ((!_adminSecret || forceAsk) && connectedAddress === ADMIN_WALLET) {
+    _adminSecret = (prompt('Enter admin secret (must match the worker ADMIN_SECRET variable):') || '').trim();
   }
-  return s || '';
+  return _adminSecret || '';
 }
+function clearAdminSecret() { _adminSecret = ''; }
+window.clearAdminSecret = clearAdminSecret;
 function adminHeaders() {
   return { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET, 'X-Admin-Secret': getAdminSecret() };
 }

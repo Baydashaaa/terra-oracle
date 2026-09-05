@@ -169,7 +169,7 @@ function renderPoll(q, qi) {
       '<button onclick="votePoll(' + qi + ',' + oi + ')" style="width:100%;text-align:left;padding:8px 12px;border-radius:8px;border:1px solid ' + border + ';background:' + bg + ';cursor:pointer;position:relative;overflow:hidden;">' +
       '<div style="position:absolute;left:0;top:0;height:100%;width:' + pct + '%;background:rgba(84,147,247,0.08);border-radius:8px;transition:width 0.4s;"></div>' +
       '<div style="position:relative;display:flex;justify-content:space-between;align-items:center;">' +
-      '<span style="font-size:12px;color:' + textColor + ';">' + opt.text + '</span>' +
+      '<span style="font-size:12px;color:' + textColor + ';">' + escHtml(opt.text) + '</span>' +
       '<span style="font-size:11px;color:var(--muted);">' + pct + '% · ' + (opt.votes || 0) + '</span>' +
       '</div></button></div>';
   }
@@ -284,7 +284,7 @@ function renderBoard() {
 
   if (filtered.length === 0) {
     list.innerHTML = boardSearch
-      ? `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No questions match "<strong>${boardSearch}</strong>".<br><span style="font-size:11px;opacity:0.6;">Try different keywords</span></div></div>`
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No questions match "<strong>${escHtml(boardSearch)}</strong>".<br><span style="font-size:11px;opacity:0.6;">Try different keywords</span></div></div>`
       : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No questions here yet.<br>Be the first to ask!</div></div>`;
     return;
   }
@@ -296,18 +296,23 @@ function renderBoard() {
       <div class="q-meta">
         ${isPinned(q) ? `<span class="badge-pin">Priority</span><span class="pin-timer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.4 2"/></svg><span class="pin-time" data-pin-until="${q.pinnedUntil}">${pinTimeLeft(q.pinnedUntil - _nowSec)}</span></span>` : ''}
         ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img src="${getProfileAvatar(q.wallet)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
-        ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${q.title}</span>` : '')}
-        <span class="q-category">${q.category}</span>
-        <span class="q-ref" style="margin-left:auto;">${q.time}&nbsp;&nbsp;${q.id}</span>
+        ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${escHtml(q.title)}</span>` : '')}
+        <span class="q-category">${escHtml(q.category)}</span>
+        <span class="q-ref" style="margin-left:auto;">${escHtml(q.time)}&nbsp;&nbsp;${escHtml(q.id)}</span>
       </div>
-      ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" onclick="setBoardSearch('#${t}')">#${t}</span>`).join('')}</div>` : ''}
+      ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" data-q-tag="${escHtml(t)}">#${escHtml(t)}</span>`).join('')}</div>` : ''}
       ${(() => {
         const u = q.evidence ? safeUrl(q.evidence) : null;
         if (!u) return '';
         const shown = u.length > 58 ? u.slice(0, 58) + '…' : u;
         return `<div class="q-evidence"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg><a href="${escHtml(u)}" target="_blank" rel="noopener noreferrer">${escHtml(shown)}</a></div>`;
       })()}
-      <div class="q-text">${boardSearch ? q.text.replace(new RegExp('(' + boardSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>') : q.text}</div>
+      <div class="q-text">${(() => {
+        const safe = escHtml(q.text);
+        if (!boardSearch) return safe;
+        const needle = escHtml(boardSearch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return safe.replace(new RegExp('(' + needle + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>');
+      })()}</div>
       ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
       <div class="q-footer">
         <div class="q-votes">
@@ -324,21 +329,21 @@ function renderBoard() {
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
             <div class="answer-meta">
               ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(a.wallet, a.alias)}</span>`}
-              ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${a.title}</span>` : '')}
+              ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${escHtml(a.title)}</span>` : '')}
               ${a.id === q.chosenAnswerId ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#66ffaa;background:rgba(102,255,170,0.08);border:1px solid rgba(102,255,170,0.35);padding:1px 7px;border-radius:4px;">&#10003; ACCEPTED</span>` : ''}
             </div>
             ${a.replyTo ? `<div style="margin-bottom:8px;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;">
-              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span>&#x21A9;&#xFE0E;</span>${a.replyTo.author}</div>
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.replyTo.text}</div>
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span>&#x21A9;&#xFE0E;</span>${escHtml(a.replyTo.author)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(a.replyTo.text)}</div>
             </div>` : ''}
-            <div class="answer-text">${a.text}</div>
+            <div class="answer-text">${escHtml(a.text)}</div>
             <div class="answer-votes" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <button class="vote-btn ${a.voted ? 'voted' : ''}" onclick="voteAnswer(${realQi},${ai})"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 4px currentColor);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${a.votes}</button>
               <button
                 data-board-reply-qi="${realQi}"
-                data-board-reply-id="${a.id}"
-                data-board-reply-author="${_getDisplayName(a.wallet, a.alias).replace(/"/g,'&quot;')}"
-                data-board-reply-text="${a.text.replace(/"/g,'&quot;').replace(/\n/g,' ').slice(0,80)}"
+                data-board-reply-id="${escHtml(a.id)}"
+                data-board-reply-author="${escHtml(_getDisplayName(a.wallet, a.alias))}"
+                data-board-reply-text="${escHtml(String(a.text).replace(/\n/g,' ').slice(0,80))}"
                 style="background:none;border:none;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;display:inline-flex;align-items:center;gap:4px;"
                 onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
                 <span style="font-style:normal;font-size:12px;line-height:1;">&#x21A9;&#xFE0E;</span> Reply
@@ -465,6 +470,14 @@ window.clearBoardReply = function(qi) {
   const block = document.getElementById('board-reply-block-' + qi);
   if (block) block.style.display = 'none';
 };
+
+// Клик по тегу. Раньше тег подставлялся прямо в inline onclick - строковая
+// подстановка в JS-контекст, которую нельзя экранировать HTML-эскейпом.
+document.addEventListener('click', function(e) {
+  const tagEl = e.target.closest('[data-q-tag]');
+  if (!tagEl) return;
+  setBoardSearch('#' + tagEl.getAttribute('data-q-tag'));
+});
 
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-board-reply-qi]');

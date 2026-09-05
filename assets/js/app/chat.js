@@ -306,14 +306,14 @@ function renderChatMessages(msgs) {
       const color = isPool ? 'rgba(123,92,255,0.18)' : 'rgba(245,197,24,0.08)';
       const borderColor = isPool ? 'rgba(123,92,255,0.25)' : 'rgba(245,197,24,0.2)';
       const labelColor = isPool ? 'var(--accent)' : 'var(--gold)';
-      return `<div id="msg-${m.txHash}" style="padding:8px 0;border-bottom:1px solid rgba(30,51,88,0.3);">
+      return `<div id="msg-${escHtml(m.txHash)}" style="padding:8px 0;border-bottom:1px solid rgba(30,51,88,0.3);">
         <div style="display:flex;align-items:center;gap:10px;background:${color};border:1px solid ${borderColor};border-radius:10px;padding:11px 14px;">
           <div style="font-size:20px;flex-shrink:0;">${icon}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:9px;color:${labelColor};letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2px;">${label}</div>
-            <div style="font-size:12px;color:var(--muted);">${m.amount} LUNC → Protocol Treasury</div>
+            <div style="font-size:12px;color:var(--muted);">${escHtml(m.amount)} LUNC → Protocol Treasury</div>
           </div>
-          <a href="https://finder.terraport.finance/mainnet/tx/${m.txHash}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${m.time}</a>
+          <a href="https://finder.terraport.finance/mainnet/tx/${encodeURIComponent(m.txHash)}" target="_blank" style="font-size:9px;color:var(--muted);text-decoration:none;flex-shrink:0;">🔗 ${escHtml(m.time)}</a>
         </div>
       </div>`;
     }
@@ -345,12 +345,12 @@ function renderChatMessages(msgs) {
         <div style="flex:1;min-width:0;">
           <!-- Header row -->
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
-            <span onclick="openUserProfile('${m.fullAddr || ''}')" style="font-size:13px;font-weight:700;color:var(--text);cursor:pointer;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${displayName}</span>
+            <span onclick="openUserProfile('${m.fullAddr || ''}')" style="font-size:13px;font-weight:700;color:var(--text);cursor:pointer;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${escHtml(displayName)}</span>
             ${rankBadge}
             <a href="https://finder.terraport.finance/mainnet/tx/${m.txHash}" target="_blank"
               style="font-size:9px;color:var(--muted);text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0;"
               onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
-              🔗 ${m.time}
+              🔗 ${escHtml(m.time)}
             </a>
           </div>
           <!-- Message text -->
@@ -360,19 +360,19 @@ function renderChatMessages(msgs) {
             if (!orig) return '';
             const origName = _getDisplayName(orig.fullAddr, orig.author);
             return `<div style="margin-bottom:8px;padding:6px 10px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;cursor:pointer;" onclick="document.getElementById('msg-${orig.txHash}')?.scrollIntoView({behavior:'smooth'})">
-              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span style="font-style:normal;">&#x21A9;&#xFE0E;</span>${origName}</div>
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${orig.text.slice(0,80)}</div>
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span style="font-style:normal;">&#x21A9;&#xFE0E;</span>${escHtml(origName)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(String(orig.text).slice(0,80))}</div>
             </div>`;
           })() : ''}
           <!-- Message text -->
-          <div style="font-size:14px;line-height:1.65;color:rgba(232,240,255,0.92);word-break:break-word;">${m.text}</div>
+          <div style="font-size:14px;line-height:1.65;color:rgba(232,240,255,0.92);word-break:break-word;white-space:pre-wrap;">${escHtml(m.text)}</div>
           <!-- Reactions -->
           ${buildReactionsRow(m.txHash)}
           <!-- Reply button -->
           <button
-            data-reply-txhash="${m.txHash}"
-            data-reply-author="${(_getDisplayName(m.fullAddr, m.author)).replace(/"/g,'&quot;')}"
-            data-reply-text="${m.text.replace(/"/g,'&quot;').replace(/\n/g,' ').slice(0,80)}"
+            data-reply-txhash="${escHtml(m.txHash)}"
+            data-reply-author="${escHtml(_getDisplayName(m.fullAddr, m.author))}"
+            data-reply-text="${escHtml(String(m.text).replace(/\n/g,' ').slice(0,80))}"
             style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:11px;font-family:'Exo 2',sans-serif;cursor:pointer;padding:2px 0;letter-spacing:0.03em;display:inline-flex;align-items:center;gap:4px;"
             onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
             <span style="font-style:normal;font-size:12px;line-height:1;">&#x21A9;&#xFE0E;</span>
@@ -759,7 +759,7 @@ async function renderPoolMilestoneBanner() {
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
         <span style="font-size:16px;">${pool.icon}</span>
         <div>
-          <div style="font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">${pool.name}</div>
+          <div style="font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">${escHtml(pool.name)}</div>
           <div style="font-size:9px;color:${ms.color};font-weight:700;letter-spacing:0.1em;">${ms.label}</div>
         </div>
       </div>

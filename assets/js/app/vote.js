@@ -84,7 +84,7 @@ function renderVotes() {
         <div class="vp-opt-fill" style="width:${revealed ? p : 0}%"></div>
         <div class="vp-opt-row">
           <div class="vp-radio">${radioInner}</div>
-          <div class="vp-opt-label">${o.label}</div>
+          <div class="vp-opt-label">${escHtml(o.label)}</div>
           ${revealed ? `<div class="vp-opt-pct">${p}%</div>` : ''}
         </div>
       </div>`;
@@ -104,17 +104,17 @@ function renderVotes() {
     return `<div class="vp-card ${closed ? 'vp-card-closed' : ''}" id="vcard-${v.id}" style="--vc:${t.vc};--vc2:${t.vc2};">
       <div class="vp-meta">
         <div class="vp-badge">${svg(t.ico, 'vp-badge-ico')}${t.label}</div>
-        <div class="vp-timer">${svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'vp-timer-ico')}${v.timer || ''}</div>
+        <div class="vp-timer">${svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'vp-timer-ico')}${escHtml(v.timer || '')}</div>
       </div>
-      <div class="vp-title">${v.title}</div>
-      <div class="vp-desc">${v.desc}</div>
+      <div class="vp-title">${escHtml(v.title)}</div>
+      <div class="vp-desc">${escHtml(v.desc)}</div>
       <div class="vp-quorum">
         <div class="vp-q-bar"><div class="vp-q-fill" style="width:${quorumPct}%"></div></div>
         <div class="vp-q-info"><span>Quorum · ${v.totalVotes} / ${v.quorum} votes</span><span>${quorumPct}%</span></div>
       </div>
       <div class="vp-opts">${opts}</div>
       <div class="vp-foot">${foot}<div class="vp-total">${v.totalVotes} votes total</div></div>
-      ${v.source ? `<div class="vp-src">${svg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 'vp-src-ico')}${v.source}</div>` : ''}
+      ${v.source ? `<div class="vp-src">${svg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 'vp-src-ico')}${escHtml(v.source)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -200,8 +200,8 @@ function updateAdminPanel() {
     const delBtn = `<button onclick="adminDeleteVote('${v.id}')" style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,60,60,0.2);background:rgba(255,60,60,0.05);color:#ff6464;cursor:pointer;" title="Delete vote">🗑</button>`;
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.title}</div>
-        <div style="font-size:10px;margin-top:3px;color:${col};letter-spacing:0.06em;">${icon} ${s.toUpperCase()} · ${v.timer || ''} · ${v.totalVotes || 0} votes</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(v.title)}</div>
+        <div style="font-size:10px;margin-top:3px;color:${col};letter-spacing:0.06em;">${icon} ${escHtml(s.toUpperCase())} · ${escHtml(v.timer || '')} · ${escHtml(String(v.totalVotes || 0))} votes</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0;">${startBtn}${stopBtn}${delBtn}</div>
     </div>`;
@@ -324,6 +324,17 @@ window.adminDeleteVote = async function(voteId) {
   }
 };
 
+function showVoteToast(msg, color) {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = "position:fixed;top:80px;right:20px;z-index:9999;padding:10px 18px;border-radius:8px;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;background:" +
+    (color === 'green' ? 'rgba(102,255,170,0.15)' : 'rgba(255,60,60,0.12)') + ";border:1px solid " +
+    (color === 'green' ? 'rgba(102,255,170,0.4)' : 'rgba(255,60,60,0.3)') + ";color:" +
+    (color === 'green' ? 'var(--green)' : '#ff6464') + ";";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
 function showAdminToast(msg, color) {
   const toast = document.createElement('div');
   toast.textContent = msg;
@@ -345,6 +356,20 @@ async function castVote(voteId, optionIdx) {
   if (vote._voting) return; // guard against double-click while a vote is in flight
   vote._voting = true;
 
+  // ADR-36. Раньше в Worker уходил только текстовый wallet - подставить чужой
+  // адрес мог кто угодно, а настоящему владельцу оставалось "уже голосовал".
+  // Сессионная подпись (та же, что в Board) доказывает владение ключом.
+  // Подписываем ДО оптимистичного обновления: отказ в кошельке не должен
+  // оставлять на экране голос, которого не было.
+  let session;
+  try {
+    session = await voteSession();
+  } catch (e) {
+    vote._voting = false;
+    showVoteToast(e.message || 'Signature required to vote', 'red');
+    return;
+  }
+
   // Optimistic update - show it immediately, but be ready to roll back.
   const prevVotes  = vote.options[optionIdx].votes;
   const prevTotal  = vote.totalVotes;
@@ -359,7 +384,7 @@ async function castVote(voteId, optionIdx) {
     const res = await fetch(`${WORKER_URL}/votes/cast`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ voteId, optionIdx, wallet: globalWalletAddress }),
+      body: JSON.stringify({ voteId, optionIdx, ...session }),
       signal: AbortSignal.timeout(8000),
     });
 
