@@ -371,9 +371,10 @@ function getUserTitleFromStats(score) {
 // Free entries: every 10th message (total) = +1 Weekly Draw entry
 // Also counts Q&A questions: each = +2 free entries
 // TREASURY_WALLET defined in app.js
+// lcd.terraclassic.community убран - домен больше не резолвится.
 const PROFILE_LCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
-  'https://lcd.terraclassic.community',
+  'https://lcd.terra-classic.hexxagon.io',
 ];
 const PROFILE_FCD_NODES = [
   'https://terra-classic-fcd.publicnode.com',
@@ -395,7 +396,7 @@ async function fetchChatStats(address) {
     { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
     { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
     { base: 'https://terra-classic-lcd.publicnode.com',    type: 'lcd' },
-    { base: 'https://lcd.terraclassic.community',          type: 'lcd' },
+    { base: 'https://lcd.terra-classic.hexxagon.io',       type: 'lcd' },
   ];
 
   for (const { base, type } of allNodes) {

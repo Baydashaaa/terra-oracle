@@ -20,9 +20,12 @@ const T_DRAW_WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
 const T_LCD = [
   // Раньше первым стоял terra-classic.publicnode.com - это RPC-хост, REST API
   // он не отдаёт. Каждый из семи запросов баланса сначала бился о него впустую.
+  //
+  // lcd.terraclassic.community и terra-classic-lcd.hexxagon.io убраны: их
+  // домены больше не резолвятся (ERR_NAME_NOT_RESOLVED), и каждый запрос к
+  // ним - это ожидание таймаута DNS перед переходом к рабочему узлу.
   'https://terra-classic-lcd.publicnode.com',
-  'https://lcd.terraclassic.community',
-  'https://terra-classic-lcd.hexxagon.io',
+  'https://lcd.terra-classic.hexxagon.io',
 ];
 function tFmt(uluna) {
   const n = uluna / 1_000_000;

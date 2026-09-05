@@ -160,16 +160,22 @@ async function loadQuestionsFromWorker() {
     // Restore voted state - from worker data (wallet-based) + localStorage fallback
     const votedQ  = JSON.parse(localStorage.getItem('voted_questions') || '{}');
     const votedA  = JSON.parse(localStorage.getItem('voted_answers') || '{}');
+    // globalWalletAddress объявлен через let в wallet.js, а он подключается
+    // ПОЗЖЕ core.js. При ответе из кеша продолжение после await успевало
+    // выполниться раньше объявления - вся загрузка падала в catch, и доска
+    // оставалась пустой. Обращение к необъявленному let бросает исключение,
+    // поэтому читаем адрес через try, а не через проверку на истинность.
+    const _wallet = _walletOrNull();
     for (const q of questions) {
       // Check if wallet already voted this question (on-chain in voters array)
       if (votedQ[q.id]) q.voted = true;
-      if ((globalWalletAddress || connectedAddress) && q.voters && q.voters.includes(globalWalletAddress || connectedAddress)) q.voted = true;
+      if (_wallet && q.voters && q.voters.includes(_wallet)) q.voted = true;
       for (const a of q.answers) {
         if (votedA[a.id]) a.voted = true;
-        if ((globalWalletAddress || connectedAddress) && a.voters && a.voters.includes(globalWalletAddress || connectedAddress)) a.voted = true;
+        if (_wallet && a.voters && a.voters.includes(_wallet)) a.voted = true;
       }
       // Restore poll vote
-      if (q.poll && q.pollVoters && globalWalletAddress && q.pollVoters.includes(globalWalletAddress)) {
+      if (q.poll && q.pollVoters && _wallet && q.pollVoters.includes(_wallet)) {
         const votedPollKey = 'poll_vote_' + q.id;
         const savedOpt = localStorage.getItem(votedPollKey);
         q.myPollVote = savedOpt !== null ? parseInt(savedOpt) : null;
@@ -205,8 +211,24 @@ function saveQuestions(qs) { questions = qs; }
 let boardFilter = 'all';
 let boardSort = 'new';
 
-// Load questions from worker on startup
-loadQuestionsFromWorker();
+// Адрес подключённого кошелька, если он уже объявлен. Оба имени объявлены
+// через let в файлах, которые грузятся после этого, поэтому прямое обращение
+// к ним отсюда может бросить ReferenceError.
+function _walletOrNull() {
+  let a = null, b = null;
+  try { a = globalWalletAddress; } catch (e) {}
+  try { b = connectedAddress; } catch (e) {}
+  return a || b || null;
+}
+
+// Запуск после того, как разобран весь HTML и выполнены остальные скрипты.
+// Раньше вызов стоял прямо здесь, и при быстром ответе воркера гонка с
+// wallet.js оставляла доску пустой.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => loadQuestionsFromWorker(), { once: true });
+} else {
+  loadQuestionsFromWorker();
+}
 let boardSearch = '';
 
 // ─── WALLET SESSION RESTORE ───────────────────────────────────
