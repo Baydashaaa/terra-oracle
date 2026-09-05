@@ -220,12 +220,14 @@ function updateAdminPanel() {
     const col = statusColors[s] || '#888';
     const icon = statusIcons[s] || '○';
     const startBtn = s !== 'active'
-      ? `<button onclick="adminStartVote('${v.id}')" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">▶</button>`
+      ? `<button onclick="adminStartVote('${v.id}')" title="Start voting" style="font-size:10px;letter-spacing:0.06em;padding:6px 12px;border-radius:6px;border:1px solid rgba(102,255,170,0.3);background:rgba(102,255,170,0.08);color:var(--green);cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>START</button>`
       : '';
     const stopBtn = s === 'active'
-      ? `<button onclick="adminStopVote('${v.id}')" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,60,60,0.25);background:rgba(255,60,60,0.06);color:#ff6464;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;">■</button>`
+      ? `<button onclick="adminStopVote('${v.id}')" title="Stop voting" style="font-size:10px;letter-spacing:0.06em;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,170,60,0.3);background:rgba(255,170,60,0.07);color:#ffb14e;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>STOP</button>`
       : '';
-    const delBtn = `<button onclick="adminDeleteVote('${v.id}')" style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,60,60,0.2);background:rgba(255,60,60,0.05);color:#ff6464;cursor:pointer;" title="Delete vote">🗑</button>`;
+    // Эмодзи корзины шрифт Exo 2 не содержит - вместо иконки рисовался пустой
+    // прямоугольник, неотличимый от кнопки остановки. Отсюда SVG и подпись.
+    const delBtn = `<button onclick="adminDeleteVote('${v.id}')" title="Delete vote permanently" style="font-size:10px;letter-spacing:0.06em;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,60,60,0.45);background:rgba(255,60,60,0.12);color:#ff6464;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>DELETE</button>`;
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(v.title)}</div>
