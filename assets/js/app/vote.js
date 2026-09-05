@@ -141,37 +141,65 @@ function applyVoteStates() {
   }
 }
 
+// Подпись берётся отдельно от запроса: отказ в кошельке - это не сетевой сбой,
+// и офлайн-режим для него неуместен. Ответ сервера проверяется: раньше 403
+// молча превращался в "Vote started!", хотя на сервере не менялось ничего.
 window.adminStartVote = async function(voteId) {
+  let payload;
   try {
-    await fetch(`${WORKER_URL}/votes/toggle`, {
+    payload = await adminBody('votes/toggle', voteId + ':start', { id: voteId, action: 'start' });
+  } catch(e) {
+    showAdminToast('❌ Signature required: ' + (e.message || 'declined'), 'red');
+    return;
+  }
+  try {
+    const res = await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(await adminBody('votes/toggle', voteId + ':start', { id: voteId, action: 'start' })),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(6000),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showAdminToast('❌ ' + (err.error || ('Server said ' + res.status)), 'red');
+      return;
+    }
     await loadVotesFromWorker();
     showAdminToast('▶ Vote started!', 'green');
   } catch(e) {
+    // Сюда попадаем только при реальном сетевом сбое или таймауте.
     const vote = VOTES_DATA.find(v => v.id === voteId); if (!vote) return;
     saveVoteState(voteId, { status: 'active', startedAt: Date.now() });
     applyVoteStates(); updateAdminPanel(); renderVotes();
-    showAdminToast('▶ Started (offline)', 'green');
+    showAdminToast('▶ Started locally only - server unreachable', 'red');
   }
 }
 window.adminStopVote = async function(voteId) {
+  let payload;
   try {
-    await fetch(`${WORKER_URL}/votes/toggle`, {
+    payload = await adminBody('votes/toggle', voteId + ':stop', { id: voteId, action: 'stop' });
+  } catch(e) {
+    showAdminToast('❌ Signature required: ' + (e.message || 'declined'), 'red');
+    return;
+  }
+  try {
+    const res = await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(await adminBody('votes/toggle', voteId + ':stop', { id: voteId, action: 'stop' })),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(6000),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showAdminToast('❌ ' + (err.error || ('Server said ' + res.status)), 'red');
+      return;
+    }
     await loadVotesFromWorker();
     showAdminToast('■ Vote stopped', 'red');
   } catch(e) {
     saveVoteState(voteId, { status: 'stopped', stoppedAt: Date.now() });
     applyVoteStates(); updateAdminPanel(); renderVotes();
-    showAdminToast('■ Stopped (offline)', 'red');
+    showAdminToast('■ Stopped locally only - server unreachable', 'red');
   }
 }
 window.adminToggleVote = function(voteId, newStatus) { if (newStatus === 'active') adminStartVote(voteId); else adminStopVote(voteId); }
@@ -311,16 +339,28 @@ window.adminDeleteVote = async function(voteId) {
   if (idx > -1) VOTES_DATA.splice(idx, 1);
   updateAdminPanel(); renderVotes();
   // Also remove from Worker
+  let payload;
   try {
-    await fetch(`${WORKER_URL}/votes`, {
+    payload = await adminBody('votes/delete', voteId, { id: voteId });
+  } catch(e) {
+    showAdminToast('❌ Signature required: ' + (e.message || 'declined'), 'red');
+    return;
+  }
+  try {
+    const res = await fetch(`${WORKER_URL}/votes`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(await adminBody('votes/delete', voteId, { id: voteId })),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(6000),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showAdminToast('❌ ' + (err.error || ('Server said ' + res.status)), 'red');
+      return;
+    }
     showAdminToast('🗑 Vote deleted', 'red');
   } catch(e) {
-    showAdminToast('🗑 Removed locally', 'red');
+    showAdminToast('🗑 Removed locally only - server unreachable', 'red');
   }
 };
 
