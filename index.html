@@ -55,12 +55,8 @@
     } catch(e) { return false; }
   };
   </script>
-  <!-- WalletConnect SignClient via ESM (loads lazily when QR modal opens) -->
-  <script type="module">
-  import SignClient from 'https://esm.sh/@walletconnect/sign-client@2.17.4';
-  window._WCSignClient = SignClient;
-  window.dispatchEvent(new Event('wc-ready'));
-  </script>
+  <!-- WalletConnect SignClient - собственная сборка, см. assets/vendor/wc-init.js -->
+  <script type="module" src="assets/vendor/wc-init.js?v=588299692e"></script>
 
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="shortcut icon" type="image/png" href="logo.png">
