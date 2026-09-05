@@ -145,7 +145,7 @@ window.adminStartVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
-      headers: adminHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(await adminBody('votes/toggle', voteId + ':start', { id: voteId, action: 'start' })),
       signal: AbortSignal.timeout(6000),
     });
@@ -162,7 +162,7 @@ window.adminStopVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes/toggle`, {
       method: 'POST',
-      headers: adminHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(await adminBody('votes/toggle', voteId + ':stop', { id: voteId, action: 'stop' })),
       signal: AbortSignal.timeout(6000),
     });
@@ -286,7 +286,7 @@ window.adminCreateVote = async function() {
   try {
     const res = await fetch(`${WORKER_URL}/votes`, {
       method: 'POST',
-      headers: adminHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(await adminBody('votes/create', String(title).slice(0,120), { title, desc, type, durationMs, quorum, source, options: opts })),
       signal: AbortSignal.timeout(8000),
     });
@@ -314,7 +314,7 @@ window.adminDeleteVote = async function(voteId) {
   try {
     await fetch(`${WORKER_URL}/votes`, {
       method: 'DELETE',
-      headers: adminHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(await adminBody('votes/delete', voteId, { id: voteId })),
       signal: AbortSignal.timeout(6000),
     });

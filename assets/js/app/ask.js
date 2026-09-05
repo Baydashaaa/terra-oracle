@@ -134,7 +134,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   try {
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
-      headers: txHash === 'ADMIN_BYPASS' ? adminHeaders() : { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(txHash === 'ADMIN_BYPASS'
         ? await adminBody('question/admin', 'ADMIN_BYPASS', { id: ref, category, text, wallet, txHash, tags, poll, evidence })
         : { id: ref, category, text, wallet, txHash, tags, poll, evidence }),
@@ -177,43 +177,23 @@ const WEEKLY_DRAW_WALLET_LEGACY = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz'
 const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
 const PROTOCOL_WALLET = ADMIN_WALLET;
 
-// ── Admin secret (pairs with worker env ADMIN_SECRET) ────────────────────────
-// The admin wallet address is public (it's in this file), so the worker also
-// requires a shared secret in the X-Admin-Secret header for admin endpoints.
-//
-// Секрет НЕ хранится в localStorage: оттуда его читает любой чужой скрипт,
-// попавший на страницу, и живёт он там вечно. Держим только в памяти вкладки -
-// закрыл вкладку, секрета нет. Это временная мера: цель - вообще убрать общий
-// секрет и подписывать админ-действия кошельком (ADR-36, signAction).
-let _adminSecret = '';
-// Разовая чистка ранее сохранённого значения у тех, кто уже вводил секрет.
+// ── Admin actions ────────────────────────────────────────────────────────────
+// Общего секрета больше нет. Он был один на все действия, вводился через
+// prompt и жил в браузере - утечка означала полный доступ до самой смены
+// значения. Разовая чистка старого значения оставлена: у того, кто вводил
+// секрет раньше, он всё ещё может лежать в localStorage.
 try { localStorage.removeItem('admin_secret'); } catch(e) {}
 
-function getAdminSecret(forceAsk) {
-  if ((!_adminSecret || forceAsk) && connectedAddress === ADMIN_WALLET) {
-    _adminSecret = (prompt('Enter admin secret (must match the worker ADMIN_SECRET variable):') || '').trim();
-  }
-  return _adminSecret || '';
-}
-function clearAdminSecret() { _adminSecret = ''; }
-window.clearAdminSecret = clearAdminSecret;
-// Подписывает админ-действие кошельком (ADR-36). Подпись привязана к самому
-// действию и к его объекту, поэтому перехваченный запрос нельзя переиграть как
-// другой. Если кошелёк подписать не смог, уходим на прежний путь с общим
-// секретом - воркер его пока принимает, но это временно.
+// Админ-действие подтверждается подписью кошелька (ADR-36). Подпись привязана
+// к действию и к его объекту, нигде не хранится и живёт пять минут, поэтому
+// перехваченный запрос нельзя переиграть как другой.
+//
+// Ошибку подписи наверх пробрасываем намеренно: запасного пути на сервере
+// больше нет, и молча отправленный неподписанный запрос всё равно получит 403.
 async function adminBody(action, refId, payload) {
-  try {
-    return { ...payload, ...(await signAction(action, refId)) };
-  } catch (e) {
-    console.warn('[admin] не удалось подписать, запасной путь через секрет:', e.message);
-    return payload;
-  }
+  return { ...payload, ...(await signAction(action, refId)) };
 }
 window.adminBody = adminBody;
-
-function adminHeaders() {
-  return { 'Content-Type': 'application/json', 'X-Admin-Wallet': ADMIN_WALLET, 'X-Admin-Secret': getAdminSecret() };
-}
 // ── Question tariffs ─────────────────────────────────────────────────────────
 // MUST match QUESTION_TIERS in the Worker. The Worker derives entries from the
 // VERIFIED on-chain pool leg, so these numbers are the source of truth for what
