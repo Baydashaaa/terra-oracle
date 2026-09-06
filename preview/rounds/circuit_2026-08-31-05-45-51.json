@@ -1,0 +1,93 @@
+{
+  "_verify": [
+    "Frozen board for this Circuit round, exactly as the draw used it.",
+    "1. blocks are consecutive: [wallet, from, to]. The sold part has no gaps.",
+    "2. total_sold must equal the sum of all block lengths.",
+    "3. winner_zone = BigInt(\"0x\" + block_hash) % total_sold",
+    "4. the wallet owning winner_zone must equal `winner` below.",
+    "",
+    "The block is not the latest one at run time: it is the first block with a",
+    "timestamp at or after the round deadline, found by binary search. That makes",
+    "the result independent of when the script actually ran.",
+    "",
+    "payouts are the amounts put on the wire. Terra Classic deducts the chain tax",
+    "from the transferred amount, so each recipient credits amount * (1 - tax_rate).",
+    "payout_scale is the factor applied to the worker split so that the pool wallet,",
+    "which itself received only (1 - tax_rate) of every player payment, can cover it."
+  ],
+  "round_id": "circuit_2026-08-31-05-45-51",
+  "opened_at": "2026-08-31T05:45:51.397Z",
+  "deadline": "2026-08-31T08:45:51.397Z",
+  "total_sold": 24,
+  "max_zones": 250,
+  "pool_uluna": 29255785074,
+  "split": {
+    "prize": 23404628059,
+    "tcoDrop": 1755347104,
+    "tcoBurn": 1755347104,
+    "tco": 3510694208,
+    "treasury": 2340462807
+  },
+  "tax_rate": 0.015,
+  "payout_scale": 0.9839834062283828,
+  "block_hash": "ABDE6405072E75F45D9F0DE225F7D84D2A2325F18FC1683957951BEFB149976F",
+  "block_height": 30190868,
+  "block_time": "2026-08-31T08:45:53.102Z",
+  "randomness": "terra-classic-block-hash-at-round-deadline",
+  "winner_zone": 15,
+  "winner": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+  "blocks": [
+    [
+      "terra1n5qj93jw56wsym0yp2kpll2ydlpa5c8a0dvej6",
+      0,
+      1
+    ],
+    [
+      "terra1zdnanxgsyy8zqpmy3dfgges4xlzdskqsrx6nm3",
+      2,
+      3
+    ],
+    [
+      "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+      4,
+      6
+    ],
+    [
+      "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      7,
+      16
+    ],
+    [
+      "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+      17,
+      23
+    ]
+  ],
+  "payouts": {
+    "winner": {
+      "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      "uluna": 23029765639,
+      "received": 22684319155,
+      "tx": "D1EC572A48808DDA4010BFB4617A958619AC3BF55FC6F2E0A64C242D601BECA1"
+    },
+    "neighbours": [],
+    "treasury": {
+      "wallet": "terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt",
+      "uluna": 2302976564,
+      "received": 2268431916,
+      "tx": "D1EC572A48808DDA4010BFB4617A958619AC3BF55FC6F2E0A64C242D601BECA1"
+    },
+    "tcoDrop": {
+      "wallet": "terra1x3axkacpes4d8q2svfeneqdtv8rvcvccrn66j5",
+      "uluna": 1727232422,
+      "purpose": "rewards",
+      "tx": "D1EC572A48808DDA4010BFB4617A958619AC3BF55FC6F2E0A64C242D601BECA1"
+    },
+    "tcoBurn": {
+      "wallet": "terra1x3axkacpes4d8q2svfeneqdtv8rvcvccrn66j5",
+      "uluna": 1727232423,
+      "purpose": "burn",
+      "tx": "D1EC572A48808DDA4010BFB4617A958619AC3BF55FC6F2E0A64C242D601BECA1"
+    }
+  }
+}

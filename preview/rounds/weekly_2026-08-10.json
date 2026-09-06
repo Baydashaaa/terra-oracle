@@ -1,0 +1,77 @@
+{
+ "_verify": [
+  "Frozen entry list for this round, in the exact order lottery-draw.js used it.",
+  "1. Expand `tickets`: a pair [addr, n] means n consecutive entries for addr.",
+  "2. The expanded length must equal `total` and `entries` in winners.json.",
+  "3. `winner_index` is a position in that expanded array.",
+  "   Daily: a single number. Weekly: one index per place drawn.",
+  "4. tickets[winner_index] must equal the winner recorded in winners.json.",
+  "",
+  "Replaying the draw:",
+  "  daily  -> index = BigInt('0x' + block_hash) % total",
+  "  weekly -> seed = block_hash; for each place p (0,1,2):",
+  "              seed  = sha256(seed + String(p))          // hex",
+  "              index = BigInt('0x' + seed) % total",
+  "              while the wallet at tickets[index] already won: index = (index + 1) % total",
+  "",
+  "The block is not the latest one at run time: it is the first block with a",
+  "timestamp at or after the round deadline (20:00 UTC), found by binary search.",
+  "That makes the result independent of when the script actually ran.",
+  "",
+  "Where the entry list itself comes from (daily, ticket_rule chain-v1):",
+  "Minting an NFT is entering the draw, so the list follows from the NFT",
+  "contract alone — no server is involved and nothing has to be trusted:",
+  "  contract: terra1hcsq79vmcqxr97sv720yw6scvyknssx62ufsa4rwlmv02gyft43s46uaqx",
+  "  a. take tokens with extension.pool = 'daily' and minted_at < deadline",
+  "  b. drop those consumed by an earlier draw — a round with fewer than 5",
+  "     entries is skipped and consumes nothing, so its tokens roll over",
+  "  c. order by (minted_at, token_id), token_id compared as a string",
+  "  d. repeat each token extension.entries times",
+  "  e. read the owner at block_height, so transferring an NFT after the",
+  "     deadline cannot move the prize",
+  "",
+  "",
+  "Weekly (ticket_rule chain-v1+free) is built from two blocks, in this order:",
+  "  1. NFT tickets, exactly by the daily rule above but with pool = 'weekly'.",
+  "     Their count is recorded as nft_tickets in winners.json.",
+  "  2. Free entries from free-entries.json, wallets in ascending string order,",
+  "     each repeated by its `total`. Count recorded as free_tickets.",
+  "Block 1 can be rebuilt from the chain and checked against nft_tickets.",
+  "Block 2 cannot: free entries are earned by chatting and asking questions,",
+  "which happens off-chain. What you can check there is the commit history of",
+  "free-entries.json in this repository. We would rather point at that limit",
+  "than let it hide inside one undifferentiated list.",
+  "",
+  "One more weekly caveat: which NFTs are still unplayed is read from the",
+  "previous completed weekly entry in winners.json (boundary_ts / deadline),",
+  "not derived from the chain. It cannot be derived — a weekly round can go",
+  "ahead on free entries alone, or be called off because the pool sat below",
+  "its minimum, and neither fact is on-chain. For daily, the same boundary IS",
+  "derived from the chain and needs no file at all."
+ ],
+ "round_id": "weekly_2026-08-10",
+ "pool": "weekly",
+ "total": 16,
+ "wallets": 2,
+ "tickets": [
+  [
+   "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+   5
+  ],
+  [
+   "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+   10
+  ],
+  [
+   "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+   1
+  ]
+ ],
+ "block_hash": "8E3294594EAD07BFF1E19AB17C100EFEC53A6EB5B1DF4358D6582D6C2F07BDBA",
+ "block_height": "29890512",
+ "winner_index": [
+  5,
+  15
+ ],
+ "generated_at": "2026-08-10T20:07:06.366Z"
+}

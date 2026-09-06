@@ -1,0 +1,160 @@
+/* ══ VERIFY v2 ═════════════════════════════════════════════════════════════ */
+.vf-wrap{max-width:820px;margin:0 auto;padding:44px 18px 80px}
+.vf-loading{color:var(--muted,#6b82a8);font-size:13px;text-align:center;padding:30px}
+
+/* ── вердикт ───────────────────────────────────────────────────────────── */
+.vf-verdict{display:flex;flex-direction:column;gap:5px;border-radius:14px;
+  padding:16px 18px;margin-bottom:14px;border:1px solid}
+.vf-verdict b{font-family:'Rajdhani',sans-serif;font-size:19px;letter-spacing:.03em}
+.vf-verdict span{font-size:12.5px;line-height:1.6;color:#9fb0c9}
+.vf-ok {border-color:rgba(0,220,160,.45);background:linear-gradient(150deg,rgba(0,60,44,.5),rgba(8,9,14,.5))}
+.vf-ok b{color:#00dca0}
+.vf-bad{border-color:rgba(255,90,90,.5);background:linear-gradient(150deg,rgba(60,10,10,.5),rgba(8,9,14,.5))}
+.vf-bad b{color:#ff6b6b}
+.vf-na {border-color:rgba(120,130,160,.35);background:rgba(255,255,255,.02)}
+.vf-na b{color:#9fb0c9}
+
+/* ── карточка блока ────────────────────────────────────────────────────── */
+.vf-card{background:linear-gradient(150deg,rgba(14,12,20,.8),rgba(8,9,14,.7));
+  border:1px solid rgba(60,52,30,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.vf-h{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold,#f4d03f);margin-bottom:12px}
+.vf-intro{font-size:12.5px;line-height:1.65;color:#8fa3c0;margin:0 0 14px}
+.vf-intro em{color:#cdd8ea;font-style:normal}
+
+.vf-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.vf-kv>div{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:9px 11px}
+.vf-kv span{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#6b82a8)}
+.vf-kv b{display:block;margin-top:4px;font-family:'Rajdhani',sans-serif;font-size:15px;color:#e9edf6;font-weight:700}
+.vf-kv a{color:#7eb8ff;text-decoration:none}
+.vf-kv a:hover{text-decoration:underline}
+.vf-hash{margin-top:10px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.05);
+  border-radius:9px;padding:9px 11px}
+.vf-hash span{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#6b82a8)}
+.vf-hash code{display:block;margin-top:4px;font-size:11px;color:var(--gold-light,#f6dd7a);word-break:break-all}
+.vf-src{display:inline-block;margin-top:11px;font-size:11px;color:#7eb8ff;text-decoration:none}
+.vf-src:hover{text-decoration:underline}
+
+/* ── шаги розыгрыша ────────────────────────────────────────────────────── */
+.vf-step{border-top:1px solid rgba(255,255,255,.06);padding-top:13px;margin-top:13px}
+.vf-step:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.vf-step-h{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap}
+.vf-place{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:#0b0b10;flex:0 0 auto}
+.vf-place.p1{background:linear-gradient(150deg,#f6dd7a,#c9a227)}
+.vf-place.p2{background:linear-gradient(150deg,#dfe6ef,#9aa6b8)}
+.vf-place.p3{background:linear-gradient(150deg,#e3a869,#a46c33)}
+.vf-step-t{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:#e9edf6}
+.vf-ok-pill,.vf-bad-pill{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:99px;padding:3px 9px;border:1px solid}
+.vf-ok-pill{color:#00dca0;border-color:rgba(0,220,160,.45)}
+.vf-bad-pill{color:#ff6b6b;border-color:rgba(255,90,90,.5)}
+
+.vf-calc{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.05);border-radius:9px;
+  padding:10px 12px;font-family:monospace;font-size:11.5px;line-height:1.85;color:#9fb0c9;overflow-x:auto}
+.vf-calc i{display:inline-block;min-width:42px;color:var(--gold-dim,#a8862c);font-style:normal}
+.vf-calc b{color:var(--gold-light,#f6dd7a)}
+.vf-calc code{color:#7eb8ff}
+.vf-shift{color:#e3a869;margin-top:3px}
+.vf-lands{margin-top:9px;font-size:12px;color:#9fb0c9}
+.vf-lands b{color:var(--gold-light,#f6dd7a)}
+.vf-lands code{font-size:11px;color:#cdd8ea;word-break:break-all}
+
+/* ── карта билетов ─────────────────────────────────────────────────────── */
+.vf-bar{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+.vf-seg{position:relative;background:rgba(255,255,255,.05);border-right:1px solid rgba(0,0,0,.5);
+  display:grid;place-items:center;min-width:3px}
+.vf-seg:last-child{border-right:0}
+.vf-seg.hit{background:linear-gradient(180deg,rgba(244,208,63,.32),rgba(244,208,63,.14))}
+.vf-seg span{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--gold-light,#f6dd7a)}
+.vf-rows{display:flex;flex-direction:column;gap:6px}
+.vf-row{display:flex;align-items:center;gap:10px;font-size:11.5px;color:#8fa3c0;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:7px 10px}
+.vf-row.hit{border-color:rgba(244,208,63,.35);background:rgba(244,208,63,.06)}
+.vf-row code{color:#cdd8ea;font-size:11px}
+.vf-range{color:var(--muted,#6b82a8)}
+.vf-cnt{margin-left:auto;font-family:'Rajdhani',sans-serif;font-weight:700;color:#e9edf6}
+.vf-hitmark{color:var(--gold-light,#f6dd7a);font-size:10.5px;white-space:nowrap}
+
+.vf-repro pre{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.05);border-radius:9px;
+  padding:12px;font-size:11.5px;line-height:1.7;color:#9fb0c9;overflow-x:auto;margin:0}
+
+/* ── телефон ───────────────────────────────────────────────────────────── */
+@media (max-width:560px){
+  .vf-wrap{padding:28px 13px 60px}
+  .vf-card{padding:14px 13px}
+  .vf-kv{grid-template-columns:1fr 1fr}
+  .vf-calc{font-size:10.5px}
+  .vf-calc i{min-width:38px}
+  .vf-bar{height:28px}
+  /* На узком экране адрес и диапазон не помещаются в строку - переносим */
+  .vf-row{flex-wrap:wrap;gap:6px 9px}
+  .vf-cnt{margin-left:auto}
+  .vf-hitmark{width:100%}
+  .vf-verdict b{font-size:17px}
+}
+
+/* ── «How the Draw Works» ──────────────────────────────────────────────── */
+.hw-tiers{display:flex;gap:8px;flex-wrap:wrap}
+.hw-tier{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border-radius:99px;
+  padding:5px 11px;border:1px solid currentColor;opacity:.9}
+.hw-tier.c{color:#9fb0c9}
+.hw-tier.r{color:#7eb8ff}
+.hw-tier.l{color:#f4d03f}
+.hw-split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hw-half{background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:13px}
+.hw-badge{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:9px;font-weight:700}
+.hw-badge.d{color:#f4d03f}
+.hw-badge.w{color:#a78bfa}
+.hw-code{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:8px;
+  padding:10px;font-size:11px;line-height:1.7;color:var(--gold-light,#f6dd7a);
+  overflow-x:auto;margin:0 0 10px;white-space:pre}
+@media (max-width:640px){
+  /* Две колонки с кодом на телефоне не читаются - ставим друг под друга */
+  .hw-split{grid-template-columns:1fr}
+  .hw-code{font-size:10.5px}
+}
+
+/* ── выбор раунда ──────────────────────────────────────────────────────── */
+.vf-picker{position:relative;margin-bottom:16px}
+.vf-trigger{width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;
+  background:linear-gradient(150deg,rgba(20,17,28,.9),rgba(8,9,14,.8));
+  border:1px solid rgba(244,208,63,.28);border-radius:11px;padding:12px 14px;
+  font-family:inherit;color:#e9edf6;text-align:left;transition:border-color .2s,background .2s}
+.vf-trigger:hover{border-color:rgba(244,208,63,.5)}
+.vf-trigger.open{border-color:rgba(244,208,63,.6);background:rgba(244,208,63,.06)}
+.vf-trigger::after{content:'';margin-left:auto;width:8px;height:8px;flex:0 0 auto;
+  border-right:2px solid var(--gold,#f4d03f);border-bottom:2px solid var(--gold,#f4d03f);
+  transform:rotate(45deg) translateY(-2px);transition:transform .22s}
+.vf-trigger.open::after{transform:rotate(-135deg) translateY(-2px)}
+#vf-trigger-label{display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
+.vf-ph{color:var(--muted,#6b82a8);font-size:13px}
+
+.vf-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;
+  max-height:290px;overflow-y:auto;border-radius:11px;padding:5px;
+  background:rgba(9,10,16,.98);border:1px solid rgba(244,208,63,.28);
+  box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.vf-opt{width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;
+  background:none;border:0;border-radius:8px;padding:9px 10px;font-family:inherit;
+  color:#cdd8ea;text-align:left;transition:background .15s}
+.vf-opt:hover{background:rgba(244,208,63,.09)}
+.vf-opt.active{background:rgba(244,208,63,.14)}
+.vf-opt-chip{font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid currentColor;border-radius:99px;padding:2px 8px;flex:0 0 auto}
+.vf-opt-chip.d{color:#f4d03f}
+.vf-opt-chip.w{color:#a78bfa}
+.vf-opt-chip.c{color:#38d9d0}
+.vf-opt-id{font-family:monospace;font-size:11.5px;color:#e9edf6}
+.vf-opt-date{font-size:11px;color:var(--muted,#6b82a8)}
+.vf-opt-tag{margin-left:auto;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:#6b7a95;border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:2px 8px;flex:0 0 auto}
+.vf-opt-tag.ok{color:#00dca0;border-color:rgba(0,220,160,.4)}
+.vf-opt-empty{padding:14px;color:var(--muted,#6b82a8);font-size:12.5px;text-align:center}
+
+@media (max-width:560px){
+  /* Метка «replayable» на своей строке - иначе выталкивает дату */
+  .vf-opt{flex-wrap:wrap;gap:7px}
+  .vf-opt-tag{margin-left:0}
+  .vf-menu{max-height:250px}
+}
