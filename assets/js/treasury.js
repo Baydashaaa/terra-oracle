@@ -27,6 +27,16 @@ const T_LCD = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terra-classic.hexxagon.io',
 ];
+// Мемо транзакции пишет кто угодно: достаточно послать копеечный перевод на
+// отслеживаемый кошелёк, чтобы содержимое мемо попало в эту страницу. Раньше
+// оно вставлялось в innerHTML сырым. Свой эскейпер, а не escHtml из nav.js:
+// этот файл подключается раньше него.
+function tEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
 function tFmt(uluna) {
   const n = uluna / 1_000_000;
   if (n >= 1_000_000) return (n/1_000_000).toFixed(2) + 'M LUNC';
@@ -211,7 +221,9 @@ async function tLoadRecentTxs(retries = 5) {
         : '';
       const tsMs = tsRaw ? tsRaw.getTime() : 0;
       const hash = tx.txhash || '';
-      const memo = tx.tx?.value?.memo || tx.tx?.body?.memo || '';
+      // Обрезаем сразу: в строке подписи мемо всё равно не помещается, а
+      // длинное значение только раздувает разметку.
+      const memo = String(tx.tx?.value?.memo || tx.tx?.body?.memo || '').slice(0, 120);
       const msgs = tx.tx?.value?.msg  || tx.tx?.body?.messages || [];
 
       // Переводы самому себе не считаем ни в одну, ни в другую сторону
@@ -339,15 +351,15 @@ async function tLoadRecentTxs(retries = 5) {
         <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">${isOut ? ARROW.out : ARROW.in}</svg>
           <div style="min-width:0;">
-            <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tx.label}</div>
-            <div style="font-size:10px;color:var(--muted);">${tx.ts}</div>
+            <div style="font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tEsc(tx.label)}</div>
+            <div style="font-size:10px;color:var(--muted);">${tEsc(tx.ts)}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-          <span style="font-size:11px;font-weight:700;color:${c};font-family:Rajdhani,sans-serif;">${isOut ? '\u2212' : '+'}${tx.amount}</span>
-          <a href="https://finder.terraport.finance/mainnet/tx/${tx.hash}" target="_blank" title="${tx.hash}"
+          <span style="font-size:11px;font-weight:700;color:${c};font-family:Rajdhani,sans-serif;">${isOut ? '\u2212' : '+'}${tEsc(tx.amount)}</span>
+          <a href="https://finder.terraport.finance/mainnet/tx/${encodeURIComponent(tx.hash)}" target="_blank" title="${tEsc(tx.hash)}"
             style="display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--accent);text-decoration:none;background:rgba(84,147,247,0.08);border:1px solid rgba(84,147,247,0.2);border-radius:5px;padding:3px 8px;white-space:nowrap;">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 13.4a4.5 4.5 0 0 0 6.8.5l2.7-2.7a4.5 4.5 0 0 0-6.4-6.4l-1.5 1.5"/><path d="M13.4 10.6a4.5 4.5 0 0 0-6.8-.5l-2.7 2.7a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5"/></svg>${tx.hash.slice(0,8)}</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 13.4a4.5 4.5 0 0 0 6.8.5l2.7-2.7a4.5 4.5 0 0 0-6.4-6.4l-1.5 1.5"/><path d="M13.4 10.6a4.5 4.5 0 0 0-6.8-.5l-2.7 2.7a4.5 4.5 0 0 0 6.4 6.4l1.5-1.5"/></svg>${tEsc(String(tx.hash).slice(0,8))}</a>
         </div>
       </div>`;
     }).join('');
