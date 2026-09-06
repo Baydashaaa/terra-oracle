@@ -109,16 +109,80 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
   const sig     = Buffer.from(secp256k1.sign(msgHash, privateKey));
 
   const txRawP = Buffer.concat([encodeField(1,2,txBodyP),encodeField(2,2,authInfoP),encodeField(3,2,sig)]);
-  const res    = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs`, {
+  // Хеш - это sha256 от тех же байт, что уходят в сеть, поэтому он известен
+  // ДО отправки. На этом и держится вся идемпотентность: записав хеш в
+  // манифест заранее, после любого сбоя можно спросить у цепочки, что стало
+  // с выплатой, вместо того чтобы платить вслепую второй раз.
+  return { txBytes: txRawP.toString('base64'), txHash: createHash('sha256').update(txRawP).digest('hex').toUpperCase() };
+}
+
+async function broadcastTx(txBytes) {
+  const res  = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tx_bytes: txRawP.toString('base64'), mode: 'BROADCAST_MODE_SYNC' }),
+    body: JSON.stringify({ tx_bytes: txBytes, mode: 'BROADCAST_MODE_SYNC' }),
   });
-  const data   = await res.json();
-  const txHash = data?.tx_response?.txhash||data?.txhash;
-  const code   = data?.tx_response?.code??data?.code??0;
-  if(code!==0) throw new Error('TX failed: '+(data?.tx_response?.raw_log||JSON.stringify(data)));
-  return txHash;
+  const data = await res.json();
+  const code = data?.tx_response?.code ?? data?.code ?? 0;
+  // Ненулевой код - отказ на приёме, в мемпул не попало. Включение в блок это
+  // не подтверждает: за этим waitForTx.
+  if (code !== 0) throw new Error('broadcast rejected: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
+}
+
+async function lookupTx(txHash) {
+  try {
+    const r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
+    if (r.status === 404) return 'missing';
+    const resp = (await r.json())?.tx_response;
+    if (!resp || !resp.height || resp.height === '0') return 'missing';
+    return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
+  } catch { return 'missing'; }
+}
+
+async function waitForTx(txHash, tries = 20, delayMs = 4000) {
+  for (let i = 0; i < tries; i++) {
+    const st = await lookupTx(txHash);
+    if (st !== 'missing') return st;
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return 'missing';
+}
+
+// Идентификатор недели - дата последнего вторника по UTC, то есть дня запуска
+// по расписанию. Ручной перезапуск в пределах той же недели попадёт в тот же
+// манифест, а не создаст второй.
+function payoutWeekId(d = new Date()) {
+  const t = new Date(d.getTime() - 20 * 3600 * 1000);   // граница 20:00 UTC вторника
+  const back = (t.getUTCDay() - 2 + 7) % 7;
+  t.setUTCDate(t.getUTCDate() - back);
+  return t.toISOString().slice(0, 10);
+}
+
+async function getManifest(week) {
+  const r = await safeFetch(`${WORKER_URL}/rep/payout-manifest?week=${week}&secret=${ACTIONS_SECRET}`);
+  if (!r.ok) throw new Error('manifest read failed: ' + (await r.text()).slice(0, 200));
+  return (await r.json()).manifest;
+}
+
+async function createManifest(week, items) {
+  const r = await safeFetch(`${WORKER_URL}/rep/payout-manifest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ week, items, secret: ACTIONS_SECRET }),
+  });
+  if (!r.ok) throw new Error('manifest create failed: ' + (await r.text()).slice(0, 200));
+  const j = await r.json();
+  console.log(j.created ? '🧾 Манифест создан' : '🧾 Манифест уже существовал - работаю по нему');
+  return j.manifest;
+}
+
+async function setItemStatus(week, wallet, status, txHash, note) {
+  const r = await safeFetch(`${WORKER_URL}/rep/payout-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ week, wallet, status, txHash, note, secret: ACTIONS_SECRET }),
+  });
+  if (!r.ok) throw new Error('payout-status failed: ' + (await r.text()).slice(0, 200));
 }
 
 async function main() {
@@ -215,8 +279,48 @@ async function main() {
     `  ${p.wallet.slice(0,20)}... | ${p.rep} REP x${p.multiplier} = ${p.weightedRep} weighted (${(p.share*100).toFixed(1)}%) → ${(p.uluna/1e6).toFixed(3)} LUNC`
   ));
 
+  const week = payoutWeekId();
+  console.log(`\n🗓 Неделя выплат: ${week}`);
+
+  // Манифест создаётся один раз. Если он уже есть - берём суммы оттуда и
+  // НЕ пересчитываем: пересчёт от изменившегося баланса и есть тот самый
+  // сценарий, в котором один лидерборд превращается в две разные раздачи.
+  const manifest = await createManifest(week, payouts.map(p => ({
+    wallet: p.wallet, uluna: p.uluna, rep: p.rep, multiplier: p.multiplier,
+  })));
+
+  // Сверка зависших с прошлого запуска - до отправки чего-либо нового.
+  const inflight = manifest.items.filter(i => i.status === 'inflight' && i.txHash);
+  if (inflight.length) {
+    console.log(`🔍 Сверяю ${inflight.length} зависших...`);
+    for (const it of inflight) {
+      const st = await lookupTx(it.txHash);
+      if (st === 'ok') {
+        await setItemStatus(week, it.wallet, 'paid', it.txHash);
+        it.status = 'paid';
+        console.log(`  ✅ ${it.txHash.slice(0,12)} в блоке - помечена оплаченной`);
+      } else if (st === 'failed') {
+        await setItemStatus(week, it.wallet, 'pending', it.txHash, 'tx failed on chain');
+        it.status = 'pending';
+        console.log(`  ↩️ ${it.txHash.slice(0,12)} завершилась ошибкой - вернул в очередь`);
+      } else {
+        const age = Date.now() - new Date(it.statusAt || 0).getTime();
+        if (age > 30 * 60 * 1000) {
+          await setItemStatus(week, it.wallet, 'pending', it.txHash, 'tx never landed');
+          it.status = 'pending';
+          console.log(`  ↩️ ${it.txHash.slice(0,12)} не найдена - вернул в очередь`);
+        } else {
+          console.log(`  ⏳ ${it.txHash.slice(0,12)} ещё не видна, оставляю`);
+        }
+      }
+    }
+  }
+
+  const todo = manifest.items.filter(i => i.status !== 'paid');
+  if (!todo.length) { console.log('✅ Все выплаты этой недели уже прошли.'); return; }
+  console.log(`📤 К отправке: ${todo.length} из ${manifest.items.length}`);
+
   let successCount=0, failCount=0;
-  const week = new Date().toISOString().slice(0,10);
 
   // Read account ONCE; increment sequence manually per tx (SYNC broadcast
   // returns before the node updates sequence, so re-reading between fast
@@ -226,12 +330,31 @@ async function main() {
   const accountNumber = parseInt(acct.account_number || '0');
   let   sequence      = parseInt(acct.sequence || '0');
 
-  for (const payout of payouts) {
+  for (const payout of todo) {
     try {
-      const txHash = await sendTokens(privateKey, publicKey, sender, payout.wallet, payout.uluna, `rep-rewards:${week}`, accountNumber, sequence);
-      console.log(`✅ ${(payout.uluna/1e6).toFixed(3)} LUNC → ${payout.wallet.slice(0,20)}... | tx: ${txHash}`);
-      successCount++;
-      sequence++;   // advance only on success
+      const { txBytes, txHash } = await sendTokens(privateKey, publicKey, sender, payout.wallet, payout.uluna, `rep-rewards:${week}`, accountNumber, sequence);
+
+      // Хеш в манифест ДО отправки. Умрём на любом следующем шаге - позиция
+      // останется inflight, и сверка спросит цепочку вместо повторной выплаты.
+      await setItemStatus(week, payout.wallet, 'inflight', txHash);
+
+      await broadcastTx(txBytes);
+      sequence++;   // номер израсходован даже при неудаче в блоке
+      console.log(`📡 ${(payout.uluna/1e6).toFixed(3)} LUNC → ${payout.wallet.slice(0,20)}... | tx: ${txHash}`);
+
+      const st = await waitForTx(txHash);
+      if (st === 'ok') {
+        await setItemStatus(week, payout.wallet, 'paid', txHash);
+        console.log(`  ✅ в блоке`);
+        successCount++;
+      } else if (st === 'failed') {
+        await setItemStatus(week, payout.wallet, 'pending', txHash, 'tx failed on chain');
+        console.error(`  ❌ завершилась ошибкой - вернул в очередь`);
+        failCount++;
+      } else {
+        console.error(`  ⚠️ не появилась в блоке за отведённое время - оставил inflight`);
+        failCount++;
+      }
       await new Promise(r=>setTimeout(r,3000));
     } catch(err) {
       console.error(`❌ Error for ${payout.wallet}: ${err.message}`);
