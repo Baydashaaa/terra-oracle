@@ -17,6 +17,12 @@
  *   oa.wallet(address)                 real Connect, counts as a conversion
  *   oa.wallet(address, {restored:true}) session restored automatically
  *   oa.wallet(null)                    disconnect
+ *
+ * Адрес НЕ покидает браузер. Он нужен здесь только чтобы отличить повторное
+ * подключение того же кошелька от смены кошелька; наружу уходит признак
+ * "подключён" и тип события. Связка "постоянный идентификатор браузера +
+ * полный адрес + реферер + кампания" - это профиль, а поведение кошельков и
+ * так видно в цепочке, где оно публично по устройству сети.
  *   oa.pool('daily' | 'weekly')
  */
 (function () {
@@ -25,7 +31,7 @@
   var ENDPOINT = 'https://s.terraoracle.io/e';
   var COOKIE = 'oa_vid';
   var COOKIE_DOMAIN = '.terraoracle.io';   // shared by both sites on purpose
-  var COOKIE_DAYS = 400;
+  var COOKIE_DAYS = 90;
   var FLUSH_AFTER_MS = 12000;
   var FLUSH_AT_COUNT = 8;
 
@@ -76,12 +82,16 @@
 
   var vid = '';
   try {
+    // Раньше идентификатор дублировался в localStorage и восстанавливался
+    // оттуда после очистки куки. Человек, стирающий куки, просит его забыть -
+    // обходить это не наше дело. Заодно подчищаем старую копию у тех, у кого
+    // она уже лежит.
+    try { localStorage.removeItem(COOKIE); } catch (e) {}
     vid = readCookie(COOKIE);
     if (!vid) {
-      vid = localStorage.getItem(COOKIE) || uuid();
+      vid = uuid();
       writeCookie(COOKIE, vid);
     }
-    localStorage.setItem(COOKIE, vid);   // survives cookie clearing in some browsers
   } catch (e) {
     vid = vid || uuid();
   }
@@ -126,7 +136,9 @@
       referrer: document.referrer || '',
       utm_source: utmSource || '',
       utm_campaign: utmCampaign || '',
-      wallet: wallet || '',
+      // Признак вместо адреса: считать подключения можно и так, а полный
+      // адрес рядом с постоянным vid превращает статистику в профиль.
+      wallet_connected: wallet ? 1 : 0,
       pool: pool || '',
       events: queue.splice(0, queue.length)
     };
