@@ -164,7 +164,7 @@ function marketCard(m) {
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
         <span style="font-size:11px;font-weight:600;color:${color};border:1px solid ${color}55;
                      background:${color}18;padding:3px 9px;border-radius:8px;">
-          ${mktEsc(m.category)}${chain ? ' · settles itself' : ''}</span>
+          ${mktEsc(m.category)}${chain ? ' · operator-resolved' : ''}</span>
         <span style="font-size:12px;color:var(--muted);margin-left:auto;">${status}</span>
       </div>
       <div style="font-size:17px;font-weight:600;line-height:1.3;margin-bottom:12px;">
@@ -204,10 +204,22 @@ async function renderMarkets(resolved) {
 
   if (!PROPHECY_CONTRACT) {
     host.innerHTML = emptyPanel('Opening soon',
-      'Prediction markets settle against the chain itself: a metric, a threshold and a block ' +
-      'height fixed before the first bet. Nobody announces the result - anyone can recompute it.');
+      'Prediction markets fix a metric, a threshold and a block height before the first bet, ' +
+      'so anyone can recompute the answer. The operator posts the outcome; the contract does not ' +
+      'read the chain itself.');
     return;
   }
+
+  // Контракт помечен в цепочке как TEST, admin и resolver - один кошелёк.
+  // Пока это так, интерфейс обязан говорить об этом прямо.
+  const TEST_BANNER = `
+    <div style="border:1px solid rgba(255,170,60,0.35);background:rgba(255,170,60,0.07);
+      border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;
+      color:#ffb14e;line-height:1.6;">
+      <strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
+      contract, and the same key can post and challenge them. Bets are capped. Treat this as a
+      preview, not a settled market.
+    </div>`;
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
   try {
@@ -217,11 +229,11 @@ async function renderMarkets(resolved) {
     // Свежие сверху: у открытых интереснее ближайшие к закрытию, у закрытых -
     // последние рассчитанные.
     list.sort((a, b) => (resolved ? b.id - a.id : a.bets_close_at - b.bets_close_at));
-    host.innerHTML = list.length
+    host.innerHTML = TEST_BANNER + (list.length
       ? list.map(marketCard).join('')
       : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
           resolved ? 'Settled and voided markets will be listed here with their readings.'
-                   : 'Be the first to open one.');
+                   : 'Be the first to open one.'));
   } catch (e) {
     host.innerHTML = emptyPanel('Chain unavailable',
       'Could not read the markets contract. This is a node problem, not a market problem - try again shortly.');
@@ -291,7 +303,9 @@ function verifyBlock(m) {
       padding:14px;overflow-x:auto;font-size:12px;color:#9fb4d8;margin:12px 0 0;">${mktEsc(cmd)}</pre>
     <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
       The contract stored this the moment the market opened, so what you check now is the
-      question people actually bet on.</div>`;
+      question people actually bet on. The outcome itself is posted by the operator - the
+      contract records the claim, it does not verify the metric. Run the command above to
+      check the claim against the chain.</div>`;
 }
 
 function betForm(m) {
@@ -405,7 +419,7 @@ async function openProphecyMarket(id) {
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
         <span style="font-size:11.5px;font-weight:600;color:${color};border:1px solid ${color}55;
           background:${color}18;padding:3px 10px;border-radius:8px;">
-          ${mktEsc(m.category)}${m.spec.metric ? ' · settles itself' : ''}</span>
+          ${mktEsc(m.category)}${m.spec.metric ? ' · operator-resolved' : ''}</span>
         <span style="margin-left:auto;font-family:'Rajdhani',sans-serif;font-weight:700;
           font-size:16px;color:#f4d03f;">${left ? 'closes in ' + left : ''}</span>
       </div>
