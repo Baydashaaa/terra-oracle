@@ -4,9 +4,20 @@ on:
     - cron: '0 * * * *'   # every hour
   workflow_dispatch:
 
+# Два одновременных запуска прочитали бы одну и ту же очередь и отправили бы
+# каждую выплату дважды. Ручной запуск поверх расписания - самый вероятный
+# способ это получить, поэтому в полёте всегда только один прогон.
+concurrency:
+  group: streak-payout
+  cancel-in-progress: false
+
 jobs:
   payout:
     runs-on: ubuntu-latest
+    # Задание держит мнемонику для подписи. Зависший прогон держит её шесть часов.
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

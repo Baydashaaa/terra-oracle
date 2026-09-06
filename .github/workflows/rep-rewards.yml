@@ -4,9 +4,19 @@ on:
     - cron: '0 20 * * 2'   # every Tuesday at 20:00 UTC
   workflow_dispatch:
 
+# Скрипт считает доли от ТЕКУЩЕГО баланса кошелька наград. Два пересекающихся
+# прогона посчитали бы разные суммы от разных остатков и раздали бы обе.
+concurrency:
+  group: rep-rewards
+  cancel-in-progress: false
+
 jobs:
   payout:
     runs-on: ubuntu-latest
+    # Задание держит мнемонику для подписи. Зависший прогон держит её шесть часов.
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
