@@ -114,7 +114,7 @@ function encodeField(f, w, d) {
 }
 function concat(...a) { return Buffer.concat(a); }
 
-async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
+async function buildSignedTx(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
   const enc = (s) => Buffer.from(s);
 
   const gasFee   = Math.ceil(GAS_LIMIT * GAS_PRICE);
@@ -164,17 +164,106 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
     encodeField(3, 2, sig)
   );
 
-  // Broadcast
+  // Хеш транзакции - это sha256 от тех же байт, что уходят в сеть. Значит он
+  // известен ДО отправки, и его можно записать в очередь заранее. Именно это
+  // превращает выплату из "отправил и надеюсь" в операцию, которую можно
+  // сверить с цепочкой после любого сбоя.
+  const txBytes = txRawP.toString('base64');
+  const txHash  = createHash('sha256').update(txRawP).digest('hex').toUpperCase();
+  return { txBytes, txHash };
+}
+
+async function broadcastTx(txBytes) {
   const res  = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tx_bytes: txRawP.toString('base64'), mode: 'BROADCAST_MODE_SYNC' }),
+    body: JSON.stringify({ tx_bytes: txBytes, mode: 'BROADCAST_MODE_SYNC' }),
   });
-  const data   = await res.json();
-  const txHash = data?.tx_response?.txhash || data?.txhash;
-  const code   = data?.tx_response?.code ?? data?.code ?? 0;
-  if (code !== 0) throw new Error('TX failed: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
-  return txHash;
+  const data = await res.json();
+  const code = data?.tx_response?.code ?? data?.code ?? 0;
+  // Ненулевой код здесь означает отказ на приёме: транзакция в мемпул не
+  // попала. Включение в блок это ещё не подтверждает - за этим waitForTx.
+  if (code !== 0) throw new Error('broadcast rejected: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
+  return data?.tx_response?.txhash || data?.txhash;
+}
+
+// Ищет транзакцию в цепочке. Возвращает 'ok', 'failed' или 'missing'.
+async function lookupTx(txHash) {
+  try {
+    const r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
+    if (r.status === 404) return 'missing';
+    const j = await r.json();
+    const resp = j?.tx_response;
+    if (!resp || !resp.height || resp.height === '0') return 'missing';
+    return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
+  } catch { return 'missing'; }
+}
+
+// Ждёт включения в блок. Без этого мы отмечаем оплаченным то, что узел лишь
+// принял в мемпул и мог отбросить.
+async function waitForTx(txHash, tries = 20, delayMs = 4000) {
+  for (let i = 0; i < tries; i++) {
+    const st = await lookupTx(txHash);
+    if (st !== 'missing') return st;
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return 'missing';
+}
+
+async function setStatus(key, status, txHash, note) {
+  const r = await safeFetch(`${WORKER_URL}/streak/set-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, status, txHash, note, secret: ACTIONS_SECRET }),
+  });
+  if (!r.ok) throw new Error('set-status failed: ' + (await r.text()).slice(0, 200));
+}
+
+async function markPaid(key, txHash) {
+  const r = await safeFetch(`${WORKER_URL}/streak/mark-paid`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, txHash, secret: ACTIONS_SECRET }),
+  });
+  return r.ok;
+}
+
+// Сверка зависших. Запись в inflight значит: транзакцию мы подписали, хеш
+// знаем, а чем кончилось - нет. Три исхода, и все три безопасны:
+//   ok      - в блоке, помечаем оплаченной, второй раз не платим;
+//   failed  - в блоке с ошибкой, деньги не ушли, возвращаем в очередь;
+//   missing - в цепочке нет, возвращаем в очередь.
+// missing - единственный, где остаётся теоретический риск: транзакция могла
+// висеть в мемпуле и попасть в блок позже. Поэтому в очередь возвращаем не
+// сразу, а только спустя запас по времени.
+const INFLIGHT_GRACE_MS = 30 * 60 * 1000;
+
+async function reconcileInflight() {
+  const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?status=inflight&secret=${ACTIONS_SECRET}`);
+  if (!res.ok) { console.error('⚠️ Не удалось прочитать зависшие выплаты'); return; }
+  const { payouts } = await res.json();
+  if (!payouts || !payouts.length) return;
+
+  console.log(`🔍 Сверяю ${payouts.length} зависших выплат(ы)...`);
+  for (const p of payouts) {
+    if (!p.txHash) { await setStatus(p.key, 'pending', null, 'inflight without hash'); continue; }
+    const st = await lookupTx(p.txHash);
+    if (st === 'ok') {
+      await markPaid(p.key, p.txHash);
+      console.log(`  ✅ ${p.txHash.slice(0,12)} в блоке - помечена оплаченной`);
+    } else if (st === 'failed') {
+      await setStatus(p.key, 'pending', p.txHash, 'tx failed on chain');
+      console.log(`  ↩️ ${p.txHash.slice(0,12)} завершилась ошибкой - вернул в очередь`);
+    } else {
+      const age = Date.now() - new Date(p.statusAt || 0).getTime();
+      if (age > INFLIGHT_GRACE_MS) {
+        await setStatus(p.key, 'pending', p.txHash, 'tx never landed');
+        console.log(`  ↩️ ${p.txHash.slice(0,12)} не найдена - вернул в очередь`);
+      } else {
+        console.log(`  ⏳ ${p.txHash.slice(0,12)} ещё не видна, жду следующего запуска`);
+      }
+    }
+  }
 }
 
 async function main() {
@@ -185,6 +274,10 @@ async function main() {
     console.error('❌ Missing env vars');
     process.exit(1);
   }
+
+  // 0. Сверка зависших с прошлого раза - ДО выборки очереди, иначе выплата,
+  // которая на самом деле уже прошла, попадёт в текущий заход второй раз.
+  await reconcileInflight();
 
   // 1. Fetch pending payouts
   const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?secret=${ACTIONS_SECRET}`);
@@ -229,25 +322,36 @@ async function main() {
     try {
       console.log(`\n⏳ ${payout.wallet.slice(0,20)}... milestone=${payout.milestone} amount=${(payout.amount/1e6).toFixed(3)} LUNC`);
 
-      const txHash = await sendTokens(
+      const { txBytes, txHash } = await buildSignedTx(
         privateKey, publicKey, sender, payoutTarget(payout.to),
         payout.amount,
         `streak:milestone:${payout.milestone}`,
         accountNumber, sequence
       );
 
-      console.log(`✅ Paid → ${payout.to} | tx: ${txHash}`);
-      sequence++;   // advance only on success
+      // Записываем хеш ДО отправки. Если процесс умрёт на любом следующем
+      // шаге, запись останется в inflight, и сверка на следующем запуске
+      // спросит у цепочки, что с ней стало, вместо повторной выплаты.
+      await setStatus(payout.key, 'inflight', txHash);
 
-      const markRes = await safeFetch(`${WORKER_URL}/streak/mark-paid`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ key: payout.key, txHash, secret: ACTIONS_SECRET }),
-      });
-      if (!markRes.ok) console.error(`⚠️ mark-paid failed`);
-      else console.log(`📝 Marked as paid.`);
+      await broadcastTx(txBytes);
+      sequence++;   // номер израсходован даже при неудаче в блоке
+      console.log(`📡 Отправлена, жду блок | tx: ${txHash}`);
 
-      successCount++;
+      const st = await waitForTx(txHash);
+      if (st === 'ok') {
+        if (await markPaid(payout.key, txHash)) console.log(`✅ Оплачена → ${payout.to}`);
+        else console.error(`⚠️ mark-paid не прошёл - останется inflight, сверка закроет`);
+        successCount++;
+      } else if (st === 'failed') {
+        await setStatus(payout.key, 'pending', txHash, 'tx failed on chain');
+        console.error(`❌ Транзакция завершилась ошибкой - вернул в очередь`);
+        failCount++;
+      } else {
+        // Оставляем inflight: платить заново вслепую нельзя.
+        console.error(`⚠️ Транзакция не появилась в блоке за отведённое время - оставил inflight`);
+        failCount++;
+      }
       await new Promise(r => setTimeout(r, 3000));
 
     } catch(err) {
