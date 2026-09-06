@@ -116,6 +116,12 @@ async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, 
   return { txBytes: txRawP.toString('base64'), txHash: createHash('sha256').update(txRawP).digest('hex').toUpperCase() };
 }
 
+// Секрет уходит заголовком, а не в адресе: URL целиком попадает в логи
+// прокси и в историю команд, заголовок - нет.
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET };
+}
+
 async function broadcastTx(txBytes) {
   const res  = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs`, {
     method: 'POST',
@@ -159,7 +165,7 @@ function payoutWeekId(d = new Date()) {
 }
 
 async function getManifest(week) {
-  const r = await safeFetch(`${WORKER_URL}/rep/payout-manifest?week=${week}&secret=${ACTIONS_SECRET}`);
+  const r = await safeFetch(`${WORKER_URL}/rep/payout-manifest?week=${week}`, { headers: authHeaders() });
   if (!r.ok) throw new Error('manifest read failed: ' + (await r.text()).slice(0, 200));
   return (await r.json()).manifest;
 }
@@ -167,8 +173,8 @@ async function getManifest(week) {
 async function createManifest(week, items) {
   const r = await safeFetch(`${WORKER_URL}/rep/payout-manifest`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week, items, secret: ACTIONS_SECRET }),
+    headers: authHeaders(),
+    body: JSON.stringify({ week, items }),
   });
   if (!r.ok) throw new Error('manifest create failed: ' + (await r.text()).slice(0, 200));
   const j = await r.json();
@@ -179,8 +185,8 @@ async function createManifest(week, items) {
 async function setItemStatus(week, wallet, status, txHash, note) {
   const r = await safeFetch(`${WORKER_URL}/rep/payout-status`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week, wallet, status, txHash, note, secret: ACTIONS_SECRET }),
+    headers: authHeaders(),
+    body: JSON.stringify({ week, wallet, status, txHash, note }),
   });
   if (!r.ok) throw new Error('payout-status failed: ' + (await r.text()).slice(0, 200));
 }
@@ -191,7 +197,7 @@ async function main() {
 
   if (!WORKER_URL||!ACTIONS_SECRET||!MNEMONIC) { console.error('❌ Missing env vars'); process.exit(1); }
 
-  const res = await safeFetch(`${WORKER_URL}/rep/weekly-leaderboard?secret=${ACTIONS_SECRET}`);
+  const res = await safeFetch(`${WORKER_URL}/rep/weekly-leaderboard`, { headers: authHeaders() });
   if (!res.ok) { console.error('❌ Failed to fetch leaderboard:', await res.text()); process.exit(1); }
   const data = await res.json();
 

@@ -32,6 +32,12 @@ async function safeFetch(url, opts = {}) {
   } catch(e) { clearTimeout(t); throw e; }
 }
 
+// Секрет уходит заголовком, а не в адресе: URL целиком попадает в логи
+// прокси и в историю команд, заголовок - нет.
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET };
+}
+
 // Derive secp256k1 keypair from mnemonic using bip32/bip39
 async function deriveKeypair(mnemonic) {
   // Use tiny-secp256k1 + bip39 + bip32
@@ -213,8 +219,8 @@ async function waitForTx(txHash, tries = 20, delayMs = 4000) {
 async function setStatus(key, status, txHash, note) {
   const r = await safeFetch(`${WORKER_URL}/streak/set-status`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, status, txHash, note, secret: ACTIONS_SECRET }),
+    headers: authHeaders(),
+    body: JSON.stringify({ key, status, txHash, note }),
   });
   if (!r.ok) throw new Error('set-status failed: ' + (await r.text()).slice(0, 200));
 }
@@ -222,8 +228,8 @@ async function setStatus(key, status, txHash, note) {
 async function markPaid(key, txHash) {
   const r = await safeFetch(`${WORKER_URL}/streak/mark-paid`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, txHash, secret: ACTIONS_SECRET }),
+    headers: authHeaders(),
+    body: JSON.stringify({ key, txHash }),
   });
   return r.ok;
 }
@@ -239,7 +245,7 @@ async function markPaid(key, txHash) {
 const INFLIGHT_GRACE_MS = 30 * 60 * 1000;
 
 async function reconcileInflight() {
-  const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?status=inflight&secret=${ACTIONS_SECRET}`);
+  const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?status=inflight`, { headers: authHeaders() });
   if (!res.ok) { console.error('⚠️ Не удалось прочитать зависшие выплаты'); return; }
   const { payouts } = await res.json();
   if (!payouts || !payouts.length) return;
@@ -280,7 +286,7 @@ async function main() {
   await reconcileInflight();
 
   // 1. Fetch pending payouts
-  const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?secret=${ACTIONS_SECRET}`);
+  const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts`, { headers: authHeaders() });
   if (!res.ok) { console.error('❌ Failed:', await res.text()); process.exit(1); }
   const { payouts } = await res.json();
 
