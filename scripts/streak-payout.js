@@ -22,6 +22,34 @@ const CHAIN_ID       = 'columbus-5';
 const GAS_LIMIT      = 300000;
 const GAS_PRICE      = 28.325;
 
+// ── Налог на перевод ────────────────────────────────────────────────────────
+// Ставка живёт в конфигурации цепочки и уже менялась: документация обещала
+// 0,5%, а фактически удерживается 1,5%. Поэтому спрашиваем её, а не зашиваем.
+// Ноль в ответе считаем неответом - налог по факту есть в каждой транзакции,
+// значит ноль означает "не тот параметр", а не "налога нет".
+const TAX_FALLBACK = 0.015;
+let _taxRate = null;
+
+async function taxRate() {
+  if (_taxRate !== null) return _taxRate;
+  try {
+    const r = await safeFetch(`${LCD_URL}/terra/treasury/v1beta1/tax_rate`);
+    if (r.ok) {
+      const v = Number((await r.json())?.tax_rate);
+      if (Number.isFinite(v) && v > 0 && v < 0.2) {
+        _taxRate = v;
+        console.log(`ставка налога с цепочки: ${(v * 100).toFixed(2)}%`);
+        return v;
+      }
+    }
+  } catch (e) {
+    console.warn('не удалось прочитать ставку налога:', e.message);
+  }
+  console.warn(`ставка налога недоступна, беру запасную ${(TAX_FALLBACK * 100).toFixed(2)}%`);
+  _taxRate = TAX_FALLBACK;
+  return _taxRate;
+}
+
 async function safeFetch(url, opts = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 15000);
@@ -124,7 +152,7 @@ async function buildSignedTx(privateKey, publicKey, fromAddr, toAddr, amountUlun
   const enc = (s) => Buffer.from(s);
 
   const gasFee   = Math.ceil(GAS_LIMIT * GAS_PRICE);
-  const taxFee   = Math.ceil(amountUluna * 0.005);
+  const taxFee   = Math.ceil(amountUluna * await taxRate());
   const totalFee = gasFee + taxFee;
 
   // Build MsgSend

@@ -27,7 +27,36 @@ const MIN_BALANCE = 100_000_000_000n;
 // учитывался вовсе: раздавался весь остаток за вычетом фиксированных 500 LUNC,
 // и на последний перевод денег не хватало. Пять выплат разработке подряд
 // упали именно так.
-const TAX_RATE = 0.005;
+// Ставка берётся из цепочки функцией taxRate(); запасное значение живёт
+// в TAX_FALLBACK рядом с ней.
+
+// ── Налог на перевод ────────────────────────────────────────────────────────
+// Ставка живёт в конфигурации цепочки и уже менялась: документация обещала
+// 0,5%, а фактически удерживается 1,5%. Поэтому спрашиваем её, а не зашиваем.
+// Ноль в ответе считаем неответом - налог по факту есть в каждой транзакции,
+// значит ноль означает "не тот параметр", а не "налога нет".
+const TAX_FALLBACK = 0.015;
+let _taxRate = null;
+
+async function taxRate() {
+  if (_taxRate !== null) return _taxRate;
+  try {
+    const r = await safeFetch(`${LCD_URL}/terra/treasury/v1beta1/tax_rate`);
+    if (r.ok) {
+      const v = Number((await r.json())?.tax_rate);
+      if (Number.isFinite(v) && v > 0 && v < 0.2) {
+        _taxRate = v;
+        console.log(`ставка налога с цепочки: ${(v * 100).toFixed(2)}%`);
+        return v;
+      }
+    }
+  } catch (e) {
+    console.warn('не удалось прочитать ставку налога:', e.message);
+  }
+  console.warn(`ставка налога недоступна, беру запасную ${(TAX_FALLBACK * 100).toFixed(2)}%`);
+  _taxRate = TAX_FALLBACK;
+  return _taxRate;
+}
 
 async function safeFetch(url, opts = {}) {
   const ctrl = new AbortController();
@@ -63,7 +92,7 @@ function encodeField(f,w,d) { const t=encodeVarint((f<<3)|w);if(w===2){return Bu
 
 async function sendTokens(privateKey, publicKey, fromAddr, toAddr, amountUluna, memo, accountNumber, sequence) {
   const enc = s => Buffer.from(s);
-  const totalFee = Math.ceil(GAS_LIMIT*GAS_PRICE) + Math.ceil(Number(amountUluna)*0.005);
+  const totalFee = Math.ceil(GAS_LIMIT*GAS_PRICE) + Math.ceil(Number(amountUluna) * await taxRate());
 
   const coinP   = Buffer.concat([encodeField(1,2,enc('uluna')),encodeField(2,2,enc(String(amountUluna)))]);
   const msgSP   = Buffer.concat([encodeField(1,2,enc(fromAddr)),encodeField(2,2,enc(toAddr)),encodeField(3,2,coinP)]);
@@ -120,7 +149,11 @@ async function run() {
   // совсем, и последний перевод в очереди всегда оставался без покрытия.
   const gasFee = Math.ceil(GAS_LIMIT * GAS_PRICE);
   const budget = Number(balance) - 4 * gasFee - Number(GAS_RESERVE);
-  const distributable = Math.floor(budget / (1 + TAX_RATE));
+  // Ставка та же, что потом заплатится на каждом переводе. Если считать
+  // бюджет по одной, а платить по другой, последняя выплата снова окажется
+  // без покрытия - ровно та поломка, из-за которой появился этот расчёт.
+  const rate = await taxRate();
+  const distributable = Math.floor(budget / (1 + rate));
   if (distributable <= 0) throw new Error('Balance too small to cover fees');
 
   // Порядок - от мелкой доли к крупной. Если денег всё же не хватит, не
@@ -136,7 +169,7 @@ async function run() {
   // Крупнейшей доле - остаток: так округления никуда не пропадают
   amounts[ORDER[ORDER.length - 1]] = distributable - assigned;
 
-  const planTax = Object.values(amounts).reduce((s, x) => s + Math.ceil(x * TAX_RATE), 0);
+  const planTax = Object.values(amounts).reduce((s, x) => s + Math.ceil(x * rate), 0);
   const planSpend = Object.values(amounts).reduce((s, x) => s + x, 0) + planTax + 4 * gasFee;
 
   console.log(DRY ? '\n=== DRY RUN - nothing will be sent ===\nPlan:' : '\nPlan:');
