@@ -354,7 +354,7 @@
           <div class="mobile-card-text">
             <div class="zk-module-tag" style="color:rgba(0,255,176,0.65);">◈ Active</div>
             <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Ask</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Anonymous questions to the community.</div>
+            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Questions to the community, posted under your wallet address.</div>
           </div>
           <div class="mobile-card-cta" style="color:#00FFB0;">200K →</div>
         </div>
@@ -855,13 +855,13 @@
  <div class="page-header">
  <div class="tag">Submit Question</div>
  <h1>Ask the <span>Community</span></h1>
- <p class="subtitle">Stay anonymous · Get community answers</p>
+ <p class="subtitle">Post under your wallet · Get community answers</p>
  </div>
 
  <div class="askv-steps">
   <div class="askv-step"><div class="askv-dot">1</div>Pay with LUNC</div>
   <div class="askv-sep">&rsaquo;</div>
-  <div class="askv-step"><div class="askv-dot">2</div>Ask anonymously</div>
+  <div class="askv-step"><div class="askv-dot">2</div>Ask under your address</div>
   <div class="askv-sep">&rsaquo;</div>
   <div class="askv-step"><div class="askv-dot">3</div>Community answers</div>
  </div>
@@ -869,7 +869,7 @@
  <div class="card">
  <div id="ask-form-section">
  <div class="note">
- 🔒 Your identity is never stored. Connect your wallet to verify your payment - wallet address will NOT be linked to your question.
+ 🔒 Pseudonymous, not anonymous. Your wallet address is stored with your question and stays publicly readable - that is what proves the question was paid for. Answers and votes from the same address can be linked together, here and on-chain. We never ask for your name.
  </div>
 
  <div class="askv-grid">
@@ -885,8 +885,8 @@
   </div>
   <div class="askv-tile" style="--tc:#00D4FF;">
    <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M5 12a7 7 0 0 1 14 0"/><circle cx="8" cy="15.5" r="2.6"/><circle cx="16" cy="15.5" r="2.6"/><path d="M10.6 15.5h2.8"/></svg></div>
-   <div class="t">Fully anonymous</div>
-   <div class="d">Your wallet is never linked to your question. Ever.</div>
+   <div class="t">No name, no account</div>
+   <div class="d">You post under your wallet address, never under a real name.</div>
   </div>
   <div class="askv-tile" style="--tc:#00FFB0;">
    <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg></div>
@@ -1042,7 +1042,7 @@
  <div class="success-state" id="ask-success">
  <div class="success-icon">📡</div>
  <div class="success-title">Question Received</div>
- <p class="success-text">Your anonymous question has been submitted.<br>It will appear on the board within <strong style="color:var(--accent)">1–3 minutes</strong>.</p>
+ <p class="success-text">Your question has been submitted.<br>It will appear on the board within <strong style="color:var(--accent)">1–3 minutes</strong>.</p>
  <div class="success-ref" id="ask-ref">REF: loading...</div>
  </div>
  </div>
@@ -1552,14 +1552,16 @@
 
 <!-- ANONYMITY -->
 <div style="margin-bottom:32px;">
-  <div class="divider">Anonymity · Web3 native</div>
+  <div class="divider">Pseudonymity · Web3 native</div>
   <div style="background:var(--surface);border:1px solid rgba(0,255,176,0.15);border-radius:14px;padding:24px;display:flex;gap:20px;align-items:flex-start;">
     <div style="font-size:32px;flex-shrink:0;">🕶</div>
     <div>
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">No login. No email. No account.</div>
       <p style="font-size:12px;color:var(--muted);line-height:1.75;">
-        Your identity is your wallet address - and it's never shown publicly. The system uses an anonymous alias generated from your address. 
-        You participate fully without revealing who you are. This is a core Web3 principle: <span style="color:var(--green);">sovereignty over your own identity</span>.
+        Your identity is your wallet address. It is shown as a short alias, but the full address is stored with everything you post and stays
+        publicly readable - that is what lets anyone verify a payment or a vote. So you take part without revealing who you are, while everything
+        done from one address can be linked together. This is a core Web3 principle: <span style="color:var(--green);">sovereignty over your own identity</span>,
+        not invisibility.
       </p>
     </div>
   </div>
@@ -1652,7 +1654,7 @@
   <div class="page-header">
     <div class="tag">Account</div>
     <h1>My <span>Profile</span></h1>
-    <p class="subtitle">Your anonymous identity on Terra Oracle</p>
+    <p class="subtitle">Your wallet identity on Terra Oracle</p>
   </div>
 
   <!-- PROFILE CARD -->
@@ -1950,7 +1952,7 @@
        Тот же порядок продублирован в dev/_verify_split.cjs -->
   <script src="assets/js/app/core.js?v=ba73347f27"></script>
   <script src="assets/js/app/nav.js?v=6a89ab8f17"></script>
-  <script src="assets/js/app/board.js?v=4ce14fc454"></script>
+  <script src="assets/js/app/board.js?v=a1bfa3c7b1"></script>
   <script src="assets/js/app/ask.js?v=ef6cbe331e"></script>
   <script src="assets/js/app/sign.js?v=b216b21fc5"></script>
   <script src="assets/js/app/wallet.js?v=ef5e559c60"></script>

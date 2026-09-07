@@ -373,7 +373,7 @@ function renderBoard() {
           </div>
         `).join('')}
         <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${realQi}">
-          <div class="answer-form-title">Submit anonymous answer</div>
+          <div class="answer-form-title">Submit an answer</div>
           <div id="board-reply-block-${realQi}" style="display:none;align-items:flex-start;gap:8px;margin-bottom:12px;padding:8px 10px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.15);border-radius:8px;">
             <div style="flex:1;padding:4px 8px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;">
               <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span>&#x21A9;&#xFE0E;</span><span class="board-reply-author"></span></div>
@@ -383,7 +383,7 @@ function renderBoard() {
           </div>
           <div class="form-group">
             <label>Your Answer</label>
-            <textarea id="atext-${realQi}" placeholder="Share your knowledge anonymously..." rows="4"></textarea>
+            <textarea id="atext-${realQi}" placeholder="Share your knowledge..." rows="4"></textarea>
           </div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
             <button class="btn btn-primary btn-sm" onclick="submitAnswer(${realQi})">Post Answer</button>
