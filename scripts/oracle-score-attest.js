@@ -57,8 +57,12 @@ const MAX_BATCHES_PER_RUN = 30;
 //
 // `draw` covers NFT mints, whose grant is 25, 125 or 250 by tier. It is the one
 // action here that carries its own amount; see the `amount` handling below.
+// question_basic и question_priority ушли отсюда 7 сентября 2026: их оплата
+// переехала в PaidAction, контракт начисляет балл сам в той же транзакции, и
+// attestor_may_record для них выключен. Оставить их здесь значило бы платить
+// дважды - о чём и предупреждает комментарий выше.
 const ATTESTABLE_ACTIONS = new Set([
-  'answer', 'upvote', 'chat', 'question_basic', 'question_priority', 'draw',
+  'answer', 'upvote', 'chat', 'draw',
   // Granted to the answer's author when the asker marks it as the one that
   // helped. Free action, price 0, attestor_may_record true.
   'answer_accepted',
