@@ -397,29 +397,18 @@ async function autoPayAndUnlock() {
       ? ` (${discountPct}% off - saved ${discountAmt.toLocaleString()} LUNC)`
       : '';
 
-    // Один вызов контракта вместо двух переводов. Контракт видит сумму сам,
-    // делит её между пулом и казной по своей же конфигурации и начисляет REP
-    // в этой же транзакции - без аттестора и без доверия воркеру.
-    //
-    // ref_id привязывает оплату к конкретному вопросу прямо в цепочке,
-    // поэтому id генерится здесь, до подписи.
-    const questionRef = newQuestionRef();
-    const actionKey = tier.key === 'basic' ? 'question_basic' : 'question_priority';
-    const funds = [{ denom: 'uluna', amount: String(toWeekly + toTreasury) }];
-
-    const txHash = await window.sendExecuteContract(
+    // Single TX with two MsgSend - one signature
+    const txHash = await sendTwoMsgsDirect(
       sender,
-      SCORE_CONTRACT_ADDR,
-      { paid_action: { action: actionKey, ref_id: questionRef } },
-      funds,
-      `Terra Oracle Q&A ${tier.label} - ${questionRef}`,
-      'columbus-5'
+      WEEKLY_DRAW_WALLET, toWeekly,
+      TREASURY_WALLET, toTreasury,
+      `Terra Oracle Q&A ${tier.label} - Weekly Pool + Treasury`, 'columbus-5'
     );
 
     // Store tx hash for question record
     document.getElementById('verified-tx-hidden').value = txHash;
     document.getElementById('verified-wallet-hidden').value = sender;
-    savePaidQuestion(txHash, sender, questionRef);
+    savePaidQuestion(txHash, sender);
 
     const luncPaid = totalLunc.toLocaleString();
     showTxStatus('success', `✅ Payment confirmed! ${luncPaid} LUNC sent${discountLabel}. Form unlocked.`);
