@@ -97,6 +97,47 @@ for (const target of targets) {
   if (!checkOnly && changes.length) fs.writeFileSync(target, after);
 }
 
+
+// ── Идентификатор сборки ────────────────────────────────────────────────────
+// Считается из уже расставленных меток ?v=, то есть из содержимого всех
+// файлов, на которые ссылается страница. Хеш коммита сюда не подходит: он
+// возникает после записи файла, а нам нужно значение, которое можно
+// пересчитать из исходника и сравнить с продом.
+function buildId(html) {
+  const marks = [...html.matchAll(/\?v=([0-9a-f]{10})/g)].map(m => m[1]).sort();
+  const body = html.replace(/<meta name="oracle-build"[^>]*>\s*/g, '');
+  return crypto.createHash('sha1')
+    .update(marks.join(',') + '|' + body)
+    .digest('hex').slice(0, 10);
+}
+
+function stampBuild(target, checkOnly) {
+  let html = fs.readFileSync(target, 'utf8');
+  const id = buildId(html);
+  const date = new Date().toISOString().slice(0, 10);
+  const tag = `<meta name="oracle-build" content="${id} ${date}">`;
+  const has = /<meta name="oracle-build" content="([0-9a-f]{10}) [^"]*">/.exec(html);
+
+  if (has && has[1] === id) {
+    console.log(`  build ${id} - без изменений`);
+    return 0;
+  }
+  html = has
+    ? html.replace(has[0], tag)
+    : html.replace(/<head>/i, `<head>\n  ${tag}`);
+  console.log(`  build ${has ? has[1] : '(нет)'} -> ${id}`);
+  if (!checkOnly) fs.writeFileSync(target, html);
+  return 1;
+}
+
+// Идентификатор сборки ставится последним: он считается по уже готовым меткам.
+for (const target of targets) {
+  if (fs.existsSync(target)) {
+    console.log(`\n${target}`);
+    totalChanged += stampBuild(target, checkOnly);
+  }
+}
+
 if (missing.length) {
   console.log('\nССЫЛКИ НА НЕСУЩЕСТВУЮЩИЕ ФАЙЛЫ (метки не тронуты):');
   for (const m of [...new Set(missing)]) console.log('  ' + m);
