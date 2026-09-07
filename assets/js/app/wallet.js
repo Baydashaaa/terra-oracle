@@ -132,12 +132,10 @@ function setWalletConnected(address) {
     const txSection = document.getElementById('tx-section');
     if (txSection) txSection.style.display = 'block';
   } else {
-    const verifiedTx = document.getElementById('verified-tx-hidden');
-    const txSection  = document.getElementById('tx-section');
-    const askForm    = document.getElementById('ask-form');
-    if (verifiedTx) verifiedTx.value = 'ADMIN_BYPASS';
-    if (txSection)  { txSection.style.display = 'block'; txSection.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected - payment bypassed</div>'; }
-    if (askForm)    askForm.style.display = 'block';
+    // Админского обхода оплаты больше нет: форма открывается после оплаты
+    // для всех, включая админа.
+    const txSection = document.getElementById('tx-section');
+    if (txSection) txSection.style.display = 'block';
   }
 
   if (window.keplrChatAddress !== undefined) {

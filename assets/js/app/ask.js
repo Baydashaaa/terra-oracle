@@ -13,7 +13,7 @@ const PAID_Q_TTL = 7 * 24 * 60 * 60 * 1000;   // matches the Worker's dedup wind
 // Без него после перезагрузки страницы вопрос отправился бы с новым id, и
 // оплата в цепочке осталась бы привязанной к другому - воркер бы их не связал.
 function savePaidQuestion(txHash, wallet, ref) {
-  if (!txHash || txHash === 'ADMIN_BYPASS') return;
+  if (!txHash) return;
   try {
     const prev = (function () { try { return JSON.parse(localStorage.getItem(PAID_Q_KEY)) || {}; } catch (e) { return {}; } })();
     localStorage.setItem(PAID_Q_KEY, JSON.stringify({
@@ -163,9 +163,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(txHash === 'ADMIN_BYPASS'
-        ? await adminBody('question/admin', 'ADMIN_BYPASS', { id: ref, category, text, wallet, txHash, tags, poll, evidence })
-        : { id: ref, category, text, wallet, txHash, tags, poll, evidence }),
+      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll, evidence }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -174,7 +172,7 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     // Add optimistically to local cache
     const newQ = { id: ref, alias: 'Anonymous#' + wallet.slice(-4).toUpperCase(), title: _titleLabel,
       category, text, tags, wallet, txHash, createdAt: Date.now() / 1000,
-      pinnedUntil: (txHash !== 'ADMIN_BYPASS' && getSelectedTier().pin) ? Math.floor(Date.now() / 1000) + 24 * 3600 : null,
+      pinnedUntil: getSelectedTier().pin ? Math.floor(Date.now() / 1000) + 24 * 3600 : null,
       poll, votes: 0, answers: [], voted: false, open: false, formOpen: false };
     questions.unshift(newQ);
     renderBoard();
@@ -335,14 +333,10 @@ async function connectKeplr() {
     }
     document.getElementById('keplr-disconnected').style.display = 'none';
     document.getElementById('keplr-connected').style.display = 'block';
-    if (connectedAddress === ADMIN_WALLET) {
-      document.getElementById('verified-tx-hidden').value = 'ADMIN_BYPASS';
-      document.getElementById('keplr-connected').style.display = 'none';
-      document.getElementById('ask-form').style.display = 'block';
-      const notice = document.getElementById('tx-section');
-      notice.style.display = 'block';
-      notice.innerHTML = '<div style="background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);">🛡️ Admin wallet detected - payment bypassed</div>';
-    } else {
+    // Раньше здесь админский кошелёк получал форму без оплаты. Исключение
+    // нигде не было описано, а документация обещает, что вопрос стоит тариф -
+    // теперь админ платит наравне со всеми, и обещание становится правдой.
+    {
       document.getElementById('tx-section').style.display = 'block';
     }
   } catch(e) {
