@@ -1,7 +1,29 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-03T02:11:07.550Z",
+  "_updated": "2026-09-07T07:24:48.747Z",
   "questions": [
+    {
+      "id": "LUNC-TQWY9DM",
+      "category": "Validator Issue",
+      "text": "When will GP start doing something instead of just blocking everyone?",
+      "wallet": "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      "walletHash": "sha256:m4x75c2l",
+      "alias": "Anonymous#5C2L",
+      "title": "Seeker",
+      "txHash": "DD7B88738896E51F297FFE75F69539EAC554075F496CB486C7F799D2FF7517C6",
+      "paymentAmount": 50000,
+      "entries": 1,
+      "pinnedUntil": null,
+      "tags": [],
+      "evidence": null,
+      "poll": null,
+      "createdAt": 1788765888,
+      "expiresAt": 1789370688,
+      "votes": 0,
+      "answers": [],
+      "status": "open",
+      "chosenAnswerId": null
+    },
     {
       "id": "LUNC-SLQCQ86",
       "category": "Protocol Bug",
