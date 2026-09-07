@@ -99,6 +99,9 @@ document.getElementById('ask-message').addEventListener('input', function() {
 document.getElementById('ask-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('ask-btn');
+  // Запоминаем надпись: если отправка прервётся проверкой, кнопку надо вернуть
+  // в исходный вид, а не оставить с бегущими точками.
+  const _btnLabel = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = 'Transmitting<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
   const formData = new FormData(this);
@@ -142,6 +145,16 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
       pollOptions = JSON.parse(raw).map(o => String(o).trim()).filter(Boolean);
     } catch {}
   }
+  // Один вариант - это не опрос, и раньше он молча выбрасывался: человек
+  // вводил его, отправлял вопрос и узнавал об отсутствии опроса уже на Board.
+  // Лучше остановиться и сказать, чем тихо потерять.
+  if (pollOptions.length === 1) {
+    btn.disabled = false;
+    btn.innerHTML = _btnLabel;
+    alert('A poll needs at least two options. Add another one, or clear the field to post without a poll.');
+    return;
+  }
+
   const poll = pollOptions.length >= 2
     ? pollOptions.slice(0, 5).map(o => ({ text: o, votes: 0, voters: [] }))
     : null;
