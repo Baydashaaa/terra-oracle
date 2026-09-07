@@ -9,11 +9,22 @@
 const PAID_Q_KEY = 'oracle_paid_question';
 const PAID_Q_TTL = 7 * 24 * 60 * 60 * 1000;   // matches the Worker's dedup window comfortably
 
-function savePaidQuestion(txHash, wallet) {
+// ref - id будущего вопроса, тот самый, что уехал в контракт как ref_id.
+// Без него после перезагрузки страницы вопрос отправился бы с новым id, и
+// оплата в цепочке осталась бы привязанной к другому - воркер бы их не связал.
+function savePaidQuestion(txHash, wallet, ref) {
   if (!txHash || txHash === 'ADMIN_BYPASS') return;
   try {
-    localStorage.setItem(PAID_Q_KEY, JSON.stringify({ txHash, wallet, ts: Date.now() }));
+    const prev = (function () { try { return JSON.parse(localStorage.getItem(PAID_Q_KEY)) || {}; } catch (e) { return {}; } })();
+    localStorage.setItem(PAID_Q_KEY, JSON.stringify({
+      txHash, wallet, ref: ref || prev.ref || '', ts: Date.now(),
+    }));
   } catch (e) {}
+}
+
+// Новый id вопроса. Один и тот же формат и до оплаты, и при отправке.
+function newQuestionRef() {
+  return 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
 }
 
 function clearPaidQuestion() {
@@ -43,7 +54,7 @@ async function checkUnusedPayment(wallet) {
     if (!res.ok) return;
     const d = await res.json();
     if (!d || !d.found || !d.txHash) return;
-    savePaidQuestion(d.txHash, wallet);
+    savePaidQuestion(d.txHash, wallet, d.ref);
     restorePaidQuestion();
   } catch (e) {}
 }
@@ -95,7 +106,11 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
   const text = formData.get('message') || '';
   const txHash = document.getElementById('verified-tx-hidden').value;
   const wallet = document.getElementById('verified-wallet-hidden').value;
-  const ref = 'LUNC-' + Date.now().toString(36).toUpperCase().slice(-7);
+  // Берём id, под которым оплата уже записана в контракте. Свой генерим
+  // только для админской публикации без оплаты и как запасной путь для
+  // оплат, сделанных до перехода на PaidAction.
+  const _paid = (typeof readPaidQuestion === 'function') ? readPaidQuestion() : null;
+  const ref = (_paid && _paid.ref) ? _paid.ref : newQuestionRef();
   // Tags only reach `currentTags` on Enter or comma, so anything typed and left
   // in the box is dropped on submit - the hashtag is visible on screen and
   // absent from the question. Take the pending text too.
