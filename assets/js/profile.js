@@ -98,13 +98,12 @@ const RANKS = [
 //      available, the HIGHER one applies. They do NOT stack.
 const STREAK_QUESTION_DISCOUNT = 25; // % off at 7+ day streak
 
-function getEffectiveRep(baseRep, streakMultiplier) {
-  return Math.round((baseRep || 0) * (streakMultiplier || 1.0));
-}
+// getEffectiveRep удалена: она умножала REP на стрик, никем не вызывалась и
+// описывала третье правило множителя вдобавок к двум существующим. Стрик
+// влияет на долю в недельных наградах, не на REP и не на ранг.
 function combineDiscounts(rankDiscount, streakDiscount) {
   return Math.max(rankDiscount || 0, streakDiscount || 0);
 }
-window.getEffectiveRep = getEffectiveRep;
 window.combineDiscounts = combineDiscounts;
 window.STREAK_QUESTION_DISCOUNT = STREAK_QUESTION_DISCOUNT;
 

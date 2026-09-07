@@ -262,6 +262,11 @@ async function main() {
   console.log('\n📊 Reading all-time REP from the Oracle Score contract...');
 
   const allTimeRepMap = {};
+  // Множитель стрика держим отдельно. Раньше он умножался на пожизненный REP
+  // и уходил в выбор ранга - из-за чего не влиял ни на что, кроме редкого
+  // случая у самой границы ранга, где перекидывал человека на ступень выше.
+  // Ранг - это накопленная репутация, стрик к ней отношения не имеет.
+  const streakMultMap = {};
   const missing = [];
   await Promise.all(data.topWallets.map(async w => {
     let base = null, streakMult = 1.0;
@@ -279,7 +284,8 @@ async function main() {
     } catch(e) {}
 
     if (base === null) { missing.push(w.wallet); base = 0; }
-    allTimeRepMap[w.wallet] = Math.round(base * streakMult);
+    allTimeRepMap[w.wallet] = base;
+    streakMultMap[w.wallet] = streakMult;
   }));
 
   // A wallet the chain could not answer for falls to rank multiplier ×1.0,
@@ -291,11 +297,18 @@ async function main() {
     process.exit(1);
   }
 
-  // Weighted REP = weekly REP × rank multiplier (rank based on all-time REP)
+  // Взвешенный REP = недельный REP × множитель ранга × множитель стрика.
+  // Ранг берётся из чистого пожизненного счёта; стрик умножает долю, а не ранг.
+  // Ровно эта формула описана в разделе Architecture и в reputation.js.
   const weighted = data.topWallets.map(w => {
-    const allTimeRep = allTimeRepMap[w.wallet] || 0;
-    const mult = getRankMultiplier(allTimeRep);
-    return { ...w, multiplier: mult, weightedRep: w.rep * mult };
+    const rankMult   = getRankMultiplier(allTimeRepMap[w.wallet] || 0);
+    const streakMult = streakMultMap[w.wallet] || 1.0;
+    return {
+      ...w,
+      multiplier: rankMult,
+      streakMultiplier: streakMult,
+      weightedRep: w.rep * rankMult * streakMult,
+    };
   });
 
   const totalWeighted = weighted.reduce((s, w) => s + w.weightedRep, 0);
@@ -303,6 +316,7 @@ async function main() {
     wallet: w.wallet,
     rep: w.rep,
     multiplier: w.multiplier,
+    streakMultiplier: w.streakMultiplier,
     weightedRep: w.weightedRep,
     share: w.weightedRep / totalWeighted,
     uluna: Math.floor((w.weightedRep / totalWeighted) * poolUluna),
@@ -310,7 +324,8 @@ async function main() {
 
   console.log(`\n📤 Sending to ${payouts.length} wallets:`);
   payouts.forEach(p => console.log(
-    `  ${p.wallet.slice(0,20)}... | ${p.rep} REP x${p.multiplier} = ${p.weightedRep} weighted (${(p.share*100).toFixed(1)}%) → ${(p.uluna/1e6).toFixed(3)} LUNC`
+    `  ${p.wallet.slice(0,20)}... | ${p.rep} REP x${p.multiplier} rank x${p.streakMultiplier} streak ` +
+    `= ${p.weightedRep.toFixed(1)} weighted (${(p.share*100).toFixed(1)}%) → ${(p.uluna/1e6).toFixed(3)} LUNC`
   ));
 
   const week = payoutWeekId();
