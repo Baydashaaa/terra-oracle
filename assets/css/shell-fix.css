@@ -419,9 +419,39 @@
 #page-chat .chat-cost img{width:18px;height:18px;object-fit:contain}
 #page-chat .chat-send{
   width:42px;height:42px;flex:none;
-  display:grid;place-items:center;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;line-height:0;
   border:0;border-radius:12px;color:#fff;cursor:pointer;
   background:linear-gradient(135deg,var(--violet-2),var(--blue));
   box-shadow:0 0 22px -8px var(--violet);
 }
+/* у самолётика вся масса в левом нижнем углу, а остриё в правом верхнем,
+   поэтому геометрический центр смотрится смещённым - сдвигаем оптически */
+#page-chat .chat-send svg{display:block;transform:translate(-1px,1px)}
 #page-chat .chat-ring-svg{flex:none;opacity:.9}
+
+/* ==================================================================
+   11. Ask Oracle
+   Форма оплаты, теги и опросы остаются боевыми. Цвета в них взяты
+   через переменные старой темы, поэтому, как и в чате, переопределяем
+   сами переменные - весь раздел переезжает на новую палитру без
+   правки разметки и скриптов.
+   ================================================================== */
+#page-ask{
+  --surface:var(--panel);
+  --surface2:var(--bg-2);
+  --border:var(--line);
+  --text:var(--ink);
+  --muted:var(--ink-3);
+  --accent:var(--violet-hi);
+  --accent-dark:var(--violet-2);
+  --green:var(--lime);
+  --gold:var(--amber);
+}
+#page-ask .card{
+  padding:22px 24px;
+  border-radius:var(--r-lg);
+}
+#page-ask .askv-steps{margin:0}
+#page-ask h1,
+#page-ask .subtitle{font-family:var(--dis)}
