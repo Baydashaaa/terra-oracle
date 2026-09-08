@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="32db8f12a4 2026-09-08">
+  <meta name="oracle-build" content="481d5c7e7e 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=f0cd33eefb">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=3fd124f36e">
 
 
   <!-- Charts -->
@@ -447,8 +447,7 @@
    🔒 Pseudonymous, not anonymous. Your wallet address is stored with your question and stays publicly readable - that is what proves the question was paid for. Answers and votes from the same address can be linked together, here and on-chain. We never ask for your name.
   </div>
 
-  <h3 class="step-h"><span class="n">1</span>Connect your wallet</h3>
-  <div id="keplr-section">
+  <div id="keplr-section" class="ask-hidden">
    <div id="keplr-disconnected">
     <section class="card ask-connect">
      <button class="btn btn-primary" id="keplr-connect-btn" onclick="openBagWalletPicker()">Connect wallet</button>
@@ -467,7 +466,7 @@
    </div>
   </div>
 
-  <h3 class="step-h"><span class="n">2</span>Choose question type</h3>
+  <h3 class="step-h"><span class="n">1</span>Choose question type</h3>
   <div id="tx-section" style="display:none;">
 
    <div class="qtypes">
@@ -510,7 +509,7 @@
    <div id="tx-status" style="display:none;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.6;"></div>
   </div>
 
-  <h3 class="step-h"><span class="n">3</span>Create your question</h3>
+  <h3 class="step-h"><span class="n">2</span>Create your question</h3>
   <form id="ask-form" action="https://formspree.io/f/maqpebee" method="POST" style="display:none;">
    <input type="text" name="_gotcha" style="display:none">
    <input type="hidden" name="_subject" value="[Terra Oracle] New Question Submitted">
@@ -518,33 +517,19 @@
    <input type="hidden" name="wallet" id="verified-wallet-hidden">
 
    <section class="card qform">
-    <div class="qcols">
-     <div class="field">
-      <label for="ask-category">Category</label>
-      <select id="ask-category" name="category" required>
-       <option value="" disabled selected>Select category...</option>
-      <option>Security / Vulnerability</option>
-      <option>Protocol Bug</option>
-      <option>Governance</option>
-      <option>Proposal / Idea</option>
-      <option>Validator Issue</option>
-      <option>Community</option>
-      <option>Fraud / Manipulation</option>
-      <option>Other</option>
-      </select>
-     </div>
-     <div class="field">
-      <label>Popular categories</label>
-      <div class="chips" id="askChips">
+    <div class="field">
+     <label>Category</label>
+     <div class="chips wide" id="askChips">
       <button type="button" data-cat="Governance" aria-pressed="false" onclick="askPickCategory(this,'Governance')">Governance</button>
       <button type="button" data-cat="Protocol Bug" aria-pressed="false" onclick="askPickCategory(this,'Protocol Bug')">Protocol Bug</button>
       <button type="button" data-cat="Validator Issue" aria-pressed="false" onclick="askPickCategory(this,'Validator Issue')">Validator Issue</button>
       <button type="button" data-cat="Security / Vulnerability" aria-pressed="false" onclick="askPickCategory(this,'Security / Vulnerability')">Security / Vulnerability</button>
       <button type="button" data-cat="Community" aria-pressed="false" onclick="askPickCategory(this,'Community')">Community</button>
       <button type="button" data-cat="Proposal / Idea" aria-pressed="false" onclick="askPickCategory(this,'Proposal / Idea')">Proposal / Idea</button>
+      <button type="button" data-cat="Fraud / Manipulation" aria-pressed="false" onclick="askPickCategory(this,'Fraud / Manipulation')">Fraud / Manipulation</button>
       <button type="button" data-cat="Other" aria-pressed="false" onclick="askPickCategory(this,'Other')">Other</button>
-      </div>
      </div>
+     <input type="hidden" name="category" id="ask-category" required>
     </div>
 
     <div class="field">
@@ -597,12 +582,17 @@
     </details>
    </section>
 
-   <h3 class="step-h"><span class="n">4</span>Review and submit</h3>
+   <h3 class="step-h"><span class="n">3</span>Review and submit</h3>
    <section class="card summary">
     <img src="assets/img/icons/a-answers.webp" alt="" width="160" height="160" loading="lazy">
     <div>
      <div class="t">Question summary</div>
-     <div class="line">Your question goes live on the Board · answers earn REP</div>
+     <div class="line" id="askSummaryLine">-</div>
+    </div>
+    <div class="price">
+     <s id="askBase2"></s>
+     <b id="askFinal2">-</b>
+     <span id="askDisc2"></span>
     </div>
     <button type="submit" class="ask-go" id="ask-btn">Ask the Oracle
      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -1667,7 +1657,7 @@
 
 <script src="assets/js/page/gov-shell.js?v=5067359821"></script>
 <script src="assets/js/page/home-shell.js?v=2cbada7660"></script>
-<script src="assets/js/page/ask-shell.js?v=ad4c8883e5"></script>
+<script src="assets/js/page/ask-shell.js?v=ebe1cf1db1"></script>
 <script src="assets/js/shell-nav.js?v=79350e95fd"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
 </body>

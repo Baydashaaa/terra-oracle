@@ -515,3 +515,48 @@
   text-align:center;font-size:11px;color:var(--ink-3);line-height:1.8;margin:4px 0 0;
 }
 #page-ask .ask-foot code{font-size:10.5px;color:var(--violet-hi);word-break:break-all}
+
+/* Подключение кошелька идёт из шапки сайта, отдельный шаг в разделе не
+   нужен. Блок остаётся в разметке: wallet.js и sign.js переключают его
+   видимость и пишут в него адрес. */
+#page-ask .ask-hidden{display:none !important}
+
+/* Тарифы и форма показаны сразу, чтобы было видно, что предстоит
+   заполнить. sign.js прячет их до оплаты через инлайновый display -
+   перебиваем. */
+#page-ask #tx-section,
+#page-ask #ask-form{display:block !important}
+
+/* До оплаты форма приглушена, отправка выключена (её выключает
+   ask-shell.js, здесь только вид). */
+#page-ask #ask-form.is-locked .qform{opacity:.62}
+#page-ask #ask-form.is-locked .summary{opacity:.62}
+#page-ask #ask-btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+
+/* Категория кнопками во всю ширину: строке нужно место, иначе
+   названия налезают друг на друга. */
+#page-ask .chips.wide{gap:9px}
+#page-ask .chips.wide button{
+  padding:9px 16px;
+  font-size:12.5px;
+  white-space:nowrap;
+}
+#page-ask .chips.wide button[aria-pressed="true"]{
+  border-color:var(--violet-hi);
+  background:rgba(168,85,247,.16);
+  color:var(--ink);
+}
+
+/* Поле вопроса пошире и повыше */
+#page-ask #ask-message{
+  width:100%;
+  min-height:150px;
+  padding:14px 16px;
+  line-height:1.6;
+}
+
+/* Итоговая карточка */
+#page-ask .summary .price s{color:var(--ink-3)}
+#page-ask .summary .price b{color:var(--pink)}
+#page-ask .summary .price span{color:var(--lime)}
+#page-ask .summary .price:empty{display:none}
