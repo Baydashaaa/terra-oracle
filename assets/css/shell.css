@@ -95,7 +95,7 @@ img{display:block;max-width:100%}
    Only from 1181px up. Narrower than that the right column drops below the
    centre and on a phone the rail becomes a bottom bar, so pinning is wrong. ---- */
 @media (min-width:1181px){
-  html,body{height:100%;overflow:hidden}
+  html:has(.app),body:has(.app){height:100%;overflow:hidden}
   .app{
     height:100dvh;                       /* dvh so the mobile URL bar cannot clip it */
     grid-template-rows:auto minmax(0,1fr);
