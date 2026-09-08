@@ -1,0 +1,69 @@
+{
+  "_verify": [
+    "Frozen entry list for this round, in the exact order the oracle-pool contract used it.",
+    "1. Expand `tickets`: a pair [addr, n] means n consecutive entries for addr.",
+    "2. The expanded length must equal `total` and `entries` in winners.json.",
+    "3. `winner_index` is a position in that expanded array.",
+    "",
+    "Replaying the draw:",
+    "  result = sha256(secret || entropy || round_id_be64)",
+    "  place p: seed = sha256(seed_prev || p_be64), index = first16(seed) % total,",
+    "  then step forward while the minter already took a place.",
+    "  Query the contract for the same data: {\"proof\":{\"round_id\":N}}"
+  ],
+  "round_id": "weekly_2026-08-31",
+  "contract_round_id": 4,
+  "pool": "weekly",
+  "total": 10,
+  "wallets": 6,
+  "tickets": [
+    [
+      "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+      1,
+      "common-48",
+      "common"
+    ],
+    [
+      "terra1a9see2df2w8wh8hsty0y6gw9tkamlkzah8kd74",
+      1,
+      "common-56",
+      "common"
+    ],
+    [
+      "terra1kur3cr4vask4lgs3tr4gww7lr0zvc944gjfcqc",
+      1,
+      "common-62",
+      "common"
+    ],
+    [
+      "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+      5,
+      "rare-8",
+      "rare"
+    ],
+    [
+      "terra1fq7jznwlfclzn9v4mc5vl8u5g6xnu8f6ra4gu3",
+      1,
+      "common-70",
+      "common"
+    ],
+    [
+      "terra1n5qj93jw56wsym0yp2kpll2ydlpa5c8a0dvej6",
+      1,
+      "common-72",
+      "common"
+    ]
+  ],
+  "block_hash": null,
+  "block_height": null,
+  "result": "OEhtJsnpNgTdS3oppQukNsIjyxCyBYHYKIEBTqUChco=",
+  "secret": "LZP8CVOEj8HZ2sx4QaNvIgqcQhOecntoRtPAwOy3gnI=",
+  "entropy": "I2p5ae3oU7JT78tH6NTxoANhDrsd2lyJcyWqa2jpMx8=",
+  "winner_index": [
+    0,
+    9,
+    8
+  ],
+  "generated_at": "2026-08-31T22:09:39.612Z",
+  "seed_hash": "ETryBIPEjeJnlWyywgudDlDSkxcXL2h2IyHjOaTLaAM="
+}
