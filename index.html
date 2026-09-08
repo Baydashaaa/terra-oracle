@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="6f75333409 2026-09-08">
+  <meta name="oracle-build" content="cf78511e76 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=813c484c23">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=2f81866355">
 
 
   <!-- Charts -->
@@ -1336,116 +1336,64 @@
 
 </div>
 <!-- ═══ MY BAG PAGE ═══ -->
-<div class="page" id="page-bag" style="padding:40px 20px 80px;max-width:900px;margin:0 auto;">
+<div class="page shell-page" id="page-bag">
 
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
-    <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#f4d03f;letter-spacing:0.05em;">MY BAG</div>
+ <section class="nft-hero">
+  <img class="art" src="assets/img/banner-nft.webp" alt="" width="1600" height="650" loading="lazy">
+  <span class="scrim"></span>
+  <div class="copy">
+   <img class="mark" src="assets/img/tco.webp" alt="" width="160" height="160">
+   <h2>NFT <em>COLLECTION</em></h2>
+   <p class="lead">Your Oracle Masks. Your entries. Your history.</p>
+   <p class="sub">Collect. Enter. Be part of the Oracle.</p>
   </div>
-  <div style="height:1px;background:linear-gradient(90deg,rgba(244,208,63,0.4),transparent);margin-bottom:32px;"></div>
+  <span class="motto">Same people<br>different answers</span>
+ </section>
 
-  <!-- Not connected -->
-  <div id="bag-not-connected-oracle" style="text-align:center;padding:60px 20px;">
-    <div style="font-size:48px;margin-bottom:16px;">🔒</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#f4d03f;margin-bottom:8px;">Connect your wallet</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Connect to see your Oracle Mask NFTs and draw history</div>
-    <button onclick="openBagWalletPicker()"
-      style="padding:14px 36px;border-radius:12px;cursor:pointer;
-      font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.08em;
-      background:linear-gradient(135deg,#8b0000,#cc1100);border:1px solid rgba(255,100,0,0.4);
-      color:#f4d03f;box-shadow:0 4px 20px rgba(139,0,0,0.4);">
-      Connect Wallet
-    </button>
+ <div id="bag-not-connected-oracle" class="nft-gate">
+  <h3>Connect your wallet</h3>
+  <p>Connect to see your Oracle Mask NFTs and draw history</p>
+  <button class="btn btn-primary" onclick="openBagWalletPicker()">Connect wallet</button>
+ </div>
+
+ <div id="bag-connected-oracle" style="display:none;">
+
+  <div class="nft-stats">
+   <div class="nft-stat"><img src="assets/img/icons/n-owned.webp" alt="" width="128" height="128" loading="lazy"><b id="o-bag-stat-nfts">0</b><span>NFTs owned</span></div>
+   <div class="nft-stat"><img src="assets/img/icons/n-won.webp" alt="" width="128" height="128" loading="lazy"><b id="o-bag-stat-won">0</b><span>Total won</span></div>
+   <div class="nft-stat"><img src="assets/img/icons/n-daily.webp" alt="" width="128" height="128" loading="lazy"><b id="o-bag-stat-daily">0</b><span>Daily · this round</span></div>
+   <div class="nft-stat"><img src="assets/img/icons/n-weekly.webp" alt="" width="128" height="128" loading="lazy"><b id="o-bag-stat-weekly">0</b><span>Weekly · this round</span></div>
   </div>
 
-  <!-- Connected -->
-  <div id="bag-connected-oracle" style="display:none;">
-
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px;">
-      <div style="background:rgba(244,208,63,0.06);border:1px solid rgba(244,208,63,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#f4d03f;" id="o-bag-stat-nfts">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">NFTs owned</div>
-      </div>
-      <div style="background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.15);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#66ffaa;" id="o-bag-stat-won">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Total won</div>
-      </div>
-      <div style="background:rgba(212,160,23,0.05);border:1px solid rgba(212,160,23,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#f4d03f;" id="o-bag-stat-daily">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Daily · this round</div>
-      </div>
-      <div style="background:rgba(74,144,217,0.05);border:1px solid rgba(74,144,217,0.2);border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:#7eb8ff;" id="o-bag-stat-weekly">0</div>
-        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;">Weekly · this round</div>
-      </div>
-    </div>
-
-    <!-- NFT Grid header -->
-    <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;color:rgba(244,208,63,0.7);margin-bottom:12px;display:flex;align-items:center;gap:10px;">
-      ORACLE MASK NFTs
-      <span id="o-bag-count" style="background:rgba(244,208,63,0.15);color:#f4d03f;border-radius:20px;padding:2px 10px;font-size:12px;">0</span>
-    </div>
-
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-      <button onclick="filterOracleBagNFTs('all')" id="o-bag-filter-all"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(244,208,63,0.5);
-        background:rgba(244,208,63,0.12);color:#f4d03f;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;font-weight:700;transition:all 0.2s;">All</button>
-      <button onclick="filterOracleBagNFTs('common')" id="o-bag-filter-common"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(180,190,210,0.2);
-        background:transparent;color:#b0b8c8;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Common</button>
-      <button onclick="filterOracleBagNFTs('rare')" id="o-bag-filter-rare"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(96,165,250,0.2);
-        background:transparent;color:#60a5fa;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Rare</button>
-      <button onclick="filterOracleBagNFTs('legendary')" id="o-bag-filter-legendary"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(251,146,60,0.2);
-        background:transparent;color:#fb923c;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Legendary</button>
-      <button onclick="filterOracleBagNFTs('used')" id="o-bag-filter-used"
-        style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);
-        background:transparent;color:#9ca3af;cursor:pointer;font-size:11px;
-        letter-spacing:0.06em;font-family:'Rajdhani',sans-serif;transition:all 0.2s;">Round over</button>
-    </div>
-
-    <!-- Empty -->
-    <div id="o-bag-empty" style="text-align:center;padding:48px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;margin-bottom:32px;">
-      <div style="font-size:40px;margin-bottom:12px;">🎭</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">No Oracle Mask NFTs yet</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Visit Oracle Draw to mint your first NFT</div>
-      <a href="https://draw.terraoracle.io/" target="_blank"
-        style="padding:12px 28px;border-radius:10px;border:1px solid rgba(244,208,63,0.4);
-        background:rgba(244,208,63,0.08);color:#f4d03f;text-decoration:none;
-        font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;">
-        Go to Oracle Draw →
-      </a>
-    </div>
-
-    <!-- NFT Grid -->
-    <div id="o-bag-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:40px;"></div>
-
-    <!-- History -->
-    <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;color:rgba(244,208,63,0.7);margin-bottom:16px;margin-top:8px;">
-      PARTICIPATION HISTORY
-    </div>
-    <div id="o-bag-hist-empty" style="text-align:center;padding:32px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;">
-      <div style="font-size:13px;color:var(--muted);">No participation history yet</div>
-    </div>
-    <table id="o-bag-hist-table" style="display:none;width:100%;border-collapse:collapse;font-size:13px;">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Round</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Type</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">NFT</th>
-          <th style="text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.08);">Result</th>
-        </tr>
-      </thead>
-      <tbody id="o-bag-hist-body"></tbody>
-    </table>
-
+  <div class="nft-bar">
+   <h3 class="nft-h">My Oracle Masks <span class="cnt" id="o-bag-count">0</span></h3>
+   <div class="chips" id="nftFilters">
+   <button onclick="filterOracleBagNFTs('all')" id="o-bag-filter-all" aria-pressed="true">All</button>
+   <button onclick="filterOracleBagNFTs('common')" id="o-bag-filter-common">Common</button>
+   <button onclick="filterOracleBagNFTs('rare')" id="o-bag-filter-rare">Rare</button>
+   <button onclick="filterOracleBagNFTs('legendary')" id="o-bag-filter-legendary">Legendary</button>
+   <button onclick="filterOracleBagNFTs('used')" id="o-bag-filter-used">Round over</button>
+   </div>
   </div>
+
+  <div id="o-bag-empty" class="nft-gate sm">
+   <p>No Oracle Mask NFTs yet</p>
+   <p class="dim">Visit Oracle Draw to mint your first NFT</p>
+   <a class="btn btn-ghost" href="https://draw.terraoracle.io/" target="_blank" rel="noopener">Go to Oracle Draw</a>
+  </div>
+
+  <div id="o-bag-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;"></div>
+
+  <h3 class="nft-h">Participation history</h3>
+  <div id="o-bag-hist-empty" class="nft-gate sm"><p>No participation history yet</p></div>
+  <section class="card nft-histbox">
+   <table class="hist" id="o-bag-hist-table" style="display:none;">
+    <thead><tr><th>Round</th><th>Type</th><th>NFT</th><th>Result</th></tr></thead>
+    <tbody id="o-bag-hist-body"></tbody>
+   </table>
+  </section>
+
+ </div>
 </div>
 <!-- ═══ END MY BAG PAGE ═══ -->
 

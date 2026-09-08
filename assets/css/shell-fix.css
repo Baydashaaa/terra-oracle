@@ -92,9 +92,11 @@
 
 /* Ряд модулей: в прототипе ровно пять колонок. Markets пока без
    боевого раздела, и жёсткая пятая колонка оставляла дыру. auto-fit
-   схлопывает пустые дорожки, поэтому карточки растягиваются сами. */
+   схлопывает пустые дорожки, поэтому карточки растягиваются сами.
+   Зазор поднят с 14 до 20 - на широкой колонке карточки слипались. */
 .shell-page .mods{
   grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:20px;
 }
 
 /* ==================================================================
@@ -115,3 +117,38 @@
 .gov-bar #vote-wallet-status{margin-left:auto}
 .gov-bar #vote-wallet-status .btn{padding:10px 18px;font-size:12.5px;border-color:var(--line-2)}
 .gov-bar .btn-create[disabled]{opacity:.5;cursor:not-allowed}
+
+/* ==================================================================
+   7. Рельс: пункты в одну строку
+   "NFT Collection" и "Oracle Draw" переносились на вторую строку.
+   ================================================================== */
+.rail .nav{
+  white-space:nowrap;
+  font-size:13.5px;
+}
+.rail .nav .ico{width:30px;height:30px}
+
+/* ==================================================================
+   8. NFT Collection
+   Заглушки "кошелёк не подключён", "масок нет" и "истории нет" -
+   в прототипе их не было, боевые нужны все три.
+   ================================================================== */
+.nft-gate{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:44px 24px;
+  text-align:center;
+}
+.nft-gate.sm{padding:28px 20px}
+.nft-gate h3{
+  margin:0 0 8px;
+  font-family:var(--dis);
+  font-size:20px;
+  font-weight:600;
+}
+.nft-gate p{margin:0 0 16px;font-size:13px;color:var(--ink-2)}
+.nft-gate p.dim{margin-bottom:20px;font-size:12px;color:var(--ink-3)}
+.nft-gate p:last-child{margin-bottom:0}
+.nft-gate .btn{display:inline-flex}
+.nft-histbox{padding:6px 14px 4px}
