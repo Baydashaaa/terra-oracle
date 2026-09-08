@@ -1,0 +1,68 @@
+/* Развязка старых правил style.css и новой оболочки.
+   Заводится на шаге 4, живёт до шага 6 - там старые правила уедут совсем,
+   и этот файл можно будет удалить целиком.
+   Подключать ПОСЛЕ shell.css. */
+
+/* ------------------------------------------------------------------
+   1. Карточки оболочки.
+   Старый .card из style.css приносит padding:32px, margin-bottom:16px,
+   overflow:hidden, тень и подскок на hover. shell.css задаёт у .card
+   только фон, рамку и радиус, поэтому всё остальное протекает.
+   В правой колонке это било дважды: карточки там flex-элементы и по
+   умолчанию сжимаются, а overflow:hidden превращал сжатие в обрезку -
+   отсюда срезанная кнопка "View details".
+   ------------------------------------------------------------------ */
+.app .card:not(.page *){
+  padding:0;
+  margin:0;
+  overflow:visible;
+  box-shadow:none;
+  transition:border-color .15s ease;
+}
+.app .card:not(.page *):hover{
+  transform:none;
+  box-shadow:none;
+}
+.app .card:not(.page *)::before{content:none}
+
+/* отступ прототипа, перебитый сбросом выше */
+.app .side .card{padding:16px}
+@media (max-width:1180px){ .app .side .card{padding:14px} }
+
+/* колонки не должны ужимать свои карточки */
+.rail > *, .side > *{flex:0 0 auto}
+
+/* ------------------------------------------------------------------
+   2. Ширина перенесённых разделов.
+   Старый .page зажимает содержимое в 760px и добавляет 48px сверху -
+   новый дизайн рассчитан на всю ширину центральной колонки.
+   По мере переноса разделов добавлять сюда их id.
+   ------------------------------------------------------------------ */
+.main > #page-vote{
+  max-width:none;
+  margin:0;
+  padding:0;
+}
+
+/* ------------------------------------------------------------------
+   3. Governance: панель фильтров.
+   Кнопка кошелька приходит с классами .btn .btn-primary старого сайта -
+   заглавные буквы, отступы 13/28 и лиловый текст поверх лилового фона.
+   ------------------------------------------------------------------ */
+.gov-bar #vote-wallet-status{margin-left:auto}
+.gov-bar #vote-wallet-status .btn{
+  font-family:var(--ui);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0;
+  text-transform:none;
+  padding:10px 18px;
+  border-radius:11px;
+  border:1px solid var(--line-2);
+}
+.gov-bar #vote-wallet-status .btn-primary{
+  color:#fff;
+  border-color:transparent;
+}
+.gov-bar #vote-wallet-status .btn-primary::before{content:none}
+.gov-bar .btn-create[disabled]{opacity:.5;cursor:not-allowed}
