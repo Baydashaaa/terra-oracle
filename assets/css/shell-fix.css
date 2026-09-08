@@ -194,12 +194,11 @@
 
 /* ==================================================================
    10. Chat
-   Раскладка чата считалась от старого сайта: на десктопе
+   Раскладка считалась от старого сайта: на десктопе
    height:calc(100vh - 110px) под навбар, на телефоне
    position:fixed;top:60px под ту же шапку. Навбара больше нет,
    а на десктопе прокручивается .main, а не окно.
-   Все правила в layout.css идут с !important, поэтому перебиваем
-   тем же весом.
+   Правила в layout.css идут с !important, перебиваем тем же весом.
    ================================================================== */
 @media (min-width:901px){
   .page#page-chat.active{
@@ -208,7 +207,9 @@
     max-width:none !important;
   }
   #page-chat .chat{flex:1;min-height:0}
-  #page-chat #chat-shell{padding:14px}
+  #page-chat #chat-shell{padding:0;grid-template-columns:minmax(0,1fr) 220px !important;gap:0 !important}
+  #page-chat #chat-accent{display:none !important}
+  #page-chat #chat-participants{border:0;border-left:1px solid var(--line);border-radius:0;background:var(--bg-2);margin:0}
 }
 
 @media (hover:none),(max-width:900px){
@@ -223,9 +224,61 @@
     z-index:auto !important;
     background:none !important;
   }
-  #page-chat .chat{
-    height:calc(100dvh - 210px);
-    min-height:360px;
-  }
-  #page-chat #chat-shell{padding:10px 12px 0}
+  #page-chat .chat{height:calc(100dvh - 210px);min-height:360px}
+  #page-chat #chat-shell{padding:0}
 }
+
+/* ------------------------------------------------------------------
+   10a. Палитра.
+   Разметку сообщений и поля ввода рисует chat.js инлайновыми
+   стилями, и почти все цвета там взяты через var(--surface),
+   var(--border), var(--text), var(--muted), var(--accent) из старой
+   темы. Переопределяем сами переменные внутри карточки чата - и весь
+   инлайн разом переезжает на палитру нового дизайна, без правки JS.
+   ------------------------------------------------------------------ */
+#page-chat .chat{
+  --surface:var(--panel);
+  --surface2:var(--bg-2);
+  --border:var(--line);
+  --text:var(--ink);
+  --muted:var(--ink-3);
+  --accent:var(--violet-hi);
+  --accent-dark:var(--violet-2);
+  --green:var(--lime);
+  --gold:var(--amber);
+}
+
+/* ------------------------------------------------------------------
+   10b. Лента: пузыри вместо строк с разделителем
+   ------------------------------------------------------------------ */
+#page-chat #chat-page-messages{
+  padding:16px 18px !important;
+  gap:14px !important;
+}
+#page-chat .chat-page-msg{
+  padding:0 !important;
+  border-bottom:0 !important;
+}
+/* аватар прототипа крупнее: 38 -> 46 */
+#page-chat .chat-page-msg > div > div:first-child{
+  width:46px !important;
+  height:46px !important;
+}
+/* тело сообщения - единственный блок с white-space:pre-wrap */
+#page-chat .chat-page-msg div[style*="pre-wrap"]{
+  display:inline-block;
+  max-width:min(74ch,100%);
+  margin-top:2px;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:4px 12px 12px 12px;
+  padding:10px 14px;
+  font-size:13.5px !important;
+  line-height:1.5 !important;
+}
+
+/* ------------------------------------------------------------------
+   10c. Поле ввода прижато к низу карточки
+   ------------------------------------------------------------------ */
+#page-chat #chat-input-bar{padding:0 14px 14px !important}
+#page-chat #chat-mobile-bar{padding:8px 14px 10px !important;margin:0 !important}
