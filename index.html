@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="c49b69d9e5 2026-09-08">
+  <meta name="oracle-build" content="32db8f12a4 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=81795da947">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=f0cd33eefb">
 
 
   <!-- Charts -->
@@ -423,6 +423,7 @@
  </div>
 </div>
 <div class="page shell-page" id="page-ask">
+
  <section class="ask-hero">
   <img class="art" src="assets/img/banner-ask.webp" alt="" width="1700" height="379" loading="lazy">
   <span class="scrim"></span>
@@ -433,198 +434,192 @@
   </div>
  </section>
 
- <div class="askv-steps">
-  <div class="askv-step"><div class="askv-dot">1</div>Pay with LUNC</div>
-  <div class="askv-sep">&rsaquo;</div>
-  <div class="askv-step"><div class="askv-dot">2</div>Ask under your address</div>
-  <div class="askv-sep">&rsaquo;</div>
-  <div class="askv-step"><div class="askv-dot">3</div>Community answers</div>
+ <div class="perks">
+  <div class="perk"><img src="assets/img/icons/a-answers.webp" alt="" width="160" height="160" loading="lazy"><b>Community answers</b><span>Real insight from the community</span></div>
+  <div class="perk"><img src="assets/img/icons/a-entry.webp" alt="" width="160" height="160" loading="lazy"><b>Weekly draw entry</b><span>Included with every question</span></div>
+  <div class="perk"><img src="assets/img/icons/a-anon.webp" alt="" width="160" height="160" loading="lazy"><b>Fully anonymous</b><span>Your identity stays private</span></div>
+  <div class="perk"><img src="assets/img/icons/a-rep.webp" alt="" width="160" height="160" loading="lazy"><b>Earn REP</b><span>Good questions build reputation</span></div>
  </div>
 
- <div class="card">
  <div id="ask-form-section">
- <div class="note">
- 🔒 Pseudonymous, not anonymous. Your wallet address is stored with your question and stays publicly readable - that is what proves the question was paid for. Answers and votes from the same address can be linked together, here and on-chain. We never ask for your name.
+
+  <div class="note">
+   🔒 Pseudonymous, not anonymous. Your wallet address is stored with your question and stays publicly readable - that is what proves the question was paid for. Answers and votes from the same address can be linked together, here and on-chain. We never ask for your name.
+  </div>
+
+  <h3 class="step-h"><span class="n">1</span>Connect your wallet</h3>
+  <div id="keplr-section">
+   <div id="keplr-disconnected">
+    <section class="card ask-connect">
+     <button class="btn btn-primary" id="keplr-connect-btn" onclick="openBagWalletPicker()">Connect wallet</button>
+     <p>Supported: Keplr · Galaxy Station · Luncdash</p>
+    </section>
+   </div>
+   <div id="keplr-connected" style="display:none;">
+    <section class="card ask-connected">
+     <span class="ok"></span>
+     <div>
+      <div class="t">Wallet connected</div>
+      <div class="a" id="connected-addr">terra1...</div>
+     </div>
+     <button class="x" onclick="disconnectKeplr()" aria-label="Disconnect">✕</button>
+    </section>
+   </div>
+  </div>
+
+  <h3 class="step-h"><span class="n">2</span>Choose question type</h3>
+  <div id="tx-section" style="display:none;">
+
+   <div class="qtypes">
+    <div id="tier-picker">
+     <label class="qtype">
+      <input type="radio" name="question-tier" value="basic" checked style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="if(typeof connectedAddress!=='undefined'&&connectedAddress&&typeof updateVerifyBtnPrice==='function')updateVerifyBtnPrice(connectedAddress);">
+      <span class="k"><span class="dot"></span>BASIC QUESTION</span>
+      <span class="amt">50,000 LUNC</span>
+      <span class="plus">+1 weekly draw entry</span>
+     </label>
+     <label class="qtype">
+      <input type="radio" name="question-tier" value="priority" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="if(typeof connectedAddress!=='undefined'&&connectedAddress&&typeof updateVerifyBtnPrice==='function')updateVerifyBtnPrice(connectedAddress);">
+      <span class="k"><span class="dot"></span>PRIORITY QUESTION</span>
+      <span class="amt">200,000 LUNC</span>
+      <span class="plus">+4 weekly draw entries</span>
+      <span class="note">Pinned to the top for 24h</span>
+     </label>
+    </div>
+
+    <div class="benefit">
+     <img src="assets/img/icons/a-benefit.webp" alt="" width="160" height="160" loading="lazy">
+     <div class="t">Your Oracle benefit</div>
+     <div class="r" id="ask-price-badge" style="display:none;"><span id="ask-price-badge-text"></span></div>
+     <div class="final">
+      <span id="ask-price-now">Your price: <b>50,000 LUNC</b></span>
+      <s id="ask-price-base" style="display:none;">Base <span id="ask-price-base-amt">50,000</span> LUNC</s>
+     </div>
+    </div>
+   </div>
+
+   <div class="askv-split">
+    <div class="askv-chip p"><b>50%</b> &rarr; Weekly Prize Pool</div>
+    <div class="askv-chip"><b>50%</b> &rarr; Protocol Treasury</div>
+   </div>
+
+   <div class="ask-pay">
+    <input type="text" id="tx-input" style="display:none;" placeholder="Paste your transaction hash...">
+    <button class="ask-go" onclick="autoPayAndUnlock()" id="verify-btn">Pay 50,000 LUNC &amp; Unlock &rarr;</button>
+   </div>
+   <div id="tx-status" style="display:none;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:12px;line-height:1.6;"></div>
+  </div>
+
+  <h3 class="step-h"><span class="n">3</span>Create your question</h3>
+  <form id="ask-form" action="https://formspree.io/f/maqpebee" method="POST" style="display:none;">
+   <input type="text" name="_gotcha" style="display:none">
+   <input type="hidden" name="_subject" value="[Terra Oracle] New Question Submitted">
+   <input type="hidden" name="tx_hash" id="verified-tx-hidden">
+   <input type="hidden" name="wallet" id="verified-wallet-hidden">
+
+   <section class="card qform">
+    <div class="qcols">
+     <div class="field">
+      <label for="ask-category">Category</label>
+      <select id="ask-category" name="category" required>
+       <option value="" disabled selected>Select category...</option>
+      <option>Security / Vulnerability</option>
+      <option>Protocol Bug</option>
+      <option>Governance</option>
+      <option>Proposal / Idea</option>
+      <option>Validator Issue</option>
+      <option>Community</option>
+      <option>Fraud / Manipulation</option>
+      <option>Other</option>
+      </select>
+     </div>
+     <div class="field">
+      <label>Popular categories</label>
+      <div class="chips" id="askChips">
+      <button type="button" data-cat="Governance" aria-pressed="false" onclick="askPickCategory(this,'Governance')">Governance</button>
+      <button type="button" data-cat="Protocol Bug" aria-pressed="false" onclick="askPickCategory(this,'Protocol Bug')">Protocol Bug</button>
+      <button type="button" data-cat="Validator Issue" aria-pressed="false" onclick="askPickCategory(this,'Validator Issue')">Validator Issue</button>
+      <button type="button" data-cat="Security / Vulnerability" aria-pressed="false" onclick="askPickCategory(this,'Security / Vulnerability')">Security / Vulnerability</button>
+      <button type="button" data-cat="Community" aria-pressed="false" onclick="askPickCategory(this,'Community')">Community</button>
+      <button type="button" data-cat="Proposal / Idea" aria-pressed="false" onclick="askPickCategory(this,'Proposal / Idea')">Proposal / Idea</button>
+      <button type="button" data-cat="Other" aria-pressed="false" onclick="askPickCategory(this,'Other')">Other</button>
+      </div>
+     </div>
+    </div>
+
+    <div class="field">
+     <label for="ask-message">Your question</label>
+     <textarea name="message" id="ask-message" rows="5" maxlength="2000" required
+      placeholder="Ask the Terra Classic community…"></textarea>
+     <div class="count">
+      <svg width="26" height="26" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex:none;">
+       <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+       <circle id="ask-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
+        stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round"
+        style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
+      </svg>
+      <span id="ask-count">2000</span> / 2000
+     </div>
+    </div>
+
+    <div class="field">
+     <label>Hashtags <span class="opt">(optional · max 5 · Enter or comma to add)</span></label>
+     <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-raw-input').focus()">
+      <span id="tag-pills"></span>
+      <input type="text" class="tag-input" id="tag-raw-input" placeholder="#ustc #sdk053 #validators..."
+       maxlength="24" autocomplete="off">
+     </div>
+     <div class="tag-suggestions" id="tag-suggestions">
+      <span class="lbl">Popular:</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('ustc')">#ustc</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('sdk053')">#sdk053</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('validators')">#validators</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('lunc')">#lunc</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('governance')">#governance</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('mm20')">#mm20</span>
+     <span class="tag-suggestion" onclick="addTagSuggestion('defi')">#defi</span>
+     </div>
+     <input type="hidden" name="tags" id="tags-hidden">
+    </div>
+
+    <details class="extra">
+     <summary>Poll options <span class="opt">(optional)</span> <em>Add choices for community voting</em></summary>
+     <div id="poll-options-list" class="polls"></div>
+     <button type="button" class="ghost sm" onclick="addPollOption()" id="add-poll-btn">Add option</button>
+     <input type="hidden" id="poll-options-hidden" name="pollOptions">
+    </details>
+
+    <details class="extra">
+     <summary>Evidence and links <span class="opt">(optional)</span> <em>Transaction hashes, screenshots, sources</em></summary>
+     <div class="field" style="margin-top:10px">
+      <input type="text" name="evidence" placeholder="https://finder.terraport.finance/mainnet/tx/...">
+     </div>
+    </details>
+   </section>
+
+   <h3 class="step-h"><span class="n">4</span>Review and submit</h3>
+   <section class="card summary">
+    <img src="assets/img/icons/a-answers.webp" alt="" width="160" height="160" loading="lazy">
+    <div>
+     <div class="t">Question summary</div>
+     <div class="line">Your question goes live on the Board · answers earn REP</div>
+    </div>
+    <button type="submit" class="ask-go" id="ask-btn">Ask the Oracle
+     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+   </section>
+  </form>
  </div>
 
- <div class="askv-grid">
-  <div class="askv-tile" style="--tc:#7B5CFF;">
-   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
-   <div class="t">Community answers</div>
-   <div class="d">Your question goes live on the Board. You pick the best answer.</div>
-  </div>
-  <div class="askv-tile" style="--tc:#E8C840;">
-   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></div>
-   <div class="t">+1 to +4 free Weekly entries</div>
-   <div class="d">Every question automatically enters you in the Weekly Draw.</div>
-  </div>
-  <div class="askv-tile" style="--tc:#00D4FF;">
-   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M5 12a7 7 0 0 1 14 0"/><circle cx="8" cy="15.5" r="2.6"/><circle cx="16" cy="15.5" r="2.6"/><path d="M10.6 15.5h2.8"/></svg></div>
-   <div class="t">No name, no account</div>
-   <div class="d">You post under your wallet address, never under a real name.</div>
-  </div>
-  <div class="askv-tile" style="--tc:#00FFB0;">
-   <div class="askv-ico"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg></div>
-   <div class="t">Builds your REP</div>
-   <div class="d">Asking counts toward your rank, streak, and weekly rewards.</div>
-  </div>
- </div>
- <div id="keplr-section">
- <div id="keplr-disconnected">
- <div style="text-align:center;padding:4px 0 20px;">
- <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Step 1 - Connect Wallet</div>
- <button class="btn btn-primary btn-full" id="keplr-connect-btn" onclick="openBagWalletPicker()">
- 🔑 Connect Wallet
- </button>
- <div style="margin-top:14px;padding:12px;background:rgba(84,147,247,0.04);border:1px solid rgba(84,147,247,0.1);border-radius:8px;">
- <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Supported: Keplr · Galaxy Station · Luncdash</div>
- </div>
- </div>
- </div>
- <div id="keplr-connected" style="display:none;">
- <div style="display:flex;align-items:center;gap:10px;background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;">
- <span>✅</span>
- <div>
- <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px;">Wallet Connected</div>
- <div style="font-size:11px;color:var(--muted);font-family:monospace;" id="connected-addr">terra1...</div>
- </div>
- <button onclick="disconnectKeplr()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕</button>
- </div>
- </div>
- </div>
- <div id="tx-section" style="display:none;">
- <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;text-align:center;">Step 2 - Verify Payment</div>
-
- <!-- Question tariff picker. The `value` of each radio must match a key in
-      QUESTION_TIERS in app.js; the Worker independently re-derives the tariff
-      from the on-chain pool leg, so this only decides what the wallet signs. -->
- <div id="tier-picker" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-  <label class="tier-opt" style="flex:1 1 180px;display:block;cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface);transition:border-color .15s,background .15s;">
-   <span style="display:flex;align-items:center;gap:8px;">
-    <input type="radio" name="question-tier" value="basic" checked
-           onchange="if(typeof connectedAddress!=='undefined'&&connectedAddress&&typeof updateVerifyBtnPrice==='function')updateVerifyBtnPrice(connectedAddress);"
-           style="accent-color:var(--accent);margin:0;">
-    <b style="color:var(--text);font-size:13px;">Basic &middot; 50,000 LUNC</b>
-   </span>
-   <span style="display:block;margin-top:6px;font-size:11px;line-height:1.5;color:var(--muted);">
-    +1 free Weekly Draw entry
-   </span>
-  </label>
-  <label class="tier-opt" style="flex:1 1 180px;display:block;cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface);transition:border-color .15s,background .15s;">
-   <span style="display:flex;align-items:center;gap:8px;">
-    <input type="radio" name="question-tier" value="priority"
-           onchange="if(typeof connectedAddress!=='undefined'&&connectedAddress&&typeof updateVerifyBtnPrice==='function')updateVerifyBtnPrice(connectedAddress);"
-           style="accent-color:var(--gold);margin:0;">
-    <b style="color:var(--gold);font-size:13px;">Priority &middot; 200,000 LUNC</b>
-   </span>
-   <span style="display:block;margin-top:6px;font-size:11px;line-height:1.5;color:var(--muted);">
-    +4 free Weekly Draw entries &middot; pinned to top for 24h
-   </span>
-  </label>
- </div>
-
- <div class="askv-price" id="ask-price-panel">
-  <div>
-   <div class="base" id="ask-price-base" style="display:none;">Base price &middot; <span id="ask-price-base-amt">50,000</span> LUNC</div>
-   <div class="now" id="ask-price-now">Your price: <b>50,000 LUNC</b></div>
-  </div>
-  <div class="askv-badge" id="ask-price-badge" style="display:none;">
-   <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg><span id="ask-price-badge-text"></span>
-  </div>
- </div>
- <div class="askv-split">
-  <div class="askv-chip p"><b>50%</b> &rarr; Weekly Prize Pool</div>
-  <div class="askv-chip"><b>50%</b> &rarr; Protocol Treasury</div>
- </div>
-
- <div class="form-group">
- <label>TX Hash</label>
- <div style="display:flex;gap:8px;">
- <input type="text" id="tx-input" style="display:none;" placeholder="Paste your transaction hash..." style="flex:1;">
- <button class="btn btn-primary" onclick="autoPayAndUnlock()" id="verify-btn" style="white-space:nowrap;padding:12px 16px;">Pay 50,000 LUNC & Unlock &rarr;</button>
- </div>
- </div>
- <div id="tx-status" style="display:none;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;"></div>
- </div>
- <form id="ask-form" action="https://formspree.io/f/maqpebee" method="POST" style="display:none;">
- <input type="text" name="_gotcha" style="display:none">
- <input type="hidden" name="_subject" value="[Terra Oracle] New Question Submitted">
- <input type="hidden" name="tx_hash" id="verified-tx-hidden">
- <input type="hidden" name="wallet" id="verified-wallet-hidden">
- <div style="display:flex;align-items:center;gap:10px;background:rgba(102,255,170,0.05);border:1px solid rgba(102,255,170,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;">
- <span>🔓</span>
- <div style="font-size:12px;color:var(--green);">Payment verified - form unlocked!</div>
- </div>
- <div class="form-group">
- <label>Category</label>
- <select name="category" required>
- <option value="" disabled selected>Select category...</option>
- <option>Security / Vulnerability</option>
- <option>Protocol Bug</option>
- <option>Governance</option>
- <option>Proposal / Idea</option>
- <option>Validator Issue</option>
- <option>Community</option>
- <option>Fraud / Manipulation</option>
- <option>Other</option>
- </select>
- </div>
- <div class="form-group">
- <label>Your Question</label>
- <textarea name="message" id="ask-message" placeholder="Ask anything about Terra Classic - governance, technical, community, market..." required maxlength="2000"></textarea>
- <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;">
- <svg width="28" height="28" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex-shrink:0;">
- <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
- <circle id="ask-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" stroke-width="3"
- stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round" style="transition:stroke-dashoffset 0.2s,stroke 0.2s;"/>
- </svg>
- <span style="font-size:10px;color:var(--muted);min-width:28px;text-align:right;" id="ask-count">2000</span>
- </div>
- </div>
- <div class="form-group">
- <label>Hashtags <span style="font-size:9px;color:var(--muted);text-transform:none">(optional · max 5 · press Enter or comma to add)</span></label>
- <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-raw-input').focus()">
- <span id="tag-pills"></span>
- <input type="text" class="tag-input" id="tag-raw-input" placeholder="#ustc #sdk053 #validators..."
- maxlength="24" autocomplete="off">
- </div>
- <div class="tag-suggestions" id="tag-suggestions">
- <span style="font-size:10px;color:var(--muted);margin-right:2px;">Popular:</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('ustc')">#ustc</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('sdk053')">#sdk053</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('validators')">#validators</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('lunc')">#lunc</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('governance')">#governance</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('mm20')">#mm20</span>
- <span class="tag-suggestion" onclick="addTagSuggestion('defi')">#defi</span>
- </div>
- <input type="hidden" name="tags" id="tags-hidden">
- </div>
- <div class="form-group">
- <label>Poll Options <span style="font-size:9px;color:var(--muted);text-transform:none">(optional · max 5 · community can vote)</span></label>
- <div id="poll-options-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
- <button type="button" onclick="addPollOption()" id="add-poll-btn" style="font-size:11px;padding:6px 14px;border-radius:8px;border:1px dashed rgba(84,147,247,0.4);background:rgba(84,147,247,0.06);color:var(--accent);cursor:pointer;font-family:'Exo 2',sans-serif;">+ Add option</button>
- <input type="hidden" id="poll-options-hidden" name="pollOptions">
- </div>
- <div class="form-group">
- <label>Evidence / Links <span style="font-size:9px;color:var(--muted);text-transform:none">(optional)</span></label>
- <input type="text" name="evidence" placeholder="https://finder.terraport.finance/mainnet/tx/...">
- </div>
- <div class="divider">Submit</div>
- <button type="submit" class="btn btn-primary btn-full" id="ask-btn">Transmit Question →</button>
- </form>
- </div>
  <div class="success-state" id="ask-success">
- <div class="success-icon">📡</div>
- <div class="success-title">Question Received</div>
- <p class="success-text">Your question has been submitted.<br>It will appear on the board within <strong style="color:var(--accent)">1–3 minutes</strong>.</p>
- <div class="success-ref" id="ask-ref">REF: loading...</div>
+  <div class="success-icon">📡</div>
+  <div class="success-title">Question Received</div>
+  <p class="success-text">Your question has been submitted.<br>It will appear on the board within <strong>1–3 minutes</strong>.</p>
+  <div class="success-ref" id="ask-ref">REF: loading...</div>
  </div>
- </div>
- <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--muted);line-height:1.8;">
- Send LUNC to the protocol wallet before submitting.<br>
- <span style="font-size:10px;font-family:monospace;color:var(--accent);word-break:break-all;">terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</span>
- </div>
+
+ <p class="ask-foot">Send LUNC to the protocol wallet before submitting.<br>
+  <code>terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</code></p>
 </div>
 <div class="page shell-page" id="page-chat">
  <section class="chat">
@@ -1672,6 +1667,7 @@
 
 <script src="assets/js/page/gov-shell.js?v=5067359821"></script>
 <script src="assets/js/page/home-shell.js?v=2cbada7660"></script>
+<script src="assets/js/page/ask-shell.js?v=ad4c8883e5"></script>
 <script src="assets/js/shell-nav.js?v=79350e95fd"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
 </body>
