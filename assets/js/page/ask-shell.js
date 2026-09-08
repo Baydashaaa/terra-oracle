@@ -74,28 +74,45 @@
   // sign.js открывает форму, выставляя ей display:block. До этого
   // момента поля видны намеренно - чтобы было понятно, что ждёт
   // впереди, - но отправлять неоплаченный вопрос нельзя.
+  var lastLocked = null;
+
   function syncLock() {
     var form = $('ask-form');
     var btn = $('ask-btn');
     if (!form || !btn) return;
     var locked = (form.style.display === 'none' || form.style.display === '');
+    // Выходим, если ничего не изменилось. Наблюдатель ниже слушает
+    // атрибуты этой же формы, а мы вешаем на неё класс - без этой
+    // проверки запись сама себя и вызывала бы, по кругу.
+    if (locked === lastLocked) return;
+    lastLocked = locked;
     form.classList.toggle('is-locked', locked);
     btn.disabled = locked;
-    btn.title = locked ? 'Pay the question fee to unlock' : '';
+    if (locked) btn.setAttribute('title', 'Pay the question fee to unlock');
+    else btn.removeAttribute('title');
   }
 
-  function watch(el, fn) {
+  // Слушаем ТОЛЬКО атрибут style и без поддерева: и sign.js, и мы сами
+  // пишем внутрь этих узлов, а широкая подписка замыкает наблюдателя
+  // на собственную запись.
+  function watchStyle(el, fn) {
     if (!el) return;
-    new MutationObserver(fn).observe(el, { attributes: true, childList: true, subtree: true });
+    new MutationObserver(fn).observe(el, { attributes: true, attributeFilter: ['style'] });
+  }
+
+  function watchText(el, fn) {
+    if (!el) return;
+    new MutationObserver(fn).observe(el, { childList: true, subtree: true, characterData: true });
   }
 
   function start() {
     if (!$('ask-form')) return;
 
-    watch($('ask-price-now'), syncSummary);
-    watch($('ask-price-base'), syncSummary);
-    watch($('ask-price-badge'), syncSummary);
-    watch($('ask-form'), syncLock);
+    watchText($('ask-price-now'), syncSummary);
+    watchStyle($('ask-price-base'), syncSummary);
+    watchStyle($('ask-price-badge'), syncSummary);
+    watchText($('ask-price-badge-text'), syncSummary);
+    watchStyle($('ask-form'), syncLock);
 
     document.addEventListener('change', function (e) {
       if (e.target.name === 'question-tier') syncSummary();
