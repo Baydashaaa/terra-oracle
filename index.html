@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="510e99b13e 2026-09-08">
+  <meta name="oracle-build" content="99c506285e 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=2f97016d58">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=7825be7f12">
 
 
   <!-- Charts -->
@@ -123,7 +123,7 @@
     <nav class="group" aria-label="Community">
       <h2>COMMUNITY</h2>
       <a class="nav" href="?v=reputation" data-view="reputation"><span class="ico"><img src="assets/img/icons/reputation.webp" alt="" width="96" height="96" loading="lazy"></span>Reputation</a>
-            <a class="nav" href="#"><span class="ico"><img src="assets/img/icons/achievements.webp" alt="" width="96" height="96" loading="lazy"></span>Achievements</a>
+            <a class="nav" hidden href="#"><span class="ico"><img src="assets/img/icons/achievements.webp" alt="" width="96" height="96" loading="lazy"></span>Achievements</a>
       <a class="nav" href="?v=nft" data-view="nft"><span class="ico"><img src="assets/img/icons/nft.webp" alt="" width="96" height="96" loading="lazy"></span>NFT Collection</a>
     </nav>
 
@@ -131,10 +131,10 @@
          its own subdomain, so it is a departure, not a section of this shell.
          TODO: replace the four hrefs with the real addresses. -->
     <div class="socials">
-      <a href="#" title="X" aria-label="X" target="_blank" rel="noopener"><img src="assets/img/icons/s-x.webp" alt="" width="128" height="128" loading="lazy"></a>
-      <a href="#" title="Telegram" aria-label="Telegram" target="_blank" rel="noopener"><img src="assets/img/icons/s-tg.webp" alt="" width="128" height="128" loading="lazy"></a>
-      <a href="#" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener"><img src="assets/img/icons/s-github.webp" alt="" width="128" height="128" loading="lazy"></a>
-      <a class="docs" href="#" title="Documentation" aria-label="Documentation" target="_blank" rel="noopener">
+      <a href="https://x.com/terraoracledraw" title="X" aria-label="X" target="_blank" rel="noopener"><img src="assets/img/icons/s-x.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a href="https://t.me/terra_oracle" title="Telegram" aria-label="Telegram" target="_blank" rel="noopener"><img src="assets/img/icons/s-tg.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a href="https://github.com/Baydashaaa/terra-oracle" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener"><img src="assets/img/icons/s-github.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a class="docs" href="https://docs.terraoracle.io/?from=oracle" title="Documentation" aria-label="Documentation" target="_blank" rel="noopener">
         <img src="assets/img/icons/s-docs.webp" alt="" width="128" height="128" loading="lazy">
       </a>
     </div>
@@ -230,539 +230,137 @@
 
 
 <!-- Mobile navigation drawer -->
-<div class="page active" id="page-home" style="position:relative;max-width:100%;padding:0;">
-
-<!-- ══ MOBILE HERO ══ -->
-<div class="mobile-hero">
-
-  <!-- Фоновый логотип - за текстом, приглушён -->
-  <div class="mobile-hero-bg-logo">
-    <img src="logo.png" alt="">
-  </div>
-
-  <!-- Контент поверх -->
-  <div class="mobile-hero-content">
-    <div class="mobile-hero-eyebrow">Terra Classic Ecosystem</div>
-    <div class="mobile-hero-title">Terra <span class="oracle-word">Oracle</span></div>
-    <div class="mobile-hero-sub">Classic</div>
-    <div class="mobile-hero-tagline">The intelligence layer of Terra Classic</div>
-  </div>
-
-  <!-- Primary CTA -->
-  <button class="mobile-hero-cta-primary" onclick="showPage('about')">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-    About Protocol
-  </button>
-</div>
-
-<!-- ══ MOBILE HOME SECTIONS ══ -->
-<div class="mobile-home-sections">
-
-  <!-- MODULES label -->
-  <div class="mobile-section-label">Modules</div>
-
-  <!-- PRIMARY: Oracle Draw -->
-  <div onclick="window.open('https://draw.terraoracle.io/','_blank')" class="zk-module zk-module-star mobile-primary-card">
-    <div class="zk-star-shimmer"></div>
-    <div class="zk-module-bar zk-module-bar-fast"></div>
-    <div class="zk-module-inner" style="position:relative;z-index:2;">
-      <div class="zk-module-tag" style="color:rgba(0,212,255,0.9);">&#9678; ACTIVE MODULE</div>
-      <div style="margin-bottom:10px;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 6px #00D4FF70);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg></div>
-      <div style="font-weight:700;font-size:17px;margin-bottom:8px;color:#fff;" class="zk-module-title">Oracle Draw</div>
-      <div style="font-size:13px;color:#b4c8e8;line-height:1.65;" class="zk-module-desc">Two draws - Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
-      <div style="margin-top:14px;font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);" class="zk-module-cta">Enter the draw →</div>
-      <div class="zk-module-dots"></div>
+<div class="page active" id="page-home">
+<!-- hero -->
+<section class="hero">
+  <img class="art" src="assets/img/hero.webp" alt=""
+       width="1600" height="800" fetchpriority="high" decoding="async">
+  <div class="veil"></div>
+  <div class="copy">
+    <img class="hmark" src="assets/img/tco.webp" alt="" width="160" height="160">
+    <h2>TERRA <em>ORACLE</em></h2>
+    <p class="classic">CLASSIC</p>
+    <p class="tagline">Voices today. Answers tomorrow.</p>
+    <p class="meta">Anonymous · Decentralized · Community driven</p>
+    <div class="lunc">
+      <span class="coin"><img src="assets/img/lunc.webp" alt="" width="128" height="128"></span>
+      <div><b>LUNC</b><span>Built on Terra Classic</span></div>
+    </div>
+    <div class="btns">
+      <a class="btn btn-primary" href="/about" onclick="showPage('about');return false">About protocol <i data-i="arrow"></i></a>
     </div>
   </div>
+</section>
 
-  <!-- SECONDARY: 3 карточки в столбец -->
-  <div class="mobile-secondary-cards">
-    <div onclick="showPage('board')" class="zk-module mobile-card-row">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 6px #a78bfa70);"><circle cx="12" cy="10" r="6.4"/><path d="M7.5 19.6h9"/><path d="M9.2 16.3l-.9 3.3M14.8 16.3l.9 3.3"/><path d="M9.7 8.3a3.3 3.3 0 012.5-1.6"/></svg></div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag">◈ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Oracle Board</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Ask questions about governance, validators &amp; market.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#7B5CFF;">Board →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('vote')" class="zk-module mobile-card-row" style="--mod-c1:#A855F7;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 6px #a78bfa70);"><rect x="3" y="9.6" width="18" height="10.4" rx="2"/><path d="M8.6 13.6h6.8"/><path d="M8 9.6V4h8v5.6"/><path d="M10.4 6.6h3.2"/></svg></div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">◆ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Governance Vote</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Vote on weekly and monthly proposals.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#A855F7;">Vote →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('chat')" class="zk-module mobile-card-row" style="--mod-c1:#00D4FF;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 6px #00D4FF70);"><path d="M21 11.5c0 4-4 7.2-9 7.2-1.1 0-2.2-.15-3.2-.45L3.5 20.5l1.7-3.6C4 15.4 3 13.6 3 11.5 3 7.5 7 4.3 12 4.3s9 3.2 9 7.2z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg></div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">◎ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">DAO Chat</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">On-chain messages, forever on Terra Classic.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#00D4FF;">5K →</div>
-        </div>
-      </div>
-    </div>
-    <div onclick="showPage('ask')" class="zk-module mobile-card-row" style="--mod-c1:#00FFB0;--mod-c2:#7B5CFF;">
-      <div class="zk-module-bar"></div>
-      <div class="zk-module-inner">
-        <div class="mobile-card-row-inner">
-          <div class="mobile-card-icon"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;filter:drop-shadow(0 0 4px #00FFB088);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg></div>
-          <div class="mobile-card-text">
-            <div class="zk-module-tag" style="color:rgba(0,255,176,0.65);">◈ Active</div>
-            <div class="zk-module-title" style="font-weight:700;font-size:15px;color:#fff;margin-bottom:4px;">Ask</div>
-            <div class="zk-module-desc" style="font-size:11px;color:#8aaccc;line-height:1.5;">Questions to the community, posted under your wallet address.</div>
-          </div>
-          <div class="mobile-card-cta" style="color:#00FFB0;">200K →</div>
-        </div>
-      </div>
-    </div>
+<!-- module cards -->
+<section class="mods" aria-label="Modules">
+  <a class="mod" data-tone="blue" href="?v=chat" data-view="chat">
+    <img src="assets/img/mod-chat.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+    <span class="scrim"></span>
+    <span class="body">
+      <h3>Chat</h3>
+      <p>Anonymous discussions, stored on chain forever.</p>
+      <span class="go">Open chat <i data-i="arrow"></i></span>
+    </span>
+  </a>
+  <a class="mod" data-tone="violet" href="?v=ask" data-view="ask">
+    <img src="assets/img/mod-ask.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+    <span class="scrim"></span>
+    <span class="body">
+      <h3>Ask Oracle</h3>
+      <p>Ask the community. Reward the best answer.</p>
+      <span class="go">Ask a question <i data-i="arrow"></i></span>
+    </span>
+  </a>
+  <a class="mod" data-tone="gold" href="?v=draw" data-view="draw">
+    <img src="assets/img/mod-draw.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+    <span class="scrim"></span>
+    <span class="body">
+      <h3>Oracle Draw</h3>
+      <p>Daily and weekly draws, verifiable on chain.</p>
+      <span class="go">View draws <i data-i="arrow"></i></span>
+    </span>
+  </a>
+  <a class="mod" data-tone="cyan" href="?v=draw" data-view="draw">
+    <img src="assets/img/mod-circuit.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+    <span class="scrim"></span>
+    <span class="body">
+      <h3>Circuit</h3>
+      <p>Claim a zone on the 250 cell board.</p>
+      <span class="go">Enter Circuit <i data-i="arrow"></i></span>
+    </span>
+  </a>
+  <a class="mod" data-tone="pink" href="?v=markets" data-view="markets">
+    <img src="assets/img/mod-markets.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+    <span class="scrim"></span>
+    <span class="body">
+      <h3>Markets</h3>
+      <p>Back yes or no. The chain settles it.</p>
+      <span class="go">Open markets <i data-i="arrow"></i></span>
+    </span>
+  </a>
+</section>
+
+<!-- stats strip -->
+<section class="stats" aria-label="Ecosystem stats">
+  <h3>Ecosystem stats</h3>
+
+  <div class="stat">
+    <img class="ico" src="assets/img/icons/stat-tvl.webp" alt="" width="128" height="128" loading="lazy">
+    <div><div class="lbl">Treasury TVL</div><div class="num" id="stTvl">-</div><div class="chg" id="stTvlSub">-</div></div>
   </div>
 
-  <!-- TOKEN label -->
-  <div class="mobile-section-label">Token</div>
-
-  <!-- TCO Token block - same redesign as desktop (animated coin + tiles) -->
-  <div class="mobile-tco-block">
-    <div class="mobile-tco-bar"></div>
-    <div class="mobile-tco-inner">
-      <div class="tcox-wrap">
-        <div class="tcox-coin">
-          <div class="halo"></div>
-          <div class="core">TCO</div>
-          <div class="ring"></div>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-weight:800;font-size:15px;color:#fff;font-family:'Rajdhani',sans-serif;letter-spacing:.03em;">TCO Token</span>
-            
-          </div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55;">Terra Classic Oracle - native governance &amp; reward token. Earned by participating, staked for more.</div>
-          <div class="tcox-grid">
-            <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
-              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
-              <div class="t">Governance</div>
-              <div class="d">Vote weight by TCO stake</div>
-            </div>
-            <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
-              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M8 9l4 12M16 9l-4 12M8 9l4-6M16 9l-4-6"/></svg></div>
-              <div class="t">Rewards</div>
-              <div class="d">Earned by Oracle participation</div>
-            </div>
-            <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
-              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/><path d="M3 21h18"/></svg></div>
-              <div class="t">Staking</div>
-              <div class="d">Lock TCO to earn passive yield</div>
-            </div>
-            <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
-              <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg></div>
-              <div class="t">On-Chain</div>
-              <div class="d">Terra Classic · columbus-5</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="stat">
+    <img class="ico" src="assets/img/icons/stat-players.webp" alt="" width="128" height="128" loading="lazy">
+    <div><div class="lbl">Draw participants</div><div class="num" id="stPlayers">-</div><div class="chg" id="stPlayersSub">-</div></div>
   </div>
 
-  <!-- FLOW label -->
-  <div class="mobile-section-label">Protocol Flow</div>
-
-  <!-- Protocol Flow - same pfx redesign as desktop (spine, nodes, split bars) -->
-  <div class="mobile-flow-block">
-    <div class="mobile-flow-bar"></div>
-    <div class="mobile-flow-header">◈ Protocol Flow</div>
-    <div style="padding:16px 14px 18px;">
-
-      <div class="pfx-stream" style="--pc:#7B5CFF;--pt:#a08fff;">
-        <div class="pfx-node"></div>
-        <div class="pfx-title">Oracle Questions</div>
-        <div class="pfx-row">
-          <div class="pfx-chip" style="border-color:rgba(123,92,255,.3);background:rgba(123,92,255,.08);">
-            <div class="v">from 50,000 LUNC</div>
-            <div class="s">per question</div>
-          </div>
-          <div class="pfx-chip"><div class="v" style="font-size:11px;color:rgba(0,255,176,.9);">+1 to +4 free Weekly entries</div></div>
-        </div>
-        <div class="pfx-bar">
-          <span style="width:50%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);"></span>
-          <span style="width:50%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.15s;"></span>
-        </div>
-        <div class="pfx-legend">
-          <div><i style="background:#a78bfa;"></i>50% &rarr; Weekly Prize Pool</div>
-          <div><i style="background:#E8C840;"></i>50% &rarr; Protocol Treasury</div>
-        </div>
-      </div>
-
-      <div class="pfx-stream" style="--pc:#f59e0b;--pt:#fbbf24;">
-        <div class="pfx-node"></div>
-        <div class="pfx-title">Daily Draw &middot; every day 20:00 UTC</div>
-        <div class="pfx-row">
-          <div class="pfx-chip" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08);">
-            <div class="v">NFT Mint</div>
-            <div class="s">Common / Rare / Legendary</div>
-          </div>
-          <div class="pfx-chip" style="border-color:rgba(245,158,11,.25);"><div class="v" style="font-size:12px;color:#fbbf24;">Daily Pool</div></div>
-        </div>
-        <div class="pfx-bar">
-          <span style="width:80%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
-          <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.15s;"></span>
-          <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.3s;"></span>
-        </div>
-        <div class="pfx-legend">
-          <div><i style="background:#00ffb0;"></i>80% &rarr; 1 Winner</div>
-          <div><i style="background:#a78bfa;"></i>10% &rarr; Seeds</div>
-          <div><i style="background:#E8C840;"></i>10% &rarr; Treasury</div>
-        </div>
-      </div>
-
-      <div class="pfx-stream" style="--pc:#a78bfa;--pt:#c4b5fd;">
-        <div class="pfx-node"></div>
-        <div class="pfx-title">Weekly Draw &middot; every Monday 20:00 UTC</div>
-        <div class="pfx-row">
-          <div class="pfx-chip" style="border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08);">
-            <div class="v">NFT Mint + Questions</div>
-            <div class="s">entries from both</div>
-          </div>
-          <div class="pfx-chip" style="border-color:rgba(167,139,250,.25);"><div class="v" style="font-size:12px;color:#c4b5fd;">Weekly Pool</div></div>
-        </div>
-        <div class="pfx-bar">
-          <span style="width:48%;background:linear-gradient(90deg,#059669,#00ffb0);"></span>
-          <span style="width:20%;background:linear-gradient(90deg,#0a9f74,#00e6a0);animation-delay:.12s;"></span>
-          <span style="width:12%;background:linear-gradient(90deg,#0b8a68,#00cc90);animation-delay:.24s;"></span>
-          <span style="width:10%;background:linear-gradient(90deg,#7B5CFF,#a78bfa);animation-delay:.36s;"></span>
-          <span style="width:10%;background:linear-gradient(90deg,#b8962e,#E8C840);animation-delay:.48s;"></span>
-        </div>
-        <div class="pfx-legend">
-          <div><i style="background:#00ffb0;"></i>48% &rarr; 1st</div>
-          <div><i style="background:#00e6a0;"></i>20% &rarr; 2nd</div>
-          <div><i style="background:#00cc90;"></i>12% &rarr; 3rd</div>
-          <div><i style="background:#a78bfa;"></i>10% &rarr; Seeds</div>
-          <div><i style="background:#E8C840;"></i>10% &rarr; Treasury</div>
-        </div>
-      </div>
-
-    </div>
+  <div class="stat">
+    <img class="ico" src="assets/img/icons/stat-paid.webp" alt="" width="128" height="128" loading="lazy">
+    <div><div class="lbl">Total paid</div><div class="num" id="stPaid">-</div><div class="chg" id="stPaidSub">-</div></div>
   </div>
 
-</div><!-- /.mobile-home-sections -->
-
-<!-- sticky bottom bar удалён -->
-
- <!-- ══ HERO WRAPPER - фиксированная высота, всё абсолютное внутри ══ -->
- <div id="hero-stage" style="position:relative;width:100%;min-height:620px;overflow:visible;isolation:isolate;">
-
-
-  <!-- Фоновый логотип - точно по центру stage -->
-  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2;">
-   <img src="logo.png" style="width:640px;height:640px;opacity:0.2;user-select:none;object-fit:contain;animation:centerPulse 6s ease-in-out infinite;">
+  <div class="stat">
+    <img class="ico" src="assets/img/icons/stat-markets.webp" alt="" width="128" height="128" loading="lazy">
+    <div><div class="lbl">Rounds settled</div><div class="num" id="stRounds">-</div><div class="chg" id="stRoundsSub">-</div></div>
   </div>
 
-  <!-- КАРТОЧКИ + CENTER - единый flex-контейнер, текст по центру flex -->
-  <div style="position:relative;z-index:3;width:100%;min-height:620px;
-    display:flex;align-items:stretch;justify-content:space-between;
-    padding:32px 24px;box-sizing:border-box;gap:20px;max-width:1280px;margin:0 auto;">
-
-    <!-- CENTER TEXT - в потоке flex, занимает место между колонками -->
-
-    <!-- ЛЕВАЯ КОЛОНКА -->
-    <div style="display:flex;flex-direction:column;gap:20px;width:300px;flex-shrink:0;">
-
-      <!-- Oracle Board -->
-      <div onclick="showPage('board')" class="zk-module" style="flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;">
-        <img src="assets/img/oracle_board-v1.png" style="position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);width:274px;height:274px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:space-between;">
-          <div class="zk-module-tag">&#9672; ACTIVE MODULE</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:14px;color:#fff;margin-top:-16px;" class="zk-module-title">Oracle Board</div>
-            <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">Ask questions about Terra Classic governance, validators and market. Get answers from the community.</div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:#7B5CFF;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">from 50,000 LUNC per question →</div>
-            <div class="zk-module-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Governance Vote -->
-      <div onclick="showPage('vote')" class="zk-module" style="flex:1;--mod-c1:#A855F7;--mod-c2:#7B5CFF;position:relative;overflow:hidden;display:flex;flex-direction:column;">
-        <img src="assets/img/governance-v2.png" style="position:absolute;left:calc(50% + 10px);bottom:-60px;transform:translateX(-50%);width:324px;height:324px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:space-between;">
-          <div class="zk-module-tag" style="color:rgba(168,85,247,0.65);">&#9670; ACTIVE MODULE</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:14px;color:#fff;margin-top:-16px;" class="zk-module-title">Governance Vote</div>
-            <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">Vote on weekly and monthly proposals. Liquidity pairs, development priorities, reward models.</div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:#A855F7;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">Vote on proposals →</div>
-            <div class="zk-module-dots"></div>
-          </div>
-        </div>
-      </div>
-
+  <div class="chainbox">
+    <img src="assets/img/globe.webp" alt="" width="160" height="160" loading="lazy">
+    <div>
+      <div class="nm">Terra Classic</div>
+      <div class="sub">Blockchain</div>
     </div>
+    <div class="tags">Decentralized &middot; Secure</div>
+  </div>
+</section>
 
-    <!-- ЦЕНТР - текст в потоке flex -->
-    <div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;">
-      <div class="hero-center" style="text-align:center;display:flex;flex-direction:column;
-        align-items:center;width:360px;pointer-events:none;">
-
-        <div class="hero-eyebrow">Terra Classic Ecosystem</div>
-        <h1 class="hero-h1"><span class="hero-h1-terra">Terra</span> <span class="hero-h1-oracle">Oracle</span></h1>
-        <div class="hero-h1-sub">Classic</div>
-        <div class="hero-sub">The intelligence layer of Terra Classic</div>
-        <div class="hero-micro">
-          <span class="hero-micro-inner">Q&amp;A · Governance · Verifiable Draws</span><br>
-          <span class="hero-micro-muted">powered by LUNC</span>
-        </div>
-        <div class="hero-tco-pill" style="pointer-events:all;">
-          🪙 <strong style="letter-spacing:0.1em;">TCO</strong> · Terra Classic Oracle
-        </div>
-      </div>
-    </div>
-
-    <!-- ПРАВАЯ КОЛОНКА -->
-    <div style="display:flex;flex-direction:column;gap:20px;width:300px;flex-shrink:0;">
-
-      <!-- DAO Chat -->
-      <div onclick="showPage('chat')" class="zk-module" style="flex:1;--mod-c1:#00D4FF;--mod-c2:#7B5CFF;position:relative;overflow:hidden;display:flex;flex-direction:column;">
-        <img src="assets/img/chat-v2.png" style="position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);width:261px;height:261px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:0;">
-        <div class="zk-module-bar"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:space-between;">
-          <div class="zk-module-tag" style="color:rgba(0,212,255,0.65);">&#9678; ACTIVE MODULE</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:14px;color:#fff;margin-top:-16px;" class="zk-module-title">DAO Chat</div>
-            <div style="font-size:13px;color:#8aaccc;line-height:1.75;" class="zk-module-desc">On-chain messages stored forever on Terra Classic blockchain. Every message costs 5,000 LUNC.</div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;" class="zk-module-cta">5,000 LUNC per message →</div>
-            <div class="zk-module-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Oracle Draw STAR -->
-      <div onclick="window.open('https://draw.terraoracle.io/','_blank')" class="zk-module zk-module-star" style="flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;">
-        <img src="assets/img/draw-v2.png" style="position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);width:297px;height:297px;object-fit:contain;opacity:0.28;pointer-events:none;z-index:1;">
-        <div class="zk-star-shimmer"></div>
-        <div class="zk-module-bar zk-module-bar-fast"></div>
-        <div class="zk-module-inner" style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:space-between;">
-          <div class="zk-module-tag" style="color:rgba(0,212,255,0.8);">&#9678; ACTIVE MODULE</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:14px;color:#fff;margin-top:-16px;" class="zk-module-title">Oracle Draw</div>
-            <div style="font-size:13px;color:#b4c8e8;line-height:1.75;" class="zk-module-desc">Two draws - Daily &amp; Weekly. Mint Oracle Mask NFTs to enter. On-chain verifiable draws on Terra Classic.</div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:#00D4FF;letter-spacing:0.08em;font-weight:600;text-shadow:0 0 8px rgba(0,212,255,0.5);" class="zk-module-cta">Enter the draw →</div>
-            <div class="zk-module-dots"></div>
-          </div>
-        </div>
-      </div>
-
+<!-- bottom banner -->
+<section class="banner">
+  <img class="art" src="assets/img/banner-ecosystem.webp" alt="" loading="lazy" width="1500" height="500">
+  <span class="scrim"></span>
+  <div>
+    <h3>Empowering the <em>Terra Classic</em> ecosystem</h3>
+    <p>Together we build, govern and grow.</p>
+    <div class="btns">
+      <a class="btn btn-primary" href="https://docs.terraoracle.io/?from=oracle" target="_blank" rel="noopener">Read the docs</a>
+      <a class="btn btn-ghost" href="https://t.me/terra_oracle" target="_blank" rel="noopener">Join the community</a>
     </div>
   </div>
- </div>
+  <blockquote class="quote">
+    <span class="mk">&ldquo;</span>
+    The Oracle does not predict the future. It reveals the possibilities.
+    <cite>Terra Oracle</cite>
+  </blockquote>
+</section>
 
-  <!-- ── ORACLE CYCLE ── -->
-  <div id="oc3-wrap" style="max-width:860px;margin:0 auto;padding:0 24px;position:relative;z-index:1;">
-   <div class="oc3">
-    <div class="oc3-glow1"></div><div class="oc3-glow2"></div>
-    <div class="oc3-head">
-     <div class="oc3-kicker">&#9670; How It All Connects</div>
-     <div class="oc3-title">One loop. <em>Every action pays forward.</em></div>
-     <div class="oc3-sub">The Oracle Cycle resets every Monday - and the top players split the Treasury.</div>
-    </div>
-    <div class="oc3-body">
-     <div class="oc3-reactor">
-      <svg viewBox="0 0 240 240">
-       <circle class="oc3-r-base" cx="120" cy="120" r="112" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
-       <g class="oc3-ring-spin"><circle class="oc3-r1" cx="120" cy="120" r="104" fill="none" stroke="rgba(123,92,255,.35)" stroke-width="1.5" stroke-dasharray="40 260"/></g>
-       <g class="oc3-ring-spin2"><circle class="oc3-r2" cx="120" cy="120" r="96" fill="none" stroke="rgba(0,212,255,.3)" stroke-width="1" stroke-dasharray="20 120"/></g>
-       <circle id="oc3prog" class="oc3-prog" cx="120" cy="120" r="86" fill="none" stroke="url(#oc3g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
-       <defs><linearGradient id="oc3g" x1="0" y1="0" x2="240" y2="240"><stop id="oc3gs1" offset="0" stop-color="#7B5CFF"/><stop id="oc3gs2" offset="1" stop-color="#c4b5fd"/></linearGradient></defs>
-      </svg>
-      <div class="oc3-core"><div class="oc3-core-num" id="oc3num" style="color:#a78bfa;">01</div><div class="oc3-core-lbl">of 04 &middot; weekly</div></div>
-     </div>
-     <div class="oc3-steps" id="oc3steps">
-      <div class="oc3-step on" style="--nc:#7B5CFF;--nc2:#c4b5fd;">
-       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div><div class="oc3-name">Participate</div><div class="oc3-idx">01</div></div>
-       <div class="oc3-more"><div class="oc3-desc">Ask a question, join the on-chain chat, or cast your governance vote.</div>
-       <div class="oc3-tags"><span>Ask</span><span>Chat</span><span>Vote</span></div></div>
-       <div class="oc3-bar"></div>
-      </div>
-      <div class="oc3-step" style="--nc:#00D4FF;--nc2:#67e8f9;">
-       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg></div><div class="oc3-name">Earn REP</div><div class="oc3-idx">02</div></div>
-       <div class="oc3-more"><div class="oc3-desc">Every action builds reputation. Daily streaks multiply everything you earn.</div>
-       <div class="oc3-tags"><span>Points</span><span>Streaks &times;1.5</span><span>Ranks</span></div></div>
-       <div class="oc3-bar"></div>
-      </div>
-      <div class="oc3-step" style="--nc:#E8C840;--nc2:#fde68a;">
-       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></div><div class="oc3-name">Enter the Draw</div><div class="oc3-idx">03</div></div>
-       <div class="oc3-more"><div class="oc3-desc">Mint an Oracle Mask - win LUNC prizes, stack bonus REP, keep the collectible.</div>
-       <div class="oc3-tags"><span>LUNC Prizes</span><span>+REP</span><span>NFT</span></div></div>
-       <div class="oc3-bar"></div>
-      </div>
-      <div class="oc3-step" style="--nc:#00FFB0;--nc2:#6ee7b7;">
-       <div class="top"><div class="oc3-ico"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/></svg></div><div class="oc3-name">Get Rewarded</div><div class="oc3-idx">04</div></div>
-       <div class="oc3-more"><div class="oc3-desc">Top 20% by weekly REP split the Treasury pool. Then the loop begins again.</div>
-       <div class="oc3-tags"><span>Top 20%</span><span>Treasury Payout</span></div></div>
-       <div class="oc3-bar"></div>
-      </div>
-     </div>
-    </div>
-   </div>
+<!-- ==================== PARTNERS ==================== -->
+<section class="marquee-wrap" aria-label="Partners">
+  <h3>WORKING TOGETHER WITH</h3>
+  <div class="marquee-shell">
+    <div class="marquee" id="marquee"></div>
   </div>
-
-
-
-  <script src="assets/js/page/mobile-hero.js?v=49051a957a"></script>
-
-  <!-- Protocol sections below -->
- <div style="max-width:720px;margin:0 auto;padding:16px 24px 80px;position:relative;z-index:1;">
-
- <!-- ── TCO TOKEN ── -->
- <div class="zk-module" style="margin-bottom:20px;--mod-c1:#E8C840;--mod-c2:#7B5CFF;">
-  <div class="zk-module-bar"></div>
-  <div class="zk-module-inner" style="padding:24px 26px;">
-   <div class="tcox-wrap">
-    <div class="tcox-coin">
-     <div class="halo"></div>
-     <div class="core">TCO</div>
-     <div class="ring"></div>
-    </div>
-    <div style="flex:1;min-width:0;">
-     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span style="font-weight:800;font-size:16px;color:#fff;font-family:'Exo 2',sans-serif;letter-spacing:.03em;">TCO Token</span>
-      
-     </div>
-     <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6;">Terra Classic Oracle - native governance &amp; reward token of the ecosystem. Earned by participating, staked for more.</div>
-     <div class="tcox-grid">
-      <div class="tcox-tile" style="--tc:#7B5CFF;--tcb:rgba(123,92,255,.35);--tcs:rgba(123,92,255,.5);">
-       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10h14v11M3 10l9-6 9 6"/><path d="M9 21v-7M15 21v-7"/></svg></div>
-       <div class="t">Governance</div>
-       <div class="d">Vote weight by TCO stake</div>
-      </div>
-      <div class="tcox-tile" style="--tc:#00D4FF;--tcb:rgba(0,212,255,.35);--tcs:rgba(0,212,255,.5);">
-       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M8 9l4 12M16 9l-4 12M8 9l4-6M16 9l-4-6"/></svg></div>
-       <div class="t">Rewards</div>
-       <div class="d">Earned by Oracle participation</div>
-      </div>
-      <div class="tcox-tile" style="--tc:#ff8a3c;--tcb:rgba(255,138,60,.35);--tcs:rgba(255,138,60,.5);">
-       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/><path d="M3 21h18"/></svg></div>
-       <div class="t">Staking</div>
-       <div class="d">Lock TCO to earn passive yield</div>
-      </div>
-      <div class="tcox-tile" style="--tc:#00ffb0;--tcb:rgba(0,255,176,.3);--tcs:rgba(0,255,176,.45);">
-       <div class="tcox-ico"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg></div>
-       <div class="t">On-Chain</div>
-       <div class="d">Terra Classic · columbus-5</div>
-      </div>
-     </div>
-    </div>
-   </div>
-  </div>
- </div>
-
-  <!-- ── PROTOCOL FLOW ── -->
- <div class="pfv-wrap">
-  <div class="pfv-head">
-   <div class="pfv-tag">&#9672; Protocol Flow</div>
-   <div class="pfv-sub">Every LUNC paid in, and where it ends up.</div>
-  </div>
-  <div class="pfv-card">
-<svg class="pfv" viewBox="0 0 1000 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How LUNC moves through the protocol">
-<defs>
-<linearGradient id="ga" x1="0" x2="1"><stop offset="0" stop-color="#7B5CFF" stop-opacity=".18"/><stop offset="1" stop-color="#7B5CFF" stop-opacity=".7"/></linearGradient>
-<linearGradient id="gb" x1="0" x2="1"><stop offset="0" stop-color="#00D4FF" stop-opacity=".18"/><stop offset="1" stop-color="#00D4FF" stop-opacity=".7"/></linearGradient>
-<linearGradient id="gc" x1="0" x2="1"><stop offset="0" stop-color="#00FFB0" stop-opacity=".18"/><stop offset="1" stop-color="#00FFB0" stop-opacity=".7"/></linearGradient>
-<linearGradient id="gd" x1="0" x2="1"><stop offset="0" stop-color="#E8C840" stop-opacity=".18"/><stop offset="1" stop-color="#E8C840" stop-opacity=".7"/></linearGradient>
-</defs>
-<text x="106.0" y="34" class="pfv-stage">You pay</text>
-<text x="500.0" y="34" class="pfv-stage">It pools</text>
-<text x="894.0" y="34" class="pfv-stage">It pays out</text>
-<path d="M194,93.08 C298.0,93.08 298.0,85.28 402,85.28" class="pfv-link" stroke="url(#ga)"/>
-<path d="M194,93.08 C298.0,93.08 298.0,85.28 402,85.28" class="pfv-flow" stroke="#7B5CFF" style="animation-delay:0.0s"/>
-<path d="M194,104.91999999999999 C298.0,104.91999999999999 298.0,321.28 402,321.28" class="pfv-link" stroke="url(#ga)"/>
-<path d="M194,104.91999999999999 C298.0,104.91999999999999 298.0,321.28 402,321.28" class="pfv-flow" stroke="#7B5CFF" style="animation-delay:0.3s"/>
-<path d="M194,213.0 C298.0,213.0 298.0,334.72 402,334.72" class="pfv-link" stroke="url(#gb)"/>
-<path d="M194,213.0 C298.0,213.0 298.0,334.72 402,334.72" class="pfv-flow" stroke="#00D4FF" style="animation-delay:0.6s"/>
-<path d="M194,321.08 C298.0,321.08 298.0,210.0 402,210.0" class="pfv-link" stroke="url(#gc)"/>
-<path d="M194,321.08 C298.0,321.08 298.0,210.0 402,210.0" class="pfv-flow" stroke="#00FFB0" style="animation-delay:0.8999999999999999s"/>
-<path d="M194,332.92 C298.0,332.92 298.0,98.72 402,98.72" class="pfv-link" stroke="url(#gc)"/>
-<path d="M194,332.92 C298.0,332.92 298.0,98.72 402,98.72" class="pfv-flow" stroke="#00FFB0" style="animation-delay:1.2s"/>
-<path d="M598,92.0 C702.0,92.0 702.0,67.72 806,67.72" class="pfv-link" stroke="url(#ga)"/>
-<path d="M598,92.0 C702.0,92.0 702.0,67.72 806,67.72" class="pfv-flow" stroke="#7B5CFF" style="animation-delay:1.5s"/>
-<path d="M598,210.0 C702.0,210.0 702.0,78.28 806,78.28" class="pfv-link" stroke="url(#gb)"/>
-<path d="M598,210.0 C702.0,210.0 702.0,78.28 806,78.28" class="pfv-flow" stroke="#00D4FF" style="animation-delay:1.7999999999999998s"/>
-<path d="M598,317.92 C702.0,317.92 702.0,155.0 806,155.0" class="pfv-link" stroke="url(#gd)"/>
-<path d="M598,317.92 C702.0,317.92 702.0,155.0 806,155.0" class="pfv-flow" stroke="#E8C840" style="animation-delay:2.1s"/>
-<path d="M598,328.0 C702.0,328.0 702.0,237.0 806,237.0" class="pfv-link" stroke="url(#gd)"/>
-<path d="M598,328.0 C702.0,328.0 702.0,237.0 806,237.0" class="pfv-flow" stroke="#E8C840" style="animation-delay:2.4s"/>
-<path d="M598,338.08 C702.0,338.08 702.0,319.0 806,319.0" class="pfv-link" stroke="url(#gd)"/>
-<path d="M598,338.08 C702.0,338.08 702.0,319.0 806,319.0" class="pfv-flow" stroke="#E8C840" style="animation-delay:2.6999999999999997s"/>
-<path d="M894,406 C700,406 640,406 500,406 C420,406 402,380 402,352" class="pfv-loop"/>
-<text x="648" y="399" class="pfv-loop-t">10 % of every pool seeds the next round</text>
-<g class="pfv-n" style="--c:#7B5CFF"><rect x="18" y="62" width="176" height="74" rx="11" class="pfv-box"/><rect x="18" y="62" width="3.5" height="74" rx="2" fill="#7B5CFF"/><text x="34" y="95.0" class="pfv-t">Oracle Questions</text><text x="34" y="113.0" class="pfv-s">from 50,000 LUNC</text></g>
-<g class="pfv-n" style="--c:#00D4FF"><rect x="18" y="176" width="176" height="74" rx="11" class="pfv-box"/><rect x="18" y="176" width="3.5" height="74" rx="2" fill="#00D4FF"/><text x="34" y="209.0" class="pfv-t">DAO Chat</text><text x="34" y="227.0" class="pfv-s">5,000 LUNC / msg</text></g>
-<g class="pfv-n" style="--c:#00FFB0"><rect x="18" y="290" width="176" height="74" rx="11" class="pfv-box"/><rect x="18" y="290" width="3.5" height="74" rx="2" fill="#00FFB0"/><text x="34" y="323.0" class="pfv-t">NFT Mints</text><text x="34" y="341.0" class="pfv-s">Common / Rare / Legendary</text></g>
-<g class="pfv-n" style="--c:#7B5CFF"><rect x="402" y="50" width="196" height="84" rx="11" class="pfv-box"/><rect x="402" y="50" width="3.5" height="84" rx="2" fill="#7B5CFF"/><text x="418" y="88.0" class="pfv-t">Weekly Pool</text><text x="418" y="106.0" class="pfv-s">Mondays 20:00 UTC</text></g>
-<g class="pfv-n" style="--c:#00D4FF"><rect x="402" y="168" width="196" height="84" rx="11" class="pfv-box"/><rect x="402" y="168" width="3.5" height="84" rx="2" fill="#00D4FF"/><text x="418" y="206.0" class="pfv-t">Daily Pool</text><text x="418" y="224.0" class="pfv-s">every day 20:00 UTC</text></g>
-<g class="pfv-n" style="--c:#E8C840"><rect x="402" y="286" width="196" height="84" rx="11" class="pfv-box"/><rect x="402" y="286" width="3.5" height="84" rx="2" fill="#E8C840"/><text x="418" y="324.0" class="pfv-t">Treasury</text><text x="418" y="342.0" class="pfv-s">distributed Wednesdays</text></g>
-<g class="pfv-n" style="--c:#00D4FF"><rect x="806" y="40" width="176" height="66" rx="11" class="pfv-box"/><rect x="806" y="40" width="3.5" height="66" rx="2" fill="#00D4FF"/><text x="822" y="69.0" class="pfv-t">Draw winners</text><text x="822" y="87.0" class="pfv-s">48 / 20 / 12 % &middot; 80 %</text></g>
-<g class="pfv-n" style="--c:#E8C840"><rect x="806" y="122" width="176" height="66" rx="11" class="pfv-box"/><rect x="806" y="122" width="3.5" height="66" rx="2" fill="#E8C840"/><text x="822" y="151.0" class="pfv-t">Liquidity</text><text x="822" y="169.0" class="pfv-s">50 % of Treasury</text></g>
-<g class="pfv-n" style="--c:#00FFB0"><rect x="806" y="204" width="176" height="66" rx="11" class="pfv-box"/><rect x="806" y="204" width="3.5" height="66" rx="2" fill="#00FFB0"/><text x="822" y="233.0" class="pfv-t">REP rewards</text><text x="822" y="251.0" class="pfv-s">25 % &middot; top 20 % by REP</text></g>
-<g class="pfv-n" style="--c:#5A7BA8"><rect x="806" y="286" width="176" height="66" rx="11" class="pfv-box"/><rect x="806" y="286" width="3.5" height="66" rx="2" fill="#5A7BA8"/><text x="822" y="315.0" class="pfv-t">Reserve &amp; Dev</text><text x="822" y="333.0" class="pfv-s">15 % &middot; 10 %</text></g>
-<g class="pfv-lab"><rect x="206.0" y="311.4" width="52.2" height="17" rx="8" class="pfv-lab-bg"/><text x="232.1" y="323.9" class="pfv-pct" fill="#00FFB0">entries</text></g>
-<g class="pfv-lab"><rect x="214.4" y="107.5" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="232.1" y="120.0" class="pfv-pct" fill="#7B5CFF">50 %</text></g>
-<g class="pfv-lab"><rect x="745.5" y="157.2" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="763.2" y="169.7" class="pfv-pct" fill="#E8C840">50 %</text></g>
-<g class="pfv-lab"><rect x="745.5" y="78.3" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="763.2" y="90.8" class="pfv-pct" fill="#00D4FF">80 %</text></g>
-<g class="pfv-lab"><rect x="211.6" y="210.5" width="41.0" height="17" rx="8" class="pfv-lab-bg"/><text x="232.1" y="223.0" class="pfv-pct" fill="#00D4FF">100 %</text></g>
-<g class="pfv-lab"><rect x="649.6" y="300.5" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="667.3" y="313.0" class="pfv-pct" fill="#E8C840">25 %</text></g>
-<g class="pfv-lab"><rect x="618.4" y="81.7" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="636.1" y="94.2" class="pfv-pct" fill="#7B5CFF">80 %</text></g>
-<g class="pfv-lab"><rect x="745.5" y="311.3" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="763.2" y="323.8" class="pfv-pct" fill="#E8C840">25 %</text></g>
-<g class="pfv-lab"><rect x="341.5" y="76.8" width="35.4" height="17" rx="8" class="pfv-lab-bg"/><text x="359.2" y="89.3" class="pfv-pct" fill="#7B5CFF">50 %</text></g>
-</svg>
-
-   <div class="pfv-fallback">
-    <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#7B5CFF;"></i>Oracle Questions - from 50,000 LUNC</div>
-     <div class="pfv-f-d">Half funds the Weekly Pool and earns you 1&ndash;4 free entries; half goes to the Treasury.</div>
-    </div>
-    <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#00D4FF;"></i>DAO Chat - 5,000 LUNC per message</div>
-     <div class="pfv-f-d">All of it to the Treasury. Every tenth message earns a free Weekly entry.</div>
-    </div>
-    <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#00FFB0;"></i>NFT Mints - Common / Rare / Legendary</div>
-     <div class="pfv-f-d">Feeds the Daily Pool and adds entries to the Weekly Draw.</div>
-    </div>
-    <div class="pfv-f-row">
-     <div class="pfv-f-t"><i style="background:#E8C840;"></i>Where it pays out</div>
-     <div class="pfv-f-d">Daily: 80% to one winner. Weekly: 48 / 20 / 12% to three. Treasury, distributed every Wednesday: 50% Liquidity, 25% REP rewards, 15% Reserve, 10% Development. 10% of every pool seeds the next round.</div>
-    </div>
-   </div>
-  </div>
- </div>
-
- </div>
+</section>
 </div>
 
 <div class="page" id="page-board" style="min-height:60vh;">
@@ -2118,6 +1716,7 @@
 
 
 <script src="assets/js/page/gov-shell.js?v=5067359821"></script>
+<script src="assets/js/page/home-shell.js?v=2cbada7660"></script>
 <script src="assets/js/shell-nav.js?v=c60b479a64"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
 </body>
