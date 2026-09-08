@@ -62,14 +62,29 @@
     highlight();
   });
 
-  // Пункты, под которые боевого раздела ещё нет. В прототипе меню
-  // выглядит обычным, поэтому ничего не дорисовываем и не прячем -
-  // только вешаем класс, чтобы такой пункт было видно в разметке.
-  // Появится раздел - вписать функцию в ROUTE вместо null.
+  // Пункты, под которые боевого раздела ещё нет, помечаем меткой SOON.
+  // Если у пункта уже есть метка (у Markets в прототипе стоит NEW),
+  // текст в ней заменяется - двух меток в строке быть не должно.
+  // Появится раздел - вписать функцию в ROUTE вместо null, метка уйдёт сама.
   Object.keys(ROUTE).forEach(function (name) {
     if (ROUTE[name]) return;
     document.querySelectorAll('[data-view="' + name + '"]').forEach(function (a) {
       a.classList.add('is-soon');
+      if (a.classList.contains('nav')) {
+        var t = a.querySelector('.tag');
+        if (!t) {
+          t = document.createElement('span');
+          t.className = 'tag';
+          a.appendChild(t);
+        }
+        t.textContent = 'SOON';
+      }
+      if (a.classList.contains('mod') && !a.querySelector('.badge')) {
+        var b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'SOON';
+        a.appendChild(b);
+      }
     });
   });
 

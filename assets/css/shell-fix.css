@@ -112,12 +112,61 @@
 }
 
 /* ==================================================================
-   5. Пункты без боевого раздела
-   В прототипе меню выглядит обычным, поэтому ни приглушения, ни
-   метки SOON: пункт просто не переключает раздел, пока его нет.
-   Класс вешает shell-nav.js - он остаётся зацепкой на будущее.
+   5. Пункты без боевого раздела и панели меню
    ================================================================== */
 .is-soon{cursor:default}
+.rail .nav.is-soon .tag{
+  background:rgba(148,163,184,.18);
+  color:var(--ink-2);
+}
+
+/* Группы меню в рельсе - это теги <nav>, и по ним бьёт голое правило
+   nav{} из style.css: липкое позиционирование, фон, размытие, рамка
+   снизу и min-height 80px. Отсюда чёрные панели вокруг разделов,
+   которых в прототипе нет. Нижняя панель на телефоне - тот же тег,
+   ей возвращаем её собственное оформление ниже. */
+.app nav.group,
+.app nav.tabbar{
+  padding:0;
+  border-bottom:0;
+  background:none;
+  backdrop-filter:none;
+  min-height:0;
+  z-index:auto;
+}
+.app nav.group{
+  position:static;
+  justify-content:flex-start;
+  align-items:stretch;
+  overflow:visible;
+}
+@media (max-width:860px){
+  .app nav.tabbar{
+    padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+    background:rgba(9,12,32,.94);
+    backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+    z-index:60;
+  }
+}
+
+/* Кнопка кошелька приехала из старого навбара со своими классами:
+   заглавные буквы, 11px и прозрачный фон. В шапке прототипа на её
+   месте сплошная лиловая кнопка. */
+.topbar .wallet-btn{
+  font-family:var(--ui);
+  font-size:13.5px;
+  font-weight:600;
+  letter-spacing:0;
+  text-transform:none;
+  padding:10px 20px;
+  border-radius:12px;
+  border:0;
+  color:#fff;
+  background:linear-gradient(90deg,var(--violet-2),var(--violet));
+  box-shadow:0 0 24px -8px var(--violet);
+}
+.topbar .wallet-btn svg{width:17px;height:17px}
 
 /* ==================================================================
    6. Governance: панель фильтров
@@ -334,3 +383,45 @@
   border-radius:12px !important;
   padding:11px 18px !important;
 }
+
+/* ------------------------------------------------------------------
+   10f. Сообщения без собственных рамок
+   Старый .chat-page-msg из style.css рисует панель вокруг каждого
+   сообщения. В прототипе рамки нет: только аватар, шапка и пузырь
+   на общем тёмном фоне ленты.
+   ------------------------------------------------------------------ */
+#page-chat .chat-page-msg{
+  background:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  padding:0 !important;
+}
+
+/* ------------------------------------------------------------------
+   10g. Поле ввода: рамка карточки снимается, строка как .composer
+   ------------------------------------------------------------------ */
+#page-chat #chat-page-form > div{
+  background:var(--bg-2) !important;
+  border:0 !important;
+  border-top:1px solid var(--line) !important;
+  border-radius:0 !important;
+}
+#page-chat #chat-input-bar{padding:0 !important}
+#page-chat #chat-page-input{
+  padding:15px 16px !important;
+  min-height:52px !important;
+  font-size:13.5px !important;
+}
+#page-chat .chat-cost{
+  display:flex;align-items:center;gap:7px;white-space:nowrap;
+  font-size:12px;color:var(--amber);
+}
+#page-chat .chat-cost img{width:18px;height:18px;object-fit:contain}
+#page-chat .chat-send{
+  width:42px;height:42px;flex:none;
+  display:grid;place-items:center;
+  border:0;border-radius:12px;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,var(--violet-2),var(--blue));
+  box-shadow:0 0 22px -8px var(--violet);
+}
+#page-chat .chat-ring-svg{flex:none;opacity:.9}
