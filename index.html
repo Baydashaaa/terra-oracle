@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="a29db6426f 2026-09-08">
+  <meta name="oracle-build" content="3e4244d891 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -86,6 +86,82 @@
   background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/><feColorMatrix type=%22saturate%22 values=%220%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');
   background-size: 200px 200px;">
 </div>
+<div class="app">
+
+  <nav class="tabbar" aria-label="Sections">
+    <a href="?v=home" data-view="home"><img src="assets/img/icons/home.webp" alt="" width="96" height="96">Home</a>
+    <a href="?v=draw" data-view="draw"><img src="assets/img/icons/draw.webp" alt="" width="96" height="96">Draw</a>
+    <a href="?v=markets" data-view="markets"><img src="assets/img/icons/markets.webp" alt="" width="96" height="96">Markets</a>
+    <a href="?v=ask" data-view="ask"><img src="assets/img/icons/ask.webp" alt="" width="96" height="96">Ask</a>
+    <button data-modal="more" aria-label="More">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More
+    </button>
+  </nav>
+
+  <aside class="rail">
+    <div class="logo">
+      <div class="mark"><img src="assets/img/tco.webp" alt="TCO" width="160" height="160"></div>
+      <h1>TERRA ORACLE</h1>
+      <small>CLASSIC</small>
+    </div>
+
+    <nav class="group" aria-label="Main">
+      <a class="nav" href="?v=home" data-view="home" aria-current="page"><span class="ico"><img src="assets/img/icons/home.webp" alt="" width="96" height="96" loading="lazy"></span>Home</a>
+      <a class="nav" href="?v=chat" data-view="chat"><span class="ico"><img src="assets/img/icons/chat.webp" alt="" width="96" height="96" loading="lazy"></span>Chat<span class="tag dot"></span></a>
+      <a class="nav" href="?v=ask" data-view="ask"><span class="ico"><img src="assets/img/icons/ask.webp" alt="" width="96" height="96" loading="lazy"></span>Ask Oracle</a>
+      <a class="nav" href="?v=draw" data-view="draw"><span class="ico"><img src="assets/img/icons/draw.webp" alt="" width="96" height="96" loading="lazy"></span>Oracle Draw</a>
+            <a class="nav" href="?v=markets" data-view="markets"><span class="ico"><img src="assets/img/icons/markets.webp" alt="" width="96" height="96" loading="lazy"></span>Markets<span class="tag">NEW</span></a>
+    </nav>
+
+    <nav class="group" aria-label="Ecosystem">
+      <h2>ECOSYSTEM</h2>
+      <a class="nav" href="?v=governance" data-view="governance"><span class="ico"><img src="assets/img/icons/governance.webp" alt="" width="96" height="96" loading="lazy"></span>Governance</a>
+      <a class="nav" href="?v=treasury" data-view="treasury"><span class="ico"><img src="assets/img/icons/treasury.webp" alt="" width="96" height="96" loading="lazy"></span>Treasury</a>
+          </nav>
+
+    <nav class="group" aria-label="Community">
+      <h2>COMMUNITY</h2>
+      <a class="nav" href="?v=reputation" data-view="reputation"><span class="ico"><img src="assets/img/icons/reputation.webp" alt="" width="96" height="96" loading="lazy"></span>Reputation</a>
+            <a class="nav" href="#"><span class="ico"><img src="assets/img/icons/achievements.webp" alt="" width="96" height="96" loading="lazy"></span>Achievements</a>
+      <a class="nav" href="?v=nft" data-view="nft"><span class="ico"><img src="assets/img/icons/nft.webp" alt="" width="96" height="96" loading="lazy"></span>NFT Collection</a>
+    </nav>
+
+    <!-- Outbound links. Docs sits here rather than in the menu: it lives on
+         its own subdomain, so it is a departure, not a section of this shell.
+         TODO: replace the four hrefs with the real addresses. -->
+    <div class="socials">
+      <a href="#" title="X" aria-label="X" target="_blank" rel="noopener"><img src="assets/img/icons/s-x.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a href="#" title="Telegram" aria-label="Telegram" target="_blank" rel="noopener"><img src="assets/img/icons/s-tg.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a href="#" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener"><img src="assets/img/icons/s-github.webp" alt="" width="128" height="128" loading="lazy"></a>
+      <a class="docs" href="#" title="Documentation" aria-label="Documentation" target="_blank" rel="noopener">
+        <img src="assets/img/icons/s-docs.webp" alt="" width="128" height="128" loading="lazy">
+      </a>
+    </div>
+    <div class="builtfor">Built for the community</div>
+  </aside>
+
+  <header class="topbar">
+    <label class="search">
+      <i data-i="search"></i>
+      <input type="search" placeholder="Search questions, markets, wallets">
+    </label>
+
+    <div class="ticker">
+      <span class="coin"><img src="assets/img/lunc.webp" alt="" width="128" height="128"></span>
+      <span class="nm">LUNC</span><span class="pr" id="tk1">$0.0000621</span><span class="up">+2.34%</span>
+    </div>
+    <div class="ticker">
+      <span class="coin"><img src="assets/img/tco.webp" alt="" width="160" height="160"></span>
+      <span class="nm">TCO</span><span class="pr" id="tk2">$0.00412</span><span class="up">+5.21%</span>
+    </div>
+
+    <span class="spacer"></span>
+    <button class="connect"><i data-i="wallet"></i> Connect wallet</button>
+    <button class="round avatar" data-modal="profile" aria-label="Open my profile"><img src="assets/img/icons/profile.webp" alt="" width="96" height="96"></button>
+    <button class="round" aria-label="Notifications"><i data-i="bell"></i><span class="dot"></span></button>
+  </header>
+
+<main class="main">
 <nav>
 <!-- HUD scanner line -->
 <div id="nav-scanner" style="position:absolute;bottom:0;left:0;right:0;height:1px;overflow:hidden;pointer-events:none;">
@@ -1933,6 +2009,74 @@
   </div>
 </footer>
 <!-- ═══ END FOOTER ═══ -->
+</main>
+
+  <aside class="side">
+
+    <!-- merged draw widget -->
+    <section class="card">
+      <h3><img class="hdr" src="assets/img/icons/hdr-draw.webp" alt="" width="128" height="128"> Next draw</h3>
+      <div class="seg" role="tablist">
+        <button role="tab" data-tab="daily" aria-selected="true">Daily</button>
+        <button role="tab" data-tab="weekly" aria-selected="false">Weekly</button>
+        <button role="tab" data-tab="circuit" aria-selected="false">Circuit</button>
+      </div>
+
+      <div class="clock" data-clock>
+        <div><b data-u="h">12</b><span>Hours</span></div>
+        <div><b data-u="m">54</b><span>Minutes</span></div>
+        <div><b data-u="s">38</b><span>Seconds</span></div>
+      </div>
+
+      <div class="poolrow">
+        <div class="lbl" data-pool-label>Prize pool</div>
+        <div class="val">
+          <img src="assets/img/lunc.webp" alt="" width="128" height="128" style="width:22px;height:22px;object-fit:contain">
+          <b data-pool>1,250,000</b><span>LUNC</span>
+        </div>
+      </div>
+      <div class="poolrow" data-extra style="display:none">
+        <div class="lbl">Zones taken</div>
+        <div class="val"><b data-zones style="color:var(--cyan)">37 / 250</b></div>
+      </div>
+
+      <button class="wide" data-cta>View details <i data-i="arrow"></i></button>
+    </section>
+
+    <!-- reputation -->
+    <section class="card repcard">
+      <div class="rephead">
+        <img src="assets/img/icons/reputation.webp" alt="" width="96" height="96">
+        <div>
+          <div class="lbl">Your reputation</div>
+          <div class="amount" id="repVal">0 REP</div>
+          <div class="rankname" id="repRank">-</div>
+        </div>
+      </div>
+      <div class="repbar">
+        <div class="bar"><i id="repBar"></i></div>
+        <span id="repPct">0%</span>
+      </div>
+      <div class="repnext" id="repNext"></div>
+      <button class="wide">View reputation <i data-i="arrow"></i></button>
+    </section>
+
+    <!-- leaderboard -->
+    <section class="card">
+      <h3><img class="hdr" src="assets/img/icons/hdr-leaderboard.webp" alt="" width="128" height="128"> Leaderboard <small>Top seekers</small></h3>
+      <ul class="lb" id="lbList"></ul>
+      <button class="wide">View all <i data-i="arrow"></i></button>
+    </section>
+
+    <!-- activity -->
+    <section class="card">
+      <h3><img class="hdr" src="assets/img/icons/hdr-activity.webp" alt="" width="128" height="128"> Recent activity</h3>
+      <ul class="acts" id="actList"></ul>
+      <button class="wide">View all activity <i data-i="arrow"></i></button>
+    </section>
+  </aside>
+
+</div><!-- /.app -->
 
   <!-- Логика -->
   <script>
@@ -2118,5 +2262,6 @@
 <script src="assets/js/oracle-notify.js?v=aca175ed77"></script>
 
 
+<script src="assets/js/shell-icons.js?v=2518b9696a"></script>
 </body>
 </html>
