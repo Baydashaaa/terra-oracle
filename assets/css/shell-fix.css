@@ -68,14 +68,26 @@
 .shell-page .btn-sm{padding:9px 16px;font-size:12.5px}
 
 /* ==================================================================
-   3. Ширина и отступы перенесённых разделов
+   3. Ширина, отступы и внутренние промежутки перенесённых разделов
    Старый .page зажимает содержимое в 760px и добавляет 48px сверху.
+   Плюс главное: в прототипе секции разносит .view{display:flex;gap}.
+   У нас на его месте .page, у которого только display:block, поэтому
+   баннер, плашки и сетка слипались в сплошное полотно.
+   Класс .active обязателен - без него правило перебивало бы
+   .page{display:none} и показывало все разделы разом.
    ================================================================== */
 .main > .shell-page{
   max-width:none;
   margin:0;
   padding:0;
 }
+.page.shell-page.active{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  min-width:0;
+}
+.page.shell-page.active > *{flex:0 0 auto}
 
 /* ==================================================================
    4. Главная
@@ -152,3 +164,30 @@
 .nft-gate p:last-child{margin-bottom:0}
 .nft-gate .btn{display:inline-flex}
 .nft-histbox{padding:6px 14px 4px}
+
+/* ==================================================================
+   9. Карточки масок во всю ширину
+   Сетку рисует vote.js инлайновыми стилями: картинка 100x150 по
+   центру, у карточки padding 20/18. Инлайн бьётся только !important.
+   Отрицательными полями вытягиваем картинку под края карточки, как
+   в прототипе у .mask .top.
+   ================================================================== */
+/* Внутренности раздела лежат не в .shell-page, а в #bag-connected-oracle,
+   поэтому flex-gap до них не достаёт. Через display спорить нельзя -
+   vote.js переключает его инлайном, поэтому разносим полями. */
+#bag-connected-oracle > *{margin-bottom:var(--gap)}
+#bag-connected-oracle > *:last-child{margin-bottom:0}
+#bag-connected-oracle > .nft-h{margin-bottom:2px}
+
+#o-bag-grid > div{overflow:hidden}
+#o-bag-grid picture{display:block}
+#o-bag-grid picture img{
+  display:block;
+  width:calc(100% + 36px) !important;
+  max-width:none !important;
+  height:auto !important;
+  aspect-ratio:2 / 3;
+  margin:-20px -18px 14px !important;
+  border-radius:15px 15px 0 0 !important;
+  object-fit:cover !important;
+}
