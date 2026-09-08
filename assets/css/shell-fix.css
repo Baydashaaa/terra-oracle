@@ -1,69 +1,117 @@
 /* Развязка старых правил style.css и новой оболочки.
-   Заводится на шаге 4, живёт до шага 6 - там старые правила уедут совсем,
-   и этот файл можно будет удалить целиком.
-   Подключать ПОСЛЕ shell.css. */
+   Живёт до шага 6 - там старые правила уедут совсем, и файл можно удалить.
+   Подключать ПОСЛЕ shell.css.
 
-/* ------------------------------------------------------------------
-   1. Карточки оболочки.
-   Старый .card из style.css приносит padding:32px, margin-bottom:16px,
+   Правило игры: раздел, переехавший на разметку прототипа, получает
+   класс shell-page. Всё, что ниже, целится либо в оболочку (.rail,
+   .side, .topbar), либо в .shell-page. Непереехавшие разделы своих
+   старых стилей не теряют. */
+
+/* ==================================================================
+   1. Карточки
+   Старый .card приносит padding:32px, margin-bottom:16px,
    overflow:hidden, тень и подскок на hover. shell.css задаёт у .card
-   только фон, рамку и радиус, поэтому всё остальное протекает.
+   только фон, рамку и радиус, поэтому остальное протекает.
    В правой колонке это било дважды: карточки там flex-элементы и по
-   умолчанию сжимаются, а overflow:hidden превращал сжатие в обрезку -
-   отсюда срезанная кнопка "View details".
-   ------------------------------------------------------------------ */
-.app .card:not(.page *){
+   умолчанию сжимаются, а overflow:hidden превращал сжатие в обрезку.
+   ================================================================== */
+.app .card:not(.page *),
+.shell-page .card{
   padding:0;
   margin:0;
   overflow:visible;
   box-shadow:none;
   transition:border-color .15s ease;
 }
-.app .card:not(.page *):hover{
-  transform:none;
-  box-shadow:none;
-}
-.app .card:not(.page *)::before{content:none}
+.app .card:not(.page *):hover,
+.shell-page .card:hover{transform:none;box-shadow:none}
+.app .card:not(.page *)::before,
+.shell-page .card::before{content:none}
 
-/* отступ прототипа, перебитый сбросом выше */
 .app .side .card{padding:16px}
 @media (max-width:1180px){ .app .side .card{padding:14px} }
 
-/* колонки не должны ужимать свои карточки */
 .rail > *, .side > *{flex:0 0 auto}
 
-/* ------------------------------------------------------------------
-   2. Ширина перенесённых разделов.
-   Старый .page зажимает содержимое в 760px и добавляет 48px сверху -
-   новый дизайн рассчитан на всю ширину центральной колонки.
-   По мере переноса разделов добавлять сюда их id.
-   ------------------------------------------------------------------ */
-.main > #page-home,
-.main > #page-vote{
+/* ==================================================================
+   2. Кнопки
+   Старый .btn делает текст заглавным и разряженным, а .btn-primary
+   красит его в лиловый и кладёт сверху ::before с градиентом. На
+   лиловой заливке нового дизайна текст пропадал - так было с
+   "About protocol" и с "Connect to Vote".
+   ================================================================== */
+.shell-page .btn,
+.gov-bar .btn,
+.topbar .btn{
+  font-family:var(--ui);
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:0;
+  text-transform:none;
+  padding:13px 26px;
+  border-radius:12px;
+  border:1px solid transparent;
+  color:var(--ink);
+  text-decoration:none;
+  transition:filter .15s ease,border-color .15s ease;
+}
+.shell-page .btn-primary,
+.gov-bar .btn-primary,
+.topbar .btn-primary{color:#fff;border-color:transparent}
+.shell-page .btn-primary::before,
+.gov-bar .btn-primary::before,
+.topbar .btn-primary::before{content:none}
+.shell-page .btn-primary:hover,
+.gov-bar .btn-primary:hover{filter:brightness(1.12);box-shadow:0 0 26px -8px var(--violet)}
+.shell-page .btn-ghost{color:var(--ink);border-color:var(--line-2)}
+.shell-page .btn-ghost:hover{border-color:var(--violet)}
+.shell-page .btn-sm{padding:9px 16px;font-size:12.5px}
+
+/* ==================================================================
+   3. Ширина и отступы перенесённых разделов
+   Старый .page зажимает содержимое в 760px и добавляет 48px сверху.
+   ================================================================== */
+.main > .shell-page{
   max-width:none;
   margin:0;
   padding:0;
 }
 
-/* ------------------------------------------------------------------
-   3. Governance: панель фильтров.
-   Кнопка кошелька приходит с классами .btn .btn-primary старого сайта -
-   заглавные буквы, отступы 13/28 и лиловый текст поверх лилового фона.
-   ------------------------------------------------------------------ */
-.gov-bar #vote-wallet-status{margin-left:auto}
-.gov-bar #vote-wallet-status .btn{
-  font-family:var(--ui);
-  font-size:12.5px;
-  font-weight:600;
-  letter-spacing:0;
-  text-transform:none;
-  padding:10px 18px;
-  border-radius:11px;
-  border:1px solid var(--line-2);
+/* ==================================================================
+   4. Главная
+   .hero задан через aspect-ratio 2/1 с max-height 510px. На широкой
+   колонке ограничение по высоте утягивало за собой и ширину, поэтому
+   баннер не доставал до правого края. Высоту задаём напрямую.
+   ================================================================== */
+.shell-page .hero{
+  aspect-ratio:auto;
+  width:100%;
+  height:clamp(430px,34vw,510px);
+  max-height:none;
 }
-.gov-bar #vote-wallet-status .btn-primary{
-  color:#fff;
+
+/* Ряд модулей: в прототипе ровно пять колонок. Markets пока без
+   боевого раздела, и жёсткая пятая колонка оставляла дыру. auto-fit
+   схлопывает пустые дорожки, поэтому карточки растягиваются сами. */
+.shell-page .mods{
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+}
+
+/* ==================================================================
+   5. Пункты без боевого раздела
+   Не прячем - помечаем. Их ставит shell-nav.js.
+   ================================================================== */
+.is-soon{opacity:.55;cursor:default}
+.is-soon:hover{opacity:.7}
+.rail .nav.is-soon .tag{
+  background:rgba(148,163,184,.16);
+  color:var(--ink-3);
   border-color:transparent;
 }
-.gov-bar #vote-wallet-status .btn-primary::before{content:none}
+
+/* ==================================================================
+   6. Governance: панель фильтров
+   ================================================================== */
+.gov-bar #vote-wallet-status{margin-left:auto}
+.gov-bar #vote-wallet-status .btn{padding:10px 18px;font-size:12.5px;border-color:var(--line-2)}
 .gov-bar .btn-create[disabled]{opacity:.5;cursor:not-allowed}

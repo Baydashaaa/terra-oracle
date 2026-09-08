@@ -18,7 +18,8 @@
     treasury:   function () { showPage_treasury(null, null, false); },
     reputation: function () { showRepPage('leaderboard'); },
     draw:       function () { window.open('https://draw.terraoracle.io/', '_blank', 'noopener'); },
-    markets:    null   // раздела на боевом сайте пока нет
+    markets:      null,  // раздела на боевом сайте пока нет
+    achievements: null   // тоже нет
   };
 
   // обратная таблица: адрес -> имя вида, чтобы подсветить пункт меню
@@ -54,23 +55,31 @@
     e.preventDefault();
     var name = a.dataset.view;
     var go = ROUTE[name];
-    if (typeof go !== 'function') {
-      console.warn('[shell-nav] вид "' + name + '" ещё не подключён к боевому разделу');
-      return;
-    }
+    if (typeof go !== 'function') return;   // помечен как SOON, ничего не делаем
     if (typeof window.dismissModal === 'function' && a.closest('.scrim-modal')) window.dismissModal();
     go();
     scrollMainTop();
     highlight();
   });
 
-  // Пункты без боевого раздела прячем, чтобы не было мёртвых ссылок.
-  // Появится Markets - убрать имя из этого списка, и пункт вернётся сам.
+  // Пункты, под которые боевого раздела ещё нет, не прячем, а помечаем.
+  // Появится раздел - вписать функцию в ROUTE вместо null, и метка уйдёт сама.
   Object.keys(ROUTE).forEach(function (name) {
     if (ROUTE[name]) return;
     document.querySelectorAll('[data-view="' + name + '"]').forEach(function (a) {
-      a.hidden = true;
-      a.style.display = 'none';
+      a.classList.add('is-soon');
+      if (a.classList.contains('nav') && !a.querySelector('.tag')) {
+        var t = document.createElement('span');
+        t.className = 'tag';
+        t.textContent = 'SOON';
+        a.appendChild(t);
+      }
+      if (a.classList.contains('mod') && !a.querySelector('.badge')) {
+        var b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'SOON';
+        a.appendChild(b);
+      }
     });
   });
 
