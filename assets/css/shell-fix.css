@@ -191,3 +191,41 @@
   border-radius:15px 15px 0 0 !important;
   object-fit:cover !important;
 }
+
+/* ==================================================================
+   10. Chat
+   Раскладка чата считалась от старого сайта: на десктопе
+   height:calc(100vh - 110px) под навбар, на телефоне
+   position:fixed;top:60px под ту же шапку. Навбара больше нет,
+   а на десктопе прокручивается .main, а не окно.
+   Все правила в layout.css идут с !important, поэтому перебиваем
+   тем же весом.
+   ================================================================== */
+@media (min-width:901px){
+  .page#page-chat.active{
+    height:100% !important;
+    padding:0 !important;
+    max-width:none !important;
+  }
+  #page-chat .chat{flex:1;min-height:0}
+  #page-chat #chat-shell{padding:14px}
+}
+
+@media (hover:none),(max-width:900px){
+  .page#page-chat.active{
+    position:static !important;
+    top:auto !important; left:auto !important;
+    right:auto !important; bottom:auto !important;
+    height:auto !important;
+    max-width:none !important;
+    padding:0 !important;
+    overflow:visible !important;
+    z-index:auto !important;
+    background:none !important;
+  }
+  #page-chat .chat{
+    height:calc(100dvh - 210px);
+    min-height:360px;
+  }
+  #page-chat #chat-shell{padding:10px 12px 0}
+}

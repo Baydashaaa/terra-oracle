@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="71a5185a6c 2026-09-08">
+  <meta name="oracle-build" content="25b1443394 2026-09-08">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=0e44e719bd">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=b37448ea03">
 
 
   <!-- Charts -->
@@ -622,14 +622,15 @@
  <span style="font-size:10px;font-family:monospace;color:var(--accent);word-break:break-all;">terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</span>
  </div>
 </div>
-<div class="page" id="page-chat" style="max-width:1180px;padding:32px 24px 0;">
-
- <!-- Header (desktop only) -->
- <div class="chat-desktop-header" style="text-align:center;margin-bottom:24px;">
-  <div class="tag">On-Chain Community</div>
-  <h1 style="margin-bottom:8px;">DAO <span>Chat</span></h1>
-  <p class="subtitle">Every message stored forever on Terra Classic · 5,000 LUNC per message</p>
- </div>
+<div class="page shell-page" id="page-chat">
+ <section class="chat">
+  <header class="chat-head">
+   <span class="hash">#</span>
+   <div>
+    <h2>DAO chat</h2>
+    <p>On-chain messages, stored on Terra Classic forever · 5,000 LUNC per message</p>
+   </div>
+  </header>
 
  <!-- 3-column shell: CHAT accent | messages | participants -->
  <div id="chat-shell">
@@ -743,6 +744,8 @@
   </aside>
 
  </div><!-- /chat-shell -->
+ </section>
+
 
  <!-- Mobile participants drawer -->
  <div id="chat-drawer-overlay" onclick="closeChatParticipants()"></div>
