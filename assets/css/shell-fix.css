@@ -113,15 +113,11 @@
 
 /* ==================================================================
    5. Пункты без боевого раздела
-   Не прячем - помечаем. Их ставит shell-nav.js.
+   В прототипе меню выглядит обычным, поэтому ни приглушения, ни
+   метки SOON: пункт просто не переключает раздел, пока его нет.
+   Класс вешает shell-nav.js - он остаётся зацепкой на будущее.
    ================================================================== */
-.is-soon{opacity:.55;cursor:default}
-.is-soon:hover{opacity:.7}
-.rail .nav.is-soon .tag{
-  background:rgba(148,163,184,.16);
-  color:var(--ink-3);
-  border-color:transparent;
-}
+.is-soon{cursor:default}
 
 /* ==================================================================
    6. Governance: панель фильтров
@@ -207,9 +203,11 @@
     max-width:none !important;
   }
   #page-chat .chat{flex:1;min-height:0}
-  #page-chat #chat-shell{padding:0;grid-template-columns:minmax(0,1fr) 220px !important;gap:0 !important}
-  #page-chat #chat-accent{display:none !important}
-  #page-chat #chat-participants{border:0;border-left:1px solid var(--line);border-radius:0;background:var(--bg-2);margin:0}
+  /* в прототипе лента во всю ширину: ни колонки с буквами CHAT,
+     ни колонки участников - список переехал в шторку */
+  #page-chat #chat-shell{padding:0;grid-template-columns:minmax(0,1fr) !important;gap:0 !important}
+  #page-chat #chat-accent,
+  #page-chat #chat-participants{display:none !important}
 }
 
 @media (hover:none),(max-width:900px){
@@ -282,3 +280,57 @@
    ------------------------------------------------------------------ */
 #page-chat #chat-input-bar{padding:0 14px 14px !important}
 #page-chat #chat-mobile-bar{padding:8px 14px 10px !important;margin:0 !important}
+
+/* ------------------------------------------------------------------
+   10d. Счётчик активных в шапке чата
+   ------------------------------------------------------------------ */
+.chat-head .online{
+  margin-left:auto;
+  display:flex;align-items:center;gap:8px;
+  font-size:12.5px;color:var(--ink-2);
+  background:none;border:0;cursor:pointer;
+  font-family:var(--ui);
+}
+.chat-head .online i{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--lime);box-shadow:0 0 8px var(--lime);
+}
+.chat-head .online b{font-family:var(--dis);font-weight:600;color:var(--ink)}
+.chat-head .online:hover b{color:var(--violet-hi)}
+
+/* Шторка со списком участников описана внутри мобильного медиазапроса
+   layout.css, поэтому на десктопе у неё не было ни позиции, ни фона.
+   Повторяем нужное здесь, чтобы она открывалась на любой ширине. */
+#chat-drawer-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:none;
+}
+#chat-drawer-overlay.open{display:block}
+#chat-drawer{
+  position:fixed;left:auto;right:0;top:0;bottom:0;width:300px;max-width:86vw;
+  transform:translateX(100%);transition:transform .25s ease;
+  background:var(--panel);border-left:1px solid var(--line);
+  border-radius:0;z-index:61;overflow-y:auto;display:block;
+}
+#chat-drawer.open{transform:translateX(0)}
+@media (hover:none),(max-width:900px){
+  #chat-drawer{
+    left:0;right:0;top:auto;width:auto;max-width:none;
+    transform:translateY(100%);
+    border-left:0;border-top:1px solid var(--line);
+    border-radius:16px 16px 0 0;max-height:60vh;
+  }
+  #chat-drawer.open{transform:translateY(0)}
+}
+
+/* ------------------------------------------------------------------
+   10e. Поле ввода одной строкой, как .composer в прототипе
+   ------------------------------------------------------------------ */
+/* полоса "Connected + адрес": адрес и так виден в шапке сайта */
+#page-chat #chat-page-form > div > div:first-child{display:none !important}
+/* счётчик символов прототип не показывает */
+#page-chat #chat-page-count{display:none}
+#page-chat #chat-page-input{padding:14px 16px !important;min-height:46px !important}
+#page-chat #chat-page-send-btn{
+  border-radius:12px !important;
+  padding:11px 18px !important;
+}

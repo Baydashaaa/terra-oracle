@@ -62,24 +62,14 @@
     highlight();
   });
 
-  // Пункты, под которые боевого раздела ещё нет, не прячем, а помечаем.
-  // Появится раздел - вписать функцию в ROUTE вместо null, и метка уйдёт сама.
+  // Пункты, под которые боевого раздела ещё нет. В прототипе меню
+  // выглядит обычным, поэтому ничего не дорисовываем и не прячем -
+  // только вешаем класс, чтобы такой пункт было видно в разметке.
+  // Появится раздел - вписать функцию в ROUTE вместо null.
   Object.keys(ROUTE).forEach(function (name) {
     if (ROUTE[name]) return;
     document.querySelectorAll('[data-view="' + name + '"]').forEach(function (a) {
       a.classList.add('is-soon');
-      if (a.classList.contains('nav') && !a.querySelector('.tag')) {
-        var t = document.createElement('span');
-        t.className = 'tag';
-        t.textContent = 'SOON';
-        a.appendChild(t);
-      }
-      if (a.classList.contains('mod') && !a.querySelector('.badge')) {
-        var b = document.createElement('span');
-        b.className = 'badge';
-        b.textContent = 'SOON';
-        a.appendChild(b);
-      }
     });
   });
 
