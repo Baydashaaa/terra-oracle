@@ -442,12 +442,42 @@
   --surface2:var(--bg-2);
   --border:var(--line);
   --text:var(--ink);
-  --muted:var(--ink-3);
+  /* приглушённый текст поднят: в разделе много подписей и подсказок,
+     на штатном --ink-3 они читались с трудом */
+  --ink-3:#a3aed6;
+  --muted:#a3aed6;
   --accent:var(--violet-hi);
   --accent-dark:var(--violet-2);
   --green:var(--lime);
   --gold:var(--amber);
 }
+
+/* Подписи полей: старый label делает их заглавными и разряженными,
+   в прототипе это обычный текст обычной яркости. */
+#page-ask label{
+  text-transform:none;
+  letter-spacing:0;
+  font-size:12.5px;
+  color:var(--ink);
+}
+#page-ask .field .opt,
+#page-ask .extra summary em{color:#98a3cc}
+#page-ask textarea,
+#page-ask input[type=text]{color:var(--ink)}
+#page-ask ::placeholder{color:#7d88b4;opacity:1}
+#page-ask .summary .line{color:#b6c0e4}
+#page-ask .summary .line b{color:var(--cyan)}
+#page-ask .qtype .k{color:#b6c0e4}
+#page-ask .qtype .note{color:#98a3cc}
+#page-ask .perk span{color:#a3aed6}
+#page-ask .note{color:#b6c0e4}
+#page-ask .tag-suggestion{color:#a3aed6}
+#page-ask .askv-chip{color:var(--ink)}
+
+/* Отдельная кнопка оплаты больше не нужна - платит нижняя кнопка.
+   Сам узел остаётся: sign.js ведёт его надпись и состояние, а
+   ask-shell.js их зеркалит. */
+#page-ask .ask-pay{display:none !important}
 #page-ask .card{
   padding:22px 24px;
   border-radius:var(--r-lg);
@@ -496,9 +526,10 @@
 #page-ask .ask-connected .a{font-size:11.5px;color:var(--ink-3);font-family:ui-monospace,monospace}
 #page-ask .ask-connected .x{margin-left:auto;background:none;border:0;color:var(--ink-3);cursor:pointer;font-size:15px}
 
-/* Шаг 2: оплата */
-#page-ask .ask-pay{display:flex;justify-content:flex-end;margin-top:14px}
-#page-ask .ask-pay .ask-go{border:0;color:#fff;cursor:pointer}
+/* Отдельной кнопки оплаты нет: её работу делает нижняя "Ask the
+   Oracle". Сама кнопка остаётся в разметке скрытой - sign.js пишет в
+   неё цену и состояние, а ask-shell.js оттуда их зеркалит. */
+#page-ask .ask-pay{display:none}
 #page-ask .askv-split{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 
 /* Счётчик под полем вопроса. Класс .count в shell.css занят плашками
@@ -532,6 +563,9 @@
 #page-ask #ask-form.is-locked .qform{opacity:.62}
 #page-ask #ask-form.is-locked .summary{opacity:.62}
 #page-ask #ask-btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+/* заперта только форма, кнопка внизу живая - через неё идёт оплата */
+#page-ask #ask-form.is-locked .summary{opacity:1}
+#page-ask #ask-form.is-locked .summary .ask-go{opacity:1}
 
 /* Категория кнопками во всю ширину: строке нужно место, иначе
    названия налезают друг на друга. */
@@ -560,3 +594,40 @@
 #page-ask .summary .price b{color:var(--pink)}
 #page-ask .summary .price span{color:var(--lime)}
 #page-ask .summary .price:empty{display:none}
+
+/* ------------------------------------------------------------------
+   11a. Читаемость текста
+   Подписи полей, чипсы и подсказки приходили из старой темы, где они
+   красились в --muted. После переезда это самый тусклый оттенок, и
+   текст почти пропадал на тёмном фоне. Поднимаем на ступень.
+   ------------------------------------------------------------------ */
+#page-ask{--muted:var(--ink-2)}
+
+#page-ask label,
+#page-ask .field label{
+  color:var(--ink);
+  font-size:12.5px;
+  letter-spacing:.02em;
+  text-transform:none;
+  margin-bottom:8px;
+}
+#page-ask .field label .opt{color:var(--ink-3);font-weight:400}
+#page-ask .chips button{color:var(--ink)}
+#page-ask .chips button:hover{color:#fff}
+#page-ask #ask-message,
+#page-ask input[type=text]{color:var(--ink)}
+#page-ask ::placeholder{color:var(--ink-3);opacity:1}
+#page-ask .tag-suggestion{color:var(--ink-2)}
+#page-ask .tag-suggestions .lbl{color:var(--ink-2)}
+#page-ask .extra summary{color:var(--ink)}
+#page-ask .extra summary em{color:var(--ink-2)}
+#page-ask .perk span{color:var(--ink-2)}
+#page-ask .qtype .note,
+#page-ask .qtype .k{color:var(--ink-2)}
+#page-ask .summary .t{color:var(--ink)}
+#page-ask .summary .line{color:var(--ink-2)}
+#page-ask .summary .line b{color:var(--cyan)}
+#page-ask .benefit .t{color:var(--ink)}
+#page-ask .note{color:var(--ink-2)}
+#page-ask .field .count,
+#page-ask .field .count span{color:var(--ink-2)}
