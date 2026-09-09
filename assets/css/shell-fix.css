@@ -631,3 +631,67 @@
 #page-ask .note{color:var(--ink-2)}
 #page-ask .field .count,
 #page-ask .field .count span{color:var(--ink-2)}
+
+/* ==================================================================
+   12. Treasury
+   Раздел перестраивался в августе и имеет собственную вёрстку tre-*,
+   которая богаче прототипа: семь кошельков, полоса Circuit, факт
+   против плана и график TVL, который сам себя монтирует рядом с
+   #t-total-tvl. Поэтому разметка остаётся, меняется палитра и
+   верхний блок получает фон из макета.
+   ================================================================== */
+#page-treasury{
+  --surface:var(--panel);
+  --surface2:var(--bg-2);
+  --border:var(--line);
+  --text:var(--ink);
+  --muted:var(--ink-2);
+  --accent:var(--cyan);
+  --accent-dark:var(--blue);
+  --gold:var(--amber);
+  --green:var(--lime);
+}
+
+/* Верхний блок: фон, затемнение к центру, карточка TVL поверх. */
+#page-treasury .tre-top{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  padding:18px;
+  background:var(--bg-2);
+}
+#page-treasury .tre-top .bg{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:50% 0%;opacity:.9;
+}
+#page-treasury .tre-top::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 58% 62% at 50% 62%,
+    rgba(5,7,15,.74),rgba(5,7,15,.28) 72%,transparent);
+}
+#page-treasury .tre-top > *{position:relative;z-index:1}
+#page-treasury .tre-hero{
+  background:rgba(7,10,26,.62);
+  backdrop-filter:blur(2px);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  margin-top:14px;
+}
+
+/* Шапка по центру, как в макете */
+#page-treasury .tre-head{text-align:center;padding:6px 0 2px;background:none;border:0}
+#page-treasury .tre-head h1{font-family:var(--dis)}
+#page-treasury .tre-eyebrow{color:var(--ink-3)}
+
+/* Заголовки секций в стиле прототипа */
+#page-treasury .tre-sec-tag b{font-family:var(--dis);color:var(--amber);letter-spacing:.06em}
+#page-treasury .tre-sec-tag span{color:var(--ink-3)}
+
+/* Карточки кошельков и блоков - на новой панели */
+#page-treasury .tre-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+}
+#page-treasury .tre-card:hover{border-color:var(--line-2)}
