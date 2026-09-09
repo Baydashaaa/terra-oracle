@@ -884,146 +884,108 @@ async function loadStatsData() {
 function renderHowItWorksHTML() {
   const ranks = typeof RANKS !== 'undefined' ? RANKS : [];
 
+  // Способы заработать REP. Значения те же, что были, добавлены иконки.
+  const EARN = [
+    ['Ask a question',    '+40 REP per question', 'assets/img/icons/ask.webp',         '168,85,247'],
+    ['Answer a question', '+40 REP per answer',   'assets/img/icons/chat.webp',        '34,211,238'],
+    ['Answer accepted',   '+60 REP when chosen',  'assets/img/icons/reputation.webp',  '34,197,94'],
+    ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208'],
+    ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66'],
+    ['Chat message',      '+5 REP per message',   'assets/img/icons/p-messages.webp',  '76,125,255'],
+    ['Mint Common',       '+25 REP per mint',     'nfts/common-sm.webp',               '200,205,216'],
+    ['Mint Rare',         '+125 REP per mint',    'nfts/rare-sm.webp',                 '77,155,255'],
+    ['Mint Legendary',    '+250 REP per mint',    'nfts/legendary-sm.webp',            '244,191,77'],
+  ];
+
+  const earn = EARN.map(([k, v, ic, c]) =>
+    '<div class="earn" style="--c:' + c + '"><img src="' + ic + '" alt="" loading="lazy">' +
+    '<div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('');
+
+  // Лестница рангов. INITIATE пропускаем - это стартовое состояние, а не ступень.
+  const asc = ranks.slice(1).map(r =>
+    '<div class="asc" style="--c:' + hexToRgbTriple(r.color) + '">' +
+    '<img src="assets/img/icons/r-' + r.name.toLowerCase() + '.webp" alt="" loading="lazy">' +
+    '<div class="nm">' + r.name + '</div>' +
+    '<div class="at">' + Number(r.minScore).toLocaleString('en-US') + ' REP</div>' +
+    '<div class="mu">&times;' + Number(r.multiplier).toFixed(1) + '</div>' +
+    '<div class="di">' + (r.discount ? r.discount + '% off questions' : 'no discount') + '</div></div>').join('');
+
   return `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px;">
-      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">
-        What is Oracle Reputation
-      </div>
-      <p style="font-size:13px;color:var(--text);line-height:1.85;margin-bottom:20px;">
-        Oracle Reputation (REP) measures your contribution to the Terra Oracle protocol.
-        It is <strong style="color:var(--accent);">not a token or balance</strong> -
-        it reflects your <strong style="color:var(--text);">activity, quality, and engagement</strong>
-        across all protocol modules. REP accumulates over time and unlocks ranks, fee discounts, and weekly rewards.
-      </p>
-      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">
-        How REP is earned
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
-        ${[
-          ['Ask a question',      '+40 REP per question',              'var(--accent)'],
-          ['Answer a question',   '+40 REP per answer',                '#66ffaa'      ],
-          ['Answer accepted',     '+60 REP when chosen',               '#66ffaa'      ],
-          ['Circuit round',       '+2 to 6.5 REP per round',           '#38d9d0'      ],
-          ['Upvote received',     '+20 REP per upvote',                '#ffd700'      ],
-          ['Chat message',        '+5 REP per message',                '#c084fc'      ],
-          ['Mint Common NFT',     '+25 REP per mint',                  '#9ca3af'      ],
-          ['Mint Rare NFT',       '+125 REP per mint',                 '#60a5fa'      ],
-          ['Mint Legendary NFT',  '+250 REP per mint',                 '#fb923c'      ],
-        ].map(([label, rep, color]) => `
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${label}</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:${color};">${rep}</div>
-          </div>`).join('')}
-      </div>
-      <div style="padding:14px 16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--border);">
-        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">
-          Anti-abuse limits
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);line-height:1.6;">
-          <div>Answers are limited to 3 per question per day to prevent spam.</div>
-          <div>Answer REP is degressive per day: answers 1-3 earn +40, answers 4-10 earn +10, later ones earn 0. You can always keep answering - only the REP stops.</div>
-          <div>Upvotes grant REP only when they come from a wallet with paid on-chain history.</div>
-          <div>Voting is capped at 20 votes per day per wallet.</div>
-          <div>Self-votes on questions and answers are blocked.</div>
-        </div>
-      </div>
-    </div>
+    <section class="card">
+      <h3 class="sec inline">What is Oracle Reputation</h3>
+      <p class="rep-p">Oracle Reputation (REP) measures your contribution to the protocol. It is
+        <b>not a token and not a balance</b> - it reflects activity, quality and engagement across
+        every module. REP accumulates over time and unlocks ranks, fee discounts and weekly rewards.</p>
+    </section>
 
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px;">
-      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">
-        Oracle Ascension
-      </div>
-      <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:18px;">
-        As your REP grows, you ascend through 7 ranks. Each rank unlocks a fee discount on questions
-        and a reward multiplier applied to your weekly earnings.
-      </p>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        ${ranks.map(r => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
-            background:var(--surface2);border:1px solid var(--border);border-radius:10px;min-width:0;">
-            <div style="font-size:12px;font-weight:800;color:${r.color};
-              text-shadow:0 0 8px ${r.glow};flex:1;min-width:0;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              ${r.icon} ${r.name}
-            </div>
-            <div style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;">
-              ${r.minScore === 0 ? 'Start' : r.minScore.toLocaleString() + ' REP'}
-            </div>
-            <div style="font-size:10px;color:${r.color};font-weight:700;flex-shrink:0;opacity:${r.multiplier > 1 ? 1 : 0.4};">
-              x${r.multiplier}
-            </div>
-            ${r.discount > 0 ? `<div style="font-size:10px;color:var(--green);flex-shrink:0;">−${r.discount}%</div>` : ''}
-          </div>`).join('')}
-      </div>
-    </div>
+    <section class="card">
+      <h3 class="sec inline">How REP is earned</h3>
+      <div class="earn-grid">${earn}</div>
+    </section>
 
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px;">
-      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">
-        Weekly Reward Pool
-      </div>
-      <p style="font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:20px;">
-        Each week, <strong style="color:var(--text);">25% of Protocol Treasury</strong> income is transferred to the <strong style="color:#66ffaa;">REP Rewards Pool</strong> wallet - and the full balance is paid out to top contributors.
-        This pool is distributed to the <strong style="color:var(--text);">top 20% of contributors</strong>
-        ranked by their REP earned in the last 7 days. Your share is proportional to your weekly REP
-        multiplied by your rank multiplier.
-      </p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.1em;text-transform:uppercase;">Reward formula</div>
-          <div style="font-size:12px;color:var(--text);line-height:1.85;">
-            Your share =<br>
-            <span style="color:var(--accent);">(your 7-day REP x rank multiplier)</span><br>
-            divided by total weighted REP of top 20%<br>
-            multiplied by weekly pool
-          </div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.1em;text-transform:uppercase;">Scoring period</div>
-          <div style="font-size:12px;color:var(--text);line-height:1.85;">
-            Only activity from the <strong style="color:var(--text);">last 7 days</strong> counts toward weekly rewards.
-            All-time REP still determines your rank and fee discounts.
-          </div>
-        </div>
-      </div>
-      <div style="padding:14px 16px;background:rgba(255,165,0,0.05);border:1px solid rgba(255,165,0,0.2);
-        border-radius:8px;margin-bottom:16px;">
-        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,165,0,0.8);margin-bottom:8px;">
-          Activation threshold
-        </div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
-          Weekly rewards only activate when at least <strong style="color:var(--text);">10 unique contributors</strong>
-          are active in a given week. If the threshold is not met, the pool carries over to the following week
-          and continues accumulating until the minimum is reached.
-        </div>
-      </div>
-      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">
-        Rank multipliers
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
-        ${ranks.filter(r => r.multiplier > 1).map(r => `
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
-            <div style="font-size:11px;font-weight:700;color:${r.color};margin-bottom:6px;letter-spacing:0.04em;">${r.icon} ${r.name}</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:${r.color};
-              text-shadow:0 0 10px ${r.glow};">x${r.multiplier}</div>
-          </div>`).join('')}
-      </div>
-    </div>
+    <section class="card">
+      <h3 class="sec inline">Anti-abuse limits</h3>
+      <ul class="rep-list">
+        <li>Answers are limited to 3 per question per day.</li>
+        <li>Answer REP is progressive per day: answers 1-3 earn +40, answers 4-10 earn +10, later ones earn 0. Only the REP stops, the answer still posts.</li>
+        <li>Upvotes grant REP only from a wallet with paid on-chain history.</li>
+        <li>Voting is capped at 20 votes per day per wallet.</li>
+        <li>Self-votes on your own questions and answers are blocked.</li>
+      </ul>
+    </section>
 
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;">
-      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">
-        REP Persistence
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;color:var(--muted);line-height:1.85;">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.1em;text-transform:uppercase;">All-time REP</div>
-          <div>Accumulates forever. Used to determine your rank and unlock fee discounts. Never resets.</div>
+    <section class="card">
+      <h3 class="sec inline">Oracle ascension <span>Each rank unlocks a fee discount and a reward multiplier</span></h3>
+      <div class="asc-line">${asc}</div>
+    </section>
+
+    <section class="card">
+      <h3 class="sec inline">Weekly rewards pool</h3>
+      <p class="rep-p">Each week <b>25% of protocol treasury income</b> moves to the REP Rewards Pool
+        wallet, and the full balance is paid out to the <b>top 20% of contributors</b> ranked by REP
+        earned in the last 7 days.</p>
+      <div class="two-col">
+        <div class="sub-card">
+          <div class="sc-h">REWARD FORMULA</div>
+          <p>Your share = <b>(your 7-day REP &times; rank multiplier)</b> divided by the total weighted
+            REP of the top 20%, multiplied by the weekly pool.</p>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.1em;text-transform:uppercase;">Weekly REP</div>
-          <div>Only activity from the last 7 days. Resets each week. Used exclusively for reward distribution.</div>
+        <div class="sub-card">
+          <div class="sc-h">SCORING PERIOD</div>
+          <p>Only the last 7 days count toward weekly rewards. All-time REP still decides your rank
+            and your fee discount.</p>
         </div>
       </div>
-    </div>
+      <div class="warn-card">
+        <b>ACTIVATION THRESHOLD</b>
+        Weekly rewards only activate when at least 10 unique contributors are active that week.
+        Below that the pool carries over and keeps accumulating.
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 class="sec inline">REP persistence</h3>
+      <div class="two-col">
+        <div class="sub-card">
+          <div class="sc-h">ALL-TIME REP</div>
+          <p>Accumulates forever. Decides your rank and your fee discount. Never resets.</p>
+        </div>
+        <div class="sub-card">
+          <div class="sc-h">WEEKLY REP</div>
+          <p>Only the last 7 days. Resets each week. Used solely for reward distribution.</p>
+        </div>
+      </div>
+    </section>
   `;
+}
+
+// Цвета рангов в RANKS заданы шестнадцатеричными, а разметка прототипа
+// ждёт тройку каналов для rgba() в переменной --c.
+function hexToRgbTriple(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return '168,85,247';
+  const v = parseInt(m[1], 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255].join(',');
 }
 
 // ── fetchChatStats ─────────────────────────────────────────────
