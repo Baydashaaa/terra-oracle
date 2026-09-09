@@ -743,7 +743,32 @@
   --green:var(--lime);
   --gold:var(--amber);
 }
-#page-reputation .rep-tabs{justify-content:center}
+#page-reputation .rep-tabs{justify-content:flex-start}
+
+/* Вкладки рисуются внутрь #rep-tab-content обычным div, поэтому
+   промежутки от .shell-page до карточек не доходят - разносим здесь.
+   Заодно снимаем нулевой padding, который карточкам поставил сброс
+   в разделе 1: у прототипа он на .card, а не на инлайне. */
+#page-reputation #rep-tab-content{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  min-width:0;
+}
+#page-reputation #rep-tab-content > *{flex:0 0 auto}
+#page-reputation #rep-tab-content > .card,
+#page-reputation .rep-pane > .card{padding:20px 22px}
 #page-reputation h1,
 #page-reputation h2,
 #page-reputation h3{font-family:var(--dis)}
+
+/* ------------------------------------------------------------------
+   13a. Карточка Leaderboard в правой колонке
+   ------------------------------------------------------------------ */
+.side .lb .lb-empty{
+  font-size:11.5px;
+  color:var(--ink-3);
+  padding:6px 0 2px;
+}
+.side .lb li.me .nm{color:var(--violet-hi);font-weight:600}
+.side .lb li.me .pos{outline:1px solid var(--violet-hi);outline-offset:1px}
