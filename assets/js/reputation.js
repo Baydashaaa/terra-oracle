@@ -498,6 +498,16 @@ function renderStatsHTML(isConnected) {
               color:${{questions:'var(--accent)',answers:'#66ffaa',upvotes:'#ffd700',chat:'#c084fc'}[k]};"
               id="stats-rep-${k}">…</div>
           </div>`).join('')}
+        <!-- Accepted answers -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;
+          display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img class="act-ic" src="assets/img/icons/reputation.webp" alt="" width="128" height="128" loading="lazy"> Answers accepted</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-accepted">…</div>
+          </div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#66ffaa;"
+            id="stats-rep-accepted">…</div>
+        </div>
         <!-- Oracle Draw card -->
         <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
           display:flex;align-items:center;justify-content:space-between;">
@@ -508,16 +518,6 @@ function renderStatsHTML(isConnected) {
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#ff8844;"
             id="stats-rep-draw">…</div>
         </div>
-      </div>
-      <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
-        border-radius:8px;font-size:10px;color:var(--muted);line-height:1.7;">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Questions: <strong style="color:var(--text);">+40 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> Answers: <strong style="color:var(--text);">+40 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00FFB088);"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/></svg> Accepted: <strong style="color:var(--text);">+60 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #E8C84088);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> Upvotes: <strong style="color:var(--text);">+20 REP</strong> each ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat: <strong style="color:var(--text);">+5 REP</strong> per message ·
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #FFA53D88);"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> Draw: <strong style="color:#ff8844;">+25/125/250 REP</strong> per mint &middot;
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#38d9d0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 5px #38d9d088);"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg> Circuit: <strong style="color:#38d9d0;">+2 to 6.5 REP</strong> per round played
       </div>
       <div style="margin-top:16px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);
         border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
@@ -707,11 +707,11 @@ async function loadStatsData() {
         <div style="flex:1;">
           <div style="font-size:20px;font-weight:800;color:${rank.color};
             text-shadow:0 0 12px ${rank.glow};margin-bottom:8px;letter-spacing:0.08em;">
-            ${rank.icon} ${rank.name}
+            <img class="rank-ic" src="assets/img/icons/r-${rank.name.toLowerCase()}.webp" alt="" width="112" height="112" loading="lazy">${rank.name}
           </div>
           ${nextRank ? `
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
-              Progress to <span style="color:${nextRank.color};font-weight:700;">${nextRank.icon} ${nextRank.name}</span>
+              Progress to <span style="color:${nextRank.color};font-weight:700;"><img class="rank-ic sm" src="assets/img/icons/r-${nextRank.name.toLowerCase()}.webp" alt="" width="112" height="112" loading="lazy">${nextRank.name}</span>
               · need <strong style="color:var(--text);">${(nextRank.minScore - totalRep).toLocaleString()}</strong> more REP
             </div>
             <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;">
@@ -737,6 +737,15 @@ async function loadStatsData() {
     const res = await fetch(`${WORKER_URL}/questions`);
     const data = await res.json();
     const allQuestions = data.questions || [];
+
+    // Принятые ответы. Флаг тот же, что читают уведомления: автор вопроса
+    // выбрал ответ, и его id лежит в chosenAnswerId.
+    const myAnswerIds = new Set(myAnswers.map(a => a.id).filter(Boolean));
+    const acceptedCount = allQuestions.filter(
+      q => q.chosenAnswerId && myAnswerIds.has(q.chosenAnswerId)).length;
+    const setAcc = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setAcc('stats-count-accepted', acceptedCount);
+    setAcc('stats-rep-accepted', '+' + (acceptedCount * 60).toLocaleString('en-US') + ' REP');
 
     // Build 7-day scores per wallet
     const cutoff7d      = Math.floor(Date.now() / 1000) - 7 * 86400;

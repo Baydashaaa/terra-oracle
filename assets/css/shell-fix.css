@@ -797,3 +797,17 @@
   margin-right:7px;
 }
 #page-reputation #stats-activity-grid > div{align-items:center}
+
+/* ------------------------------------------------------------------
+   13d. Иконки рангов в Your stats
+   ------------------------------------------------------------------ */
+#page-reputation .rank-ic{
+  width:34px;height:34px;
+  object-fit:contain;
+  vertical-align:middle;
+  margin-right:9px;
+}
+#page-reputation .rank-ic.sm{
+  width:18px;height:18px;
+  margin:0 4px 0 2px;
+}
