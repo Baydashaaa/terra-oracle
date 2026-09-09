@@ -695,3 +695,28 @@
   border-radius:var(--r);
 }
 #page-treasury .tre-card:hover{border-color:var(--line-2)}
+
+/* ------------------------------------------------------------------
+   12a. Иконки казны
+   В прототипе у карточек пулов иконка 46px слева, а в распределении
+   40px вместо цветного квадратика. Карточка пула на бою - обычный
+   блок, поэтому переводим её в сетку "иконка | всё остальное".
+   ------------------------------------------------------------------ */
+#page-treasury .tre-pools .tre-card{
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr);
+  gap:6px 14px;
+  align-items:center;
+  align-content:center;
+}
+#page-treasury .tre-ic{
+  width:46px;height:46px;object-fit:contain;
+  grid-row:1 / span 4;
+  align-self:center;
+}
+#page-treasury .tre-pools .tre-card > *:not(.tre-ic){grid-column:2}
+
+#page-treasury .tre-row-name{display:flex;align-items:center;gap:11px}
+#page-treasury .tre-ic-sm{
+  width:34px;height:34px;object-fit:contain;flex:none;
+}
