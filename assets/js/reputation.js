@@ -51,9 +51,9 @@ function renderRepPage(tab) {
     </section>
 
     <div class="rep-tabs" role="tablist">
-      <button role="tab" aria-selected="${tab === 'leaderboard'}" onclick="showRepPage('leaderboard')">Leaderboard</button>
-      <button role="tab" aria-selected="${tab === 'stats'}" onclick="showRepPage('stats')">Your stats</button>
-      <button role="tab" aria-selected="${tab === 'how'}" onclick="showRepPage('how')">How it works</button>
+      <button role="tab" aria-selected="${tab === 'leaderboard'}" onclick="showRepPage('leaderboard')"><img class="tab-ic" src="assets/img/icons/hdr-leaderboard.webp" alt="" width="112" height="112" loading="lazy">Leaderboard</button>
+      <button role="tab" aria-selected="${tab === 'stats'}" onclick="showRepPage('stats')"><img class="tab-ic" src="assets/img/icons/tab-stats.webp" alt="" width="112" height="112" loading="lazy">Your stats</button>
+      <button role="tab" aria-selected="${tab === 'how'}" onclick="showRepPage('how')"><img class="tab-ic" src="assets/img/icons/tab-how.webp" alt="" width="112" height="112" loading="lazy">How it works</button>
     </div>
 
     <div id="rep-tab-content">
@@ -651,15 +651,12 @@ async function loadStatsData() {
         const totalMints = tierCounts.common + tierCounts.rare + tierCounts.legendary;
 
         drawEl.innerHTML = `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px;">
-            ${[['common','#9ca3af',25],['rare','#60a5fa',125],['legendary','#fb923c',250]].map(([tier, color, pts]) => `
-              <div style="background:${tier==='common'?'rgba(156,163,175,0.06)':tier==='rare'?'rgba(96,165,250,0.06)':'rgba(251,146,60,0.06)'};
-                border:1px solid ${tier==='common'?'rgba(156,163,175,0.35)':tier==='rare'?'rgba(96,165,250,0.35)':'rgba(251,146,60,0.35)'};
-                border-radius:10px;padding:12px;text-align:center;
-                box-shadow:0 0 12px ${tier==='common'?'rgba(156,163,175,0.08)':tier==='rare'?'rgba(96,165,250,0.08)':'rgba(251,146,60,0.08)'};">
-                <div style="font-size:10px;color:${color};margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">${tier}</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:${color};">${tierCounts[tier]}</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:2px;">mints · +${(tierCounts[tier]*pts).toLocaleString()} REP</div>
+          <div class="mint-grid">
+            ${[['common','200,205,216',25],['rare','77,155,255',125],['legendary','244,191,77',250]].map(([tier, t, pts]) => `
+              <div class="mint-c" style="--t:${t}">
+                <img src="nfts/${tier}-md.webp" alt="" loading="lazy">
+                <div class="k">${tier.toUpperCase()}</div>
+                <div class="v"><b>${tierCounts[tier]}</b><span>mints &middot; +${(tierCounts[tier]*pts).toLocaleString()} REP</span></div>
               </div>`).join('')}
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;

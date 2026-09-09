@@ -821,3 +821,13 @@
   display:block;
   margin:0 auto;
 }
+
+/* ------------------------------------------------------------------
+   13f. Иконки у вкладок раздела
+   ------------------------------------------------------------------ */
+#page-reputation .rep-tabs button{display:inline-flex;align-items:center;gap:8px}
+#page-reputation .tab-ic{
+  width:20px;height:20px;
+  object-fit:contain;
+  flex:none;
+}
