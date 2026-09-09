@@ -715,6 +715,10 @@
   align-self:center;
 }
 #page-treasury .tre-pools .tre-card > *:not(.tre-ic){grid-column:2}
+/* У t-protocol рисунок занимает 90 на 76 процентов холста, у соседей
+   98-100. При одинаковой рамке иконка казны читается мельче остальных,
+   поэтому дотягиваем её масштабом, а не размером бокса. */
+#page-treasury .tre-ic[src*="t-protocol"]{transform:scale(1.16)}
 
 #page-treasury .tre-row-name{display:flex;align-items:center;gap:11px}
 #page-treasury .tre-ic-sm{

@@ -253,10 +253,19 @@
       allPoints = (d.points || [])
         .filter((p) => p && typeof p.ts === 'number' && typeof p.uluna === 'number')
         .sort((a, b) => a.ts - b.ts);
+      if (!allPoints.length) console.warn('[treasury-chart] воркер ответил, но точек нет');
       draw();
     } catch (e) {
       const plot = $('tvc-plot');
-      if (plot) plot.innerHTML = '<div class="tvc-empty">History unavailable right now.</div>';
+      // TypeError здесь означает, что запрос вообще не дошёл: сеть или CORS.
+      // AbortError - вышло время. Остальное - воркер ответил, но не тем.
+      const blocked = e && (e.name === 'TypeError' || e.name === 'AbortError' || e.name === 'TimeoutError');
+      console.warn('[treasury-chart] ' + W_URL + '/treasury-series ->', (e && (e.message || e.name)) || e);
+      if (plot) {
+        plot.innerHTML = '<div class="tvc-empty">' +
+          (blocked ? 'History source is not responding.'
+                   : 'History unavailable right now.') + '</div>';
+      }
     }
   }
 
