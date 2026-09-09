@@ -772,3 +772,28 @@
 }
 .side .lb li.me .nm{color:var(--violet-hi);font-weight:600}
 .side .lb li.me .pos{outline:1px solid var(--violet-hi);outline-offset:1px}
+
+/* ------------------------------------------------------------------
+   13b. Наложение футера на содержимое
+   layout.css даёт .page#page-reputation.active и .page#page-treasury.active
+   правило flex:1. Внутри .main, которая теперь flex-колонка, это значит
+   flex-basis:0 - высота считается по остатку, а не по содержимому.
+   Длинный раздел вылезал за свою коробку, и общий подвал оказывался
+   поверх карточек. Возвращаем размер по содержимому.
+   ------------------------------------------------------------------ */
+.main > .page#page-reputation.active,
+.main > .page#page-treasury.active{
+  flex:0 0 auto !important;
+  min-height:0 !important;
+}
+
+/* ------------------------------------------------------------------
+   13c. Иконки в плашках активности
+   ------------------------------------------------------------------ */
+#page-reputation .act-ic{
+  width:30px;height:30px;
+  object-fit:contain;
+  vertical-align:middle;
+  margin-right:7px;
+}
+#page-reputation #stats-activity-grid > div{align-items:center}
