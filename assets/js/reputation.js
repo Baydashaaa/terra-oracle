@@ -35,46 +35,25 @@ function renderRepPage(tab) {
   const isConnected = typeof globalWalletAddress !== 'undefined' && globalWalletAddress;
 
   pg.innerHTML = `
-    <div style="text-align:center;margin-bottom:36px;">
-      <div style="display:inline-block;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
-        color:var(--accent);border:1px solid rgba(84,147,247,0.3);padding:4px 14px;border-radius:20px;
-        background:rgba(84,147,247,0.05);margin-bottom:14px;">ORACLE REPUTATION</div>
-      <h1 style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(26px,4vw,38px);color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;">
-        ${tab === 'leaderboard' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M8 4.4h8v4.7a4 4 0 0 1-8 0z"/><path d="M8 5.9H5.4v1.6a3 3 0 0 0 3 3M16 5.9h2.6v1.6a3 3 0 0 1-3 3"/><path d="M12 13.1v3.4"/><path d="M9.3 20.1h5.4l-.55-3.6H9.85z"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">Leaderboard</span></span>' : tab === 'stats' ? '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #00D4FF88);"><path d="M3.6 20.4h16.8"/><path d="M7.2 20.4v-7.2M12 20.4V6.6M16.8 20.4v-4.6"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">Your Stats</span></span>' : '<span style="display:inline-flex;align-items:center;gap:10px;"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:58px;height:58px;flex-shrink:0;display:block;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M12 6.9S10.1 5 6.6 5H3.4v12.6h3.4c3 0 5.2 1.8 5.2 1.8s2.2-1.8 5.2-1.8h3.4V5h-3.2C14 5 12 6.9 12 6.9z"/><path d="M12 6.9v12.5"/></svg><span style="color:#fff;font-size:clamp(26px,4vw,38px);font-weight:800;">How it Works</span></span>'}
-      </h1>
-      <p style="font-size:12px;color:var(--muted);">
-        ${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
-        : tab === 'stats'      ? 'Your activity breakdown · weekly rewards · estimated payout'
-        :                        'Earn REP through activity · Unlock ranks, discounts & rewards'}
-      </p>
-    </div>
+    <section class="rep-hero">
+      <img class="art" src="assets/img/banner-rep-${tab === 'leaderboard' ? 'board' : tab === 'stats' ? 'stats' : 'how'}.webp"
+           alt="" width="1600" height="533" loading="lazy">
+      <span class="scrim"></span>
+      <div class="copy">
+        <p class="eyebrow">ORACLE REPUTATION</p>
+        <h2>${tab === 'leaderboard' ? 'LEADER<em>BOARD</em>'
+            : tab === 'stats'      ? 'YOUR <em>STATS</em>'
+            :                        'HOW IT <em>WORKS</em>'}</h2>
+        <p class="lead">${tab === 'leaderboard' ? 'Top contributors ranked by Oracle Reputation score'
+            : tab === 'stats'      ? 'Your activity breakdown, weekly rewards and estimated payout'
+            :                        'Earn REP through activity. Unlock ranks, discounts and rewards.'}</p>
+      </div>
+    </section>
 
-    <!-- Tab switcher -->
-    <div style="display:flex;gap:8px;margin-bottom:28px;justify-content:center;flex-wrap:wrap;">
-      <button onclick="showRepPage('leaderboard')" style="
-        background:${tab==='leaderboard' ? 'rgba(84,147,247,0.12)' : 'transparent'};
-        border:1px solid ${tab==='leaderboard' ? 'rgba(84,147,247,0.4)' : 'var(--border)'};
-        color:${tab==='leaderboard' ? 'var(--accent)' : 'var(--muted)'};
-        font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
-        padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M8 4.4h8v4.7a4 4 0 0 1-8 0z"/><path d="M8 5.9H5.4v1.6a3 3 0 0 0 3 3M16 5.9h2.6v1.6a3 3 0 0 1-3 3"/><path d="M12 13.1v3.4"/><path d="M9.3 20.1h5.4l-.55-3.6H9.85z"/></svg> Leaderboard
-      </button>
-      <button onclick="showRepPage('stats')" style="
-        background:${tab==='stats' ? 'rgba(84,147,247,0.12)' : 'transparent'};
-        border:1px solid ${tab==='stats' ? 'rgba(84,147,247,0.4)' : 'var(--border)'};
-        color:${tab==='stats' ? 'var(--accent)' : 'var(--muted)'};
-        font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
-        padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #00D4FF88);"><path d="M3.6 20.4h16.8"/><path d="M7.2 20.4v-7.2M12 20.4V6.6M16.8 20.4v-4.6"/></svg> Your Stats
-      </button>
-      <button onclick="showRepPage('how')" style="
-        background:${tab==='how' ? 'rgba(84,147,247,0.12)' : 'transparent'};
-        border:1px solid ${tab==='how' ? 'rgba(84,147,247,0.4)' : 'var(--border)'};
-        color:${tab==='how' ? 'var(--accent)' : 'var(--muted)'};
-        font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;
-        padding:8px 20px;border-radius:8px;cursor:pointer;transition:all 0.2s;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;filter:drop-shadow(0 0 5px #a78bfa88);"><path d="M12 6.9S10.1 5 6.6 5H3.4v12.6h3.4c3 0 5.2 1.8 5.2 1.8s2.2-1.8 5.2-1.8h3.4V5h-3.2C14 5 12 6.9 12 6.9z"/><path d="M12 6.9v12.5"/></svg> How it Works
-      </button>
+    <div class="rep-tabs" role="tablist">
+      <button role="tab" aria-selected="${tab === 'leaderboard'}" onclick="showRepPage('leaderboard')">Leaderboard</button>
+      <button role="tab" aria-selected="${tab === 'stats'}" onclick="showRepPage('stats')">Your stats</button>
+      <button role="tab" aria-selected="${tab === 'how'}" onclick="showRepPage('how')">How it works</button>
     </div>
 
     <div id="rep-tab-content">

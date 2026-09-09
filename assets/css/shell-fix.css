@@ -724,3 +724,26 @@
 #page-treasury .tre-ic-sm{
   width:34px;height:34px;object-fit:contain;flex:none;
 }
+
+/* ==================================================================
+   13. Reputation
+   Страницу целиком рисует reputation.js инлайновыми стилями поверх
+   переменных старой темы. Баннер и вкладки заменены в шаблоне, всё
+   остальное перекрашивается через переменные - лидерборд, ранги,
+   пул наград и расчёт выплаты остаются нетронутыми.
+   ================================================================== */
+#page-reputation{
+  --surface:var(--panel);
+  --surface2:var(--bg-2);
+  --border:var(--line);
+  --text:var(--ink);
+  --muted:var(--ink-2);
+  --accent:var(--violet-hi);
+  --accent-dark:var(--violet-2);
+  --green:var(--lime);
+  --gold:var(--amber);
+}
+#page-reputation .rep-tabs{justify-content:center}
+#page-reputation h1,
+#page-reputation h2,
+#page-reputation h3{font-family:var(--dis)}
