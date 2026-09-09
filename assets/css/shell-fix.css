@@ -811,3 +811,13 @@
   width:18px;height:18px;
   margin:0 4px 0 2px;
 }
+
+/* ------------------------------------------------------------------
+   13e. Медали в лидерборде
+   ------------------------------------------------------------------ */
+#page-reputation .lb-medal{
+  width:34px;height:34px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto;
+}

@@ -363,11 +363,8 @@ function renderLeaderboardPage(page) {
     // MEDAL_STYLES, поэтому определение переехало сюда, ниже него.
     // Места с 4-го остаются текстовыми (#4, #5 …), как и были.
     const medal = ms
-      ? `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;filter:drop-shadow(0 0 5px ${ms.c}99);">
-           <path d="M8.6 2.8 11 8.4M15.4 2.8 13 8.4" stroke="${ms.c}" stroke-width="1.8" stroke-linecap="round"/>
-           <circle cx="12" cy="14.8" r="5.9" stroke="${ms.c}" stroke-width="1.8"/>
-           <text x="12" y="15" text-anchor="middle" dominant-baseline="central" fill="${ms.c}" font-family="Rajdhani,sans-serif" font-size="7.5" font-weight="800">${globalIdx + 1}</text>
-         </svg>`
+      ? `<img class="lb-medal" src="assets/img/icons/lb-${globalIdx + 1}.webp" alt="#${globalIdx + 1}"
+             width="128" height="128" loading="lazy">`
       : `#${globalIdx + 1}`;
 
     if (!w) {
@@ -421,7 +418,7 @@ function renderLeaderboardPage(page) {
             </span>
             <span style="font-size:10px;font-weight:700;color:${w.rank.color};
               text-shadow:0 0 8px ${w.rank.glow};white-space:nowrap;">
-              ${w.rank.icon} ${w.rank.name}
+              <img class="rank-ic sm" src="assets/img/icons/r-${w.rank.name.toLowerCase()}.webp" alt="" width="112" height="112" loading="lazy">${w.rank.name}
             </span>
           </div>
           <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
