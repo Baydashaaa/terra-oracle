@@ -1,0 +1,32 @@
+{
+ "_verify": [
+  "Этот файл — массив билетов на момент розыгрыша, в том порядке,",
+  "в котором его использовал lottery-draw.js.",
+  "1. Разверни tickets: пара [addr, n] даёт n подряд идущих билетов.",
+  "2. Длина должна совпасть с total и с entries в winners.json.",
+  "3. winner_index — позиция в этом развёрнутом массиве.",
+  "4. tickets[winner_index] должен равняться winner из winners.json.",
+  "   Для weekly winner_index — массив индексов трёх мест."
+ ],
+ "round_id": "weekly_2026-08-03",
+ "pool": "weekly",
+ "total": 13,
+ "wallets": 2,
+ "tickets": [
+  [
+   "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+   12
+  ],
+  [
+   "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
+   1
+  ]
+ ],
+ "block_hash": "6487A5DD20EA35A9EDBF605DB08813A6F0867CFB124614B44B775171562EA770",
+ "block_height": "29788240",
+ "winner_index": [
+  10,
+  12
+ ],
+ "generated_at": "2026-08-03T22:12:03.333Z"
+}

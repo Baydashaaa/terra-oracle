@@ -17,7 +17,7 @@
     nft:        function () { showPage('bag'); },
     treasury:   function () { showPage_treasury(null, null, false); },
     reputation: function () { showRepPage('leaderboard'); },
-    draw:       function () { window.open('https://draw.terraoracle.io/', '_blank', 'noopener'); },
+    draw:       function () { showPage('draw'); },
     markets:      null,  // раздела на боевом сайте пока нет
     achievements: null   // тоже нет
   };

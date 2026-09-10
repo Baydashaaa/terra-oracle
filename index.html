@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="0ffc8b42c1 2026-09-10">
+  <meta name="oracle-build" content="dc85bd2606 2026-09-10">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,6 +35,8 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
+  <link rel="stylesheet" href="assets/css/page/winners-v2.css?v=890aa6ce5b">
+  <link rel="stylesheet" href="assets/css/page/verify-v2.css?v=703c407c77">
   <link rel="stylesheet" href="assets/css/shell-fix.css?v=5105508475">
 
 
@@ -611,6 +613,165 @@
  <p class="ask-foot">Send LUNC to the protocol wallet before submitting.<br>
   <code>terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6</code></p>
 </div>
+<div class="page shell-page" id="page-draw">
+  <img class="draw-bg" src="assets/img/bg-draw.webp" alt="" width="1500" height="582" loading="lazy">
+
+  <div class="draw-nav">
+    <div class="modes" id="drawModes" role="tablist"></div>
+    <div class="subs" id="drawSubs" role="tablist"></div>
+  </div>
+
+  <div class="draw-pane" data-pane="play">
+    <!-- daily and weekly: the canvas wheel -->
+    <div class="wheel-lay" id="stage-draw">
+      <div class="wcol">
+        <h2 class="draw-title" id="drawTitle"></h2>
+        <p class="draw-sub" id="drawLead"></p>
+        <div id="drawTiers"></div>
+
+        <section class="card dpool">
+          <div class="lbl" id="poolLbl">CURRENT PRIZE POOL</div>
+          <div class="amt"><img src="assets/img/lunc.webp" alt="" width="128" height="128"><b id="poolAmt">0</b> LUNC</div>
+          <div class="sub" id="poolSub"></div>
+          <div class="wbar green" id="poolBarWrap" hidden><i id="poolBar"></i></div>
+          <div class="sub" id="poolNote"></div>
+        </section>
+
+        <div class="lbl next-lbl">NEXT DRAW IN</div>
+        <div class="clock big4" id="drawClock">
+          <div><b data-u="d">00</b><span>Days</span></div>
+          <div><b data-u="h">00</b><span>Hours</span></div>
+          <div><b data-u="m">00</b><span>Minutes</span></div>
+          <div><b data-u="s">00</b><span>Seconds</span></div>
+        </div>
+
+        <button class="mint" id="drawMint">Mint Oracle Mask<span>Common &middot; Rare &middot; Legendary</span></button>
+
+        <div class="mini3">
+          <div><b id="stat-total">-</b><span>MY ENTRIES THIS ROUND</span></div>
+          <div><b id="stat-burned">-</b><span>SEEDED NEXT ROUND</span></div>
+          <div><b id="stat-draws">-</b><span>DRAWS COMPLETED</span></div>
+        </div>
+      </div>
+
+      <section class="card wheel-card" id="wheel-panel-hero">
+        <div class="wheel-cap" id="wheel-panel-label">ORACLE WHEEL</div>
+        <div id="wheel-canvas-wrap"><canvas id="wheel-canvas" width="480" height="480"></canvas></div>
+        <div class="wheel-when">
+          <b id="wheel-msg">Awaiting draw…</b>
+          <span id="wheel-submsg">Wheel spins automatically at 20:00 UTC</span>
+        </div>
+        <div class="wstats">
+          <div><b id="wheel-participant-count">0</b><span>PARTICIPANTS</span></div>
+          <div><b id="wheel-ticket-count">0</b><span>TOTAL ENTRIES</span></div>
+        </div>
+        <div id="wheel-winner-card"></div>
+        <div id="wheel-legend"></div>
+        <div class="wnote">Each sector is one wallet &middot; size is the share of entries<br>
+          <span>On-chain block hash &middot; fully verifiable</span></div>
+      </section>
+    </div>
+
+    <!-- circuit -->
+    <div class="circuit-lay" id="stage-circuit" hidden>
+      <div class="cir-head">
+        <h2 class="draw-title">CIRCUIT</h2>
+        <p class="draw-sub">Claim consecutive zones on a 250&#8209;zone board. A marker runs across it
+          and stops on one - whoever owns that zone takes the round.</p>
+        <button class="cir-i" id="cir-i" type="button"
+                onclick="document.getElementById('cir-info').classList.toggle('open')">i</button>
+      </div>
+
+      <div class="dg-cir-info" id="cir-info">
+        <p><b>How it works.</b> Zones are handed out back to back from the first free one.
+          A round draws when the board fills, or every three hours once at least 20 zones
+          are taken. Below that the zones and the pot carry into the next round - nothing
+          is refunded and nothing is lost.</p>
+        <p><b>Price.</b> 1,000 LUNC for your first zone, +5% for each one after it. The markup
+          is cumulative per wallet per round, so splitting a purchase does not dodge it.
+          Your Oracle Mask sets the cap: 10 zones for Common, 25 for Rare, 50 for Legendary.</p>
+        <p><b>The pool splits</b> 80% to the winner, 6% to TCO rewards for everyone who took
+          zones, 6% to TCO burn, 8% to the treasury.</p>
+        <p><b>Rewards.</b> Your share is fixed in LUNC the moment a round draws, then converted
+          to TCO in one batch once 50,000 LUNC has built up. Claims are cumulative.</p>
+        <p><b>The draw is checkable.</b> The winning zone comes from the Terra Classic block hash
+          at the round deadline, not from a number our server picked.</p>
+      </div>
+
+      <div class="cir-stats">
+        <div><div class="k">BOARD</div><b id="cir-sold">0</b><div class="u">of 250 zones</div></div>
+        <div><div class="k">ROUND POOL</div><b id="cir-pool">0</b><div class="u">LUNC</div></div>
+        <div><div class="k">NEXT ROUND IN</div><b id="cir-left">-</b><div class="u" id="cir-left-sub">draws with 20+ zones</div></div>
+      </div>
+
+      <div class="board" id="cir-board"></div>
+      <p class="cir-hint">Zones are claimed back to back. Everything past the last claimed zone
+        sits out the round.</p>
+    </div>
+  </div>
+
+  <!-- winners: same ids and filter names as the live site -->
+  <div class="draw-pane" data-pane="winners" hidden>
+    <section class="card">
+      <h3 class="sec inline">Recent winners <span>Every closed round, newest first</span></h3>
+      <div class="wfilters">
+        <button class="draw-nav-btn active" id="wf-all"     onclick="filterWinners('all')">All</button>
+        <button class="draw-nav-btn" id="wf-daily"          onclick="filterWinners('daily')">Daily</button>
+        <button class="draw-nav-btn weekly" id="wf-weekly"  onclick="filterWinners('weekly')">Weekly</button>
+        <button class="draw-nav-btn" id="wf-circuit"        onclick="filterWinners('circuit')">Circuit</button>
+        <button class="draw-nav-btn" id="wf-mine"           onclick="filterWinners('mine')">My wins</button>
+      </div>
+      <div class="wn-stats" id="wn-stats"></div>
+      <div class="wn-list" id="wn-list"></div>
+    </section>
+  </div>
+
+  <!-- verify -->
+  <div class="draw-pane" data-pane="verify" hidden>
+    <section class="card verify">
+      <h3 class="sec inline">How the draw works <span>Nobody picks the winner</span></h3>
+      <p class="vf-intro">The result comes out of a Terra Classic block that did not exist yet
+        when entries closed, and anyone can replay it afterwards.</p>
+
+      <div class="vf-card">
+        <div class="vf-h">Step 1 &middot; Entries</div>
+        <p class="vf-intro">Every Oracle Mask you mint adds entries to the round. The tier decides
+          how many. More entries mean a wider slice, never a guarantee.</p>
+        <div class="hw-tiers">
+          <span class="hw-tier c">Common &middot; 1 entry</span>
+          <span class="hw-tier r">Rare &middot; 5 entries</span>
+          <span class="hw-tier l">Legendary &middot; 10 entries</span>
+        </div>
+      </div>
+
+      <div class="vf-card">
+        <div class="vf-h">Step 2 &middot; The block</div>
+        <p class="vf-intro">The draw uses the first block produced at or after 20:00 UTC of the
+          round deadline, not whichever block happens to be latest when the script runs. Re-running
+          the draw later cannot change the winner.</p>
+      </div>
+
+      <div class="vf-card">
+        <div class="vf-h">Step 3 &middot; The result</div>
+        <p class="vf-intro">The block hash and the frozen snapshot of entries pick the winner.
+          The same two inputs always give the same answer, so anyone can repeat it.</p>
+      </div>
+
+      <h3 class="sec inline" style="margin-top:20px">Verify a draw <span>Pick a completed round</span></h3>
+      <div class="vf-picker" id="vf-picker">
+        <button class="vf-trigger" id="vf-trigger" type="button" aria-haspopup="listbox"
+                aria-expanded="false" onclick="typeof vfToggle==='function'&&vfToggle()">
+          <span id="vf-trigger-label"><span class="vf-ph">Select a completed round</span></span>
+        </button>
+        <div class="vf-menu" id="vf-menu" role="listbox" style="display:none"></div>
+      </div>
+      <div id="vf-empty" class="vf-intro">Pick a round and your browser will run the steps above,
+        then compare the outcome with what was recorded on chain.</div>
+      <div id="vf-result"></div>
+    </section>
+  </div>
+</div>
+
 <div class="page shell-page" id="page-chat">
  <section class="chat">
   <header class="chat-head">
@@ -1667,7 +1828,16 @@
 <script src="assets/js/page/ask-shell.js?v=3f75bb1b18"></script>
 <script src="assets/js/page/side-leaderboard.js?v=1348eb77a1"></script>
 <script src="assets/js/page/side-reputation.js?v=53918c8395"></script>
-<script src="assets/js/shell-nav.js?v=79350e95fd"></script>
+<script src="assets/js/shell-nav.js?v=2ec6c10c6b"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
+<script src="chain-tickets.js?v=5ebdf0de41"></script>
+<script src="assets/js/circuit-state.js?v=b78fabda43"></script>
+<script src="assets/js/circuit-board.js?v=980e9fe1e8"></script>
+<script src="assets/js/app/winners-v2.js?v=9bab5b96de"></script>
+<script src="assets/js/app/winners-v3.js?v=cb19e822b6"></script>
+<script src="assets/js/app/verify-v2.js?v=3d5ba8007b"></script>
+<script src="assets/js/draw-glue.js?v=bdad9af55c"></script>
+<script src="assets/js/page/draw-shell.js?v=6745eea9f2"></script>
+<script type="module" src="assets/js/draw-v2/index.js?v=305e7efcfb"></script>
 </body>
 </html>
