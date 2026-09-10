@@ -950,7 +950,7 @@
 #page-draw #wheel-canvas-wrap{
   position:relative;
   width:100%;
-  max-width:620px;
+  max-width:520px;
   margin:0 auto;
   aspect-ratio:1 / 1;
 }
@@ -979,10 +979,52 @@ body.oracle-predraw #page-draw #wheel-canvas-wrap::after{
 /* Одноколоночная раскладка: колесо во всю ширину, но не разъезжается
    на планшете. Порог 900px - тот же, что на Draw. */
 @media (max-width:900px){
-  #page-draw #wheel-canvas-wrap{max-width:560px}
+  #page-draw #wheel-canvas-wrap{max-width:460px}
 }
 @media (max-width:768px){
   #page-draw #wheel-canvas{max-width:100% !important}
   #page-draw #wheel-panel-hero{width:100% !important;padding:20px 12px !important}
   #page-draw #wheel-canvas-wrap{display:block !important;text-align:center !important}
 }
+
+/* ------------------------------------------------------------------
+   14b. Читаемость раздела
+   Раздел стоит на тёмном баннере bg-draw, и самые тусклые оттенки
+   палитры на нём почти пропадают. Поднимаем две ступени локально -
+   так правится весь текст раздела разом, а остальной сайт не трогается.
+   ------------------------------------------------------------------ */
+#page-draw{
+  --ink-2:#c6cdf0;
+  --ink-3:#96a0cd;
+}
+
+/* Подложка под содержимым: баннер не должен съедать контраст */
+#page-draw .draw-pane{position:relative;z-index:1}
+#page-draw .draw-bg{opacity:.35}
+
+/* Вкладки: активная - заливкой в тон, остальные читаемым основным цветом */
+#page-draw .modes{
+  background:rgba(8,11,30,.86);
+  backdrop-filter:blur(6px);
+  flex-wrap:wrap;
+}
+#page-draw .modes button{
+  color:var(--ink);
+  font-weight:600;
+  padding:9px 18px;
+  cursor:pointer;
+  background:none;
+  border:0;
+}
+#page-draw .modes button:hover{background:rgba(255,255,255,.05)}
+#page-draw .modes button[aria-selected="true"]{
+  background:rgb(var(--tone));
+  color:#0a0d1c;
+  font-weight:700;
+}
+
+/* Подписи под цифрами и мелкие метки */
+#page-draw .lbl,
+#page-draw .next-lbl,
+#page-draw .timer-lbl{color:var(--ink-2)}
+#page-draw .draw-sub{color:var(--ink-2)}
