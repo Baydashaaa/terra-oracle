@@ -831,3 +831,91 @@
   object-fit:contain;
   flex:none;
 }
+
+/* ------------------------------------------------------------------
+   13g. Таблица лидерборда
+   Девять колонок: место, кошелёк, ранг сразу за ним, дальше числа.
+   Ширины заданы одной переменной, чтобы шапка и строки не разъезжались.
+   ------------------------------------------------------------------ */
+#page-reputation .lb-head,
+#page-reputation .lb-row{
+  display:grid;
+  grid-template-columns:52px minmax(120px,1.5fr) minmax(96px,1fr)
+                        repeat(5,minmax(52px,.6fr)) minmax(76px,.8fr);
+  align-items:center;
+  gap:10px;
+}
+#page-reputation .lb-head{
+  padding:0 14px 9px;
+  font-size:10px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+}
+#page-reputation .lb-head .num,
+#page-reputation .lb-row .num{text-align:right}
+
+#page-reputation .lb-row{
+  position:relative;
+  padding:11px 14px;
+  margin-bottom:8px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  font-size:12.5px;
+  transition:border-color .15s ease;
+}
+#page-reputation .lb-row:hover{border-color:var(--line-2)}
+
+/* Первые три места: подложка и рамка в цвет медали */
+#page-reputation .lb-row.top1,
+#page-reputation .lb-row.top2,
+#page-reputation .lb-row.top3{
+  background:linear-gradient(100deg,rgba(var(--m),.10),rgba(12,17,40,.55));
+  border-color:rgba(var(--m),.40);
+  padding:15px 14px;
+}
+#page-reputation .lb-row.top1::before,
+#page-reputation .lb-row.top2::before,
+#page-reputation .lb-row.top3::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:rgb(var(--m));border-radius:12px 0 0 12px;
+}
+#page-reputation .lb-row.me{border-color:var(--violet-hi)}
+#page-reputation .lb-row.empty{
+  background:none;
+  border-style:dashed;
+  opacity:.45;
+}
+
+#page-reputation .lb-row .pos{
+  font-family:var(--dis);font-weight:700;font-size:13px;
+  color:var(--ink-2);text-align:center;
+}
+#page-reputation .lb-row .wal{
+  display:flex;align-items:center;gap:8px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-weight:600;
+}
+#page-reputation .lb-row .you{
+  font-size:9px;letter-spacing:.08em;padding:2px 6px;border-radius:6px;
+  background:var(--violet-2);color:#fff;font-weight:700;
+}
+#page-reputation .lb-row .rnk{
+  display:flex;align-items:center;gap:2px;
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;
+}
+#page-reputation .lb-row .rep{
+  font-family:var(--dis);font-weight:700;font-size:14px;
+}
+
+@media (max-width:1100px){
+  /* На узкой колонке лишние числа прячем - кошелёк, ранг и REP важнее */
+  #page-reputation .lb-head,
+  #page-reputation .lb-row{
+    grid-template-columns:44px minmax(110px,1.4fr) minmax(84px,1fr) minmax(70px,.8fr);
+  }
+  #page-reputation .lb-head span:nth-child(n+4):nth-child(-n+8),
+  #page-reputation .lb-row .num:not(.rep){display:none}
+}

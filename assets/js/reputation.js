@@ -218,6 +218,10 @@ async function loadLeaderboard() {
           wallets[a.wallet].answers++;
           wallets[a.wallet].upvotesReceived += a.votes || 0;
         }
+        // Принятый ответ: автор вопроса выбрал его, id лежит в chosenAnswerId.
+        if (aInPeriod && q.chosenAnswerId && a.id && q.chosenAnswerId === a.id) {
+          wallets[a.wallet].accepted = (wallets[a.wallet].accepted || 0) + 1;
+        }
       }
     }
 
@@ -251,7 +255,7 @@ async function loadLeaderboard() {
 
     // Fetch draw REP, chat REP and streak for all wallets in parallel
     const walletList = Object.values(wallets);
-    const drawRepMap = {}, chatRepMap = {}, streakMap = {};
+    const drawRepMap = {}, chatRepMap = {}, streakMap = {}, drawMintsMap = {};
     try {
       const fetches = walletList.slice(0, 50).flatMap(w => [
         fetch(`${WORKER_URL}/rep/draw?wallet=${w.wallet}`)
@@ -264,6 +268,10 @@ async function loadLeaderboard() {
             } else {
               drawRepMap[w.wallet] = d.total || 0;
             }
+            // Количество минтов - отдельно от REP: в таблице столбец про штуки.
+            drawMintsMap[w.wallet] = (_lbPeriod === 'weekly')
+              ? (d.history || []).filter(h => (h.date || '') >= cutoffDate).length
+              : (d.history || []).length;
           })
           .catch(() => { drawRepMap[w.wallet] = 0; }),
         fetch(`${WORKER_URL}/chat/count?wallet=${w.wallet}`)
@@ -314,7 +322,8 @@ async function loadLeaderboard() {
         : (chainScore !== undefined ? chainScore : periodScore);
       const forRank = (chainScore !== undefined) ? chainScore : score;
       const rank  = typeof getRank === 'function' ? getRank(forRank) : { name: 'INITIATE', icon: '◈', color: '#6b82a8', glow: 'rgba(107,130,168,0.3)' };
-      return { ...w, score, drawRep, chatRep, multiplier, rank };
+      return { ...w, score, drawRep, chatRep, multiplier, rank,
+               drawMints: drawMintsMap[w.wallet] || 0, accepted: w.accepted || 0 };
     }).filter(w => w.score > 0).sort((a, b) => b.score - a.score).slice(0, 50);
 
     // If a newer load started (user switched period), discard this stale result
@@ -368,20 +377,14 @@ function renderLeaderboardPage(page) {
       : `#${globalIdx + 1}`;
 
     if (!w) {
-      // Empty slot - an inviting "open spot", not a loading skeleton.
+      // Пустое место - приглашение, а не заглушка загрузки.
       return `
-        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
-          background:transparent;border:1px dashed var(--border);
-          border-radius:10px;margin-bottom:8px;opacity:0.5;">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:800;
-            color:var(--muted);min-width:32px;text-align:center;opacity:0.6;">${medal}</div>
-          <div style="flex:1;">
-            <div style="font-size:12px;color:var(--muted);opacity:0.7;">Open spot - be a contributor</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--muted);opacity:0.5;">-</div>
-            <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;opacity:0.6;">REP</div>
-          </div>
+        <div class="lb-row empty">
+          <span class="pos">${medal}</span>
+          <span class="wal">Open spot - be a contributor</span>
+          <span class="rnk"></span>
+          <span class="num">-</span><span class="num">-</span><span class="num">-</span>
+          <span class="num">-</span><span class="num">-</span><span class="num rep">-</span>
         </div>`;
     }
 
@@ -401,41 +404,18 @@ function renderLeaderboardPage(page) {
     const repGlow  = ms ? `0 0 12px rgba(${ms.rgba},0.5)` : w.rank.glow;
     const repSize  = ms ? '24px' : '20px';
     return `
-      <div style="display:flex;align-items:center;gap:14px;padding:${ms ? '16px' : '14px'} 16px;position:relative;overflow:hidden;
-        background:${rowBg};
-        border:1px solid ${rowBorder};
-        border-radius:12px;margin-bottom:8px;transition:all 0.2s;${ms ? `box-shadow:0 0 20px rgba(${ms.rgba},0.07);` : ''}"
-        onmouseover="this.style.borderColor='${ms ? `rgba(${ms.rgba},0.6)` : 'rgba(84,147,247,0.25)'}'"
-        onmouseout="this.style.borderColor='${rowBorder}'">
-        ${accentBar}
-        <div style="font-family:'Rajdhani',sans-serif;font-size:${medalSize};font-weight:800;
-          color:${medalColor};min-width:36px;text-align:center;${medalGlow}">${medal}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-            <span style="font-size:${ms ? '13px' : '12px'};font-weight:700;color:${isMe ? 'var(--accent)' : 'var(--text)'};
-              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              ${(w.wallet ? w.wallet.slice(0,8) + '...' + w.wallet.slice(-4) : 'Anonymous')}${isMe ? ' <span style="color:var(--accent);font-size:10px;">(you)</span>' : ''}
-            </span>
-            <span style="font-size:10px;font-weight:700;color:${w.rank.color};
-              text-shadow:0 0 8px ${w.rank.glow};white-space:nowrap;">
-              <img class="rank-ic sm" src="assets/img/icons/r-${w.rank.name.toLowerCase()}.webp" alt="" width="112" height="112" loading="lazy">${w.rank.name}
-            </span>
-          </div>
-          <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> ${w.questions} questions</span>
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00FFB0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.8 10.6l2.1 2.1 4.3-4.3"/></svg> ${w.answers} answers</span>
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${w.upvotesReceived || 0} upvotes</span>
-            ${w.chatRep ? `<span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> +${w.chatRep} chat</span>` : ''}
-            ${w.drawRep ? `<span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg> +${w.drawRep} draw</span>` : ''}
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:${repSize};font-weight:800;
-            color:${repColor};text-shadow:0 0 10px ${repGlow};">
-            ${w.score.toLocaleString()}
-          </div>
-          <div style="font-size:9px;color:var(--muted);letter-spacing:0.08em;">REP</div>
-        </div>
+      <div class="lb-row${ms ? ' top' + (globalIdx + 1) : ''}${isMe ? ' me' : ''}" style="--m:${ms ? ms.rgba : '110,135,235'}">
+        <span class="pos">${medal}</span>
+        <span class="wal">${w.wallet ? w.wallet.slice(0,8) + '\u2026' + w.wallet.slice(-4) : 'Anonymous'}${isMe ? '<b class="you">YOU</b>' : ''}</span>
+        <span class="rnk" style="color:${w.rank.color}">
+          <img class="rank-ic sm" src="assets/img/icons/r-${w.rank.name.toLowerCase()}.webp" alt="" width="112" height="112" loading="lazy">${w.rank.name}
+        </span>
+        <span class="num">${w.questions}</span>
+        <span class="num">${w.answers}</span>
+        <span class="num">${w.upvotesReceived || 0}</span>
+        <span class="num">${w.accepted || 0}</span>
+        <span class="num">${w.drawMints || 0}</span>
+        <span class="num rep" style="color:${repColor}">${w.score.toLocaleString()}</span>
       </div>`;
   }).join('');
 
@@ -462,7 +442,14 @@ function renderLeaderboardPage(page) {
           transition:all 0.2s;">Next →</button>
     </div>` : '';
 
-  el.innerHTML = slots + pagination;
+  const head = `
+    <div class="lb-head">
+      <span>#</span><span>Wallet</span><span>Rank</span>
+      <span class="num">Questions</span><span class="num">Answers</span>
+      <span class="num">Upvotes</span><span class="num">Accepted</span>
+      <span class="num">Draw</span><span class="num">REP</span>
+    </div>`;
+  el.innerHTML = head + slots + pagination;
 }
 function renderStatsHTML(isConnected) {
   if (!isConnected) {
