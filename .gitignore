@@ -4,3 +4,4 @@ treasury-section.html
 *.bak
 *.bak
 node_modules/
+draw-app/.github/
