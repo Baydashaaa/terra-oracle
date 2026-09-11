@@ -1,0 +1,56 @@
+name: Preflight - скрипты розыгрыша
+
+# Смысл шага: 2 и 3 августа 2026 два розыгрыша подряд не состоялись из-за
+# require() в репо с "type": "module". Поломка приехала коммитом, а выяснилась
+# только через двое суток по пустому winners.json. Эта проверка гоняется
+# на каждый push, затрагивающий скрипты, - тогда красный крест виден сразу.
+
+on:
+  push:
+    paths:
+      - 'lottery-draw.js'
+      - 'free-entries.json'
+      - 'round-snapshot.js'
+      - '.github/scripts/**.js'
+      - '.github/workflows/lottery-draw.yml'
+      - 'package.json'
+      - 'dev/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    name: Модули загружаются
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Те же пакеты, что ставит боевой workflow: без них import упадёт
+      # на @cosmjs и проверка загрузки будет бессмысленной
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Preflight
+        run: node dev/_preflight.js
+
+      # Перенос free entries при несостоявшемся розыгрыше + подпись раунда
+      - name: Rollover tests
+        run: |
+          if [ -f dev/_test_rollover.cjs ]; then
+            node dev/_test_rollover.cjs
+          else
+            echo "dev/_test_rollover.cjs отсутствует - пропускаю"
+          fi
+
+      # Расписание: единый источник времени + сверка с DrawClock бандла
+      - name: Schedule tests
+        run: |
+          if [ -f dev/_test_schedule.cjs ]; then
+            node dev/_test_schedule.cjs
+          else
+            echo "dev/_test_schedule.cjs отсутствует - пропускаю"
+          fi

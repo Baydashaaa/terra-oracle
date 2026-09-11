@@ -1,0 +1,44 @@
+{
+  "epoch": 1,
+  "updatedAt": "2026-08-23T11:04:55.545Z",
+  "dustTco": "2",
+  "wallets": {
+    "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l": {
+      "processedUluna": "12307432962",
+      "tcoUluna": "345563118862"
+    },
+    "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7": {
+      "processedUluna": "13657777135",
+      "tcoUluna": "383477535735"
+    },
+    "terra1zdnanxgsyy8zqpmy3dfgges4xlzdskqsrx6nm3": {
+      "processedUluna": "146278925",
+      "tcoUluna": "4107160421"
+    },
+    "terra1a9see2df2w8wh8hsty0y6gw9tkamlkzah8kd74": {
+      "processedUluna": "146278925",
+      "tcoUluna": "4107160421"
+    },
+    "terra13pl88qlk5vdsxqu9dj6aydnyhncayvdvmvmn9p": {
+      "processedUluna": "148395191",
+      "tcoUluna": "4166580080"
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "at": "2026-08-23T11:04:55.545Z",
+      "spentUluna": "50016595353",
+      "boughtTco": "1482843111042",
+      "priceLuncPerTco": "0.033730200",
+      "toBurn": "741421555521",
+      "toRewards": "741421555521",
+      "handed": "741421555519",
+      "wallets": 5,
+      "txSwap": "98F5A0742CE849A469D5F3AF62920B120CE44CEAFC59C9B3BE1D4391B26DF707",
+      "txBurn": "FE388243C2126E26CDBE83A2B78FEA8FD5787808BAECD9669E9467D54AA36A9F",
+      "txFund": "8D05173456C9A039BB8A9FAA9F47F62B1796BDB5B16CB7C238E00A530F9AA892",
+      "txRoot": "F332483D9B267C8E9F38CEC78C80D5AED200DE34758F6E8B1018F2C10DE1B5B0"
+    }
+  ]
+}

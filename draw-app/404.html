@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script>
+    var path = window.location.pathname;
+    var validTabs = ['home','draw','winners','verify','bag'];
+    var tab = path.replace(/^\//, '') || 'home';
+    if (!validTabs.includes(tab)) tab = 'home';
+    // Параметры обязаны пережить редирект. Раньше здесь терялось всё после
+    // «?»: ссылка /draw?revealtest=1 приезжала на /#draw без параметра, и
+    // отладочные ключи молча не срабатывали.
+    window.location.replace('/' + window.location.search + '#' + tab);
+  </script>
+</head>
+<body></body>
+</html>

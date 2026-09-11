@@ -1,0 +1,13 @@
+{
+  "name": "oracle-draw-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "0.36.2",
+    "@cosmjs/crypto": "0.36.2",
+    "@cosmjs/proto-signing": "0.36.2",
+    "@cosmjs/stargate": "0.36.2",
+    "node-fetch": "3.3.2"
+  }
+}

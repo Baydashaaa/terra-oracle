@@ -1,0 +1,124 @@
+/* Weekly prize split animation */
+#weekly-prize-1, #weekly-prize-2, #weekly-prize-3 {
+  transition: all 0.4s ease;
+}
+/* Daily last winner card */
+#last-winner-addr {
+  word-break: break-all;
+  line-height: 1.4;
+}
+/* Smooth show/hide */
+#daily-extra, #weekly-extra {
+  transition: opacity 0.3s ease;
+}
+/* Weekly free entries counter */
+#weekly-free-entries {
+  font-size: 28px;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ── STICKY FOOTER ───────────────────────────────────────── */
+html, body { height: 100%; }
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+body > footer {
+  margin-top: auto;
+}
+
+/* ── TAB NAVIGATION ──────────────────────────────────────── */
+.nav-link {
+  position: relative;
+  transition: color 0.2s;
+}
+.nav-link.active-tab {
+  color: #E6ECFF !important;
+}
+.nav-link.active-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: #7C5CFF;
+  border-radius: 2px;
+}
+.tab-page {
+  animation: tabFadeIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes tabFadeIn {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── LOADING SCREEN ───────────────────────────────────────── */
+#page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #050208;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#page-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loader-logo {
+  font-family: 'Cinzel', serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: #7C5CFF;
+  text-shadow: 0 0 30px rgba(124,92,255,0.6);
+  animation: loader-pulse 1.5s ease-in-out infinite;
+}
+@keyframes loader-pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.5; }
+}
+.loader-sub {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #f5c842;
+  text-shadow: 0 0 12px rgba(245,200,66,0.4);
+}
+.loader-bar-bg {
+  width: 200px;
+  height: 2px;
+  background: rgba(124,92,255,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.loader-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7C5CFF, #5B8CFF, #7C5CFF);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: loader-sweep 1.4s ease-in-out infinite;
+}
+@keyframes loader-sweep {
+  0%   { background-position: 200% 0; width: 40%; margin-left: 0; }
+  50%  { background-position: 0% 0; width: 60%; margin-left: 20%; }
+  100% { background-position: -200% 0; width: 40%; margin-left: 60%; }
+}
+
+/* ── PAGE TRANSITION OVERLAY ─────────────────────────────── */
+.page-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+}

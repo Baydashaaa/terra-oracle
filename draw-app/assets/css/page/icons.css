@@ -1,0 +1,16 @@
+.oi{display:inline-block;width:1em;height:1em;vertical-align:-.14em;flex:0 0 auto;
+    fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+    overflow:visible;filter:drop-shadow(0 0 4px currentColor)}
+.oi--gold{color:#F5C542}
+.oi--amber{color:#FFA53D}
+.oi--cyan{color:#4FD8FF}
+.oi--violet{color:#9B7BFF}
+.oi--red{color:#FF5C6C}
+.oi--green{color:#3FE0A0}
+.oi--muted{color:#8A93B2;filter:drop-shadow(0 0 3px rgba(138,147,178,.6))}
+.oi--plain{color:inherit}
+.oi--sm{width:.85em;height:.85em;stroke-width:1.9}
+.oi--lg{width:1.35em;height:1.35em;stroke-width:1.55}
+.oi--xl{width:1.8em;height:1.8em;stroke-width:1.4}
+.oi--noglow{filter:none}
+@media (prefers-reduced-motion:reduce){.oi{filter:none}}

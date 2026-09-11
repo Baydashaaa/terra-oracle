@@ -1,0 +1,51 @@
+name: Update Free Entries
+
+on:
+  schedule:
+    # Every hour except Monday 20:00 UTC (draw time)
+    - cron: '0 0-19 * * 1'     # Monday 00:00-19:00 UTC
+    - cron: '0 21-23 * * 1'    # Monday 21:00-23:00 UTC
+    - cron: '0 * * * 2'        # Tuesday every hour
+    - cron: '0 * * * 3'        # Wednesday every hour
+    - cron: '0 * * * 4'        # Thursday every hour
+    - cron: '0 * * * 5'        # Friday every hour
+    - cron: '0 * * * 6'        # Saturday every hour
+    - cron: '0 * * * 0'        # Sunday every hour
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run update script
+        env:
+          ACTIONS_SECRET: ${{ secrets.ACTIONS_SECRET }}
+        run: node .github/scripts/update-free-entries.js
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add free-entries.json
+          git diff --staged --quiet && echo "нечего коммитить" && exit 0
+          git commit -m "chore: update free-entries [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            echo "попытка $i не прошла, ждём 10 секунд"
+            sleep 10
+          done
+          echo "::error::free-entries.json не сохранён"
+          exit 1

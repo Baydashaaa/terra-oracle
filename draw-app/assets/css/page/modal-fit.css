@@ -1,0 +1,57 @@
+/* ─── Mint modal: гарантированно помещается в экран ───────────────────── */
+.modal-overlay{
+  align-items:center;
+  padding:12px;
+  padding-top:max(12px, env(safe-area-inset-top));
+  padding-bottom:max(12px, env(safe-area-inset-bottom));
+  overscroll-behavior:contain;
+}
+.modal{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  max-height:calc(100vh - 24px);   /* фолбэк для старых браузеров */
+  max-height:calc(100dvh - 24px);  /* учитывает адресную строку моб. браузера */
+  overflow:hidden;
+}
+.modal-head{flex:0 0 auto}
+.modal-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(212,160,23,.4) transparent;
+  /* overflow-y:auto заставляет обрезать и по горизонтали.
+     Отрицательные margin + равные padding расширяют область отсечения,
+     не сдвигая контент - чтобы scale() и бейдж SELECTED не срезало. */
+  margin:-12px -12px 0;
+  padding:12px 12px 0;
+}
+.modal-body::-webkit-scrollbar{width:4px}
+.modal-body::-webkit-scrollbar-track{background:transparent}
+.modal-body::-webkit-scrollbar-thumb{background:rgba(212,160,23,.35);border-radius:4px}
+.modal-foot{
+  flex:0 0 auto;
+  padding-top:12px;
+  margin-top:6px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.modal-foot .modal-note{margin-bottom:10px}
+.modal-close{z-index:3}
+body.modal-open{overflow:hidden}
+
+/* ─── компактнее на телефоне ─── */
+@media (max-width:600px){
+  .modal-overlay{padding:8px;padding-bottom:max(8px, env(safe-area-inset-bottom))}
+  .modal{max-height:calc(100dvh - 16px)}
+  #tier-common img,#tier-rare img,#tier-legendary img{width:44px!important;height:44px!important}
+  #tier-common,#tier-rare,#tier-legendary{padding:10px 6px!important}
+  #pool-daily,#pool-weekly{padding:10px!important}
+}
+/* низкие экраны - жмём ещё */
+@media (max-width:600px) and (max-height:740px){
+  #tier-common img,#tier-rare img,#tier-legendary img{width:36px!important;height:36px!important}
+  #tier-common,#tier-rare,#tier-legendary{padding:8px 5px!important}
+}

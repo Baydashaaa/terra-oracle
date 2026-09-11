@@ -60,7 +60,7 @@
   // ---------- розыгрыши ----------
   async function loadDraws() {
     try {
-      var r = await fetch('winners.json', { cache: 'no-cache' });
+      var r = await fetch('draw-app/winners.json', { cache: 'no-cache' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var w = await r.json();
 

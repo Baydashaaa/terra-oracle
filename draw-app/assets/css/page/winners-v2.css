@@ -1,0 +1,85 @@
+/* ══ WINNERS v2 ═══════════════════════════════════════════════════════════
+   Таблица заменена карточками: семь колонок на телефоне нечитаемы, а у
+   weekly в одну ячейку приходилось паковать до трёх победителей. */
+
+.wn-wrap{max-width:920px;margin:0 auto;padding:44px 18px 80px}
+
+/* ── сводка ─────────────────────────────────────────────────────────────── */
+.wn-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.wn-stat{background:linear-gradient(160deg,rgba(24,18,4,.7),rgba(10,10,16,.6));
+  border:1px solid rgba(120,90,20,.35);border-radius:12px;padding:13px 14px;position:relative;overflow:hidden}
+.wn-stat::after{content:'';position:absolute;inset:0 auto auto 0;width:100%;height:1px;
+  background:linear-gradient(90deg,rgba(244,208,63,.55),transparent 70%)}
+.wn-stat b{display:block;font-family:'Rajdhani',sans-serif;font-size:21px;line-height:1.1;
+  color:var(--gold-light,#f6dd7a);font-weight:700;letter-spacing:.01em}
+.wn-stat span{display:block;margin-top:5px;font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted,#6b82a8)}
+
+/* ── карточка раунда ────────────────────────────────────────────────────── */
+.wn-list{display:flex;flex-direction:column;gap:10px}
+.wn-card{display:grid;grid-template-columns:78px 1fr auto;gap:16px;align-items:center;
+  background:linear-gradient(140deg,rgba(14,12,20,.85),rgba(8,9,14,.75));
+  border:1px solid rgba(60,52,30,.55);border-radius:14px;padding:14px 16px;
+  transition:border-color .22s,transform .22s,box-shadow .22s}
+.wn-card:hover{border-color:rgba(244,208,63,.4);transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 24px rgba(244,208,63,.07)}
+.wn-card.is-weekly{border-color:rgba(90,70,150,.5)}
+.wn-card.is-weekly:hover{border-color:rgba(167,139,250,.5);box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 24px rgba(140,110,255,.1)}
+/* Свой выигрыш - видно сразу, не надо искать себя глазами */
+.wn-card.is-mine{border-color:rgba(0,220,160,.5);background:linear-gradient(140deg,rgba(6,26,20,.75),rgba(8,9,14,.75))}
+
+.wn-round{text-align:center}
+.wn-round b{display:block;font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:#e9edf6}
+.wn-chip{display:inline-block;margin-top:5px;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 8px;border-radius:99px;border:1px solid currentColor;opacity:.9}
+.wn-chip.d{color:#f4d03f}
+.wn-chip.w{color:#a78bfa}
+
+.wn-places{display:flex;flex-direction:column;gap:7px;min-width:0}
+.wn-place{display:flex;align-items:center;gap:9px;min-width:0}
+.wn-medal{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:#0b0b10}
+.wn-medal.p1{background:linear-gradient(150deg,#f6dd7a,#c9a227)}
+.wn-medal.p2{background:linear-gradient(150deg,#dfe6ef,#9aa6b8)}
+.wn-medal.p3{background:linear-gradient(150deg,#e3a869,#a46c33)}
+.wn-addr{font-family:monospace;font-size:12px;color:#cdd8ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wn-amt{flex:0 0 auto;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13.5px;color:var(--gold-light,#f6dd7a)}
+.wn-you{flex:0 0 auto;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:#00dca0;border:1px solid rgba(0,220,160,.5);border-radius:99px;padding:2px 7px}
+
+.wn-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto}
+.wn-date{font-size:11px;color:var(--muted,#6b82a8);white-space:nowrap}
+.wn-facts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.wn-fact{font-size:10px;color:#7d8ba4;background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.wn-fact a{color:#7eb8ff;text-decoration:none}
+.wn-fact a:hover{text-decoration:underline}
+.wn-verify{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#f4d03f;
+  background:none;border:1px solid rgba(244,208,63,.35);border-radius:99px;padding:4px 10px;
+  cursor:pointer;transition:background .2s,border-color .2s;font-family:inherit}
+.wn-verify:hover{background:rgba(244,208,63,.1);border-color:rgba(244,208,63,.6)}
+
+.wn-empty{text-align:center;color:var(--muted,#6b82a8);padding:46px 20px;font-size:13px}
+
+/* ── планшет ───────────────────────────────────────────────────────────── */
+@media (max-width:760px){
+  .wn-stats{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ── телефон: карточка раскладывается в три яруса ──────────────────────── */
+@media (max-width:560px){
+  .wn-wrap{padding:30px 14px 60px}
+  .wn-card{grid-template-columns:1fr;gap:11px;padding:13px 14px}
+  /* Номер раунда и тип встают в строку, а не столбиком слева */
+  .wn-round{display:flex;align-items:center;gap:9px;text-align:left}
+  .wn-round b{font-size:16px}
+  .wn-chip{margin-top:0}
+  .wn-places{gap:9px}
+  .wn-addr{font-size:11.5px}
+  .wn-place{flex-wrap:wrap}
+  /* Метаданные уезжают влево и становятся обычной строкой чипов */
+  .wn-meta{align-items:flex-start}
+  .wn-facts{justify-content:flex-start}
+  .wn-verify{width:100%;padding:7px 10px}
+  .wn-stat b{font-size:18px}
+}

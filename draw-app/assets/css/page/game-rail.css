@@ -1,0 +1,102 @@
+.dg-shell{display:grid;grid-template-columns:236px 1fr;gap:18px;position:relative;
+  max-width:1400px;margin:26px auto 0;padding:0 20px 40px;align-items:start;box-sizing:border-box}
+.dg-rail{display:flex;flex-direction:column;gap:10px;position:sticky;top:96px}
+.dg-rail{position:sticky}
+/* Подпись вынесена ИЗ ПОТОКА: в потоке она опускала первую карточку ниже
+   контента справа, и верх двух колонок не совпадал. Теперь обе начинаются
+   с одной линии, а подпись висит над рельсом. */
+.dg-rail{padding-top:0}
+.dg-rail-h{position:absolute;top:-17px;left:4px;margin:0;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.dg-game{position:relative;text-align:left;cursor:pointer;border-radius:13px;padding:14px 15px;
+  background:linear-gradient(150deg,rgba(14,18,32,.9),rgba(8,9,14,.8));
+  border:1px solid rgba(255,255,255,.07);font-family:inherit;color:var(--text);
+  transition:border-color .2s,transform .18s,background .2s;overflow:hidden}
+.dg-game:hover{transform:translateX(2px);border-color:rgba(255,255,255,.18)}
+/* Активная игра помечена полосой слева, а не заливкой: заливка спорит
+   с живыми цифрами внутри карточки и мешает их читать. */
+.dg-game::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--c);opacity:0;transition:opacity .2s}
+.dg-game.on::before{opacity:1}
+.dg-game.on{border-color:var(--c);background:linear-gradient(150deg,var(--tint),rgba(8,9,14,.85))}
+.dg-r1{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.dg-ico{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  background:var(--tint);color:var(--c);flex:0 0 auto}
+.dg-ico svg{width:15px;height:15px}
+.dg-nm{font-family:'Rajdhani',sans-serif;font-size:15.5px;font-weight:700;letter-spacing:.03em;display:block}
+.dg-game.on .dg-nm{color:var(--c)}
+.dg-sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.dg-stat{display:flex;align-items:baseline;gap:7px;margin-top:2px}
+.dg-big{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:var(--gold-light,#f6dd7a)}
+.dg-game.on .dg-big{color:var(--c)}
+.dg-tick{margin-left:auto;font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif}
+.dg-bar{height:3px;border-radius:99px;background:rgba(255,255,255,.07);margin-top:9px;overflow:hidden}
+.dg-bar>i{display:block;height:100%;border-radius:99px;background:var(--c);transition:width .4s}
+.dg-stage{min-width:0}
+.dg-stage .hero-split{margin-top:0;padding-top:0}
+.dg-stage > div > .hero-split > .hero > h1:first-of-type{margin-top:0}
+/* Панель колеса несла inline margin-top:60px, подобранный под старую
+   раскладку на всю ширину. В рельсовой заголовок стоит у верха сцены,
+   и этот отступ опускал колесо ровно на 60px ниже. */
+.dg-stage .wheel-panel{margin-top:0}
+.dg-stage .hero{padding-top:0}
+
+@media (max-width:860px){
+  .dg-shell{grid-template-columns:1fr;gap:14px;margin-top:16px;padding:0 14px 30px}
+  /* Сетка вместо горизонтальной прокрутки.
+     Прокрутка с намеренно скрытым скроллбаром прятала третью игру: три
+     карточки по 172px это 532px, на телефоне 390px помещалось 2.1 - Circuit
+     уезжал за край без единого намёка, что вправо можно листать.
+     Сетка показывает все сразу и сама разместит четвёртую игру. */
+  .dg-rail{position:static;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:0}
+  .dg-rail-h{display:none}
+  .dg-game{min-width:0;padding:11px 12px}
+  .dg-game:hover{transform:none}
+  .dg-bar{display:none}
+}
+
+/* ── Сцена Circuit ─────────────────────────────────────────────────────────
+   Раньше заглушка висела голым текстом посреди пустого экрана и читалась как
+   поломка. Теперь это панель того же веса, что панели в Daily и Weekly. */
+.dg-panel{background:linear-gradient(160deg,rgba(12,14,26,.75),rgba(7,9,16,.55));
+  border:1px solid rgba(56,217,208,.22);border-radius:16px;padding:30px 28px 26px;
+  position:relative;overflow:hidden}
+.dg-panel::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg,transparent,#38d9d0,transparent);opacity:.6}
+.dg-cir-title{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;
+  letter-spacing:.06em;color:#38d9d0;text-align:center}
+/* Справка по игре. Правила нигде не описаны, а разбивку не помнят даже свои. */
+.dg-cir-i{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;
+  border:1px solid rgba(56,217,208,.4);background:rgba(56,217,208,.08);color:#38d9d0;
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;line-height:1;
+  cursor:pointer;z-index:2;transition:background .15s,border-color .15s}
+.dg-cir-i:hover{background:rgba(56,217,208,.18);border-color:rgba(56,217,208,.7)}
+.dg-cir-info{display:none;max-width:560px;margin:0 auto 22px;padding:16px 18px;
+  background:rgba(0,0,0,.3);border:1px solid rgba(56,217,208,.16);border-radius:12px;
+  font-size:12.5px;line-height:1.7;color:var(--muted)}
+.dg-cir-info.open{display:block}
+.dg-cir-info b{color:#38d9d0;font-weight:600}
+.dg-cir-info p{margin:0 0 10px}
+.dg-cir-info p:last-child{margin:0}
+.dg-cir-line{width:60px;height:2px;margin:9px auto 16px;
+  background:linear-gradient(90deg,transparent,#38d9d0,transparent)}
+.dg-cir-lead{max-width:460px;margin:0 auto 22px;text-align:center;
+  font-size:13px;line-height:1.7;color:var(--muted)}
+.dg-cir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.dg-cir-box{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);
+  border-radius:11px;padding:13px 14px;text-align:center}
+.dg-cir-box span{display:block;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.dg-cir-box b{display:block;font-family:'Rajdhani',sans-serif;font-size:27px;color:#38d9d0;line-height:1.1;margin-top:5px}
+.dg-cir-box i{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:3px}
+.dg-cir-board{display:grid;grid-template-columns:repeat(25,1fr);gap:3px;margin-bottom:14px}
+.dg-cir-board i{aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,.045)}
+.dg-cir-board i.t{background:rgba(56,217,208,.5)}
+.dg-cir-note{text-align:center;font-size:11.5px;color:var(--muted);margin:0 0 18px}
+.dg-cir-soon{text-align:center;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:#38d9d0;opacity:.7;border-top:1px solid rgba(255,255,255,.06);padding-top:16px}
+@media (max-width:640px){
+  .dg-cir-grid{grid-template-columns:1fr}
+  .dg-cir-board{grid-template-columns:repeat(15,1fr)}
+  .dg-panel{padding:22px 16px 20px}
+  .dg-cir-title{font-size:27px}
+}

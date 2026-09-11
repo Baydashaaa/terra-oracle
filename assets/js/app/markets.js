@@ -104,7 +104,8 @@ function fmtLunc(uluna) {
 }
 
 /** Короткое имя для разметки: в шаблонах оно встречается десятки раз. */
-const fmt = fmtLunc;
+// Псевдоним fmt убран: это имя занимают модули Oracle Draw,
+// и у них оно значит другое. В шаблонах ниже - fmtLunc.
 
 /**
  * Коэффициент выплаты: своя ставка плюс доля проигравшего банка за вычетом
@@ -347,9 +348,9 @@ function positionBlock(m, pos) {
   <div style="border:1px dashed rgba(168,85,247,.45);border-radius:16px;padding:16px 18px;
        margin-bottom:12px;font-size:13.5px;">
     Your position:
-    ${Number(pos.yes) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmt(pos.yes)} LUNC on yes</b> ` : ''}
-    ${Number(pos.no) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmt(pos.no)} LUNC on no</b>` : ''}
-    ${Number(pos.payout) ? `<div style="margin-top:8px;">Pays <b style="color:#22d3ee;">${fmt(pos.payout)} LUNC</b>${
+    ${Number(pos.yes) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmtLunc(pos.yes)} LUNC on yes</b> ` : ''}
+    ${Number(pos.no) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmtLunc(pos.no)} LUNC on no</b>` : ''}
+    ${Number(pos.payout) ? `<div style="margin-top:8px;">Pays <b style="color:#22d3ee;">${fmtLunc(pos.payout)} LUNC</b>${
       m.status === 'proposed' ? ' once the challenge window closes' : ''}</div>` : ''}
     ${pos.claimed ? '<div style="margin-top:8px;color:var(--muted);">Already claimed.</div>'
       : canClaim ? `<button onclick="submitClaim()" style="margin-top:10px;padding:12px 22px;
@@ -430,18 +431,18 @@ async function openProphecyMarket(id) {
         <div style="flex:0 0 ${pct}%;display:flex;flex-direction:column;justify-content:center;
           padding:0 16px;background:linear-gradient(180deg,rgba(34,211,238,.22),rgba(34,211,238,.06));">
           <b style="font-family:'Rajdhani',sans-serif;font-size:20px;color:#22d3ee;">Yes · ${pct}%</b>
-          <span style="font-size:11.5px;color:var(--muted);">${fmt(yes)} LUNC · ${m.bettors_yes} players</span>
+          <span style="font-size:11.5px;color:var(--muted);">${fmtLunc(yes)} LUNC · ${m.bettors_yes} players</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;
           padding:0 16px;text-align:right;background:linear-gradient(180deg,rgba(244,114,182,.2),rgba(244,114,182,.05));">
           <b style="font-family:'Rajdhani',sans-serif;font-size:20px;color:#f472b6;">${100 - pct}% · No</b>
-          <span style="font-size:11.5px;color:var(--muted);">${fmt(no)} LUNC · ${m.bettors_no} players</span>
+          <span style="font-size:11.5px;color:var(--muted);">${fmtLunc(no)} LUNC · ${m.bettors_no} players</span>
         </div>
       </div>
       <div style="display:flex;gap:24px;flex-wrap:wrap;">
-        <div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;">${fmt(total + Number(m.boost || 0))}</b>
+        <div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;">${fmtLunc(total + Number(m.boost || 0))}</b>
           <div style="font-size:11.5px;color:var(--muted);">pot, LUNC</div></div>
-        ${Number(m.boost) ? `<div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;color:#f4d03f;">+${fmt(m.boost)}</b>
+        ${Number(m.boost) ? `<div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;color:#f4d03f;">+${fmtLunc(m.boost)}</b>
           <div style="font-size:11.5px;color:var(--muted);">treasury boost</div></div>` : ''}
       </div>
     </div>

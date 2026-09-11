@@ -1,0 +1,55 @@
+{
+  "_verify": [
+    "Cumulative TCO allocations for Circuit participants.",
+    "amount is the LIFETIME allocation, not this epoch - the contract pays the",
+    "difference against what the address has already claimed.",
+    "leaf = sha256(\"<address><amount>\"), nodes hash the sorted pair, root is hex.",
+    "Rebuild it yourself: node merkle.js --self-test pins the format."
+  ],
+  "epoch": 1,
+  "root": "f9a98db28e58004152b69f255d1d75c4cf2b25fb093391f570a2d35e57491945",
+  "total": "741421555519",
+  "contract": "terra18pau9q25ykswgey8ckcfxhdln27nk23qv6af0pjs2vye5r5crmcs7w9fr0",
+  "token": "terra1566znlxwke0kp9jkhe6qgapsmcfdmc7k9czh380tlx80va8zlsgqzvjtfp",
+  "generatedAt": "2026-08-23T11:04:55.545Z",
+  "proofs": {
+    "terra13pl88qlk5vdsxqu9dj6aydnyhncayvdvmvmn9p": {
+      "amount": "4166580080",
+      "proof": [
+        "41a0e2ed9aefe7723aba71ba0975093c0b607968ab332c1af3248f333374538e",
+        "4b0870fbb8e3f82d5ebac32c2dd0d4af05991e38df5121fa316731c8878a3931",
+        "141a3b67822030294fec89380607a2748294051284ab134a30064c4ff602877a"
+      ]
+    },
+    "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7": {
+      "amount": "383477535735",
+      "proof": [
+        "337235e6b1a970c106e7bb8c2b24517ff185c8dcee97482731698b209042c437",
+        "4b0870fbb8e3f82d5ebac32c2dd0d4af05991e38df5121fa316731c8878a3931",
+        "141a3b67822030294fec89380607a2748294051284ab134a30064c4ff602877a"
+      ]
+    },
+    "terra1a9see2df2w8wh8hsty0y6gw9tkamlkzah8kd74": {
+      "amount": "4107160421",
+      "proof": [
+        "231db8d7202fdc3f5031be0065061e53aa0e629e3b29c3890f0d502dcf76be29",
+        "e9764b506bc004de970b445fd26241614b4a41100b5d84974f436096ffb01e08",
+        "141a3b67822030294fec89380607a2748294051284ab134a30064c4ff602877a"
+      ]
+    },
+    "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l": {
+      "amount": "345563118862",
+      "proof": [
+        "b00ff365ab18af6c3db22784acecf22644ca4c2c9788d500066ec4d917fd8e6c",
+        "e9764b506bc004de970b445fd26241614b4a41100b5d84974f436096ffb01e08",
+        "141a3b67822030294fec89380607a2748294051284ab134a30064c4ff602877a"
+      ]
+    },
+    "terra1zdnanxgsyy8zqpmy3dfgges4xlzdskqsrx6nm3": {
+      "amount": "4107160421",
+      "proof": [
+        "d219e140e4470ac7b909e69f38d6e3921667c602556416ec891b2578e9b3a487"
+      ]
+    }
+  }
+}

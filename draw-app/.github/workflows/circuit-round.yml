@@ -1,0 +1,91 @@
+name: Circuit - Round Closer
+
+# Раунд Circuit закрывается по заполнению доски ИЛИ по истечении трёх часов -
+# что раньше. Момент заранее неизвестен, поэтому крон частый, а решение
+# принимает сам скрипт: не пора - тихо выходит.
+#
+# Раз в 15 минут это до 96 запусков в сутки. Каждый - несколько секунд, если
+# закрывать нечего.
+
+on:
+  # Основной запуск - от воркера на Cloudflare: он тикает раз в минуту и шлёт
+  # repository_dispatch, как только раунд действительно созрел. Его расписание
+  # пунктуально, в отличие от планировщика GitHub, который прореживает тики:
+  # 21 августа этап drawing на сайте висел 18 минут вместо обещанных пяти.
+  repository_dispatch:
+    types: [run-circuit]
+  # Крон GitHub остаётся страховкой на случай, если воркер не достучится.
+  # Лишний запуск ничего не стоит: скрипт сам решает, пора ли, а отметки
+  # переводов не дадут заплатить дважды.
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Только показать, что было бы сделано (без отправки средств)'
+        type: boolean
+        default: false
+
+# Два запуска одновременно закрыли бы раунд дважды. Отменять текущий нельзя -
+# он может быть посреди выплат, поэтому новый ждёт.
+concurrency:
+  group: circuit-round-closer
+  cancel-in-progress: false
+
+jobs:
+  close:
+    name: Close a Circuit round if it is due
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Ловит поломки загрузки модулей ДО того, как скрипт тронет деньги.
+      # 2–3 августа 2026 розыгрыши не состоялись из-за require() в ESM-репо:
+      # node --check такого не видит, падает только реальный импорт.
+      - name: Preflight
+        run: node dev/_preflight.js
+
+      - name: Close round
+        env:
+          OPERATOR_MNEMONIC_CIRCUIT: ${{ secrets.OPERATOR_MNEMONIC_CIRCUIT }}
+          DISTRIBUTION_SECRET:       ${{ secrets.DISTRIBUTION_SECRET }}
+          CIRCUIT_WORKER_URL:        ${{ secrets.CIRCUIT_WORKER_URL }}
+          CIRCUIT_NEIGHBOUR_SHARE:   ${{ vars.CIRCUIT_NEIGHBOUR_SHARE }}
+          # inputs существует только у workflow_dispatch. При запуске от воркера
+          # или по крону выражение даёт пустую строку, то есть боевой режим.
+          DRY_RUN:                   ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: node circuit-draw.js
+
+      # Снимок пишется только когда раунд реально закрылся. Коммитим ТОЧЕЧНО:
+      # шаг выше ставит зависимости в корне, и `git add -A` утащил бы
+      # node_modules в репозиторий.
+      - name: Commit round snapshot
+        run: |
+          if [ -z "$(git status --porcelain rounds/)" ]; then
+            echo "no snapshot to commit"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add rounds/
+          git commit -m "chore: circuit round snapshot [skip ci]"
+          # Без pull --rebase push падает non-fast-forward, если между
+          # checkout и push прилетел чужой коммит - призы уже отправлены,
+          # а снимок потерялся бы.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash && git push; then
+              echo "снимок сохранён"
+              exit 0
+            fi
+            echo "попытка $i не прошла, ждём 10 секунд"
+            sleep 10
+          done
+          echo "::error::СНИМОК РАУНДА НЕ СОХРАНЁН. Выплаты прошли, раунд закрыт, но файл в rounds/ не попал в репозиторий - страница проверки этот раунд не покажет."
+          exit 1
