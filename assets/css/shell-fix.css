@@ -974,9 +974,43 @@
 #page-draw #drawFrame{
   display:block;
   width:100%;
-  min-height:900px;
+  /* Высота по видимой области, а НЕ по содержимому. Внутри рамки
+     страница прокручивается сама, и position:fixed там считается от
+     экрана - модалки встают по центру, как на обычной странице.
+     170px - шапка сайта, ряд вкладок и промежутки. */
+  height:calc(100dvh - 132px);
+  min-height:520px;
   border:0;
   border-radius:var(--r-lg);
   background:var(--bg-2);
-  overflow:hidden;
 }
+
+/* Вкладки раздела Draw над рамкой */
+#page-draw .draw-nav{padding:0 0 var(--gap)}
+#page-draw .modes{
+  display:flex;gap:6px;flex-wrap:wrap;
+  background:rgba(8,11,30,.86);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:5px;
+  width:max-content;
+  max-width:100%;
+}
+#page-draw .modes button{
+  padding:9px 18px;
+  border:0;background:none;cursor:pointer;
+  border-radius:9px;
+  font-family:var(--ui);font-size:13px;font-weight:600;
+  color:var(--ink);
+}
+#page-draw .modes button:hover{background:rgba(255,255,255,.05)}
+#page-draw .modes button[aria-selected="true"]{
+  background:rgb(var(--tone,168 85 247));
+  background:rgb(var(--tone));
+  color:#0a0d1c;font-weight:700;
+}
+
+/* Рамке нужен тот же воздух сверху, что и у прочих разделов: вкладки
+   стоят вплотную к шапке, а содержимое Draw начиналось сразу под ними. */
+#page-draw #drawFrame{margin-top:4px}
+#page-draw .draw-nav{padding-top:4px}

@@ -1,0 +1,351 @@
+/* Oracle Draw внутри Terra Oracle.
+   Подключается последним и действует ТОЛЬКО при body.is-embedded -
+   на своём домене Draw остаётся прежним.
+
+   Разметка не трогается: переопределяем переменные темы и убираем
+   вертикальный воздух, рассчитанный на отдельную страницу. */
+
+body.is-embedded{
+  /* палитра Terra Oracle */
+  --bg:        #05070f;
+  --bg2:       #080c1c;
+  --surface:   #0c1128;
+  --bg-hover:  #161d42;
+  --border:    rgba(110,135,235,.14);
+
+  --text:      #eef1ff;
+  --muted:     #a2abd8;
+  --text-weak: #6c76a6;
+
+  --accent:      #a855f7;
+  --accent-2:    #7c3aed;
+  --accent-glow: rgba(168,85,247,.5);
+
+  background:transparent;
+}
+
+/* Свой фон и частицы не нужны - фон даёт внешний сайт */
+body.is-embedded::before{display:none}
+body.is-embedded .particles{display:none}
+
+/* Шрифты. Cinzel - засечный, из другой оперы; в новом дизайне
+   заголовки идут Chakra Petch, текст Space Grotesk. */
+body.is-embedded,
+body.is-embedded .btn-wallet-connect,
+body.is-embedded .wallet-info-btn{
+  font-family:'Space Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+}
+body.is-embedded .hero h1,
+body.is-embedded .section-title,
+body.is-embedded .pool-amount,
+body.is-embedded .timer-num,
+body.is-embedded .stat-val,
+body.is-embedded .tab-title,
+body.is-embedded .wheel-panel-label,
+body.is-embedded .wheel-mini-val,
+body.is-embedded .btn-buy,
+body.is-embedded .wallet-info-bal-val,
+body.is-embedded .timer-sep{
+  font-family:'Chakra Petch','Space Grotesk',system-ui,sans-serif !important;
+  letter-spacing:.02em;
+}
+
+/* ------------------------------------------------------------------
+   Плотность. Раскладка Draw рассчитана на отдельную страницу: отступы
+   в 60-80px и min-height:82vh у героя. Внутри рамки это значит, что
+   половину экрана занимает воздух, а данные уходят под сгиб.
+   ------------------------------------------------------------------ */
+body.is-embedded main{padding-top:0}
+body.is-embedded .hero-split{
+  min-height:0;
+  padding:18px 22px 26px;
+  gap:28px;
+  align-items:start;
+  max-width:none;
+}
+body.is-embedded .lottery-tabs{padding:16px 20px 0}
+body.is-embedded section{margin:0 auto 36px;max-width:none}
+body.is-embedded .hero h1{font-size:clamp(30px,3.4vw,46px);margin-bottom:10px}
+body.is-embedded .hero-sub{margin-bottom:18px;font-size:14px}
+body.is-embedded .hero-badge{margin-bottom:14px}
+body.is-embedded .pool-display{padding:16px 20px;margin-bottom:16px;border-radius:14px}
+body.is-embedded .timer-section{margin-bottom:18px}
+body.is-embedded .stats-bar{margin-top:18px}
+
+/* Карточки и рамки - как на сайте */
+body.is-embedded .pool-display,
+body.is-embedded .wheel-panel,
+body.is-embedded .lottery-tab,
+body.is-embedded .wheel-mini-stat,
+body.is-embedded .step{
+  border-color:var(--border);
+  border-radius:14px;
+}
+body.is-embedded .wheel-panel{background:var(--bg2);padding:18px 16px}
+body.is-embedded .wheel-panel::before{display:none}
+
+/* Золото остаётся признаком Daily, но приглушённое: на тёмно-синем
+   фоне прежний #F5C842 выжигал глаз. */
+body.is-embedded{
+  --gold:       #f4d477;
+  --gold-light: #ffe08a;
+  --gold-dim:   #8b7638;
+}
+
+/* Подписи, которые были почти чёрными на своём фоне */
+body.is-embedded .pool-label,
+body.is-embedded .timer-lbl,
+body.is-embedded .stat-lbl,
+body.is-embedded .wheel-mini-lbl,
+body.is-embedded .pool-tickets{color:var(--muted)}
+
+/* Кнопка минта: у Draw это красный градиент под золото. */
+body.is-embedded .btn-buy{
+  border-radius:12px;
+  letter-spacing:.08em;
+}
+
+/* Домашняя страница показывается только по вкладке About - до того,
+   как отработает скрипт, её быть не должно вовсе. */
+body.is-embedded #page-home{display:none !important}
+body.is-embedded.show-home #page-home{display:block !important}
+
+/* ------------------------------------------------------------------
+   Weekly: колонки разной длины
+   У Weekly слева добавляются три доли призов и блок free entries, и
+   левая колонка становится вдвое длиннее правой. Колесо уезжает вверх,
+   справа остаётся пустота.
+   Закрепляем правую колонку: колесо держится в поле зрения, пока
+   листается левая. Порог 1100px - ниже раскладка одноколоночная,
+   и закрепление там только мешает.
+   ------------------------------------------------------------------ */
+@media (min-width: 1100px) {
+  body.is-embedded .hero-split > *:last-child {
+    position: sticky;
+    top: 14px;
+    align-self: start;
+  }
+}
+
+/* Три доли призов в строку компактнее: они и так читаются с одного
+   взгляда, а занимали высоту полноценной карточки. */
+body.is-embedded .weekly-tiers,
+body.is-embedded [class*="tier"] { gap: 10px; }
+
+/* Нижние блоки левой колонки - плотнее */
+body.is-embedded .stats-bar { gap: 10px; margin-top: 14px; }
+body.is-embedded .stats-bar > * { padding: 12px 10px; }
+
+/* Заставка: в рамке не нужна вовсе. Скрипт удаляет её из дерева, но
+   успевает это сделать только после разбора страницы - к тому моменту
+   она уже нарисована. Гасим стилями, они применяются раньше. */
+body.is-embedded #page-loader,
+body.is-embedded #page-transition{display:none !important}
+
+/* Те же правила, но от html - класс на нём появляется до разбора body */
+html.is-embedded #page-loader,
+html.is-embedded #page-transition{display:none !important}
+html.is-embedded body > nav,
+html.is-embedded body > footer{display:none !important}
+html.is-embedded #page-home{display:none !important}
+html.is-embedded body.show-home #page-home{display:block !important}
+
+/* ------------------------------------------------------------------
+   Рельс игр в рамке не нужен: те же Daily, Weekly и Circuit стоят
+   вкладками наверху, на стороне сайта. Прячем, а освободившуюся колонку
+   отдаём содержимому.
+
+   Рельс только скрыт, но живой: game-switcher.js продолжает писать в
+   него пулы и отсчёты, а наши вкладки зовут его selectGame. Удалять
+   нельзя - переключение перестанет работать.
+   ------------------------------------------------------------------ */
+html.is-embedded .dg-rail,
+html.is-embedded [class*="dg-games"]{
+  display:none !important;
+}
+
+
+/* Колонка рельса задана жёстко (236px в .dg-shell), поэтому скрытие
+   самого рельса её не убирает - grid держит дорожку по объявленной
+   ширине. Схлопываем именно дорожку, а не содержимое. */
+html.is-embedded .dg-shell{
+  grid-template-columns:minmax(0,1fr) !important;
+  gap:0 !important;
+  max-width:none !important;
+  margin-top:0 !important;
+  padding:0 !important;
+}
+
+/* Модалка внутри рамки прибита к документу, а он длиннее экрана -
+   окно уезжало вниз. Прибиваем к области просмотра рамки. */
+html.is-embedded .modal-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  align-items:center !important;
+}
+
+/* ==================================================================
+   Модальное окно минта в рамке
+   Внутри iframe position:fixed считается от коробки рамки, а она
+   высотой во всё содержимое - центр окна приходится ниже видимой
+   части экрана. Ограничиваем высоту и даём прокрутку внутри, а сайт
+   снаружи подкручивает к окну (см. embed-host.js / draw-frame.js).
+   ================================================================== */
+html.is-embedded .modal-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  align-items:flex-start !important;
+  padding:24px 16px !important;
+  overflow-y:auto !important;
+  background:rgba(3,5,14,.88) !important;
+  backdrop-filter:blur(10px) !important;
+}
+
+html.is-embedded .modal{
+  max-height:none !important;
+  margin:auto !important;
+  /* палитра Terra Oracle вместо коричнево-золотой */
+  background:var(--surface) !important;
+  border:1px solid var(--border) !important;
+  border-radius:20px !important;
+  box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(110,135,235,.08) !important;
+  padding:28px !important;
+}
+html.is-embedded .modal.weekly-modal{border-color:rgba(168,85,247,.35) !important}
+
+html.is-embedded .modal-title{
+  font-family:'Chakra Petch','Space Grotesk',sans-serif !important;
+  color:var(--text) !important;
+  font-size:19px !important;
+}
+html.is-embedded .modal-title.blue{color:#7eb8ff !important}
+html.is-embedded .modal-sub{color:var(--muted) !important;margin-bottom:18px !important}
+
+html.is-embedded .modal-close{
+  color:var(--muted) !important;
+  width:30px;height:30px;border-radius:9px;
+  transition:background .15s,color .15s;
+}
+html.is-embedded .modal-close:hover{
+  background:rgba(255,255,255,.06) !important;
+  color:var(--text) !important;
+}
+
+/* Итоговая сумма и кнопка подтверждения */
+html.is-embedded .modal-total{
+  background:var(--bg2) !important;
+  border:1px solid var(--border) !important;
+  border-radius:12px !important;
+}
+html.is-embedded .modal-total-label{color:var(--muted) !important}
+html.is-embedded .modal-total-val{
+  font-family:'Chakra Petch','Space Grotesk',sans-serif !important;
+  color:var(--text) !important;
+}
+html.is-embedded .modal-note{color:var(--muted) !important}
+
+html.is-embedded .btn-confirm{
+  font-family:'Chakra Petch','Space Grotesk',sans-serif !important;
+  border-radius:12px !important;
+  letter-spacing:.08em !important;
+  background:linear-gradient(135deg,var(--accent-2),var(--accent)) !important;
+  border:0 !important;
+  color:#fff !important;
+  box-shadow:0 0 26px -8px var(--accent) !important;
+}
+html.is-embedded .btn-confirm.weekly{
+  background:linear-gradient(135deg,#7c3aed,#a855f7) !important;
+}
+html.is-embedded .btn-confirm:disabled{opacity:.45 !important;box-shadow:none !important}
+
+html.is-embedded .count-btn{
+  background:var(--bg-hover) !important;
+  border:1px solid var(--border) !important;
+  color:var(--text) !important;
+  border-radius:10px !important;
+}
+html.is-embedded .count-btn:hover{border-color:var(--accent) !important}
+
+/* Глаз оракула в рамке не нужен: он уже есть у сайта снаружи,
+   и в разделе Draw их становилось два. */
+html.is-embedded #oracle-eye,
+html.is-embedded [id*="oracle-eye"],
+html.is-embedded [class*="oracle-eye"]{display:none !important}
+
+/* Окно по центру видимой части. flex-start ставился на случай, когда
+   содержимое не влезает - margin:auto делает то же самое, но без
+   прижатия к верху, когда места хватает. */
+html.is-embedded .modal-overlay{align-items:center !important}
+html.is-embedded .modal{max-height:calc(100% - 48px) !important;overflow-y:auto !important}
+
+
+/* Окно минта: фиксируем положение, а не центрируем.
+   У Weekly нижняя подпись на три строки длиннее, чем у Daily, окно
+   становится выше - и при центрировании прыгает вверх-вниз на каждом
+   переключении. Прижимаем к постоянной высоте от верха: содержимое
+   растёт вниз, а шапка и выбор тира остаются на месте. */
+html.is-embedded .modal-overlay{
+  align-items:flex-start !important;
+  padding-top:min(9vh, 90px) !important;
+  padding-bottom:24px !important;
+}
+html.is-embedded .modal{
+  margin:0 auto !important;
+  max-height:calc(100vh - min(9vh, 90px) - 48px) !important;
+}
+
+/* Нижняя подпись у Weekly в три строки - сжимаем, чтобы разница
+   с Daily была меньше. */
+html.is-embedded .modal-note{
+  font-size:10px !important;
+  line-height:1.5 !important;
+  margin-bottom:10px !important;
+}
+
+/* Внутренний воздух Draw. Раньше .dg-shell давал 26px сверху, я их
+   снял вместе с внешними полями - содержимое прилипло к краю рамки. */
+html.is-embedded .dg-shell{
+  padding:18px 20px 24px !important;
+}
+
+/* Рамка теперь высотой в экран, содержимое прокручивается внутри неё.
+   Значит fixed считается от видимой области - окно центрируем обычным
+   способом, без прижатий и подкруток. */
+html.is-embedded .modal-overlay{
+  align-items:center !important;
+  padding:20px !important;
+}
+html.is-embedded .modal{
+  margin:0 !important;
+  max-height:calc(100vh - 40px) !important;
+  overflow-y:auto !important;
+}
+
+/* Содержимое в высоту рамки. Полоса прокрутки внутри встроенного блока
+   выглядит чужеродно, поэтому поджимаем вертикаль, а не прячем её. */
+html.is-embedded .dg-shell{padding:14px 20px 16px !important}
+html.is-embedded .hero-split{padding:0 !important;gap:22px !important}
+html.is-embedded .hero h1{font-size:clamp(26px,2.8vw,38px) !important;margin-bottom:8px !important}
+html.is-embedded .hero-sub{margin-bottom:14px !important}
+html.is-embedded .pool-display{padding:13px 18px !important;margin-bottom:12px !important}
+html.is-embedded .timer-section{margin-bottom:14px !important}
+html.is-embedded .timer-num{font-size:25px !important}
+html.is-embedded .btn-buy{padding:13px !important}
+html.is-embedded .stats-bar{margin-top:12px !important}
+html.is-embedded .wheel-panel{padding:14px !important}
+html.is-embedded #wheel-canvas-wrap{max-width:430px !important}
+
+/* Тонкая полоса на случай, если всё же не влезет - вместо системной. */
+html.is-embedded ::-webkit-scrollbar{width:6px;height:6px}
+html.is-embedded ::-webkit-scrollbar-thumb{background:rgba(110,135,235,.35);border-radius:99px}
+html.is-embedded ::-webkit-scrollbar-track{background:transparent}
+
+/* Окно ближе к верху: снизу нужен запас под подпись, сверху он лишний. */
+html.is-embedded .modal-overlay{
+  align-items:flex-start !important;
+  padding:6px 20px 34px !important;
+}
+html.is-embedded .modal{
+  margin-top:0 !important;
+  max-height:calc(100vh - 44px) !important;
+}

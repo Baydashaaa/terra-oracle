@@ -79,6 +79,17 @@
     } catch(e) { return false; }
   };
   </script>
+  <link rel="stylesheet" href="assets/css/embed-theme.css">
+  <script id="embed-early">
+  // Класс ставим до первой отрисовки, иначе заставка и шапка Draw
+  // успевают мелькнуть. К body здесь обращаться нельзя - его ещё нет,
+  // поэтому вешаем на <html>, а стили целятся в html.is-embedded.
+  try {
+    if (location.search.indexOf('embed') > -1 || window.top !== window.self) {
+      document.documentElement.classList.add('is-embedded');
+    }
+  } catch (e) {}
+  </script>
 </head>
 <body>
 <!-- ===== ORACLE ICONS SPRITE (v1) - не удалять ===== -->
@@ -396,7 +407,7 @@
 
     <!-- Common -->
     <div style="position:relative;background:#12182A;border:1px solid rgba(180,190,210,0.35);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 20px rgba(180,190,210,0.08);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 30px rgba(180,190,210,0.2)';this.style.borderColor='rgba(180,190,210,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 20px rgba(180,190,210,0.08)';this.style.borderColor='rgba(180,190,210,0.35)'">
-     <div style="margin-bottom:6px;"><img src="assets/img/common-v1.png" style="width:140px;height:140px;object-fit:contain;"></div>
+     <div style="margin-bottom:6px;"><img src="nfts/common-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BED2;margin-bottom:6px;">Common</div>
      <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">1 entry</div>
      <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#C8D4E8;margin-bottom:4px;">25,000 LUNC</div>
@@ -405,7 +416,7 @@
     <!-- Rare -->
     <div style="position:relative;background:#0E1525;border:1px solid rgba(59,130,246,0.45);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 24px rgba(59,130,246,0.12);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 36px rgba(59,130,246,0.28)';this.style.borderColor='rgba(59,130,246,0.7)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 24px rgba(59,130,246,0.12)';this.style.borderColor='rgba(59,130,246,0.45)'">
 
-     <div style="margin-bottom:6px;"><img src="assets/img/rare-v1.png" style="width:140px;height:140px;object-fit:contain;"></div>
+     <div style="margin-bottom:6px;"><img src="nfts/rare-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#60a5fa;margin-bottom:6px;">Rare</div>
      <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">5 entries</div>
      <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#60a5fa;margin-bottom:4px;">125,000 LUNC</div>
@@ -414,7 +425,7 @@
     <!-- Legendary -->
     <div style="position:relative;background:linear-gradient(160deg,#150A00,#0D0600);border:1px solid rgba(251,146,60,0.45);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 24px rgba(251,146,60,0.12);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 40px rgba(251,146,60,0.28)';this.style.borderColor='rgba(251,146,60,0.7)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 24px rgba(251,146,60,0.12)';this.style.borderColor='rgba(251,146,60,0.45)'">
 
-     <div style="margin-bottom:6px;"><img src="assets/img/legendary-v1.png" style="width:140px;height:140px;object-fit:contain;"></div>
+     <div style="margin-bottom:6px;"><img src="nfts/legendary-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
      <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#fb923c;margin-bottom:6px;">Legendary</div>
      <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">10 entries</div>
      <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#fb923c;margin-bottom:4px;">250,000 LUNC</div>
@@ -949,7 +960,7 @@ for place p in 0, 1, 2:
    style="border:2px solid rgba(156,163,175,0.35);border-radius:12px;padding:14px 10px;
    text-align:center;cursor:pointer;background:rgba(156,163,175,0.05);
    transition:all 0.25s cubic-bezier(0.4,0,0.2,1);position:relative;">
-   <div style="margin-bottom:6px;"><img src="assets/img/common-v1.png" style="width:56px;height:56px;object-fit:contain;"></div>
+   <div style="margin-bottom:6px;"><img src="nfts/common-md.webp" style="width:56px;height:56px;object-fit:contain;"></div>
    <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;color:#9ca3af;margin-bottom:8px;">COMMON</div>
    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">1 entry</div>
    <div style="font-size:10px;color:#9ca3af;">25,000 LUNC</div>
@@ -960,7 +971,7 @@ for place p in 0, 1, 2:
    text-align:center;cursor:pointer;background:rgba(96,165,250,0.06);
    transition:all 0.25s cubic-bezier(0.4,0,0.2,1);position:relative;">
 
-   <div style="margin-bottom:6px;"><img src="assets/img/rare-v1.png" style="width:56px;height:56px;object-fit:contain;"></div>
+   <div style="margin-bottom:6px;"><img src="nfts/rare-md.webp" style="width:56px;height:56px;object-fit:contain;"></div>
    <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;color:#60a5fa;margin-bottom:8px;">RARE</div>
    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">5 entries</div>
    <div style="font-size:10px;color:#60a5fa;">125,000 LUNC</div>
@@ -971,7 +982,7 @@ for place p in 0, 1, 2:
    text-align:center;cursor:pointer;background:rgba(251,146,60,0.06);
    transition:all 0.25s cubic-bezier(0.4,0,0.2,1);position:relative;">
 
-   <div style="margin-bottom:6px;"><img src="assets/img/legendary-v1.png" style="width:56px;height:56px;object-fit:contain;"></div>
+   <div style="margin-bottom:6px;"><img src="nfts/legendary-md.webp" style="width:56px;height:56px;object-fit:contain;"></div>
    <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;color:#fb923c;margin-bottom:8px;">LEGENDARY</div>
    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">10 entries</div>
    <div style="font-size:10px;color:#fb923c;">250,000 LUNC</div>

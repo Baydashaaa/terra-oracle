@@ -15,14 +15,12 @@
     if (e.origin !== location.origin) return;
     var d = e.data;
     if (!d || d.type !== 'oracle-draw:height') return;
-    var f = frame();
-    if (f) f.style.height = Math.max(MIN, Number(d.height) || 0) + 'px';
+    return;
   });
 
   // Запасная высота: пока сообщение не пришло, рамка не должна быть пустой.
   function init() {
     var f = frame();
-    if (f && !f.style.height) f.style.height = MIN + 'px';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
