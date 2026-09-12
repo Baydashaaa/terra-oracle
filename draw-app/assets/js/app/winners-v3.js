@@ -133,7 +133,7 @@ async function toggleRoundStats(roundId, type, btn) {
   var snap = roundStatsCache[roundId];
   if (!snap) {
     try {
-      var r = await fetch('./rounds/' + roundId + '.json?t=' + Date.now());
+      var r = await fetch(window.drawDataUrl('rounds/' + roundId + '.json') + '?t=' + Date.now());
       if (!r.ok) throw new Error('HTTP ' + r.status);
       snap = await r.json();
       roundStatsCache[roundId] = snap;

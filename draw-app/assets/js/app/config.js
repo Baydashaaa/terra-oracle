@@ -141,7 +141,7 @@ async function loadFreeEntries() {
   // Read pre-computed free-entries.json (updated hourly by GitHub Actions)
   // This is more reliable than browser scraping and covers full history
   try {
-    const res = await fetch('./free-entries.json?t=' + Math.floor(Date.now() / 3600000), {
+    const res = await fetch(window.drawDataUrl('free-entries.json') + '?t=' + Math.floor(Date.now() / 3600000), {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);

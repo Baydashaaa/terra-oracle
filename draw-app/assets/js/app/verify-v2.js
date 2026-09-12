@@ -84,7 +84,7 @@ function vfRanges(pairs) {
 async function vfLoadSnapshot(roundId) {
   if (!roundId) return null;
   try {
-    const r = await fetch('./rounds/' + roundId + '.json?t=' + Date.now());
+    const r = await fetch(window.drawDataUrl('rounds/' + roundId + '.json') + '?t=' + Date.now());
     return r.ok ? await r.json() : null;
   } catch (e) { return null; }
 }
@@ -342,7 +342,7 @@ function vfInputsHtml(w, snap) {
       ? '<div class="vf-hash"><span>Block hash</span><code>' + w.blockHash + '</code></div>'
       : '') +
     (snap
-      ? '<a class="vf-src" href="./rounds/' + w.roundId + '.json" target="_blank" rel="noopener">' +
+      ? '<a class="vf-src" href="' + window.drawDataUrl('rounds/' + w.roundId + '.json') + '" target="_blank" rel="noopener">' +
         'entry snapshot &rarr;</a>' : '') +
     '</div>';
 }
@@ -495,7 +495,7 @@ function vfCircuitHtml(w, snap) {
     '<div class="vf-card"><div class="vf-h">Input data</div><div class="vf-kv">' +
     rows.map(r => '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('') +
     '</div><div class="vf-hash"><span>Block hash</span><code>' + snap.block_hash + '</code></div>' +
-    '<a class="vf-src" href="./rounds/' + w.roundId + '.json" target="_blank" rel="noopener">' +
+    '<a class="vf-src" href="' + window.drawDataUrl('rounds/' + w.roundId + '.json') + '" target="_blank" rel="noopener">' +
     'board snapshot &rarr;</a></div>' +
     '<div class="vf-card vf-repro"><div class="vf-h">Reproduce it yourself</div>' +
     '<p class="vf-intro">Take the block hash from the explorer above and the zone count ' +
@@ -553,7 +553,7 @@ var vfMarked    = false; // размечен ли текущий список
 
 function vfSnapExists(roundId) {
   if (!vfSnapCache[roundId]) {
-    vfSnapCache[roundId] = fetch('./rounds/' + roundId + '.json', { method: 'HEAD' })
+    vfSnapCache[roundId] = fetch(window.drawDataUrl('rounds/' + roundId + '.json'), { method: 'HEAD' })
       .then(function (r) { return r.ok; })
       .catch(function () { return false; });
   }

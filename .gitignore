@@ -5,3 +5,12 @@ treasury-section.html
 *.bak
 node_modules/
 draw-app/.github/
+
+# draw-app/ - это копия репо oracle-draw для рамки на /draw.
+# Данные живут на draw.terraoracle.io и читаются оттуда (assets/js/data-origin.js).
+# Копии здесь молча подменяли бы живые данные замороженными.
+draw-app/CNAME
+draw-app/winners.json
+draw-app/free-entries.json
+draw-app/rewards-proofs.json
+draw-app/rounds/

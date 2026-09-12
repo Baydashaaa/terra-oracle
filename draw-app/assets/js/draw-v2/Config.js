@@ -7,14 +7,17 @@ export const CONFIG = {
 
     /* ---------- источник данных ---------- */
 
-    // Абсолютный путь от корня сайта. Относительный "./winners.json" резолвится
-    // от URL СТРАНИЦЫ, а не от модуля - на вложенных страницах это ломается.
-    WINNERS_JSON: "winners.json",
+    // Данные живут на draw.terraoracle.io - их пишут воркфлоу репо oracle-draw.
+    // Префикс ставит data-origin.js: пусто на самом draw.terraoracle.io,
+    // https://draw.terraoracle.io на terraoracle.io/draw и на localhost.
+    // Ни относительный путь (упрётся в копию в draw-app/), ни путь от корня
+    // (404 на terraoracle.io) здесь не годятся.
+    WINNERS_JSON: (window.DRAW_DATA_ORIGIN || '') + "/winners.json",
 
     // Снимок билетов на момент розыгрыша. {round} - это round_id из
     // winners.json (daily_2026-08-01), тот же, с которым его пишет скрипт.
     // Пишется lottery-draw.js; без него колесо работает в legacy-режиме.
-    ROUND_SNAPSHOT: "/rounds/{round}.json",
+    ROUND_SNAPSHOT: (window.DRAW_DATA_ORIGIN || '') + "/rounds/{round}.json",
 
     // Таймаут одного запроса
     FETCH_TIMEOUT: 10000,

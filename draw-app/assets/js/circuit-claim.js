@@ -21,7 +21,7 @@
 
   const CONTRACT = 'terra18pau9q25ykswgey8ckcfxhdln27nk23qv6af0pjs2vye5r5crmcs7w9fr0';
   const TCO_BOND = 'terra1xnejslpfa398nn2mexv34y8737fcq998zz4dsnq74qn464lu9m4s604du5';
-  const PROOFS   = 'rewards-proofs.json';
+  const PROOFS   = window.drawDataUrl('rewards-proofs.json');
 
   const LCD_NODES = [
     'https://terra-classic-lcd.publicnode.com',
