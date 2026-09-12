@@ -24,6 +24,23 @@
     document.body.style.removeProperty('overflow');
     document.documentElement.style.removeProperty('overflow');
   }
+  // Glaz Oracle: on est' u sayta snaruzhi, vnutri ramki vtoroy lishniy.
+  // Selektory po id/klassu ne srabotali - modul' sozdaet svoy uzel sam,
+  // poetomu gasim i modul', i lyuboy uzel s "eye" v id ili klasse.
+  function killEye() {
+    try { window.oracleEye = { wake: function () {} }; } catch (e) {}
+    var all = document.querySelectorAll('[id*="eye" i],[class*="eye" i]');
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+  }
+  killEye();
+  addEventListener('DOMContentLoaded', killEye);
+  addEventListener('load', killEye);
+  setTimeout(killEye, 600);
+  setTimeout(killEye, 2000);
+
   dropSplash();
   addEventListener('DOMContentLoaded', dropSplash);
   addEventListener('load', dropSplash);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="563fc68aaf 2026-09-11">
+  <meta name="oracle-build" content="c4f6d97ce8 2026-09-12">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=ef544e91b9">
+  <link rel="stylesheet" href="assets/css/page/about.css?v=56a0cbf533">
   <link rel="stylesheet" href="assets/css/shell-fix.css?v=3ed8c78b0c">
 
 
@@ -623,7 +624,7 @@
   </div>
  </div>
  <iframe id="drawFrame" src="draw-app/?embed=1" title="Oracle Draw"
-         loading="lazy" referrerpolicy="same-origin"></iframe>
+         referrerpolicy="same-origin"></iframe>
 </div>
 
 <div class="page shell-page" id="page-chat">
@@ -1108,143 +1109,320 @@
 
   </div>
 </div>
-<div class="page" id="page-about">
+<div class="page shell-page" id="page-about">
 
-<!-- HERO -->
-<div style="text-align:center;padding-bottom:32px;margin-bottom:32px;border-bottom:1px solid rgba(30,51,88,0.6);">
-  <div class="tag">Terra Classic · columbus-5</div>
-  <h1>Terra <span>Oracle</span> Classic</h1>
-  <p style="font-size:13px;color:var(--muted);line-height:1.8;max-width:520px;margin:0 auto 12px;">
-    A hybrid Q&amp;A and governance system: payments and reputation settle on Terra Classic, while question and answer text lives in a public Git-backed dataset. Every action has economic weight.<br>
-    No login. Only wallet.
-  </p>
-  <p style="font-size:11px;color:rgba(107,130,168,0.6);">All transactions verifiable on Terra Classic blockchain</p>
-</div>
-
-<!-- WHAT IS A QUESTION -->
-<div style="margin-bottom:32px;">
-  <div class="divider">What is a question?</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      A question on Terra Oracle is not just text - it's an <strong style="color:var(--accent);">economic action on the blockchain</strong>. 
-      When you pay to ask - 50,000 LUNC for a Basic question or 200,000 for Priority - that fee is split automatically:
-    </p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-      <div style="flex:1;min-width:160px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:14px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#a78bfa;">50%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">→ Weekly Prize Pool</div>
-      </div>
-      <div style="flex:1;min-width:160px;background:rgba(84,147,247,0.07);border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:14px;text-align:center;">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:var(--accent);">50%</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">→ Protocol Treasury</div>
-      </div>
-    </div>
-    <p style="font-size:12px;color:var(--muted);line-height:1.7;">
-      You also receive <span style="color:var(--green);">+40 REP</span> and <span style="color:#a78bfa;">+1 free Draw entry (Basic) or +4 (Priority)</span> - your contribution immediately returns value back to you. Oracle Draw entries also earn <span style="color:#ff8844;">+10 REP per entry</span>.
-    </p>
+ <section class="ab-hero">
+  <img class="art" src="assets/img/banner-about.webp" alt="" width="1920" height="800" loading="lazy">
+  <span class="scrim"></span>
+  <div class="copy">
+   <button class="ab-back" onclick="showPage('home')">&larr; Back to Home</button>
+   <h1>TERRA ORACLE <em>CLASSIC</em></h1>
+   <p class="ab-lead">Community intelligence. On-chain participation.<br>A stronger Terra Classic.</p>
+   <p class="txt">A decentralized Q&amp;A and engagement platform built on Terra Classic.
+    Ask questions, share knowledge, build your reputation, take part in Oracle Draw and
+    Circuit, and help grow the ecosystem. Every action has value. Every voice matters.</p>
+   <div class="ab-cta">
+    <button class="btn btn-primary" onclick="showPage('ask')">Explore the protocol &rarr;</button>
+    <a class="btn btn-ghost" href="https://docs.terraoracle.io/?from=oracle" target="_blank" rel="noopener">Read documentation &rarr;</a>
+   </div>
+   <div class="ab-tags">
+    <span>Terra Classic</span><span>Community driven</span>
+    <span>Transparent</span><span>Built for oracles</span>
+   </div>
   </div>
-</div>
+ </section>
 
-<!-- ANONYMITY -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Pseudonymity · Web3 native</div>
-  <div style="background:var(--surface);border:1px solid rgba(0,255,176,0.15);border-radius:14px;padding:24px;display:flex;gap:20px;align-items:flex-start;">
-    <div style="font-size:32px;flex-shrink:0;">🕶</div>
-    <div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">No login. No email. No account.</div>
-      <p style="font-size:12px;color:var(--muted);line-height:1.75;">
-        Your identity is your wallet address. It is shown as a short alias, but the full address is stored with everything you post and stays
-        publicly readable - that is what lets anyone verify a payment or a vote. So you take part without revealing who you are, while everything
-        done from one address can be linked together. This is a core Web3 principle: <span style="color:var(--green);">sovereignty over your own identity</span>,
-        not invisibility.
-      </p>
-    </div>
+ <section>
+  <div class="ab-h"><b>One ecosystem</b><span>Different modules. One connected protocol.</span></div>
+  <div class="ab-mods">
+   <div class="ab-mod" style="--c:168,85,247" onclick="showPage('ask')">
+    <img src="assets/img/icons/ask.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Ask Oracle</b><p>Ask community questions and reward useful answers.</p>
+    <span class="go">&rarr;</span>
+   </div>
+   <div class="ab-mod" style="--c:34,211,238" onclick="showRepPage('leaderboard')">
+    <img src="assets/img/icons/reputation.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Reputation</b><p>Every meaningful contribution builds your Oracle Reputation.</p>
+    <span class="go">&rarr;</span>
+   </div>
+   <div class="ab-mod" style="--c:244,212,119" onclick="showPage('draw')">
+    <img src="assets/img/icons/draw.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Oracle Draw</b><p>Daily and weekly draws powered by community participation.</p>
+    <span class="go">&rarr;</span>
+   </div>
+   <div class="ab-mod" style="--c:56,217,208" onclick="showPage('draw')">
+    <img src="assets/img/icons/circuit.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Circuit</b><p>Claim zones and take part in recurring community rounds.</p>
+    <span class="go">&rarr;</span>
+   </div>
+   <div class="ab-mod" style="--c:139,164,255" onclick="showPage('vote')">
+    <img src="assets/img/icons/governance.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Governance</b><p>Community proposals decide where the protocol goes next.</p>
+    <span class="go">&rarr;</span>
+   </div>
+   <div class="ab-mod" style="--c:245,197,66" onclick="showPage_treasury(null,null,false)">
+    <img src="assets/img/icons/treasury.webp" alt="" width="128" height="128" loading="lazy">
+    <b>Treasury</b><p>Protocol revenue is routed into transparent ecosystem pools.</p>
+    <span class="go">&rarr;</span>
+   </div>
   </div>
-</div>
+ </section>
 
-<!-- REPUTATION = VALUE -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Reputation = real value</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      REP is not just points. It's <strong style="color:var(--gold);">your position in the protocol</strong> - and it directly affects how much LUNC you earn from the weekly pool.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.2);border-radius:10px;padding:14px;">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;">Fee discount</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Higher rank = lower cost per question. Up to <span style="color:var(--green);">−25%</span> at Ascended rank.</div>
-      </div>
-      <div style="background:rgba(232,200,64,0.06);border:1px solid rgba(232,200,64,0.2);border-radius:10px;padding:14px;">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;">Reward multiplier</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Your weekly pool share is multiplied by your rank. Up to <span style="color:var(--green);">×1.5</span> at Ascended - deliberately low, so newcomers can still catch up.</div>
-      </div>
-    </div>
-    <div style="background:var(--surface2);border-radius:10px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);">
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">◈</div><div style="font-size:8px;color:#6b82a8;margin-top:3px;">INITIATE</div><div style="font-size:8px;color:var(--muted);">x1.0</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🌱</div><div style="font-size:8px;color:#66ffaa;margin-top:3px;">SEEKER</div><div style="font-size:8px;color:var(--muted);">x1.0</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔵</div><div style="font-size:8px;color:#7eb8ff;margin-top:3px;">ADEPT</div><div style="font-size:8px;color:var(--green);">x1.1</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔮</div><div style="font-size:8px;color:#c084fc;margin-top:3px;">ANALYST</div><div style="font-size:8px;color:var(--green);">x1.2</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">⚡</div><div style="font-size:8px;color:#ffd700;margin-top:3px;">ORACLE</div><div style="font-size:8px;color:var(--green);">x1.3</div></div>
-        <div style="text-align:center;padding:10px 4px;border-right:1px solid var(--border);"><div style="font-size:14px;">🔥</div><div style="font-size:8px;color:#ff8844;margin-top:3px;">ARCHON</div><div style="font-size:8px;color:var(--green);">x1.4</div></div>
-        <div style="text-align:center;padding:10px 4px;"><div style="font-size:14px;">✦</div><div style="font-size:8px;color:#00ffff;margin-top:3px;">ASCENDED</div><div style="font-size:8px;color:var(--green);">x1.5</div></div>
-      </div>
-    </div>
+ <section class="card ab-loop2">
+  <div class="ab-h"><b>One loop</b><span>Every action pays forward.</span></div>
+  <p class="lp-lead">The Oracle cycle resets every Monday - and the top contributors split the pool.</p>
+  <div class="lp-grid">
+   <div class="lp-dial" id="lpDial" style="--c:168,85,247">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+     <g class="lp-ticks">
+    <line class="lp-tick lp-tick-l" x1="100" y1="8" x2="100" y2="16" transform="rotate(0.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(7.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(15.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(22.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(30.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(37.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(45.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(52.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(60.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(67.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(75.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(82.5 100 100)"/>
+    <line class="lp-tick lp-tick-l" x1="100" y1="8" x2="100" y2="16" transform="rotate(90.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(97.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(105.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(112.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(120.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(127.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(135.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(142.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(150.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(157.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(165.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(172.5 100 100)"/>
+    <line class="lp-tick lp-tick-l" x1="100" y1="8" x2="100" y2="16" transform="rotate(180.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(187.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(195.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(202.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(210.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(217.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(225.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(232.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(240.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(247.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(255.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(262.5 100 100)"/>
+    <line class="lp-tick lp-tick-l" x1="100" y1="8" x2="100" y2="16" transform="rotate(270.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(277.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(285.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(292.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(300.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(307.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(315.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(322.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(330.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(337.5 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(345.0 100 100)"/>
+    <line class="lp-tick" x1="100" y1="11" x2="100" y2="16" transform="rotate(352.5 100 100)"/>
+     </g>
+     <circle cx="100" cy="100" r="74" class="lp-track"/>
+     <circle cx="100" cy="100" r="74" class="lp-arc" id="lpArc"/>
+     <circle cx="100" cy="100" r="58" class="lp-glow"/>
+    </svg>
+    <div class="lp-num"><b id="lpNum">01</b><span id="lpName">Participate</span><em>of 04 · weekly</em></div>
+   </div>
+   <div class="lp-rows">
+    <button class="lp-row on" style="--c:168,85,247" data-step="0" data-name="Participate">
+     <img class="lp-ic" src="assets/img/icons/ask.webp" alt="" width="128" height="128" loading="lazy">
+     <span class="lp-body"><b>Participate</b><span class="lp-d">Ask a question, join the on-chain chat, mint a mask or cast a vote.</span>
+      <span class="lp-chips"><i>Ask</i><i>Chat</i><i>Draw</i><i>Circuit</i><i>Vote</i></span></span>
+     <span class="lp-n">01</span>
+    </button>
+    <button class="lp-row" style="--c:34,211,238" data-step="1" data-name="Earn REP">
+     <img class="lp-ic" src="assets/img/icons/reputation.webp" alt="" width="128" height="128" loading="lazy">
+     <span class="lp-body"><b>Earn REP</b><span class="lp-d">Every accepted answer, upvote and round played becomes reputation.</span>
+      <span class="lp-chips"><i>Answers</i><i>Upvotes</i><i>Streak</i></span></span>
+     <span class="lp-n">02</span>
+    </button>
+    <button class="lp-row" style="--c:244,212,119" data-step="2" data-name="Unlock ranks">
+     <img class="lp-ic" src="assets/img/icons/r-oracle.webp" alt="" width="128" height="128" loading="lazy">
+     <span class="lp-body"><b>Unlock ranks</b><span class="lp-d">REP raises your rank: cheaper questions and a bigger reward multiplier.</span>
+      <span class="lp-chips"><i>Discounts</i><i>Multiplier</i><i>Ranks</i></span></span>
+     <span class="lp-n">03</span>
+    </button>
+    <button class="lp-row" style="--c:34,197,94" data-step="3" data-name="Get rewarded">
+     <img class="lp-ic" src="assets/img/icons/leaderboard.webp" alt="" width="128" height="128" loading="lazy">
+     <span class="lp-body"><b>Get rewarded</b><span class="lp-d">Draw prizes, the weekly REP pool and TCO come back to contributors.</span>
+      <span class="lp-chips"><i>Draw prizes</i><i>REP pool</i><i>TCO</i></span></span>
+     <span class="lp-n">04</span>
+    </button>
+   </div>
   </div>
-</div>
+ </section>
 
-<!-- TREASURY & REWARDS -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Treasury & rewards · where money flows</div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <p style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:16px;">
-      Every LUNC paid into the system has a clear destination - nothing disappears. The protocol is fully transparent and verifiable on-chain.
-    </p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #a78bfa88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg></div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Question fee <span style="color:var(--text);">(50K Basic / 200K Priority)</span></div>
-        <div style="font-size:11px;color:var(--muted);">50% pool · 50% treasury</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/></svg></div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Chat message <span style="color:var(--text);">(5K LUNC)</span></div>
-        <div style="font-size:11px;color:var(--muted);">100% treasury</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;">
-        <div style="font-size:20px;flex-shrink:0;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5B8CFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #5B8CFF88);"><path d="M3.4 9.6 12 4.4l8.6 5.2"/><path d="M6 9.9v7.6M10 9.9v7.6M14 9.9v7.6M18 9.9v7.6"/><path d="M3.6 20.4h16.8"/></svg></div>
-        <div style="flex:1;font-size:12px;color:var(--muted);">Protocol Treasury</div>
-        <div style="font-size:11px;color:var(--gold);">25% → weekly rewards</div>
-      </div>
+ <section class="card ab-flow2">
+  <div class="ab-h"><b>Protocol flow</b><span>Every LUNC paid in, and where it ends up.</span></div>
+  <div class="fx-wrap">
+   <svg viewBox="0 0 1120 500" role="img" aria-label="Protocol value flow">
+   <defs>
+    <marker id="fxArrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+     <path d="M0,0 L8,4 L0,8 z" fill="#4ade80"/>
+    </marker>
+   </defs>
+   <text x="28" y="26" class="fx-h">YOU PAY</text>
+   <text x="456" y="26" class="fx-h">IT POOLS</text>
+   <text x="842" y="26" class="fx-h">IT PAYS OUT</text>
+   <path id="fxe0" d="M256,98 C354,98 354,86 452,86" stroke="#a855f7" class="fx-w"/>
+   <path id="fxe1" d="M256,98 C354,98 354,394 452,394" stroke="#a855f7" class="fx-w"/>
+   <path id="fxe2" d="M256,240 C354,240 354,394 452,394" stroke="#22d3ee" class="fx-w"/>
+   <path id="fxe3" d="M256,382 C354,382 354,240 452,240" stroke="#4ade80" class="fx-w"/>
+   <path id="fxe4" d="M256,382 C354,382 354,86 452,86" stroke="#4ade80" class="fx-w"/>
+   <path id="fxe5" d="M666,86 C752,86 752,74 838,74" stroke="#b98cff" class="fx-w"/>
+   <path id="fxe6" d="M666,240 C752,240 752,74 838,74" stroke="#f4d477" class="fx-w"/>
+   <path id="fxe7" d="M666,394 C752,394 752,190 838,190" stroke="#f5c542" class="fx-w"/>
+   <path id="fxe8" d="M666,394 C752,394 752,306 838,306" stroke="#f5c542" class="fx-w"/>
+   <path id="fxe9" d="M666,394 C752,394 752,422 838,422" stroke="#f5c542" class="fx-w"/>
+   <path d="M256,98 C354,98 354,86 452,86" stroke="#a855f7" class="fx-w fx-run"/>
+   <path d="M256,98 C354,98 354,394 452,394" stroke="#a855f7" class="fx-w fx-run"/>
+   <path d="M256,240 C354,240 354,394 452,394" stroke="#22d3ee" class="fx-w fx-run"/>
+   <path d="M256,382 C354,382 354,240 452,240" stroke="#4ade80" class="fx-w fx-run"/>
+   <path d="M256,382 C354,382 354,86 452,86" stroke="#4ade80" class="fx-w fx-run"/>
+   <path d="M666,86 C752,86 752,74 838,74" stroke="#b98cff" class="fx-w fx-run"/>
+   <path d="M666,240 C752,240 752,74 838,74" stroke="#f4d477" class="fx-w fx-run"/>
+   <path d="M666,394 C752,394 752,190 838,190" stroke="#f5c542" class="fx-w fx-run"/>
+   <path d="M666,394 C752,394 752,306 838,306" stroke="#f5c542" class="fx-w fx-run"/>
+   <path d="M666,394 C752,394 752,422 838,422" stroke="#f5c542" class="fx-w fx-run"/>
+   <path d="M626,428 L626,454 C626,476 196,476 L196,454" class="fx-w fx-seed" stroke="#4ade80" marker-end="url(#fxArrow)"/>
+   <text class="fx-p" fill="#a855f7"><textPath href="#fxe0" startOffset="30%">50 %</textPath></text>
+   <text class="fx-p" fill="#a855f7"><textPath href="#fxe1" startOffset="30%">50 %</textPath></text>
+   <text class="fx-p" fill="#22d3ee"><textPath href="#fxe2" startOffset="34%">100 %</textPath></text>
+   <text class="fx-p" fill="#4ade80"><textPath href="#fxe3" startOffset="30%">entries</textPath></text>
+   <text class="fx-p" fill="#b98cff"><textPath href="#fxe5" startOffset="34%">80 %</textPath></text>
+   <text class="fx-p" fill="#f4d477"><textPath href="#fxe6" startOffset="34%">80 %</textPath></text>
+   <text class="fx-p" fill="#f5c542"><textPath href="#fxe7" startOffset="30%">50 %</textPath></text>
+   <text class="fx-p" fill="#f5c542"><textPath href="#fxe8" startOffset="38%">25 %</textPath></text>
+   <text class="fx-p" fill="#f5c542"><textPath href="#fxe9" startOffset="30%">15 %</textPath></text>
+   <g class="fx-chip fx-chip-seed">
+    <rect x="326" y="466" width="270" height="22" rx="7"/>
+    <text x="461" y="481" fill="#4ade80">10 % of every pool seeds the next round</text>
+   </g>
+   <g class="fx-node">
+    <rect x="24" y="64" width="232" height="68" rx="12" class="fx-box"/>
+    <rect x="24" y="64" width="3" height="68" rx="2" fill="#a855f7"/>
+    <text x="40" y="92" class="fx-t">Oracle Questions</text>
+    <text x="40" y="111" class="fx-s">from 50,000 LUNC</text>
+   </g>
+   <g class="fx-node">
+    <rect x="24" y="206" width="232" height="68" rx="12" class="fx-box"/>
+    <rect x="24" y="206" width="3" height="68" rx="2" fill="#22d3ee"/>
+    <text x="40" y="234" class="fx-t">DAO Chat</text>
+    <text x="40" y="253" class="fx-s">5,000 LUNC per message</text>
+   </g>
+   <g class="fx-node">
+    <rect x="24" y="348" width="232" height="68" rx="12" class="fx-box"/>
+    <rect x="24" y="348" width="3" height="68" rx="2" fill="#4ade80"/>
+    <text x="40" y="376" class="fx-t">NFT Mints</text>
+    <text x="40" y="395" class="fx-s">Common / Rare / Legendary</text>
+   </g>
+   <g class="fx-node">
+    <rect x="452" y="52" width="214" height="68" rx="12" class="fx-box"/>
+    <rect x="452" y="52" width="3" height="68" rx="2" fill="#b98cff"/>
+    <text x="468" y="80" class="fx-t">Weekly Pool</text>
+    <text x="468" y="99" class="fx-s">Mondays 20:00 UTC</text>
+   </g>
+   <g class="fx-node">
+    <rect x="452" y="206" width="214" height="68" rx="12" class="fx-box"/>
+    <rect x="452" y="206" width="3" height="68" rx="2" fill="#f4d477"/>
+    <text x="468" y="234" class="fx-t">Daily Pool</text>
+    <text x="468" y="253" class="fx-s">every day 20:00 UTC</text>
+   </g>
+   <g class="fx-node">
+    <rect x="452" y="360" width="214" height="68" rx="12" class="fx-box"/>
+    <rect x="452" y="360" width="3" height="68" rx="2" fill="#f5c542"/>
+    <text x="468" y="388" class="fx-t">Treasury</text>
+    <text x="468" y="407" class="fx-s">distributed Wednesdays</text>
+   </g>
+   <g class="fx-node">
+    <rect x="838" y="40" width="258" height="68" rx="12" class="fx-box"/>
+    <rect x="838" y="40" width="3" height="68" rx="2" fill="#b98cff"/>
+    <text x="854" y="68" class="fx-t">Draw winners</text>
+    <text x="854" y="87" class="fx-s">48 / 20 / 12 % of 80 %</text>
+   </g>
+   <g class="fx-node">
+    <rect x="838" y="156" width="258" height="68" rx="12" class="fx-box"/>
+    <rect x="838" y="156" width="3" height="68" rx="2" fill="#22d3ee"/>
+    <text x="854" y="184" class="fx-t">Liquidity</text>
+    <text x="854" y="203" class="fx-s">50 % of Treasury</text>
+   </g>
+   <g class="fx-node">
+    <rect x="838" y="272" width="258" height="68" rx="12" class="fx-box"/>
+    <rect x="838" y="272" width="3" height="68" rx="2" fill="#4ade80"/>
+    <text x="854" y="300" class="fx-t">REP rewards</text>
+    <text x="854" y="319" class="fx-s">25 % · top 20 % by REP</text>
+   </g>
+   <g class="fx-node">
+    <rect x="838" y="388" width="258" height="68" rx="12" class="fx-box"/>
+    <rect x="838" y="388" width="3" height="68" rx="2" fill="#f5c542"/>
+    <text x="854" y="416" class="fx-t">Reserve & Dev</text>
+    <text x="854" y="435" class="fx-s">15 % and 10 %</text>
+   </g>
+   </svg>
+  </div>
+ </section>
+
+ <section>
+  <div class="ab-h"><b>Transparent by design</b><span>Open. Verifiable. Community first.</span></div>
+  <div class="ab-three">
+   <div class="ab-card" style="--c:76,125,255">
+    <img class="ab-ic" src="assets/img/icons/profile.webp" alt="" width="96" height="96" loading="lazy">
+    <b>Wallet native</b>
+    <p>No traditional account is required. Your connected wallet represents you across the entire ecosystem.</p>
+   </div>
+   <div class="ab-card" style="--c:34,211,238">
+    <img class="ab-ic" src="assets/img/icons/circuit.webp" alt="" width="96" height="96" loading="lazy">
+    <b>On-chain activity</b>
+    <p>Every payment, draw and reward can be independently inspected and verified on Terra Classic.</p>
+   </div>
+   <div class="ab-card" style="--c:245,197,66">
+    <img class="ab-ic" src="assets/img/icons/treasury.webp" alt="" width="96" height="96" loading="lazy">
+    <b>Visible treasury</b>
+    <p>Pools, balances and protocol movements are shown on the site instead of hiding behind a database.</p>
+   </div>
+  </div>
+ </section>
+
+ <section>
+  <div class="ab-h"><b>TCO token</b><span>More than a token. A stronger ecosystem.</span></div>
+  <div class="ab-tco">
+   <div class="ab-coin">TCO</div>
+   <div>
+    <p style="font-size:13px;line-height:1.7;color:var(--ink-2);margin:0">
+     The native token of Terra Oracle Classic. Part of every Circuit round is used to buy TCO
+     back: half goes to zone holders, half to the burn wallet. Earned by taking part, held for
+     more, and used across the features that come next.</p>
+    <div class="ab-tco-uses">
+     <div class="ab-use"><b>Governance</b><span>Vote and shape the protocol</span></div>
+     <div class="ab-use"><b>Rewards</b><span>Earned by participation</span></div>
+     <div class="ab-use"><b>Buyback</b><span>Funded by Circuit rounds</span></div>
+     <div class="ab-use"><b>On-chain</b><span>Used across the ecosystem</span></div>
     </div>
-    <p style="font-size:11px;color:var(--muted);line-height:1.7;">
-      Every Tuesday at 20:00 UTC, the REP Rewards pool - funded with 25% of Protocol Treasury income - is distributed to the top 20% of contributors - ranked by weekly REP, multiplied by their rank.
-    </p>
+   </div>
   </div>
-</div>
+ </section>
 
-<!-- ECOSYSTEM FLOW -->
-<div style="margin-bottom:32px;">
-  <div class="divider">Ecosystem flow</div>
-  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
-    <div style="background:rgba(84,147,247,0.1);border:1px solid rgba(84,147,247,0.25);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--accent);">ASK</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#00D4AA;">CHAT</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(232,200,64,0.08);border:1px solid rgba(232,200,64,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--gold);">REP</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#a78bfa;">DRAW</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.18);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--gold);">TREASURY</div>
-    <div style="color:var(--muted);font-size:12px;">→</div>
-    <div style="background:rgba(0,255,176,0.06);border:1px solid rgba(0,255,176,0.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:var(--green);">YOU</div>
+ <section>
+  <div class="ab-h"><b>Ecosystem at a glance</b><span>Live data from the protocol.</span></div>
+  <div class="ab-stats">
+   <div class="ab-stat"><img src="assets/img/icons/ask.webp" alt="" width="96" height="96" loading="lazy">
+    <div><b id="ab-questions">-</b><span>Questions asked</span></div></div>
+   <div class="ab-stat"><img src="assets/img/icons/stat-players.webp" alt="" width="96" height="96" loading="lazy">
+    <div><b id="ab-players">-</b><span>Draw participants</span></div></div>
+   <div class="ab-stat"><img src="assets/img/icons/stat-paid.webp" alt="" width="96" height="96" loading="lazy">
+    <div><b id="ab-paid">-</b><span>LUNC paid out</span></div></div>
+   <div class="ab-stat"><img src="assets/img/icons/hdr-draw.webp" alt="" width="96" height="96" loading="lazy">
+    <div><b id="ab-rounds">-</b><span>Rounds settled</span></div></div>
   </div>
-  <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;">Every action feeds the system. Activity creates value that returns to users.</p>
+ </section>
 </div>
-
-</div>
-<!-- ─── PROFILE PAGE ─────────────────────────────────── -->
-<!-- Вставить перед <div class="site-footer"> -->
 <div class="page" id="page-profile">
   <div class="page-header">
     <div class="tag">Account</div>
@@ -1678,6 +1856,7 @@
 
 
 <script src="assets/js/page/gov-shell.js?v=5067359821"></script>
+<script src="assets/js/page/about-shell.js?v=a76cb957fd"></script>
 <script src="assets/js/page/home-shell.js?v=5df4ab3ab3"></script>
 <script src="assets/js/page/ask-shell.js?v=3f75bb1b18"></script>
 <script src="assets/js/page/side-leaderboard.js?v=1348eb77a1"></script>

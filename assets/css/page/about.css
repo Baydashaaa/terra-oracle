@@ -1,0 +1,369 @@
+/* ==================================================================
+   About Protocol
+   Раздел рассказывает про протокол целиком: модули, как ходит
+   ценность, петля участия, токен, прозрачность и цифры.
+
+   Анимации сделаны на CSS и SVG, без библиотек: на странице их много,
+   а каждая библиотека - это лишние сотни килобайт и чужая типографика.
+   Всё уважает prefers-reduced-motion (см. конец файла).
+   ================================================================== */
+
+/* ---------------- hero ---------------- */
+#page-about .ab-hero{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  min-height:380px;
+  display:flex;
+  align-items:center;
+}
+#page-about .ab-hero .art{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:60% 50%;
+}
+#page-about .ab-hero .scrim{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,
+    rgba(5,7,15,.94) 0%, rgba(5,7,15,.80) 34%,
+    rgba(5,7,15,.30) 58%, transparent 78%);
+}
+#page-about .ab-hero .copy{
+  position:relative;z-index:1;
+  padding:40px 44px;
+  max-width:640px;
+}
+#page-about .ab-back{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:12.5px;color:var(--ink-2);
+  background:none;border:0;cursor:pointer;padding:0;margin-bottom:18px;
+}
+#page-about .ab-back:hover{color:var(--ink)}
+#page-about .ab-hero h1{
+  font-family:var(--dis);
+  font-size:clamp(30px,3.6vw,46px);
+  font-weight:700;line-height:1.04;margin:0 0 12px;
+}
+#page-about .ab-hero h1 em{font-style:normal;color:var(--violet-hi)}
+#page-about .ab-lead{
+  font-family:var(--dis);
+  font-size:clamp(15px,1.5vw,19px);
+  color:var(--ink);margin:0 0 14px;line-height:1.35;
+}
+#page-about .ab-hero p.txt{
+  font-size:13.5px;line-height:1.75;color:var(--ink-2);margin:0 0 22px;
+}
+#page-about .ab-cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+#page-about .ab-tags{display:flex;gap:8px;flex-wrap:wrap}
+#page-about .ab-tags span{
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);
+  border:1px solid var(--line);border-radius:8px;padding:7px 12px;
+}
+
+/* ---------------- общая шапка секции ---------------- */
+#page-about .ab-h{
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  margin:0 0 16px;padding-left:12px;position:relative;
+}
+#page-about .ab-h::before{
+  content:"";position:absolute;left:0;top:2px;bottom:2px;width:3px;
+  border-radius:2px;background:linear-gradient(180deg,var(--violet),var(--cyan));
+}
+#page-about .ab-h b{
+  font-family:var(--dis);font-size:17px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+}
+#page-about .ab-h span{font-size:12.5px;color:var(--ink-3)}
+
+/* ---------------- модули ---------------- */
+#page-about .ab-mods{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:14px;
+}
+#page-about .ab-mod{
+  position:relative;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  padding:18px;
+  display:flex;flex-direction:column;
+  cursor:pointer;
+  transition:border-color .2s ease,transform .2s ease;
+}
+#page-about .ab-mod:hover{border-color:rgba(var(--c),.55);transform:translateY(-3px)}
+#page-about .ab-mod img{
+  width:34px;height:34px;object-fit:contain;margin-bottom:14px;
+  filter:drop-shadow(0 0 10px rgba(var(--c),.45));
+}
+#page-about .ab-mod b{font-size:14.5px;font-weight:600;margin-bottom:6px}
+#page-about .ab-mod p{font-size:12px;line-height:1.6;color:var(--ink-2);margin:0 0 14px;flex:1}
+#page-about .ab-mod .go{
+  width:28px;height:28px;border-radius:9px;
+  display:grid;place-items:center;
+  background:rgba(var(--c),.14);color:rgb(var(--c));
+  align-self:flex-start;
+}
+
+/* ---------------- прозрачность ---------------- */
+#page-about .ab-three{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;
+}
+#page-about .ab-card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:20px;
+}
+#page-about .ab-card .ic{
+  width:46px;height:46px;border-radius:13px;
+  display:grid;place-items:center;margin-bottom:14px;
+  background:rgba(var(--c),.13);
+}
+#page-about .ab-card .ic img{width:24px;height:24px;object-fit:contain}
+#page-about .ab-card b{display:block;font-size:14px;margin-bottom:7px}
+#page-about .ab-card p{font-size:12px;line-height:1.65;color:var(--ink-2);margin:0}
+
+/* ---------------- токен ---------------- */
+#page-about .ab-tco{
+  display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:22px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:22px;
+}
+#page-about .ab-coin{
+  width:120px;height:120px;border-radius:50%;
+  display:grid;place-items:center;
+  font-family:var(--dis);font-size:26px;font-weight:700;color:#2a1f00;
+  background:radial-gradient(circle at 34% 30%,#ffe9a3,#f0b429 58%,#9d7412);
+  box-shadow:0 0 44px -10px var(--amber);
+  animation:ab-float 4.6s ease-in-out infinite;
+}
+@keyframes ab-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+#page-about .ab-tco-uses{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px;margin-top:14px;
+}
+#page-about .ab-use{
+  text-align:center;padding:12px 8px;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:11px;
+}
+#page-about .ab-use b{display:block;font-size:12px;margin-bottom:3px}
+#page-about .ab-use span{font-size:10px;color:var(--ink-3);line-height:1.45}
+
+/* ---------------- цифры ---------------- */
+#page-about .ab-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+}
+#page-about .ab-stat{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:16px;
+  display:flex;align-items:center;gap:12px;
+}
+#page-about .ab-stat img{width:26px;height:26px;object-fit:contain}
+#page-about .ab-stat b{display:block;font-family:var(--dis);font-size:21px;font-weight:700}
+#page-about .ab-stat span{font-size:10.5px;color:var(--ink-3)}
+
+/* ---------------- нижний баннер ---------------- */
+#page-about .ab-foot{
+  position:relative;overflow:hidden;
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  min-height:230px;display:grid;place-items:center;text-align:center;
+  padding:34px 24px;
+}
+#page-about .ab-foot .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5}
+#page-about .ab-foot .scrim{position:absolute;inset:0;background:rgba(5,7,15,.6)}
+#page-about .ab-foot .copy{position:relative;z-index:1}
+#page-about .ab-foot .eyebrow{
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3);
+}
+#page-about .ab-foot h2{
+  font-family:var(--dis);font-size:clamp(20px,2.4vw,30px);
+  font-weight:700;margin:9px 0 10px;
+}
+#page-about .ab-foot p{font-size:13px;color:var(--ink-2);margin:0 0 20px}
+
+@media (max-width:900px){
+  #page-about .ab-flow-grid{grid-template-columns:1fr}
+  #page-about .ab-wires{display:none}
+  #page-about .ab-tco{grid-template-columns:1fr;justify-items:center;text-align:center}
+  #page-about .ab-step{position:static;width:auto;margin-bottom:8px;transform:none}
+  #page-about .ab-loop{min-height:0}
+  #page-about .ab-loop svg{display:none}
+  #page-about .ab-loop-core{position:static;margin-bottom:12px}
+}
+
+/* Движение по желанию пользователя: у кого в системе стоит запрет на
+   анимацию, тот видит те же схемы, но без бега. */
+@media (prefers-reduced-motion:reduce){
+  #page-about .spark,
+  #page-about .ab-wires .dash,
+  #page-about .ab-hub,
+  #page-about .ab-coin{animation:none !important}
+}
+
+
+/* ==================================================================
+   Поток ценности
+   Схема целиком в SVG: и коробки, и кривые, и подписи. Смешивать
+   HTML-узлы с SVG-линиями нельзя - координаты разъезжаются от любой
+   смены шрифта, и связи перестают читаться.
+   ================================================================== */
+#page-about .fx-wrap{
+  overflow-x:auto;
+  margin:0 -6px;
+  padding:0 6px 6px;
+}
+#page-about .fx-wrap svg{width:100%;min-width:1000px;height:auto;display:block}
+
+#page-about .fx-box{fill:var(--panel);stroke:var(--line);stroke-width:1}
+#page-about .fx-node:hover .fx-box{stroke:var(--line-2)}
+#page-about .fx-t{fill:var(--ink);font-family:var(--ui);font-size:14px;font-weight:600}
+#page-about .fx-s{fill:var(--ink-3);font-family:var(--ui);font-size:11px}
+#page-about .fx-h{
+  fill:var(--ink-3);font-family:var(--ui);font-size:10px;
+  letter-spacing:.2em;font-weight:600;
+}
+
+/* Тонкая постоянная линия плюс бегущий пунктир: видно и связь,
+   и направление потока. */
+#page-about .fx-w{fill:none;stroke-width:1.4;opacity:.3}
+#page-about .fx-run{
+  opacity:.95;stroke-width:2.2;
+  stroke-dasharray:4 16;
+  animation:fx-run 2s linear infinite;
+}
+@keyframes fx-run{to{stroke-dashoffset:-40}}
+
+/* Линия возврата идёт под схемой и заканчивается стрелкой у входов -
+   без неё было непонятно, что именно возвращается в следующий раунд. */
+#page-about .fx-seed{
+  opacity:.6;stroke-width:1.6;stroke-dasharray:6 7;
+  animation:fx-run 2.6s linear infinite reverse;
+}
+
+/* Подписи долей сидят на самой линии через textPath - сразу видно,
+   к какой связи относится цифра. Читаемость даёт обводка под текстом
+   (paint-order), а не отдельная подложка: подложка не умеет повторять
+   изгиб кривой. */
+#page-about .fx-p{
+  font-family:var(--dis);font-size:12px;font-weight:700;letter-spacing:.03em;
+  paint-order:stroke fill;
+  stroke:#05070f;stroke-width:5px;stroke-linejoin:round;
+}
+#page-about .fx-chip rect{fill:rgba(8,12,28,.94);stroke:var(--line);stroke-width:1}
+#page-about .fx-chip text{
+  font-family:var(--dis);font-size:11.5px;font-weight:700;
+  text-anchor:middle;letter-spacing:.03em;
+  paint-order:stroke fill;stroke:none;
+}
+#page-about .fx-chip-seed text{font-size:11px;font-weight:600}
+
+/* ==================================================================
+   Петля участия
+   Слева циферблат с рисками и дугой в цвет текущего шага, справа сами
+   шаги. Активный раскрыт, остальные свёрнуты.
+   ================================================================== */
+#page-about .lp-lead{font-size:13px;color:var(--ink-2);margin:0 0 22px}
+#page-about .lp-grid{
+  display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);
+  gap:30px;align-items:center;
+}
+
+#page-about .lp-dial{position:relative;display:grid;place-items:center}
+#page-about .lp-dial svg{width:100%;max-width:230px;height:auto}
+#page-about .lp-ticks line{
+  stroke:var(--line-2);stroke-width:1.4;opacity:.5;
+  transition:stroke .5s ease;
+}
+#page-about .lp-tick-l{stroke:rgb(var(--c));stroke-width:2;opacity:.85}
+#page-about .lp-track{fill:none;stroke:var(--line);stroke-width:3}
+#page-about .lp-arc{
+  fill:none;stroke:rgb(var(--c));stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:465;stroke-dashoffset:349;
+  transform:rotate(-90deg);transform-origin:100px 100px;
+  filter:drop-shadow(0 0 8px rgba(var(--c),.55));
+  transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1),stroke .5s ease;
+}
+#page-about .lp-glow{
+  fill:rgba(var(--c),.07);
+  stroke:rgba(var(--c),.22);stroke-width:1;
+  transition:fill .5s ease,stroke .5s ease;
+}
+#page-about .lp-num{position:absolute;text-align:center;font-family:var(--dis)}
+#page-about .lp-num b{
+  display:block;font-size:42px;font-weight:700;line-height:1;
+  color:rgb(var(--c));transition:color .5s ease;
+}
+#page-about .lp-num span{
+  display:block;margin-top:5px;font-size:12px;font-weight:600;color:var(--ink);
+}
+#page-about .lp-num em{
+  display:block;margin-top:3px;font-style:normal;
+  font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);
+}
+
+#page-about .lp-rows{display:flex;flex-direction:column;gap:10px}
+#page-about .lp-row{
+  display:grid;grid-template-columns:38px minmax(0,1fr) auto;
+  align-items:center;gap:15px;
+  width:100%;text-align:left;cursor:pointer;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:15px 18px;
+  font-family:var(--ui);color:var(--ink);
+  transition:border-color .35s ease,background .35s ease,transform .25s ease;
+}
+#page-about .lp-row:hover{border-color:rgba(var(--c),.5);transform:translateX(2px)}
+#page-about .lp-row.on{
+  border-color:rgb(var(--c));
+  background:linear-gradient(100deg,rgba(var(--c),.13),rgba(8,12,28,.5));
+}
+#page-about .lp-ic{
+  width:34px;height:34px;object-fit:contain;
+  opacity:.55;transition:opacity .35s ease,filter .35s ease;
+}
+#page-about .lp-row.on .lp-ic{
+  opacity:1;filter:drop-shadow(0 0 10px rgba(var(--c),.6));
+}
+#page-about .lp-body b{display:block;font-size:14.5px;font-weight:600}
+#page-about .lp-d,
+#page-about .lp-chips{
+  max-height:0;overflow:hidden;opacity:0;
+  transition:max-height .4s cubic-bezier(.4,0,.2,1),opacity .3s ease,margin .4s ease;
+}
+#page-about .lp-d{
+  display:block;font-size:12px;color:var(--ink-3);line-height:1.6;
+}
+#page-about .lp-chips{display:flex;gap:6px;flex-wrap:wrap}
+#page-about .lp-row.on .lp-d{max-height:60px;opacity:1;margin-top:5px}
+#page-about .lp-row.on .lp-chips{max-height:44px;opacity:1;margin-top:10px}
+#page-about .lp-chips i{
+  font-style:normal;font-size:10px;
+  padding:4px 10px;border-radius:8px;
+  background:rgba(var(--c),.15);color:rgb(var(--c));
+}
+#page-about .lp-n{
+  font-family:var(--dis);font-size:14px;font-weight:700;color:var(--ink-3);
+  transition:color .35s ease;
+}
+#page-about .lp-row.on .lp-n{color:rgb(var(--c))}
+
+/* ---------- иконки без подложек ---------- */
+#page-about .ab-ic{
+  width:40px;height:40px;object-fit:contain;
+  margin-bottom:15px;display:block;
+  filter:drop-shadow(0 0 12px rgba(var(--c),.5));
+}
+#page-about .ab-stat img{width:38px;height:38px}
+#page-about .ab-stat{gap:14px;padding:18px}
+#page-about .ab-stat b{font-size:23px}
+#page-about .ab-stat span{font-size:11px}
+
+@media (max-width:820px){
+  #page-about .lp-grid{grid-template-columns:1fr}
+  #page-about .lp-dial{max-width:200px;margin:0 auto 8px}
+}
+@media (prefers-reduced-motion:reduce){
+  #page-about .fx-run,#page-about .fx-seed{animation:none !important}
+}
