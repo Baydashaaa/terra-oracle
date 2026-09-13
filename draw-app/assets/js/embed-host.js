@@ -24,22 +24,11 @@
     document.body.style.removeProperty('overflow');
     document.documentElement.style.removeProperty('overflow');
   }
-  // Glaz Oracle: on est' u sayta snaruzhi, vnutri ramki vtoroy lishniy.
-  // Selektory po id/klassu ne srabotali - modul' sozdaet svoy uzel sam,
-  // poetomu gasim i modul', i lyuboy uzel s "eye" v id ili klasse.
-  function killEye() {
-    try { window.oracleEye = { wake: function () {} }; } catch (e) {}
-    var all = document.querySelectorAll('[id*="eye" i],[class*="eye" i]');
-    for (var i = 0; i < all.length; i++) {
-      var el = all[i];
-      if (el.parentNode) el.parentNode.removeChild(el);
-    }
-  }
-  killEye();
-  addEventListener('DOMContentLoaded', killEye);
-  addEventListener('load', killEye);
-  setTimeout(killEye, 600);
-  setTimeout(killEye, 2000);
+  // Глаз Oracle гасит себя сам - см. отказ по is-embedded в начале
+  // assets/js/oracle-eye.js. Здешний killEye() удалён: он искал узлы со
+  // словом "eye" в id или классе и до #oe-btn не доставал.
+  // Заглушка window.oracleEye тоже не нужна - wheel-bridge.js проверяет
+  // наличие перед вызовом wake().
 
   dropSplash();
   addEventListener('DOMContentLoaded', dropSplash);
@@ -174,12 +163,23 @@
     return e ? e.textContent.trim() : '';
   }
 
+  // Кроме готовой строки отдаём ещё и остаток в миллисекундах. Строка
+  // общего формата теряет секунды всё, что дальше суток ("2d 05:24"), а
+  // карточке снаружи нужны три клетки. Считать расписание у себя она
+  // по-прежнему не должна - источник один, здесь.
+  function msLeft(pool) {
+    var S = window.DRAW_SCHEDULE;
+    if (!S || typeof S.msToNext !== 'function') return null;
+    var v = S.msToNext(pool);
+    return (typeof v === 'number' && isFinite(v)) ? v : null;
+  }
+
   function broadcast() {
     parent.postMessage({
       type: 'oracle-draw:stats',
       games: {
-        daily:   { pool: txt('dg-daily-pool'),   tick: txt('dg-daily-tick') },
-        weekly:  { pool: txt('dg-weekly-pool'),  tick: txt('dg-weekly-tick') },
+        daily:   { pool: txt('dg-daily-pool'),   tick: txt('dg-daily-tick'),   ms: msLeft('daily') },
+        weekly:  { pool: txt('dg-weekly-pool'),  tick: txt('dg-weekly-tick'),  ms: msLeft('weekly') },
         circuit: { pool: txt('dg-circuit-zones'), tick: txt('dg-circuit-tick') }
       }
     }, location.origin);

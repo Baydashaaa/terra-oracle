@@ -12,6 +12,7 @@
   var tab = 'daily';
   var card = null;
   var stats = {};      // последнее, что прислала рамка
+  var msAt = {};       // {игра: {ms, at}} - остаток и когда он получен
 
   function $(sel) { return card ? card.querySelector(sel) : null; }
 
@@ -33,27 +34,43 @@
 
     var d = stats[tab] || {};
 
-    // Часы. Рамка присылает готовую строку вида "3d 07:42" или "1h 18m" -
-    // разбираем её на клетки, а если формата нет, показываем как есть.
+    // Часы. Если рамка прислала остаток в миллисекундах - считаем клетки
+    // от него, с поправкой на время, прошедшее с момента получения. Так
+    // секунды идут у любого пула: общий формат строки их теряет всё, что
+    // дальше суток ("2d 05:24"), и weekly навсегда показывал 00.
+    // Строка остаётся запасным путём - у Circuit миллисекунд нет, там
+    // приходит "1h 18m" или "drawing".
     var box = $('[data-clock]');
     if (box) {
-      var t = String(d.tick || '');
       var set = function (u, v) { var e = box.querySelector('[data-u="' + u + '"]'); if (e) e.textContent = v; };
-      // Форматы разные: у розыгрышей "3d 07:42:11", у Circuit "33m" или
-      // "1h 18m", а во время розыгрыша просто "drawing". Разбираем все,
-      // а неизвестное показываем прочерками - чужие цифры хуже пустоты.
-      var hms = t.match(/(?:(\d+)d\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-      var hm  = t.match(/(?:(\d+)h\s*)?(\d+)m$/);
-      if (hms) {
-        set('h', (hms[1] ? hms[1] + 'd ' : '') + hms[2]);
-        set('m', hms[3]);
-        set('s', hms[4] || '00');
-      } else if (hm) {
-        set('h', hm[1] || '00');
-        set('m', hm[2]);
-        set('s', '00');
+      var two = function (n) { return String(n).padStart(2, '0'); };
+      var live = msAt[tab];
+      var left = live ? live.ms - (Date.now() - live.at) : null;
+
+      if (left !== null && left > 0) {
+        var s = Math.floor(left / 1000);
+        var days = Math.floor(s / 86400);
+        set('h', (days ? days + 'd ' : '') + two(Math.floor(s % 86400 / 3600)));
+        set('m', two(Math.floor(s % 3600 / 60)));
+        set('s', two(s % 60));
       } else {
-        set('h', '--'); set('m', '--'); set('s', '--');
+        var t = String(d.tick || '');
+        // Форматы разные: у розыгрышей "3d 07:42:11", у Circuit "33m" или
+        // "1h 18m", а во время розыгрыша просто "drawing". Разбираем все,
+        // а неизвестное показываем прочерками - чужие цифры хуже пустоты.
+        var hms = t.match(/(?:(\d+)d\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        var hm  = t.match(/(?:(\d+)h\s*)?(\d+)m$/);
+        if (hms) {
+          set('h', (hms[1] ? hms[1] + 'd ' : '') + hms[2]);
+          set('m', hms[3]);
+          set('s', hms[4] || '00');
+        } else if (hm) {
+          set('h', hm[1] || '00');
+          set('m', hm[2]);
+          set('s', '00');
+        } else {
+          set('h', '--'); set('m', '--'); set('s', '--');
+        }
       }
     }
 
@@ -89,6 +106,11 @@
     var d = e.data;
     if (!d || d.type !== 'oracle-draw:stats') return;
     stats = d.games || {};
+    // Запоминаем момент получения: между сообщениями карточка тикает сама.
+    Object.keys(stats).forEach(function (g) {
+      var v = stats[g] && stats[g].ms;
+      if (typeof v === 'number' && isFinite(v)) msAt[g] = { ms: v, at: Date.now() };
+    });
     paint();
   });
 
@@ -116,6 +138,11 @@
 
     var cta = $('[data-cta]') || card.querySelector('button.wide');
     if (cta) cta.addEventListener('click', function () { open(tab); });
+
+    // Свой такт: сообщения из рамки приходят раз в секунду, но если рамка
+    // ещё не открыта или встала, клетки всё равно должны идти по
+    // последнему известному остатку.
+    setInterval(paint, 1000);
 
     paint();
   }

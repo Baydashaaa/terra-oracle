@@ -16,6 +16,15 @@
   if (window.__oracleEyeLoaded) return;        // guard against double-include
   window.__oracleEyeLoaded = true;
 
+  // В рамке на terraoracle.io/draw глаз не нужен: внешняя страница держит
+  // свой, а внутри iframe он оказывается вторым. Защита выше считает
+  // включения в ОДНОМ окне, а рамка - отдельное окно, поэтому нужен
+  // отдельный отказ. Раньше это пытался делать killEye() в embed-host.js,
+  // но он искал узлы со словом "eye" в id или классе, а здесь они
+  // называются #oe-btn и #oe-bubble.
+  if (window.top !== window.self ||
+      document.documentElement.classList.contains('is-embedded')) return;
+
   var WORKER_URL = 'https://oracle-eye.vladislav-baydan.workers.dev/feedback';
   // Site label appended to the message (so Telegram shows where it came from)
   var SITE = (location.hostname.indexOf('draw.') === 0) ? 'draw.terraoracle.io' : 'terraoracle.io';

@@ -60,7 +60,10 @@
   // ---------- розыгрыши ----------
   async function loadDraws() {
     try {
-      var r = await fetch('draw-app/winners.json', { cache: 'no-cache' });
+      // Данные живут в репо oracle-draw, копии в draw-app/ больше нет -
+      // см. draw-app/assets/js/data-origin.js. Внешний сайт никогда не
+      // на draw-домене, поэтому адрес просто абсолютный.
+      var r = await fetch('https://draw.terraoracle.io/winners.json', { cache: 'no-cache' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       var w = await r.json();
 
