@@ -14,3 +14,12 @@ draw-app/winners.json
 draw-app/free-entries.json
 draw-app/rewards-proofs.json
 draw-app/rounds/
+
+# draw-app/ - копия репо oracle-draw для рамки на /draw.
+# Данные живут на draw.terraoracle.io (см. draw-app/assets/js/data-origin.js).
+# Копии здесь молча подменяли бы живые данные замороженными.
+draw-app/CNAME
+draw-app/winners.json
+draw-app/free-entries.json
+draw-app/rewards-proofs.json
+draw-app/rounds/
