@@ -19,10 +19,19 @@
 
   function frame() { return document.getElementById('drawFrame'); }
 
+  // Потолок. Внутри рамки vh считается от её высоты, поэтому любой
+  // размер в vh замыкает круг "рамка выше -> содержимое выше -> рамка
+  // выше". Один такой случай уже был (min-height:100vh у body), и он
+  // разогнал страницу до 71244 пикселей. Потолок делает возможный
+  // повтор безобидным: появится прокрутка внутри рамки - это видно
+  // сразу, - а не полотно в десятки тысяч пикселей.
+  var MAX = 6000;
+
   function setHeight(px) {
     var f = frame();
     if (!f) return;
-    var h = Math.max(MIN, Math.ceil(px) + PAD) + 'px';
+    var want = Math.min(MAX, Math.max(MIN, Math.ceil(px) + PAD));
+    var h = want + 'px';
     if (f.style.height !== h) f.style.height = h;
   }
 
