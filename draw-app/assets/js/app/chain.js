@@ -267,9 +267,20 @@ function weeklyTicketPrice() {
 }
 
 // ─── LOAD WINNERS FROM winners.json ─────────────────────────────────────────
+// Вызывает fn, когда выполнены все defer-скрипты страницы. Пока
+// readyState === 'loading', нижние скрипты ещё не тронуты; 'interactive'
+// наступает уже после них, прямо перед DOMContentLoaded.
+function whenScriptsReady(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn, { once: true });
+  } else {
+    fn();
+  }
+}
+
 async function loadWinners() {
   try {
-    const r = await fetch('./winners.json?t=' + Date.now());
+    const r = await fetch(window.drawDataUrl('winners.json') + '?t=' + Date.now());
     if (r.ok) {
       const raw = await r.json();
       let entries = [];
@@ -287,8 +298,18 @@ async function loadWinners() {
       winnersData = entries;
     }
   } catch(e) { console.warn('loadWinners:', e); winnersData = []; }
-  renderWinners();
-  populateDrawVerifySelect();
+
+  // renderWinners живёт в winners-v2.js, а он подключён НИЖЕ init.js,
+  // который зовёт loadWinners() сразу. При быстром ответе winners.json
+  // мы попадали сюда раньше, чем браузер выполнил те defer-скрипты:
+  // ReferenceError, и остаток старта в init.js не выполнялся вовсе -
+  // ни балансы, ни updatePoolDisplay, отсюда "0 LUNC" до первого
+  // переключения вкладки. Порядок загрузки теперь не при чём.
+  whenScriptsReady(function () {
+    if (typeof renderWinners === 'function') renderWinners();
+    else console.warn('loadWinners: renderWinners не найден');
+    if (typeof populateDrawVerifySelect === 'function') populateDrawVerifySelect();
+  });
   // Circuit живёт в воркере, а не в winners.json, и грузится отдельно. Без
   // этого вызова вкладка ALL показывала только daily и weekly до тех пор,
   // пока пользователь не открывал CIRCUIT руками.

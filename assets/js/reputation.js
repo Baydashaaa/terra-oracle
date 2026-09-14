@@ -641,7 +641,7 @@ async function loadStatsData() {
           <div class="mint-grid">
             ${[['common','200,205,216',25],['rare','77,155,255',125],['legendary','244,191,77',250]].map(([tier, t, pts]) => `
               <div class="mint-c" style="--t:${t}">
-                <img src="nfts/${tier}-md.webp" alt="" loading="lazy">
+                <img src="/draw-app/nfts/${tier}-md.webp" alt="" loading="lazy">
                 <div class="k">${tier.toUpperCase()}</div>
                 <div class="v"><b>${tierCounts[tier]}</b><span>mints &middot; +${(tierCounts[tier]*pts).toLocaleString()} REP</span></div>
               </div>`).join('')}
@@ -882,9 +882,9 @@ function renderHowItWorksHTML() {
     ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208'],
     ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66'],
     ['Chat message',      '+5 REP per message',   'assets/img/icons/p-messages.webp',  '76,125,255'],
-    ['Mint Common',       '+25 REP per mint',     'nfts/common-sm.webp',               '200,205,216'],
-    ['Mint Rare',         '+125 REP per mint',    'nfts/rare-sm.webp',                 '77,155,255'],
-    ['Mint Legendary',    '+250 REP per mint',    'nfts/legendary-sm.webp',            '244,191,77'],
+    ['Mint Common',       '+25 REP per mint',     '/draw-app/nfts/common-sm.webp',      '200,205,216'],
+    ['Mint Rare',         '+125 REP per mint',    '/draw-app/nfts/rare-sm.webp',        '77,155,255'],
+    ['Mint Legendary',    '+250 REP per mint',    '/draw-app/nfts/legendary-sm.webp',   '244,191,77'],
   ];
 
   const earn = EARN.map(([k, v, ic, c]) =>

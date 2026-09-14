@@ -690,79 +690,37 @@ function renderStreakBlock(streakData) {
   const el = document.getElementById('streak-block');
   if (!el) return;
 
-  const { currentStreak, longestStreak, todayDone, multiplier, milestones } = streakData;
+  const s = streakData || { currentStreak: 0, todayDone: false, multiplier: 1.0, milestones: [] };
+  const days = s.currentStreak || 0;
+  const done = !!s.todayDone;
+  const hit  = s.milestones || [];
 
-  const flameSize   = currentStreak >= 30 ? '32px' : currentStreak >= 14 ? '28px' : currentStreak >= 7 ? '24px' : '20px';
-  const streakColor = currentStreak >= 30 ? '#00ffff' : currentStreak >= 14 ? '#ffd700' : currentStreak >= 7 ? '#ff8844' : currentStreak >= 3 ? '#66ffaa' : 'var(--muted)';
-  const streakGlow  = currentStreak >= 30 ? 'rgba(0,212,255,0.5)' : currentStreak >= 14 ? 'rgba(245,197,24,0.45)' : currentStreak >= 7 ? 'rgba(255,102,0,0.4)' : currentStreak >= 3 ? 'rgba(30,200,100,0.35)' : 'none';
+  // Вехи и награды - те же, что были в прежнем блоке, это множители
+  // REP, а не разовые начисления. В прототипе на месте этой строки
+  // стояли семь дней с "+10 REP" - заготовка, у нас механика другая.
+  const MS = [
+    { d: 3,  r: 'x1.1 REP' },
+    { d: 5,  r: 'x1.2 REP' },
+    { d: 7,  r: 'x1.3 REP<br>25% off ask' },
+    { d: 14, r: 'x1.5 REP<br>2 free entries' },
+    { d: 30, r: 'x2.0 REP<br>+1 Draw entry' }
+  ];
+  const next = MS.find(m => days < m.d);
 
-  const MILESTONES       = [3, 5, 7, 14, 30];
-  const MILESTONE_LABELS = {
-    3:  'x1.1 REP multiplier',
-    5:  'x1.2 REP multiplier',
-    7:  'x1.3 REP + 25% question discount',
-    14: 'x1.5 REP + 2 free Weekly Draw entries',
-    30: 'x2.0 REP + Trusted User status',
-  };
-  const nextMs      = MILESTONES.find(m => currentStreak < m);
-  const nextMsLabel = nextMs ? MILESTONE_LABELS[nextMs] : null;
-
-  const statusBadge = todayDone
-    ? `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(30,200,100,0.12);border:1px solid rgba(30,200,100,0.35);color:#4ade80;font-weight:700;">✓ Streak secured today</span>`
-    : `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);color:#ffaa00;font-weight:700;">⏳ Today not completed</span>`;
-
-  const MILESTONE_REWARDS = {
-    3:  'x1.1 REP',
-    5:  'x1.2 REP',
-    7:  'x1.3 REP\n25% off ask',
-    14: 'x1.5 REP\n2 free entries',
-    30: 'x2.0 REP\n+1 Draw entry',
-  };
-
-  const msBadges = MILESTONES.map(m => {
-    const reached  = milestones.includes(m);
-    const lines    = MILESTONE_REWARDS[m].split('\n');
-    return `<div style="text-align:center;padding:8px 6px;border-radius:8px;flex:1;min-width:50px;
-      background:${reached ? 'rgba(30,200,100,0.08)' : 'rgba(255,255,255,0.03)'};
-      border:1px solid ${reached ? 'rgba(30,200,100,0.3)' : 'var(--border)'};
-      opacity:${reached ? 1 : 0.45};">
-      <div style="line-height:0;margin-bottom:2px;">${reached ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #4ade8088);"><path d="M4.5 12.6 9.4 17.5 19.5 7.4"/></svg>` : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B82A8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="4.5" y="10.4" width="15" height="9.6" rx="2.2"/><path d="M8 10.4V7.8a4 4 0 0 1 8 0v2.6"/><path d="M12 14.3v2.2"/></svg>`}</div>
-      <div style="font-size:12px;font-weight:700;color:${reached ? '#4ade80' : 'var(--muted)'};margin-top:2px;">${m}d</div>
-      ${lines.map(l => `<div style="font-size:11px;color:${reached ? '#4ade80' : 'var(--muted)'};opacity:0.85;margin-top:2px;line-height:1.3;">${l}</div>`).join('')}
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <svg width="${flameSize}" height="${flameSize}" viewBox="0 0 24 24" fill="none" stroke="${streakColor}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;filter:${currentStreak > 0 ? `drop-shadow(0 0 8px ${streakGlow})` : 'none'};"><path d="M12 20.6c3.2 0 5.7-2.2 5.7-5.3 0-3.6-2.9-5.6-4.2-9.6-2 1.6-3 3.3-3 5 0 1.2.5 2 .5 2.9 0 .9-.7 1.6-1.6 1.6-.85 0-1.45-.55-1.65-1.45-1 1.2-1.55 2.6-1.55 4.05 0 3 2.5 4.8 5.75 4.8z"/></svg>
-        <div>
-          <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;">Daily Streak</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:${streakColor};${currentStreak > 0 ? `text-shadow:0 0 14px ${streakGlow};` : ''}line-height:1;">
-            ${currentStreak} <span style="font-size:16px;font-weight:600;opacity:0.7;">days</span>
-          </div>
-        </div>
-      </div>
-      <div style="text-align:right;">
-        ${statusBadge}
-        <div style="font-size:12px;color:var(--muted);margin-top:6px;">Best: ${longestStreak}d · REP ×${multiplier.toFixed(1)}</div>
-      </div>
-    </div>
-    ${nextMs ? `
-      <div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Next milestone: <strong style="color:var(--text);">${nextMs} days</strong></div>
-        <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:5px;overflow:hidden;">
-          <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#ff8844,#ffd700);width:${Math.round((currentStreak / nextMs) * 100)}%;transition:width 0.6s ease;"></div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;">${currentStreak}/${nextMs} days · unlocks: <span style="color:var(--green);">${nextMsLabel}</span></div>
-      </div>
-    ` : `<div style="font-size:13px;color:#00ffff;font-weight:700;letter-spacing:0.08em;margin-bottom:10px;">✦ MAX STREAK - TRUSTED STATUS UNLOCKED</div>`}
-    <div style="display:flex;gap:6px;">${msBadges}</div>
-    <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6;">
-      Active in <strong style="color:var(--text);">Ask · Answer · Vote · Chat · Draw</strong> = 1 streak day.
-      Miss 1 day per 7 days = grace period applied automatically.
-    </div>
-  `;
+  el.innerHTML =
+    '<h3><img src="assets/img/icons/p-streak.webp" alt=""> Daily streak' +
+      '<span class="pill-warn">' + (done ? 'Today complete' : 'Today not completed') + '</span></h3>' +
+    '<div class="streak-top"><div class="days"><span>' + days + '</span>' +
+      '<small>' + (days === 1 ? 'day in a row' : 'days in a row') + '</small></div></div>' +
+    '<div class="brow" style="margin-top:12px">' +
+      '<span>Next milestone: <b>' + (next ? next.d + ' days' : 'all reached') + '</b></span>' +
+      '<span>Multiplier <b>x' + (s.multiplier || 1) + '</b></span></div>' +
+    '<div class="days7">' + MS.map(function (m) {
+      // Только по ТЕКУЩЕЙ серии. Поле milestones из воркера - это вехи,
+      // взятые когда-либо, и по нему при нуле дней горели 3, 5 и 7.
+      return '<div class="day' + (days >= m.d ? ' on' : '') + '">' +
+             '<b>' + m.d + ' days</b><em>' + m.r + '</em></div>';
+    }).join('') + '</div>';
 }
 
 
@@ -888,7 +846,9 @@ function renderProfilePage() {
     // Update title badge → rank with SVG star (no default emoji)
     const titleEl = document.getElementById('profile-title-badge');
     if (titleEl) {
-      titleEl.innerHTML = `<span style="display:inline-flex;width:14px;height:14px;">${_PF_STAR.replace('<svg ', '<svg style="stroke:' + rank.color + ';" ')}</span><span style="color:${rank.color};text-shadow:0 0 12px ${rank.glow};">${rank.name}</span>`;
+      // Только название ранга: звезда в шапке карточки лишняя.
+      titleEl.textContent = rank.name;
+      titleEl.style.textShadow = '0 0 12px ' + rank.glow;
       titleEl.style.color = rank.color;
     }
     // Rank-colored ring around the avatar
@@ -944,109 +904,72 @@ function renderMessageProgress(stats) {
   const el = document.getElementById('message-milestone-section');
   if (!el) return;
 
-  // Guard against undefined stats (network error or slow load)
-  const msgCount     = stats?.msgCount     ?? 0;
-  const entriesEarned = stats?.entriesEarned ?? 0;
-  const todayMsgs    = stats?.todayMsgs    ?? 0;
-  const todayEntries = stats?.todayEntries  ?? 0;
+  // Правило живое, из воркера: десять сообщений - один недельный вход.
+  // В прототипе стояло 100, но это была заготовка дизайна.
+  const PER = 10;
+  const msgCount = stats && stats.msgCount ? stats.msgCount : 0;
+  const entries  = stats && stats.entriesEarned ? stats.entriesEarned : 0;
+  const into = msgCount % PER;
 
-  // Progress to next entry: X/10 msgs total
-  const totalProgress = msgCount % 10;
-  const pct = Math.round((totalProgress / 10) * 100);
-
-  el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-size:13px;color:var(--muted);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Chat messages → free Weekly lottery entries</span>
-      <span style="font-size:13px;color:var(--green);font-weight:700;">${entriesEarned} ${entriesEarned === 1 ? 'entry' : 'entries'} earned</span>
-    </div>
-    <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden;">
-      <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#1ec864,#4ade80);width:${pct}%;transition:width 0.6s ease;"></div>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-      <div style="font-size:12px;padding:3px 10px;border-radius:20px;
-        background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);">
-        Every 10th message = +1 Weekly Draw entry
-      </div>
-      <div style="font-size:12px;color:var(--muted);padding:3px 0;">
-        ${totalProgress}/10 to next entry
-      </div>
-    </div>
-  `;
+  el.innerHTML =
+    '<h3><img src="assets/img/icons/p-weekly.webp" alt=""> Weekly draw activity' +
+      '<span class="aside">earned<b>' + entries + (entries === 1 ? ' entry' : ' entries') + '</b></span></h3>' +
+    '<div class="brow"><span>Chat messages turn into free weekly entries</span></div>' +
+    '<div class="wbar green"><i style="width:' + Math.round(into / PER * 100) + '%"></i></div>' +
+    '<div class="brow"><span>Every ' + PER + ' messages = 1 weekly entry</span>' +
+      '<span>' + into + ' / ' + PER + ' to next entry</span></div>';
 }
 
 // ─── REPUTATION BLOCK ─────────────────────────────────────────
 function renderReputationBlock(reputation, rank, nextRank) {
   const el = document.getElementById('reputation-block');
   if (!el) return;
+  const n = x => Number(x || 0).toLocaleString('en-US');
+  // Процент считается против порога СЛЕДУЮЩЕГО ранга - так же, как в
+  // прототипе и в боковой карточке, иначе на сайте будет две разные
+  // шкалы для одного числа.
+  const pct = nextRank ? Math.min(100, Math.round(reputation / nextRank.minScore * 100)) : 100;
 
-  const pct = nextRank
-    ? Math.round(((reputation - rank.minScore) / (nextRank.minScore - rank.minScore)) * 100)
-    : 100;
+  el.innerHTML =
+    '<h3><img src="assets/img/icons/p-progress.webp" alt=""> Reputation progress' +
+      '<span class="aside">Current rank<b>' + rank.name + '</b></span></h3>' +
+    '<div class="bigrep"><span>' + n(reputation) + '</span><span>REP</span></div>' +
+    '<div class="wbar"><i style="width:' + pct + '%;background:' + (rank.bar || rank.color) + '"></i></div>' +
+    '<div class="brow"><span>' +
+      (nextRank ? n(reputation) + ' / ' + n(nextRank.minScore) + ' REP \u00b7 Next rank: ' + nextRank.name
+                : 'Top rank') +
+      '</span><span>' + pct + '%</span></div>' +
+    '<div class="brow" style="margin-top:5px"><span></span><span class="gold">' +
+      (nextRank ? n(nextRank.minScore - reputation) + ' REP to go' : '') + '</span></div>';
 
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div>
-        <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Oracle Reputation</div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;color:${rank.color};text-shadow:0 0 18px ${rank.glow};line-height:1;">
-          ${reputation.toLocaleString()}
-        </div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Current Rank</div>
-        <div style="font-size:18px;font-weight:800;letter-spacing:0.1em;color:${rank.color};text-shadow:0 0 14px ${rank.glow};">
-          ${rank.icon} ${rank.name}
-        </div>
-      </div>
-    </div>
-    ${nextRank ? `
-      <div style="margin-bottom:6px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
-        <span>Progress to <span style="color:${nextRank.color};font-weight:700;">${nextRank.icon} ${nextRank.name}</span></span>
-        <span style="color:${rank.color};">${pct}%</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px;">
-        <div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,${rank.bar},${nextRank.bar});transition:width 0.8s ease;box-shadow:0 0 8px ${rank.glow};"></div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);">
-        ${reputation.toLocaleString()} / ${nextRank.minScore.toLocaleString()} REP · need <strong style="color:var(--text);">${(nextRank.minScore - reputation).toLocaleString()}</strong> more
-      </div>
-    ` : `
-      <div style="font-size:13px;color:${rank.color};text-shadow:0 0 10px ${rank.glow};font-weight:700;letter-spacing:0.08em;">
-        ✦ MAX RANK ACHIEVED - ASCENDED
-      </div>
-    `}
-  `;
+  // Малая шкала в карточке личности идёт от того же числа.
+  const mini = document.getElementById('profile-rep-mini');
+  if (mini) mini.style.width = pct + '%';
 }
 
 // ─── RANK PROGRESS LIST ───────────────────────────────────────
 function renderRankProgress(reputation) {
   const el = document.getElementById('title-progress-list');
   if (!el) return;
+  const n = x => Number(x || 0).toLocaleString('en-US');
 
-  el.innerHTML = RANKS.map(r => {
-    const achieved = reputation >= r.minScore;
-    const isCurrent = getRank(reputation) === r;
-    const pct = r.minScore === 0 ? 100 : Math.min(100, Math.round((reputation / r.minScore) * 100));
+  // Текущая ступень - последняя, чей порог уже пройден.
+  let cur = 0;
+  RANKS.forEach(function (r, i) { if (reputation >= r.minScore) cur = i; });
 
-    return `
-      <div class="title-row" style="${isCurrent ? `border-left:2px solid ${r.color};padding-left:10px;margin-left:-12px;` : ''}">
-        <div style="width:110px;font-size:13px;font-weight:700;color:${r.color};opacity:${achieved ? 1 : 0.45};
-          ${achieved ? `text-shadow:0 0 8px ${r.glow};` : ''}">
-          ${r.icon} ${r.name}
-          ${isCurrent ? '<span style="font-size:11px;opacity:0.7;"> ← you</span>' : ''}
-        </div>
-        <div style="flex:1;">
-          <div class="title-progress-bar" style="margin-bottom:3px;">
-            <div class="title-progress-fill" style="width:${pct}%;background:${achieved ? r.bar : 'rgba(255,255,255,0.12)'};
-              ${achieved ? `box-shadow:0 0 6px ${r.glow};` : ''}"></div>
-          </div>
-          <div style="font-size:11px;color:var(--muted);">
-            ${r.minScore === 0 ? 'Starting rank' : r.minScore.toLocaleString() + ' REP'}
-          </div>
-        </div>
-        <div style="font-size:12px;color:${r.color};opacity:${achieved ? 1 : 0.45};min-width:80px;text-align:right;">
-          ${achieved ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M4.5 12.6 9.4 17.5 19.5 7.4"/></svg> ` : ''}${r.discountLabel}
-        </div>
-      </div>`;
+  el.innerHTML = RANKS.map(function (rk, i) {
+    const nx = RANKS[i + 1];
+    // Пройденные ступени залиты целиком, будущие пусты, текущая - по
+    // доле пути до следующего порога.
+    const fill = i < cur ? 100 : i > cur ? 0
+      : (nx ? Math.min(100, Math.round((reputation - rk.minScore) / (nx.minScore - rk.minScore) * 100)) : 100);
+    return '<div class="rung' + (i === cur ? ' here' : i < cur ? ' done' : '') + '">' +
+      '<img class="mark" src="assets/img/icons/r-' + rk.name.toLowerCase() + '.webp" alt="" ' +
+        'width="112" height="112" loading="lazy">' +
+      '<div><div class="nm">' + rk.name + '</div>' +
+      '<div class="at">' + (rk.minScore ? n(rk.minScore) + ' REP' : 'Starting rank') + '</div></div>' +
+      '<div class="lbar"><i style="width:' + fill + '%;background:' + (rk.bar || rk.color) + '"></i></div>' +
+      '<div class="disc">' + (rk.discount ? rk.discount + '% off any question' : 'No discount') + '</div></div>';
   }).join('');
 }
 
@@ -1060,10 +983,15 @@ let currentHistoryTab = 'answers';
 
 function switchHistoryTab(tab) {
   currentHistoryTab = tab;
-  document.getElementById('history-tab-answers').classList.toggle('active', tab === 'answers');
-  document.getElementById('history-tab-questions').classList.toggle('active', tab === 'questions');
-  const msgTabEl = document.getElementById('history-tab-messages');
-  if (msgTabEl) msgTabEl.classList.toggle('active', tab === 'messages');
+  // Разметка прототипа (.ptabs) красит кнопку по aria-selected, прежние
+  // правила - по классу .active. Ставим оба: содержимое переключалось, а
+  // кнопки оставались невыделенными именно из-за этого расхождения.
+  ['answers', 'questions', 'messages'].forEach(function (t) {
+    const b = document.getElementById('history-tab-' + t);
+    if (!b) return;
+    b.classList.toggle('active', tab === t);
+    b.setAttribute('aria-selected', String(tab === t));
+  });
   const drawTabEl = document.getElementById('history-tab-draw');
   if (drawTabEl) drawTabEl.classList.toggle('active', tab === 'draw');
 
@@ -1187,36 +1115,86 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
     });
     return;
   }
+  // Список в разметке прототипа (.plist). Строка кликабельна - ведёт к
+  // вопросу на борде, см. goToQuestion ниже.
+  const empty = function (text) {
+    return '<div class="brow" style="padding:26px 0;justify-content:center;color:var(--ink-3)">' +
+           '<span>' + text + '</span></div>';
+  };
+  const cut = function (v, n) {
+    const s = String(v == null ? '' : v);
+    return escHtml(s.length > n ? s.slice(0, n) + '\u2026' : s);
+  };
+  const ref = function (id) {
+    return String(id == null ? '' : id).replace(/['"\\]/g, '');
+  };
+  const ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+               'stroke-width="1.6"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>';
+
   if (tab === 'answers') {
-    if (!myAnswers.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">No answers yet - go to the Board and share your knowledge!</div>'; return; }
-    el.innerHTML = myAnswers.map(a => `
-      <div class="history-item">
-        <div class="history-item-meta">
-          <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> Answer</span>
-          <span>on question ${escHtml(a.questionId)}</span>
-          ${a.votes >= 3 ? '<span style="color:var(--gold);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8C840" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px #E8C84088);"><path d="M12 3.6l2.55 5.2 5.75.84-4.15 4.05.98 5.71L12 16.7l-5.13 2.7.98-5.71L3.7 9.64l5.75-.84z"/></svg> Top Answer</span>' : ''}
-        </div>
-        <div class="history-item-text" style="font-size:13px;color:var(--muted);margin-bottom:6px;font-style:italic;">"${escHtml(String(a.questionText||'').slice(0,80))}..."</div>
-        <div class="history-item-text">${escHtml(String(a.text).slice(0,200))}${a.text.length > 200 ? '...' : ''}</div>
-        <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${a.votes || 0} upvotes</div>
-      </div>
-    `).join('');
-  } else {
-    if (!myQuestions.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">No questions yet - ask the community something!</div>'; return; }
-    el.innerHTML = myQuestions.map(q => `
-      <div class="history-item">
-        <div class="history-item-meta">
-          <span style="color:var(--accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;filter:drop-shadow(0 0 4px currentColor88);"><path d="M9 9.1a3.05 3.05 0 115.75 1.4c-.62 1.02-1.85 1.42-2.35 2.35-.28.52-.4 1.05-.4 1.65"/><path d="M12 18.3h.01"/></svg> Question</span>
-          <span>${escHtml(q.category)}</span>
-          <span>${escHtml(q.time)}</span>
-          <span class="q-ref">${escHtml(q.id)}</span>
-        </div>
-        <div class="history-item-text">${escHtml(String(q.text).slice(0,200))}${q.text.length > 200 ? '...' : ''}</div>
-        <div class="history-item-votes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><path d="M7 11.6v8.8H4.4A1.4 1.4 0 0 1 3 19v-6a1.4 1.4 0 0 1 1.4-1.4z"/><path d="M7 11.6 10.5 4.1a2.05 2.05 0 0 1 2.9 2.55l-.85 3.05h4.45a1.8 1.8 0 0 1 1.77 2.12l-.98 5.45a1.95 1.95 0 0 1-1.92 1.6H9.6a2.8 2.8 0 0 1-.9-.15L7 20.4z"/></svg> ${q.votes || 0} votes · <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;"><rect x="3.5" y="4.8" width="17" height="11.8" rx="3"/><path d="M8.2 16.6v3.6l4.4-3.6"/><path d="M8.6 10.7h.01M12 10.7h.01M15.4 10.7h.01"/></svg> ${q.answers?.length || 0} answers</div>
-      </div>
-    `).join('');
+    if (!myAnswers.length) {
+      el.innerHTML = empty('No answers yet - go to the Board and share what you know.');
+      return;
+    }
+    el.innerHTML = '<ul class="plist">' + myAnswers.map(function (a) {
+      const id = ref(a.questionId);
+      return '<li onclick="goToQuestion(\'' + id + '\')" title="Open this question on the Board">' +
+        ICON +
+        '<span><span class="t">' + cut(a.questionText, 90) + '</span><br>' +
+        '<span class="d">' + cut(a.text, 120) + '</span></span>' +
+        '<span class="meta">' + escHtml(a.time || '') +
+        '<b>' + (a.votes ? '&uarr;' + a.votes : '') + '</b></span></li>';
+    }).join('') + '</ul>';
+    return;
+  }
+
+  if (!myQuestions.length) {
+    el.innerHTML = empty('No questions yet - ask the community something.');
+    return;
+  }
+  el.innerHTML = '<ul class="plist">' + myQuestions.map(function (q) {
+    const id = ref(q.id);
+    const answers = (q.answers && q.answers.length) || q.answers || 0;
+    return '<li onclick="goToQuestion(\'' + id + '\')" title="Open this question on the Board">' +
+      ICON +
+      '<span><span class="t">' + cut(q.text, 110) + '</span><br>' +
+      '<span class="d">' + escHtml(q.category || '') + '</span></span>' +
+      '<span class="meta">' + escHtml(q.time || '') +
+      '<b>' + (q.votes ? '&uarr;' + q.votes : '') +
+      (answers ? '&nbsp;&nbsp;&#9679;' + answers : '') + '</b></span></li>';
+  }).join('') + '</ul>';
+}
+
+// ─── ПЕРЕХОД К ВОПРОСУ С ПРОФИЛЯ ──────────────────────────────
+// Открывает Board и оставляет на нём только этот вопрос. Через поиск, а
+// не через индекс карточки: id карточки (qcard-N) считается от уже
+// отфильтрованного списка, и при другом фильтре или сортировке тот же
+// номер указывал бы на чужой вопрос. renderBoard фильтрует по q.id,
+// поэтому поиск по нему находит ровно одну запись.
+function goToQuestion(id) {
+  if (!id) return;
+  try {
+    if (typeof showPage === 'function') showPage('board');
+
+    // Фильтр и сортировка могут спрятать вопрос: ALL и NEW этого не делают.
+    if (typeof setBoardFilter === 'function') setBoardFilter('all');
+    if (typeof setBoardSort === 'function') setBoardSort('new');
+
+    const box = document.getElementById('board-search');
+    if (box) box.value = id;
+    if (typeof setBoardSearch === 'function') setBoardSearch(id);
+
+    // Прокрутка к списку - после отрисовки.
+    requestAnimationFrame(function () {
+      const first = document.querySelector('#page-board .q-card');
+      if (first && first.scrollIntoView) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  } catch (e) {
+    console.warn('goToQuestion:', e);
   }
 }
+window.goToQuestion = goToQuestion;
+
 
 // ─── EDIT PROFILE ─────────────────────────────────────────────
 function toggleProfileEdit() {

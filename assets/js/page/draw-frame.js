@@ -3,24 +3,93 @@
 // iframe сам под содержимое не растёт. Внутренняя страница шлёт свою
 // высоту наружу через postMessage - домен один, поэтому обмен разрешён.
 // Если сообщений нет (старая версия внутри), остаётся запасная высота.
+//
+// Зачем вообще: при высоте по экрану внутри рамки появляется своя полоса
+// прокрутки, и колесо мыши над рамкой перестаёт листать страницу. Когда
+// внутри прокручивать нечего, браузер отдаёт прокрутку наружу.
 (function () {
   'use strict';
 
   var MIN = 900;
 
+  // report() внутри молчит, пока разница меньше 24 пикселей. Без такого
+  // же запаса рамка могла бы оказаться на эти 24 пикселя короче
+  // содержимого, а прокрутки внутри больше нет - низ просто обрезало бы.
+  var PAD = 24;
+
   function frame() { return document.getElementById('drawFrame'); }
+
+  function setHeight(px) {
+    var f = frame();
+    if (!f) return;
+    var h = Math.max(MIN, Math.ceil(px) + PAD) + 'px';
+    if (f.style.height !== h) f.style.height = h;
+  }
 
   window.addEventListener('message', function (e) {
     // Принимаем только со своего же источника.
     if (e.origin !== location.origin) return;
     var d = e.data;
-    if (!d || d.type !== 'oracle-draw:height') return;
-    return;
+    if (!d) return;
+
+    if (d.type === 'oracle-draw:height') {
+      var px = Number(d.height);
+      if (isFinite(px) && px > 0) setHeight(px);
+      return;
+    }
+
+    // oracle-draw:modal больше не обрабатываем. Окно встаёт по центру
+    // видимой части рамки (переменные --host-top / --host-vh ниже),
+    // и подкрутка страницы под него только дёргала бы экран.
   });
+
+  // Какая часть рамки сейчас видна. Внутри рамки этого знать нельзя:
+  // её собственная "видимая область" равна всей её высоте, поэтому
+  // position:fixed там считается от полотна, а не от экрана человека.
+  var sent = { top: -1, height: -1 };
+  var queued = false;
+
+  function sendViewport() {
+    queued = false;
+    var f = frame();
+    if (!f || !f.contentWindow) return;
+
+    var r = f.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+
+    // Сколько рамки ушло вверх за край экрана и сколько её видно.
+    var top = Math.max(0, -r.top);
+    var height = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+    if (height <= 0) return;                 // рамка вне экрана - молчим
+
+    // Дрожание гасим порогом: прокрутка идёт пикселями, а перерисовывать
+    // подложку на каждый пиксель незачем.
+    if (Math.abs(top - sent.top) < 2 && Math.abs(height - sent.height) < 2) return;
+    sent.top = top;
+    sent.height = height;
+
+    f.contentWindow.postMessage({
+      type: 'oracle-draw:viewport',
+      top: Math.round(top),
+      height: Math.round(height)
+    }, location.origin);
+  }
+
+  function queueViewport() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(sendViewport);
+  }
+
+  addEventListener('scroll', queueViewport, { passive: true });
+  addEventListener('resize', queueViewport);
+  addEventListener('load', queueViewport);
+  setInterval(queueViewport, 500);   // вкладки и раскладка меняют геометрию
 
   // Запасная высота: пока сообщение не пришло, рамка не должна быть пустой.
   function init() {
     var f = frame();
+    if (f && !f.style.height) f.style.height = MIN + 'px';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

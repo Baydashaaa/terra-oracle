@@ -84,18 +84,19 @@
     // Сумма. У Circuit это число занятых зон, а не LUNC - подпись и
     // значение должны меняться вместе, иначе выходит "Zones claimed
     // 1,250,000 LUNC".
-    var amt = $('[data-pool-amount]') || $('.amount');
+    // [data-pool] - это разметка карточки; без него подставлялось
+    // никуда, и в блоке навсегда оставалась заготовка прототипа.
+    var amt = $('[data-pool-amount]') || $('.amount') || $('[data-pool]');
     if (amt && d.pool) {
       amt.textContent = d.pool + (tab === 'circuit' ? ' / 250' : '');
     }
-    var unit = card.querySelector('.amount small, [data-pool-unit]');
+    var unit = card.querySelector('.amount small, [data-pool-unit], [data-pool] + span');
     if (unit) unit.style.display = tab === 'circuit' ? 'none' : '';
 
-    // Секунды есть только у розыгрышей: Circuit отдаёт минуты.
+    // Секунды теперь есть и у Circuit: дедлайн раунда приходит из рамки
+    // в миллисекундах, клетку больше не скрываем.
     var secCell = box && box.querySelector('[data-u="s"]');
-    if (secCell && secCell.parentElement) {
-      secCell.parentElement.style.display = tab === 'circuit' ? 'none' : '';
-    }
+    if (secCell && secCell.parentElement) secCell.parentElement.style.display = '';
 
     var extra = $('[data-extra]');
     if (extra) extra.style.display = tab === 'circuit' ? '' : 'none';

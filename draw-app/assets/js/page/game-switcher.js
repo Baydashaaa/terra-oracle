@@ -79,6 +79,35 @@
   // оставляем прочерки, рельс не должен ломаться из-за 404.
   // Своего запроса тут больше нет: состояние раздаёт circuit-state.js,
   // единственный опросчик на всю страницу. Здесь только отрисовка.
+  // Отсчёт Circuit. Состояние из воркера приходит раз в 20 секунд, а
+  // цифра должна идти каждую секунду - поэтому опрос задаёт только точку
+  // отсчёта (дедлайн), а рисует её отдельный такт. Формат с секундами:
+  // "1:05:12" больше часа, "05:12" меньше. Раунд короткий, дни не нужны.
+  function fmtCircuit(ms) {
+    var s = Math.floor(ms / 1000);
+    var two = function (n) { return String(n).padStart(2, '0'); };
+    var h = Math.floor(s / 3600);
+    return (h > 0 ? h + ':' : '') + two(Math.floor(s % 3600 / 60)) + ':' + two(s % 60);
+  }
+
+  function paintCircuitClock() {
+    // См. circuit-reveal.js: во время показа розыгрыша доска не наша.
+    if (window.__circuitRevealBusy) return;
+    var dl = window.__circuitDeadline;
+    if (typeof dl !== 'number') return;
+
+    var left = dl - Date.now();
+    var drawing = left <= 0;
+    var tick = drawing ? 'drawing' : fmtCircuit(left);
+    var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+
+    set('dg-circuit-tick', tick);
+    set('cir-left', tick);
+    set('cir-left-sub', drawing
+      ? 'zones are locked, picking the winner - usually a few minutes'
+      : 'draws with ' + (window.__circuitMinZones || 0) + '+ zones');
+  }
+
   function renderCircuit(d) {
     // См. circuit-reveal.js: во время показа розыгрыша доска не наша.
     if (window.__circuitRevealBusy) return;
@@ -86,25 +115,22 @@
     try {
       document.getElementById('dg-circuit-zones').textContent = d.sold;
       document.getElementById('dg-circuit-bar').style.width   = (d.sold / d.maxZones * 100) + '%';
-      const m = Math.max(0, Math.round(d.msLeft / 60000));
+      // Точка отсчёта для paintCircuitClock: дальше цифру ведёт такт,
+      // а не этот опрос. Через window, а не const - одинаковые имена на
+      // верхнем уровне роняют разбор целого файла.
+      window.__circuitDeadline = Date.now() + Number(d.msLeft || 0);
+      window.__circuitMinZones = d.minZones;
       // Дедлайн прошёл: зоны заперты, ждём ближайшего запуска circuit-round.yml.
       // Крон стоит на */5, но GitHub под нагрузкой задерживает запуски по
       // расписанию, так что окно ожидания реально до 10-15 минут. Пустое слово
       // «closing» люди читают как поломку и начинают жать F5, поэтому пишем
       // «drawing» и объясняем прямо под цифрой, что происходит.
-      const drawing = d.msLeft <= 0;
-      const tick = drawing ? 'drawing' :
-                   m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm';
-      document.getElementById('dg-circuit-tick').textContent = tick;
+      paintCircuitClock();
 
       // Та же выборка кормит и сцену Circuit - второй запрос не нужен
       const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
       set('cir-sold', d.sold);
       set('cir-pool', Math.round(d.poolUluna / 1e6).toLocaleString('en-US'));
-      set('cir-left', tick);
-      set('cir-left-sub', drawing
-        ? 'zones are locked, picking the winner - usually a few minutes'
-        : 'draws with ' + d.minZones + '+ zones');
 
       // Учащение такта на время розыгрыша делает circuit-state.js: при
       // msLeft <= 0 он сам переходит с 20 секунд на 5. Второго параллельного
@@ -128,6 +154,7 @@
     if (window.CircuitState) window.CircuitState.subscribe(renderCircuit);
     else console.warn('[circuit] circuit-state.js не подключён');
     setInterval(refreshTicks, 1000);      // счётчик - локально, без сети
+    setInterval(paintCircuitClock, 1000); // секунды Circuit, тоже без сети
     setInterval(refreshPools, 45000);     // балансы меняются редко
   });
 })();

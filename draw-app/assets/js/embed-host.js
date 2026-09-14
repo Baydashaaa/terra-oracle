@@ -81,7 +81,19 @@
 
   addEventListener('message', function (e) {
     if (e.origin !== location.origin) return;
-    if (!e.data || e.data.type !== 'oracle-draw:go') return;
+    if (!e.data) return;
+
+    // Видимая часть рамки, присланная хозяином. Кладём в переменные:
+    // по ним embed-theme.css ставит подложку окна минта так, чтобы окно
+    // оказалось по центру экрана человека, а не по центру всего полотна.
+    if (e.data.type === 'oracle-draw:viewport') {
+      var s = document.documentElement.style;
+      s.setProperty('--host-top', (Number(e.data.top) || 0) + 'px');
+      s.setProperty('--host-vh', Math.max(240, Number(e.data.height) || 0) + 'px');
+      return;
+    }
+
+    if (e.data.type !== 'oracle-draw:go') return;
     selfOpened = true;
     go(e.data.tab);
   });
@@ -167,6 +179,15 @@
   // общего формата теряет секунды всё, что дальше суток ("2d 05:24"), а
   // карточке снаружи нужны три клетки. Считать расписание у себя она
   // по-прежнему не должна - источник один, здесь.
+  // У Circuit расписания нет, дедлайн приходит из воркера - его кладёт
+  // в window game-switcher.js при каждом опросе.
+  function circuitMsLeft() {
+    var dl = window.__circuitDeadline;
+    if (typeof dl !== 'number') return null;
+    var left = dl - Date.now();
+    return left > 0 ? left : null;
+  }
+
   function msLeft(pool) {
     var S = window.DRAW_SCHEDULE;
     if (!S || typeof S.msToNext !== 'function') return null;
@@ -180,7 +201,7 @@
       games: {
         daily:   { pool: txt('dg-daily-pool'),   tick: txt('dg-daily-tick'),   ms: msLeft('daily') },
         weekly:  { pool: txt('dg-weekly-pool'),  tick: txt('dg-weekly-tick'),  ms: msLeft('weekly') },
-        circuit: { pool: txt('dg-circuit-zones'), tick: txt('dg-circuit-tick') }
+        circuit: { pool: txt('dg-circuit-zones'), tick: txt('dg-circuit-tick'), ms: circuitMsLeft() }
       }
     }, location.origin);
   }

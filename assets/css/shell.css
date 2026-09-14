@@ -1975,3 +1975,67 @@ img{display:block;max-width:100%}
 }
 .more-links img{width:26px;height:26px;object-fit:contain}
 
+
+
+/* ==================================================================
+   Профиль - это СТРАНИЦА, а не окно.
+
+   Классы .sheet и внутренности пришли из прототипа, где профиль
+   открывался поверх сайта. На странице лишнее приходится снимать:
+   .sheet ограничивал ширину 920 пикселями и прокручивался внутри себя,
+   из-за чего рядом с полосой страницы появлялась вторая. Рамка и
+   подсветка вокруг оставлены намеренно - раздел читается как панель.
+   ================================================================== */
+#page-profile .sheet{
+  width:100%;
+  max-width:none;
+  max-height:none;
+  overflow:visible;
+  overscroll-behavior:auto;
+}
+
+/* Иконки заголовков карточек - крупнее прототипных 26px. */
+#page-profile .pcard h3 img{width:34px;height:34px}
+
+/* Вехи серии. В прототипе тут семь дней подряд, поэтому сетка на семь
+   узких колонок; у нас пять вех с подписями в две строки - им нужна
+   ширина и воздух, иначе текст прижат к краям. */
+#page-profile .days7{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:9px;
+  margin-top:16px;
+}
+#page-profile .days7 .day{padding:11px 8px;line-height:1.45}
+#page-profile .days7 .day b{margin-bottom:6px}
+#page-profile .days7 .day em{margin-top:5px}
+
+
+/* Строки списка в профиле кликабельны - ведут к вопросу на борде
+   (goToQuestion в assets/js/profile.js). Без указателя и отклика они
+   выглядели мёртвыми, и нажать на них никто не догадывался. */
+#page-profile .plist li{
+  cursor:pointer;
+  transition:border-color .15s ease, background .15s ease;
+}
+#page-profile .plist li:hover{
+  border-color:var(--violet-hi);
+  background:rgba(168,85,247,.10);
+}
+
+/* Раскладка карточек профиля.
+
+   Лестница рангов - семь ступеней, она вдвое выше остальных карточек. В
+   обычной сетке высота ряда равна самой высокой карточке, поэтому под
+   короткой Reputation оставалась пустая полоса почти в пол-экрана, а
+   Daily streak начинался только после лестницы. Размещаем явно: слева
+   три карточки столбиком, справа лестница на всю их высоту.
+
+   Только для широких экранов: на 820 и ниже .pgrid складывается в одну
+   колонку и идёт по порядку разметки, там явные строки только помешают. */
+@media (min-width:821px){
+  #page-profile #reputation-block{grid-column:1;grid-row:1}
+  #page-profile #streak-block{grid-column:1;grid-row:2}
+  #page-profile #message-milestone-section{grid-column:1;grid-row:3}
+  #page-profile #ascension-block{grid-column:2;grid-row:1 / span 3}
+  #page-profile #profile-history-card{grid-column:1 / -1;grid-row:4}
+}

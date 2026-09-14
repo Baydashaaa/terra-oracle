@@ -308,17 +308,18 @@ html.is-embedded .dg-shell{
   padding:18px 20px 24px !important;
 }
 
-/* Рамка теперь высотой в экран, содержимое прокручивается внутри неё.
-   Значит fixed считается от видимой области - окно центрируем обычным
-   способом, без прижатий и подкруток. */
-html.is-embedded .modal-overlay{
-  align-items:center !important;
-  padding:20px !important;
-}
-html.is-embedded .modal{
-  margin:0 !important;
-  max-height:calc(100vh - 40px) !important;
-  overflow-y:auto !important;
+/* Рамка растёт под содержимое (draw-frame.js по oracle-draw:height),
+   поэтому своей прокрутки внутри нет: когда прокручивать нечего,
+   браузер отдаёт колесо мыши наружу и страница листается одна.
+   Блок с центрированием окна, который жил здесь раньше, снят - он
+   перебивал прижатие к верху выше, а при высокой рамке центр приходится
+   на середину всего полотна, то есть мимо экрана. Положение окна теперь
+   постоянное сверху, а подкрутку страницы к нему делает хозяин по
+   сообщению oracle-draw:modal. */
+html.is-embedded,
+html.is-embedded body{
+  overflow:hidden !important;
+  height:auto !important;
 }
 
 /* Содержимое в высоту рамки. Полоса прокрутки внутри встроенного блока
@@ -348,4 +349,38 @@ html.is-embedded .modal-overlay{
 html.is-embedded .modal{
   margin-top:0 !important;
   max-height:calc(100vh - 44px) !important;
+}
+
+
+/* ==================================================================
+   Окно минта по центру ЭКРАНА, а не по центру рамки.
+
+   Рамка высотой во всё содержимое (draw-frame.js по oracle-draw:height),
+   поэтому её собственная видимая область равна всей высоте: position:fixed
+   и 100vh внутри считаются от полотна, и окно уезжало вниз, а высокое
+   обрезалось. Хозяин присылает смещение и высоту видимой части
+   (oracle-draw:viewport), embed-host.js кладёт их в --host-top / --host-vh.
+
+   Подложка становится absolute и занимает ровно видимый кусок - окно в
+   нём центруется обычным способом и подстраивается под любой экран.
+   Запасные значения на случай, если сообщение ещё не пришло.
+   Блок последний в файле намеренно: он должен перебивать все прежние
+   поколения правил для .modal-overlay выше.
+   ================================================================== */
+html.is-embedded .modal-overlay{
+  position:absolute !important;
+  top:var(--host-top, 0px) !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:auto !important;
+  height:var(--host-vh, 100vh) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:16px !important;
+}
+html.is-embedded .modal{
+  margin:0 !important;
+  max-height:calc(var(--host-vh, 100vh) - 32px) !important;
+  overflow-y:auto !important;
 }
