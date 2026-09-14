@@ -111,33 +111,48 @@
   //
   // Ждать признака готовности ДО открытия нечего: пока раздел скрыт, у
   // него нулевая высота при любом состоянии. Поэтому проверяем ПОСЛЕ.
-  var MIN_H = 40;   // ниже этого сцена считается нерисованной
+  // Сторож стартового показа.
+  //
+  // Раздел открывается двумя путями: сами на DOMContentLoaded и по
+  // сообщению oracle-draw:go от хозяина. Оба зовут apply(), но на старте
+  // это может не удержаться - init.js показывает СВОЮ стартовую вкладку
+  // (обычно home), и порядок двух вызовов не гарантирован. На проде
+  // выходило так, что побеждал init.js: у #page-draw оставался
+  // display:none, а всё внутри отдавало нулевую высоту.
+  //
+  // Поэтому проверяем результат, а не момент вызова, и делаем это
+  // независимо от того, кто открыл раздел первым: прошлая версия жила
+  // внутри openDefault, а та выходит сразу, если хозяин успел прислать
+  // oracle-draw:go раньше DOMContentLoaded.
+  var MIN_H = 40;          // ниже этого сцена считается нерисованной
+  var watchUntil = 0;      // до какого момента следим
+  var lastFix = 0;         // когда последний раз вмешивались
 
-  function stageEmpty() {
+  function drawShown() {
+    var p = document.getElementById('page-draw');
+    if (!p || getComputedStyle(p).display === 'none') return false;
     var st = document.getElementById('stage-draw');
-    return !st || st.offsetHeight < MIN_H;
+    return !!st && st.offsetHeight >= MIN_H;
   }
 
-  function ensureRendered(tab, tries) {
-    tries = tries || 0;
-    if (!stageEmpty() || tries > 24) return;     // нарисовалось либо сдаёмся (~6 с)
-
-    // Повторяем дважды, на второй и четвёртой секунде. Чаще нельзя:
-    // два вызова go() подряд оставляли колесо в промежуточном
-    // состоянии, из-за этого в go() и стоит дедуп по lastGo.
-    if ((tries === 8 || tries === 16) && lastGo === tab) {
-      lastGo = null;
-      go(tab);
+  function watchdog() {
+    if (Date.now() > watchUntil) return;
+    // Не чаще раза в секунду: apply перестраивает колесо, и частые
+    // вызовы подряд оставляли его в промежуточном состоянии.
+    if (!drawShown() && Date.now() - lastFix > 900) {
+      lastFix = Date.now();
+      apply(lastGo || 'daily');
     }
-    setTimeout(function () { ensureRendered(tab, tries + 1); }, 250);
+    setTimeout(watchdog, 250);
   }
 
   function openDefault() {
-    if (selfOpened) return;
+    watchUntil = Date.now() + 8000;
+    watchdog();
+    if (selfOpened) return;      // хозяин уже открыл нужную вкладку
     var want = new URLSearchParams(location.search).get('tab') || 'daily';
     lastGo = null;
     go(want);
-    ensureRendered(want, 0);
   }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', openDefault);
   else openDefault();
