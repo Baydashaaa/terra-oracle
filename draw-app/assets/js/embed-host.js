@@ -100,20 +100,44 @@
 
   // Своим ходом: в рамке домашняя страница не нужна никогда, а ждать
   // команды снаружи нельзя - пока она идёт, успевает мелькнуть home.
-  // Сцена строится не мгновенно: рамка фиксированной высоты грузится
-  // быстрее, чем Draw успевает собрать колесо. Ждём появления сцены и
-  // только тогда открываем вкладку - иначе Daily оставался пустым до
-  // первого переключения.
-  function waitStage(fn, tries) {
+  // Сцена строится не мгновенно: рамка грузится быстрее, чем Draw
+  // успевает получить winners.json и билеты.
+  //
+  // Здесь была страховка waitStage, которая ЖДАЛА ПОЯВЛЕНИЯ #stage-draw.
+  // Она не работала: этот элемент лежит в статической разметке и есть
+  // всегда, поэтому ожидание завершалось на первой же попытке. Вкладка
+  // открывалась по пустым данным, и Daily оставался пустым до первого
+  // переключения - ручное переключение делало то же самое, но позже.
+  //
+  // Ждать признака готовности ДО открытия нечего: пока раздел скрыт, у
+  // него нулевая высота при любом состоянии. Поэтому проверяем ПОСЛЕ.
+  var MIN_H = 40;   // ниже этого сцена считается нерисованной
+
+  function stageEmpty() {
     var st = document.getElementById('stage-draw');
-    if (st || (tries || 0) > 40) return fn();
-    setTimeout(function () { waitStage(fn, (tries || 0) + 1); }, 50);
+    return !st || st.offsetHeight < MIN_H;
+  }
+
+  function ensureRendered(tab, tries) {
+    tries = tries || 0;
+    if (!stageEmpty() || tries > 24) return;     // нарисовалось либо сдаёмся (~6 с)
+
+    // Повторяем дважды, на второй и четвёртой секунде. Чаще нельзя:
+    // два вызова go() подряд оставляли колесо в промежуточном
+    // состоянии, из-за этого в go() и стоит дедуп по lastGo.
+    if ((tries === 8 || tries === 16) && lastGo === tab) {
+      lastGo = null;
+      go(tab);
+    }
+    setTimeout(function () { ensureRendered(tab, tries + 1); }, 250);
   }
 
   function openDefault() {
     if (selfOpened) return;
     var want = new URLSearchParams(location.search).get('tab') || 'daily';
-    waitStage(function () { lastGo = null; go(want); });
+    lastGo = null;
+    go(want);
+    ensureRendered(want, 0);
   }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', openDefault);
   else openDefault();
