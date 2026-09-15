@@ -18,6 +18,7 @@
     treasury:   function () { showPage_treasury(null, null, false); },
     reputation: function () { showRepPage('leaderboard'); },
     draw:       function () { showPage('draw'); },
+    board:      function () { showPage('board'); },
     markets:      null,  // раздела на боевом сайте пока нет
     achievements: null   // тоже нет
   };
@@ -30,8 +31,8 @@
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
     if (p === 'treasury') return 'treasury';
-    if (p === 'chat' || p === 'ask') return p;
-    return null;   // board, about, profile - пунктов в новом меню нет
+    if (p === 'chat' || p === 'ask' || p === 'board') return p;
+    return null;   // about, profile - пунктов в новом меню нет
   }
 
   function highlight() {

@@ -2039,3 +2039,24 @@ img{display:block;max-width:100%}
   #page-profile #ascension-block{grid-column:2;grid-row:1 / span 3}
   #page-profile #profile-history-card{grid-column:1 / -1;grid-row:4}
 }
+
+
+/* Board - подпункт Ask Oracle.
+
+   Связь показываем сдвигом и линией, а не заголовком группы: заголовки
+   в этом меню уже заняты под ECOSYSTEM и COMMUNITY, и единственный
+   заголовок в верхней группе выглядел бы заплаткой. Линия остаётся
+   видимой и когда пункт активен, иначе в этом состоянии связь с
+   родителем терялась бы. */
+.nav.nav-sub{
+  margin-left:18px;
+  padding-left:14px;
+  font-size:13.5px;
+  border-left:1px solid var(--line);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+}
+.nav.nav-sub .ico img{width:17px;height:17px}
+.nav.nav-sub:hover{border-left-color:rgba(168,85,247,.55)}
+.nav.nav-sub[aria-current="page"]{
+  border-left-color:rgba(59,130,246,.75);
+}
