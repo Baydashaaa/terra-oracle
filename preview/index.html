@@ -496,35 +496,39 @@ img{display:block;max-width:100%}
 .acts .tx span{font-size:10.5px;color:var(--ink-3)}
 .acts .amt{font-size:11px;font-family:var(--dis);font-weight:600;white-space:nowrap}
 
-/* ============================ partners marquee ============================ */
-.marquee-wrap{
-  background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);
-  padding:16px 0 18px;overflow:hidden;
-}
+/* ============================ partners ============================ */
+/* Two partners, so no marquee: the strip is static and centred. The heading
+   sits OUTSIDE the panel, which is why the border and background live on
+   .partners-strip rather than on the section. */
+.marquee-wrap{ background:none; border:0; padding:0; overflow:visible; }
 .marquee-wrap h3{
-  margin:0 0 14px;padding:0 22px;
-  font-size:11px;letter-spacing:.18em;color:var(--ink-3);font-weight:500;
+  margin:0 0 12px; padding:0 2px;
+  font-family:var(--dis);
+  font-size:13px; letter-spacing:.16em; font-weight:700;
+  color:var(--ink-2); text-transform:uppercase;
 }
-.marquee{
-  display:flex;gap:0;width:max-content;
-  animation:slide 38s linear infinite;
+.partners-strip{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:26px 22px;
 }
-.marquee-wrap:hover .marquee{animation-play-state:paused}
-.marquee ul{display:flex;align-items:center;gap:52px;list-style:none;margin:0;padding:0 26px}
-.marquee li{flex:none;height:44px;display:grid;place-items:center;opacity:.62;transition:opacity .2s}
-.marquee li:hover{opacity:1}
-.marquee img{height:38px;width:auto;object-fit:contain}
-.marquee .txt{font-family:var(--dis);font-size:17px;font-weight:600;letter-spacing:.06em;color:var(--ink-2);white-space:nowrap}
-@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){
-  .marquee{animation:none;width:100%;overflow-x:auto}
+.marquee{ display:block; width:100%; animation:none; }
+.marquee ul{
+  display:flex; align-items:center; justify-content:center;
+  gap:72px; list-style:none; margin:0; padding:0; flex-wrap:wrap;
 }
-.marquee-wrap::before,.marquee-wrap::after{
-  content:"";position:absolute;top:0;bottom:0;width:90px;pointer-events:none;z-index:2;
+.marquee li{ flex:none; display:grid; place-items:center; transition:transform .2s; }
+.marquee li:hover{ transform:translateY(-3px); }
+.marquee li a{ display:grid; place-items:center; gap:12px; text-decoration:none; }
+.marquee img{ height:88px; width:auto; max-width:300px; object-fit:contain; }
+.marquee .txt{
+  font-family:var(--dis); font-size:16px; font-weight:600; letter-spacing:.05em;
+  color:var(--ink-2); white-space:nowrap;
 }
-.marquee-shell{position:relative}
-.marquee-shell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;background:linear-gradient(90deg,var(--panel),transparent)}
-.marquee-shell::after{content:"";position:absolute;right:0;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;background:linear-gradient(270deg,var(--panel),transparent)}
+.marquee li:hover .txt{ color:var(--ink-1); }
+@media (max-width:680px){
+  .marquee ul{ gap:36px; }
+  .marquee img{ height:64px; }
+}
 
 /* ============================ footer ============================ */
 .foot{
@@ -2219,7 +2223,7 @@ img{display:block;max-width:100%}
     <!-- ==================== PARTNERS ==================== -->
     <section class="marquee-wrap" aria-label="Partners">
       <h3>WORKING TOGETHER WITH</h3>
-      <div class="marquee-shell">
+      <div class="partners-strip">
         <div class="marquee" id="marquee"></div>
       </div>
     </section>
@@ -3134,12 +3138,8 @@ const DATA = {
   /* Drop a logo file in assets/img/partners/ and add it here.
      Leave `src` empty and only `name` is drawn as text. */
   partners: [
-    { name: 'Terraport',    src: 'assets/img/partners/terraport.webp' },
-    { name: 'Terra Classic',src: 'assets/img/partners/terraclassic.webp' },
-    { name: 'Terra Finder', src: '' },
-    { name: 'Repeg Club',   src: '' },
-    { name: 'Garuda',       src: '' },
-    { name: 'TerraCVita',   src: '' }
+    { name: 'Repeg Club', src: 'assets/img/partners/repegclub.webp', url: 'https://repegclub.com/' },
+    { name: 'Orbit Wire', src: 'assets/img/partners/orbitwire.webp', url: 'https://orbitwire.io/' }
   ]
 };
 
@@ -3302,12 +3302,16 @@ document.querySelectorAll('img[data-src]').forEach(img=>{
   ).join('');
 
   /* the strip is duplicated so the loop has no visible seam */
-  const one = '<ul>' + DATA.partners.map(p =>
-    '<li>' + (p.src
-      ? '<img src="'+p.src+'" alt="'+p.name+'" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'txt\',textContent:\''+p.name+'\'}))">'
-      : '<span class="txt">'+p.name+'</span>') + '</li>'
-  ).join('') + '</ul>';
-  document.getElementById('marquee').innerHTML = one + one;
+  const item = p => {
+    const inner = (p.src
+      ? '<img src="'+p.src+'" alt="'+p.name+'" loading="lazy" onerror="this.remove()">'
+      : '') + '<span class="txt">'+p.name+'</span>';
+    return '<li>' + (p.url
+      ? '<a href="'+p.url+'" target="_blank" rel="noopener">'+inner+'</a>'
+      : inner) + '</li>';
+  };
+  document.getElementById('marquee').innerHTML =
+    '<ul>' + DATA.partners.map(item).join('') + '</ul>';
 })();
 
 
