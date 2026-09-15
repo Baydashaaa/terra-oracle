@@ -65,7 +65,7 @@
       if (q.createdAt) {
         out.push({
           ts:   q.createdAt,
-          ic:   'ask.webp',
+          ic:   'p-questions.webp',
           text: 'Question asked',
           amt:  q.paymentAmount ? lunc(q.paymentAmount) + ' LUNC' : '',
           tone: 'var(--ink-2)'
@@ -76,7 +76,7 @@
         var accepted = q.chosenAnswerId && q.chosenAnswerId === a.id;
         out.push({
           ts:   a.createdAt,
-          ic:   'reputation.webp',
+          ic:   accepted ? 'p-top.webp' : 'p-answers.webp',
           text: accepted ? 'Answer accepted' : 'Answer posted',
           amt:  accepted ? 'accepted' : (a.votes ? '\u2191' + a.votes : ''),
           tone: accepted ? 'var(--green)' : 'var(--ink-3)'
@@ -115,7 +115,7 @@
         if (!isFinite(ts)) return;
         out.push({
           ts:   ts,
-          ic:   'draw.webp',
+          ic:   pool === 'weekly' ? 'n-weekly.webp' : 'n-daily.webp',
           text: (pool === 'weekly' ? 'Weekly' : 'Daily') + ' draw settled',
           amt:  w.prize_lunc ? lunc(w.prize_lunc) + ' LUNC' : '',
           tone: 'var(--cyan)'
