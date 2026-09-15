@@ -11,12 +11,8 @@
   var DRAW_WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
 
   var PARTNERS = [
-    { name: 'Terraport',     src: 'assets/img/partners/terraport.webp' },
-    { name: 'Terra Classic', src: 'assets/img/partners/terraclassic.webp' },
-    { name: 'Terra Finder',  src: '' },
-    { name: 'Repeg Club',    src: '' },
-    { name: 'Garuda',        src: '' },
-    { name: 'TerraCVita',    src: '' }
+    { name: 'Repeg Club', src: 'assets/img/partners/repegclub.webp', url: 'https://repegclub.com/' },
+    { name: 'Orbit Wire', src: 'assets/img/partners/orbitwire.webp', url: 'https://orbitwire.io/' }
   ];
 
   function n(x) { return Number(x || 0).toLocaleString('en-US'); }
@@ -101,14 +97,14 @@
   function paintMarquee() {
     var box = document.getElementById('marquee');
     if (!box) return;
-    var one = '<ul>' + PARTNERS.map(function (p) {
-      return '<li>' + (p.src
-        ? '<img src="' + p.src + '" alt="' + p.name + '" loading="lazy" ' +
-          'onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),' +
-          '{className:\'txt\',textContent:\'' + p.name + '\'}))">'
-        : '<span class="txt">' + p.name + '</span>') + '</li>';
+    box.innerHTML = '<ul>' + PARTNERS.map(function (p) {
+      var inner = (p.src
+        ? '<img src="' + p.src + '" alt="' + p.name + '" loading="lazy" onerror="this.remove()">'
+        : '') + '<span class="txt">' + p.name + '</span>';
+      return '<li>' + (p.url
+        ? '<a href="' + p.url + '" target="_blank" rel="noopener">' + inner + '</a>'
+        : inner) + '</li>';
     }).join('') + '</ul>';
-    box.innerHTML = one + one;   // две копии, чтобы у бегущей строки не было шва
   }
 
   function start() {
