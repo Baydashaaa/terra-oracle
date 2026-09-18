@@ -52,7 +52,7 @@
 .hero-dot.is-active .fill{animation:heroDotFill var(--hero-interval,7s) linear forwards}
 .hero-dot:focus-visible{outline:2px solid var(--cyan,#22d3ee);outline-offset:2px;border-radius:6px}
 #page-home .hero:hover .hero-dot.is-active .fill,
-#page-home .hero:focus-within .hero-dot.is-active .fill{animation-play-state:paused}
+#page-home .hero:has(:focus-visible) .hero-dot.is-active .fill{animation-play-state:paused}
 @keyframes heroDotFill{to{transform:scaleX(1)}}
 
 @media (prefers-reduced-motion:reduce){
