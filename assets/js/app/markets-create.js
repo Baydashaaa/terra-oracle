@@ -1,16 +1,20 @@
 /**
  * markets-create.js - создание рынка в oracle-prophecy.
  *
- * Форма собирает спецификацию и ПЕРЕД отправкой выполняет тот же запрос,
- * который потом ляжет в блок Verify. Человек видит, что метрика читается,
- * что порог в тех же единицах и что рынок не решён заранее - до того, как
- * заплатил залог.
+ * Форма собирает условие, а вопрос и правило расчёта выводятся из него.
+ * Отдельного поля "вопрос" нет намеренно: пока заголовок и спека были
+ * двумя независимыми полями, они разошлись на первом же рынке.
  *
- * Только ончейн-метрики. Свободный критерий (спорт, биржи, мировые события)
- * ждёт открытого challenge: пока оспорить исход может лишь админ, такой рынок
- * держится на одном ключе, и предлагать его людям нечестно.
+ * Перед отправкой выполняется тот же запрос, который потом ляжет в блок
+ * Verify: человек видит, что метрика читается и что порог в тех же
+ * единицах, до того как заплатил залог.
  *
- * Загружать ПОСЛЕ markets.js: оттуда берутся адрес контракта и список узлов.
+ * Только ончейн-метрики. Свободный критерий (спорт, биржи, мировые
+ * события) ждёт открытого challenge: пока оспорить исход может лишь
+ * админ, такой рынок держится на одном ключе.
+ *
+ * Загружать ПОСЛЕ markets.js: оттуда берутся адрес контракта, список
+ * узлов и catRgb.
  */
 
 (function () {
@@ -22,17 +26,18 @@
 
   // ── метрики ───────────────────────────────────────────────────────────────
   //
-  // path   - что дёргаем у LCD
-  // pick   - как достать число из ответа
-  // unit   - в чём человек вводит порог, и как это превратить в единицы цепочки
-  // note   - то, что обязано попасть в criterion, иначе исход можно оспорить
+  // cats  - в каких категориях метрика предлагается
+  // path  - что дёргаем у LCD
+  // pick  - как достать значение из ответа
+  // unit  - в чём человек вводит порог и как это лечь в единицы цепочки
+  // note  - обязано попасть в criterion, иначе исход можно оспорить
 
   function num(v) { return Number(v || 0); }
 
   var METRICS = {
     total_supply: {
       label: 'Total LUNC supply',
-      cats: ['economy', 'protocol'],
+      cats: ['economy'],
       path: function () { return '/cosmos/bank/v1beta1/supply/by_denom?denom=uluna'; },
       pick: function (j) { return num(j.amount && j.amount.amount); },
       unit: { name: 'LUNC', mul: 1e6, dec: 0 },
@@ -53,7 +58,7 @@
     },
     staking_ratio: {
       label: 'Staking ratio',
-      cats: ['network', 'protocol'],
+      cats: ['network'],
       path: function () { return '/cosmos/staking/v1beta1/pool'; },
       pick: function (j) {
         var p = j && j.pool; if (!p) return null;
@@ -61,13 +66,13 @@
         return b + n ? (b / (b + n)) * 100 : null;
       },
       unit: { name: '%', mul: 1, dec: 4 },
-      // Эндпоинт отдаёт две суммы, а не готовое отношение. Формула обязана
+      // Эндпоинт отдаёт две суммы, а не готовое отношение: формула обязана
       // быть в критерии, иначе исход разойдётся с тем, что считал резолвер.
       note: 'bonded_tokens / (bonded_tokens + not_bonded_tokens) from the staking pool, in percent',
     },
     community_pool: {
       label: 'Community pool',
-      cats: ['economy', 'protocol'],
+      cats: ['economy'],
       path: function () { return '/cosmos/distribution/v1beta1/community_pool'; },
       pick: function (j) {
         var list = (j && j.pool) || [];
@@ -97,7 +102,6 @@
     },
   };
 
-  // Порядок как в меню фильтров. Значения совпадают с MARKET_COLORS в markets.js.
   var CATEGORIES = [
     { id: 'economy', label: 'Economy' },
     { id: 'governance', label: 'Governance' },
@@ -107,36 +111,156 @@
   ];
 
   var COMPARATORS = [
-    { id: 'gt', label: 'greater than' },
-    { id: 'gte', label: 'at least' },
-    { id: 'lt', label: 'below' },
-    { id: 'lte', label: 'at most' },
+    { v: 'gt', label: 'above' },
+    { v: 'gte', label: 'at least' },
+    { v: 'lt', label: 'below' },
+    { v: 'lte', label: 'at most' },
   ];
 
   var DENOMS = ['uusd', 'ukrw', 'usdr', 'umnt', 'ueur', 'ucny', 'ujpy', 'ugbp',
     'uinr', 'ucad', 'uchf', 'uhkd', 'uaud', 'usgd', 'uthb', 'usek', 'unok',
     'udkk', 'uidr', 'uphp'];
 
-  // ── вопрос и правило из условия ───────────────────────────────────────────
+  /** Метрики, которые имеют смысл в выбранной категории. */
+  function metricsFor(cat) {
+    return Object.keys(METRICS).filter(function (k) {
+      return METRICS[k].cats.indexOf(cat) > -1;
+    });
+  }
+
+  /** Категории, в которых есть хотя бы одна ончейн-метрика. Protocol
+   *  сейчас пуст и в форме не показывается; появится метрика - вернётся
+   *  сам, без правки списка. В фильтрах списка рынков он остаётся, он
+   *  понадобится свободным критериям. */
+  function usableCategories() {
+    return CATEGORIES.filter(function (c) { return metricsFor(c.id).length > 0; });
+  }
+
+  // ── время ─────────────────────────────────────────────────────────────────
   //
-  // Единственный источник истины - введённое условие. Заголовок и criterion
-  // выводятся из него, поэтому разойтись, как случилось у тестового рынка,
-  // им нечем.
+  // Всё в UTC и своими списками. Родной input[type=datetime-local] рисует
+  // подпись языком браузера: у половины пользователей это дд.мм.гггг, и они
+  // же путают местное время с временем цепочки. Рынок разрешается по UTC,
+  // значит и выбирать надо сразу UTC.
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+  // Насколько раньше разрешения закрывается приём ставок. Контракт требует
+  // зазор (bet_cutoff_secs), и задавать две даты руками ради этого - лишний
+  // способ ошибиться.
+  var LEADS = [
+    { secs: 3600, label: '1 hour before' },
+    { secs: 21600, label: '6 hours before' },
+    { secs: 86400, label: '24 hours before' },
+    { secs: 259200, label: '3 days before' },
+  ];
+
   function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
-  /** Дата всегда в UTC: цепочка живёт в UTC, и рынок должны одинаково
-   *  понимать из любого часового пояса. */
-  function utcText(local, withTime) {
-    if (!local) return '';
-    var d = new Date(local);
+  function utcText(ts, withTime) {
+    if (!ts) return '';
+    var d = new Date(ts * 1000);
     if (isNaN(d.getTime())) return '';
     var s = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
-    return withTime ? s + ', ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ' UTC' : s;
+    return withTime ? s + ', ' + pad2(d.getUTCHours()) + ':00 UTC' : s;
   }
+
+  function daysInMonth(y, m) { return new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); }
+
+  // ── состояние ─────────────────────────────────────────────────────────────
+
+  var S = {
+    category: 'economy',
+    metric: 'total_supply',
+    param: '',
+    comparator: 'lt',
+    threshold: '',
+    resY: 0, resM: 0, resD: 0, resH: 20,   // момент разрешения, UTC
+    lead: 86400,                            // за сколько закрывается приём
+    promoted: false,
+    height: null,
+    cfg: null,
+    chain: null,
+    blockSecs: 6,
+  };
+
+  (function initDate() {
+    var d = new Date(Date.now() + 7 * 86400000);
+    S.resY = d.getUTCFullYear();
+    S.resM = d.getUTCMonth();
+    S.resD = d.getUTCDate();
+  })();
+
+  function resolveTs() {
+    return Math.floor(Date.UTC(S.resY, S.resM, S.resD, S.resH, 0, 0) / 1000);
+  }
+  function closeTs() { return resolveTs() - S.lead; }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function fmtLuncLocal(u) {
+    return Math.floor(Number(u || 0) / 1e6).toLocaleString('en-US');
+  }
+
+  // ── сеть ──────────────────────────────────────────────────────────────────
+
+  // AbortSignal.timeout поддержан не везде: на части кошельковых браузеров
+  // запрос просто не уходит.
+  function get(url) {
+    var c = new AbortController();
+    var t = setTimeout(function () { c.abort(); }, 10000);
+    return fetch(url, { headers: { Accept: 'application/json' }, signal: c.signal })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .finally(function () { clearTimeout(t); });
+  }
+
+  function lcdGet(path) {
+    var i = 0;
+    function next() {
+      if (i >= LCD.length) return Promise.reject(new Error('chain unavailable'));
+      return get(LCD[i++] + path).catch(next);
+    }
+    return next();
+  }
+
+  function query(msg) {
+    return lcdGet('/cosmwasm/wasm/v1/contract/' + CONTRACT + '/smart/' + btoa(JSON.stringify(msg)))
+      .then(function (j) { return j.data; });
+  }
+
+  // Реальное время блока меряем по двум точкам: на горизонте в месяц
+  // ошибка в полсекунды даёт почти сутки.
+  function loadChainTip() {
+    return lcdGet('/cosmos/base/tendermint/v1beta1/blocks/latest').then(function (j) {
+      var h = Number(j.block.header.height);
+      var t = Date.parse(j.block.header.time) / 1000;
+      S.chain = { height: h, time: t };
+      var back = Math.max(h - 20000, 1);
+      return lcdGet('/cosmos/base/tendermint/v1beta1/blocks/' + back)
+        .then(function (j2) {
+          var t2 = Date.parse(j2.block.header.time) / 1000;
+          S.blockSecs = (t - t2) / (h - back);
+        })
+        .catch(function () { /* остаётся оценка по умолчанию */ });
+    });
+  }
+
+  function heightAt(ts) {
+    if (!S.chain || !ts) return null;
+    var d = ts - S.chain.time;
+    if (d <= 0) return null;
+    return S.chain.height + Math.round(d / S.blockSecs);
+  }
+
+  // ── вопрос и правило из условия ───────────────────────────────────────────
 
   var PHRASE = {
     total_supply:    function () { return 'the total LUNC supply'; },
@@ -154,159 +278,59 @@
     return s.length > 20 ? s.slice(0, 12) + '…' + s.slice(-4) : (s || 'the validator');
   }
 
-  /** Порог в том же виде, в каком его увидит читатель: 6T LUNC, а не
-   *  6000000000000000000. Считается из введённого значения, не из
-   *  микроединиц. */
+  /**
+   * Порог словами. Сокращаем до T/B/M ТОЛЬКО если сокращение точное:
+   * 6000000000000 это ровно 6T, а 5866600000000 - нет, и "5.87T" разошлось
+   * бы с тем, что лежит в контракте. Длинное число честнее округления.
+   */
   function thresholdText(m, typed) {
-    var v = Number(String(typed).replace(/[^0-9.]/g, ''));
+    var raw = String(typed == null ? '' : typed).replace(/[^0-9.]/g, '');
+    if (!raw) return '';
+    var v = Number(raw);
     if (!isFinite(v)) return '';
     if (m.unit.name === 'LUNC') {
       var exact = v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-      if (v >= 1e12) return (+(v / 1e12).toFixed(2)) + 'T LUNC';
-      if (v >= 1e9) return (+(v / 1e9).toFixed(2)) + 'B LUNC';
-      if (v >= 1e6) return (+(v / 1e6).toFixed(2)) + 'M LUNC';
+      var steps = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M']];
+      for (var i = 0; i < steps.length; i++) {
+        if (v >= steps[i][0]) {
+          var r = Math.round((v / steps[i][0]) * 100) / 100;
+          // Меньше одного LUNC расхождения считаем точным попаданием: это
+          // защита от двоичного представления, а не округление порога.
+          if (Math.abs(r * steps[i][0] - v) < 1) return r + steps[i][1] + ' LUNC';
+          return exact + ' LUNC';
+        }
+      }
       return exact + ' LUNC';
     }
     if (m.unit.name === '%') return v + '%';
-    return String(typed).trim();
+    return raw;
   }
 
-  /** Заголовок рынка. Без времени: точный момент живёт в правиле ниже и
-   *  в блоке сроков, а в вопрос он влезает плохо. */
   function questionText() {
     var m = METRICS[S.metric];
     var what = (PHRASE[S.metric] || function () { return S.metric; })(S.param);
-    var when = utcText(S.resolveAt, false);
+    var when = utcText(resolveTs(), false);
     var tail = when ? ' on ' + when + '?' : '?';
+    if (m.param && !String(S.param).trim()) return '';
     if (m.discrete) return 'Will ' + what + ' have passed' + tail;
-    var cmp = CMP_WORD[S.comparator] || S.comparator;
     var th = thresholdText(m, S.threshold);
     if (!th) return '';
-    return 'Will ' + what + ' be ' + cmp + ' ' + th + tail;
+    return 'Will ' + what + ' be ' + (CMP_WORD[S.comparator] || S.comparator) + ' ' + th + tail;
   }
 
-  /** Правило расчёта. Уходит в контракт как criterion и остаётся там
-   *  навсегда, поэтому пишется полностью и без сокращений: что читаем,
-   *  где читаем, с чем сравниваем и что означает YES. */
+  /** Уходит в контракт как criterion и остаётся там навсегда, поэтому
+   *  пишется полностью: что читаем, где, с чем сравниваем, что значит YES. */
   function resolutionRule() {
     var m = METRICS[S.metric];
     var what = (PHRASE[S.metric] || function () { return S.metric; })(S.param);
-    var at = 'at block ' + (S.height || '?')
-      + (S.resolveAt ? ' (' + utcText(S.resolveAt, true) + ')' : '');
+    var at = 'at block ' + (S.height || '?') + ' (' + utcText(resolveTs(), true) + ')';
     if (m.discrete) {
-      return 'YES if the status of ' + what + ' reported by the Terra Classic chain '
-        + at + ' is PROPOSAL_STATUS_PASSED. Otherwise NO. Source: ' + m.note + '.';
+      return 'YES if the status of ' + what + ' reported by the Terra Classic chain ' + at
+        + ' is PROPOSAL_STATUS_PASSED. Otherwise NO. Source: ' + m.note + '.';
     }
-    var cmp = CMP_WORD[S.comparator] || S.comparator;
-    var th = thresholdText(m, S.threshold);
-    return 'YES if ' + what + ' reported by the Terra Classic chain ' + at
-      + ' is ' + cmp + ' ' + th + '. Otherwise NO. Source: ' + m.note + '.';
-  }
-
-  // ── состояние формы ───────────────────────────────────────────────────────
-
-  var S = {
-    category: 'economy',
-    metric: 'total_supply',
-    param: '',
-    comparator: 'lt',
-    threshold: '',
-    closeAt: '',      // datetime-local
-    resolveAt: '',
-    promoted: false,
-    height: null,     // расчётная высота под resolveAt
-    cfg: null,        // config контракта
-    chain: null,      // высота и время последнего блока
-    blockSecs: 6,
-  };
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function fmtLunc(u) {
-    return Math.floor(Number(u || 0) / 1e6).toLocaleString('en-US');
-  }
-
-  // AbortSignal.timeout поддержан не везде: на части кошельковых браузеров
-  // запрос просто не уходит. Контроллер с таймером работает одинаково.
-  function get(url) {
-    var c = new AbortController();
-    var t = setTimeout(function () { c.abort(); }, 10000);
-    return fetch(url, { headers: { Accept: 'application/json' }, signal: c.signal })
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .finally(function () { clearTimeout(t); });
-  }
-
-  function lcdGet(path, height) {
-    var i = 0;
-    function next() {
-      if (i >= LCD.length) return Promise.reject(new Error('chain unavailable'));
-      var base = LCD[i++];
-      var url = base + path;
-      // Высота передаётся заголовком, но fetch к чужому узлу с произвольным
-      // заголовком уходит в preflight. Поэтому для прошлых высот используем
-      // тот же заголовок только там, где он действительно нужен - в проверке.
-      var opts = height ? { headers: { 'x-cosmos-block-height': String(height) } } : null;
-      return (opts ? fetchWithHeaders(url, opts) : get(url)).catch(next);
-    }
-    return next();
-  }
-
-  function fetchWithHeaders(url, opts) {
-    var c = new AbortController();
-    var t = setTimeout(function () { c.abort(); }, 10000);
-    var h = Object.assign({ Accept: 'application/json' }, opts.headers || {});
-    return fetch(url, { headers: h, signal: c.signal })
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .finally(function () { clearTimeout(t); });
-  }
-
-  function query(msg) {
-    var q = btoa(JSON.stringify(msg));
-    return lcdGet('/cosmwasm/wasm/v1/contract/' + CONTRACT + '/smart/' + q)
-      .then(function (j) { return j.data; });
-  }
-
-  // ── высота блока по дате ──────────────────────────────────────────────────
-  //
-  // Реальное время блока меряем по двум точкам, а не берём «шесть секунд» на
-  // веру: на Terra Classic оно плавает, и на горизонте в месяц ошибка в
-  // полсекунды - это почти сутки.
-
-  function loadChainTip() {
-    return lcdGet('/cosmos/base/tendermint/v1beta1/blocks/latest').then(function (j) {
-      var h = Number(j.block.header.height);
-      var t = Date.parse(j.block.header.time) / 1000;
-      var back = Math.max(h - 20000, 1);
-      return lcdGet('/cosmos/base/tendermint/v1beta1/blocks/' + back)
-        .then(function (j2) {
-          var t2 = Date.parse(j2.block.header.time) / 1000;
-          S.blockSecs = (t - t2) / (h - back);
-          S.chain = { height: h, time: t };
-        })
-        .catch(function () { S.chain = { height: h, time: t }; });
-    });
-  }
-
-  function heightAt(unixSecs) {
-    if (!S.chain) return null;
-    var d = unixSecs - S.chain.time;
-    if (d <= 0) return null;
-    return S.chain.height + Math.round(d / S.blockSecs);
-  }
-
-  function tsOf(local) {
-    if (!local) return 0;
-    return Math.floor(new Date(local).getTime() / 1000);
+    return 'YES if ' + what + ' reported by the Terra Classic chain ' + at + ' is '
+      + (CMP_WORD[S.comparator] || S.comparator) + ' ' + thresholdText(m, S.threshold)
+      + '. Otherwise NO. Source: ' + m.note + '.';
   }
 
   // ── спека ─────────────────────────────────────────────────────────────────
@@ -317,61 +341,52 @@
     if (!m.discrete) {
       var v = String(S.threshold).replace(/[^0-9.]/g, '');
       if (v === '') return null;
-      if (m.unit.mul === 1e6) {
-        // Порог уходит в цепочку в микроединицах. Это место, где ошибается
-        // каждый: 6T LUNC и 6T uluna отличаются в миллион раз.
-        raw = String(Math.round(Number(v) * 1e6));
-      } else {
-        raw = v;
-      }
+      // Порог уходит в цепочку в микроединицах. Здесь ошибается каждый:
+      // 6T LUNC и 6T uluna отличаются в миллион раз.
+      raw = m.unit.mul === 1e6 ? String(Math.round(Number(v) * 1e6)) : v;
     }
-    // В контракт уходит полное правило, а не служебная подпись к метрике:
-    // criterion неизменяем и остаётся единственным человеческим описанием
-    // того, за что держат деньги.
-    var human = resolutionRule();
     return {
       metric: S.metric,
       param: m.param ? (S.param || null) : null,
       comparator: m.discrete ? null : S.comparator,
       threshold: raw,
       height: S.height,
-      criterion: human,
+      criterion: resolutionRule(),
     };
   }
 
   function curlFor(spec) {
-    var m = METRICS[spec.metric];
     return 'curl -s -H "x-cosmos-block-height: ' + (spec.height || '?') + '" \\\n  "'
-      + LCD[0] + m.path(spec.param || '') + '"';
+      + LCD[0] + METRICS[spec.metric].path(spec.param || '') + '"';
   }
 
   // ── живая проверка ────────────────────────────────────────────────────────
-  //
-  // Читаем метрику на ТЕКУЩЕЙ высоте и показываем, чем рынок разрешился бы
-  // сегодня. Если ответ пустой - спека нерабочая, и залог сгорит.
 
   function fmtMetric(m, raw) {
-    if (m.unit.mul === 1e6) {
-      var v = Number(raw || 0) / 1e6;
-      var exact = v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-      if (v >= 1e12) return (+(v / 1e12).toFixed(2)) + 'T LUNC (' + exact + ')';
-      if (v >= 1e9) return (+(v / 1e9).toFixed(2)) + 'B LUNC (' + exact + ')';
-      if (v >= 1e6) return (+(v / 1e6).toFixed(2)) + 'M LUNC (' + exact + ')';
-      return exact + ' LUNC';
-    }
+    if (m.unit.mul === 1e6) return thresholdText(m, Number(raw || 0) / 1e6);
     if (m.unit.name === '%') return Number(raw).toFixed(2) + '%';
     return String(Number(raw).toFixed(Math.min(m.unit.dec, 12)))
       .replace(/0+$/, '').replace(/\.$/, '');
   }
 
+  function hint(t) { return '<span class="mkf-hint">' + esc(t) + '</span>'; }
+
   function runCheck() {
     var box = document.getElementById('mkf-check');
     if (!box) return;
-    var spec = buildSpec();
     var m = METRICS[S.metric];
 
-    if (m.param && !S.param) { box.className = 'mkf-check'; box.innerHTML = hint('Fill in ' + m.param.label.toLowerCase() + ' to run the check.'); return; }
-    if (!spec) { box.className = 'mkf-check'; box.innerHTML = hint('Enter a threshold to run the check.'); return; }
+    if (m.param && !String(S.param).trim()) {
+      box.className = 'mkf-check';
+      box.innerHTML = hint('Fill in ' + m.param.label.toLowerCase() + ' to run the check.');
+      return;
+    }
+    if (!m.discrete && !String(S.threshold).trim()) {
+      box.className = 'mkf-check';
+      box.innerHTML = hint('Enter a value to run the check.');
+      return;
+    }
+    var spec = buildSpec() || { metric: S.metric, param: S.param || null, height: S.height };
 
     box.className = 'mkf-check';
     box.innerHTML = hint('Reading the chain…');
@@ -402,25 +417,23 @@
         : spec.comparator === 'lte' ? val <= th
           : spec.comparator === 'gt' ? val > th : val >= th;
 
-      // Сравнение порядков. Порог и значение хранятся в одних единицах,
-      // поэтому расхождение в тысячу раз почти всегда означает, что
-      // человек ввёл не то: LUNC вместо микроединиц, проценты вместо доли,
-      // лишние или недостающие нули.
+      // Расхождение в тысячу раз почти всегда означает не тот масштаб:
+      // LUNC вместо микроединиц, лишние или недостающие нули.
       var warn = '';
       if (th > 0 && val > 0) {
         var ratio = val / th;
         if (ratio >= 1000 || ratio <= 0.001) {
           var power = Math.round(Math.log10(ratio > 1 ? ratio : 1 / ratio));
-          warn = '<div class="mkf-warn"><b>Check the units.</b> The metric and your threshold are '
-            + 'about 10<sup>' + power + '</sup> apart. That usually means a wrong number of zeros: '
-            + 'this market would be decided before it opens, and nobody would take the other side.</div>';
+          warn = '<div class="mkf-warn"><b>Check the units.</b> The metric and your value are about '
+            + '10<sup>' + power + '</sup> apart. That usually means a wrong number of zeros: this '
+            + 'market would be decided before it opens, and nobody would take the other side.</div>';
         }
       }
 
       box.className = 'mkf-check ' + (warn ? 'warn' : 'ok');
       box.innerHTML =
           '<div class="mkf-row"><span>Reads right now</span><b>' + esc(fmtMetric(m, val)) + '</b></div>'
-        + '<div class="mkf-row"><span>Your threshold</span><b>' + esc(fmtMetric(m, th)) + '</b></div>'
+        + '<div class="mkf-row"><span>Your value</span><b>' + esc(thresholdText(m, S.threshold)) + '</b></div>'
         + '<div class="mkf-row"><span>Would settle today</span><b class="' + (would ? 'y' : 'n') + '">'
         + (would ? 'YES' : 'NO') + '</b></div>'
         + warn
@@ -434,33 +447,81 @@
     });
   }
 
-
-  function hint(t) { return '<span class="mkf-hint">' + esc(t) + '</span>'; }
-
   // ── валидация ─────────────────────────────────────────────────────────────
 
   function problems() {
     var out = [];
     var m = METRICS[S.metric];
     var now = Math.floor(Date.now() / 1000);
-    var close = tsOf(S.closeAt), resolve = tsOf(S.resolveAt);
     var cut = S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600;
 
+    if (m.param && !String(S.param).trim()) out.push(m.param.label + ' is required.');
+    if (!m.discrete && !String(S.threshold).trim()) out.push('A value is required.');
     if (!questionText()) out.push('Fill in the condition - the question is built from it.');
-    if (m.param && !S.param.trim()) out.push(m.param.label + ' is required.');
-    if (!m.discrete && !String(S.threshold).trim()) out.push('A threshold is required.');
-    if (!close) out.push('Set when betting closes.');
-    else if (close <= now + 600) out.push('Betting has to stay open at least ten more minutes.');
-    if (!resolve) out.push('Set when the market resolves.');
-    else if (close && close + cut > resolve) {
-      out.push('Resolution must be at least ' + Math.round(cut / 60)
-        + ' minutes after betting closes - otherwise the outcome is visible while bets are still open.');
+    if (closeTs() <= now + 600) out.push('Predictions have to stay open at least ten more minutes.');
+    if (S.lead < cut) {
+      out.push('Predictions must close at least ' + Math.round(cut / 60)
+        + ' minutes before resolution, or the outcome is visible while bets are open.');
     }
-    if (resolve && !S.height) out.push('Block height could not be estimated. Reload and try again.');
+    if (!S.height) out.push('Block height could not be estimated. Reload and try again.');
     return out;
   }
 
+  // ── свои выпадающие списки ────────────────────────────────────────────────
+  //
+  // Родной select рисует список средствами системы: его нельзя ни покрасить,
+  // ни выровнять по остальному разделу.
+
+  var ddHandlers = {};
+
+  function dd(id, options, value, width) {
+    var cur = null;
+    for (var i = 0; i < options.length; i++) if (String(options[i].v) === String(value)) cur = options[i];
+    return '<div class="mkf-dd" data-dd="' + id + '"' + (width ? ' style="max-width:' + width + '"' : '') + '>'
+      + '<button type="button" class="mkf-dd-btn"><span>' + esc(cur ? cur.label : '—') + '</span>'
+      + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>'
+      + '<div class="mkf-dd-list">'
+      + options.map(function (o) {
+        return '<button type="button" data-v="' + esc(o.v) + '"'
+          + (String(o.v) === String(value) ? ' aria-selected="true"' : '') + '>' + esc(o.label) + '</button>';
+      }).join('')
+      + '</div></div>';
+  }
+
+  function onDD(id, fn) { ddHandlers[id] = fn; }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.mkf-dd-btn');
+    var item = e.target.closest('.mkf-dd-list button');
+    document.querySelectorAll('.mkf-dd.open').forEach(function (d) {
+      if (!btn || d !== btn.parentNode) d.classList.remove('open');
+    });
+    if (btn) { btn.parentNode.classList.toggle('open'); return; }
+    if (item) {
+      var host = item.closest('.mkf-dd');
+      host.classList.remove('open');
+      var fn = ddHandlers[host.dataset.dd];
+      if (fn) fn(item.dataset.v);
+    }
+  });
+
   // ── разметка ──────────────────────────────────────────────────────────────
+
+  function dateFields() {
+    var days = [], months = [], years = [], hours = [];
+    var dim = daysInMonth(S.resY, S.resM);
+    for (var d = 1; d <= dim; d++) days.push({ v: d, label: String(d) });
+    for (var i = 0; i < 12; i++) months.push({ v: i, label: MONTHS[i] });
+    var y0 = new Date().getUTCFullYear();
+    for (var y = y0; y <= y0 + 3; y++) years.push({ v: y, label: String(y) });
+    for (var h = 0; h < 24; h++) hours.push({ v: h, label: pad2(h) + ':00' });
+    return '<div class="mkf-date">'
+      + dd('resD', days, S.resD, '84px')
+      + dd('resM', months, S.resM, '100px')
+      + dd('resY', years, S.resY, '104px')
+      + dd('resH', hours, S.resH, '116px')
+      + '<span class="mkf-utc">UTC</span></div>';
+  }
 
   function render() {
     var host = document.getElementById('mk-create-host');
@@ -471,6 +532,9 @@
     var total = bond + (S.promoted ? promo : 0);
     var errs = problems();
     var q = questionText();
+    var mList = metricsFor(S.category).map(function (k) {
+      return { v: k, label: METRICS[k].label };
+    });
 
     host.innerHTML = ''
       + '<h3 class="step-h"><span class="n">1</span>What do you want to predict?</h3>'
@@ -478,32 +542,20 @@
       + '  <div class="field">'
       + '    <label>Category</label>'
       + '    <div class="chips" id="mkf-cats">'
-      + CATEGORIES.map(function (c) {
+      + usableCategories().map(function (c) {
         return '<button type="button" data-cat="' + c.id + '" aria-pressed="' + (S.category === c.id) + '">' + c.label + '</button>';
       }).join('')
       + '    </div>'
       + '  </div>'
       + '  <div class="qcols">'
-      + '    <div class="field">'
-      + '      <label>Metric</label>'
-      + '      <select id="mkf-metric">'
-      + Object.keys(METRICS).map(function (k) {
-        return '<option value="' + k + '"' + (S.metric === k ? ' selected' : '') + '>' + METRICS[k].label + '</option>';
-      }).join('')
-      + '      </select>'
-      + '    </div>'
+      + '    <div class="field"><label>Metric</label>' + dd('metric', mList, S.metric) + '</div>'
       + (m.param ? '<div class="field"><label>' + esc(m.param.label) + '</label>'
         + (m.param.kind === 'denom'
-          ? '<select id="mkf-param">' + DENOMS.map(function (d) {
-            return '<option value="' + d + '"' + (S.param === d ? ' selected' : '') + '>' + d + '</option>';
-          }).join('') + '</select>'
+          ? dd('param', DENOMS.map(function (d) { return { v: d, label: d.replace(/^u/, '').toUpperCase() }; }), S.param)
           : '<input type="text" id="mkf-param" placeholder="' + esc(m.param.placeholder || '') + '" value="' + esc(S.param) + '">')
         + '</div>' : '')
       + (m.discrete ? '' :
-        '<div class="field"><label>Condition</label>'
-        + '<select id="mkf-cmp">' + COMPARATORS.map(function (c) {
-          return '<option value="' + c.id + '"' + (S.comparator === c.id ? ' selected' : '') + '>' + c.label + '</option>';
-        }).join('') + '</select></div>'
+        '<div class="field"><label>Condition</label>' + dd('cmp', COMPARATORS, S.comparator) + '</div>'
         + '<div class="field"><label>Value <span class="opt">in ' + esc(m.unit.name) + '</span></label>'
         + '<input type="text" id="mkf-th" inputmode="decimal" placeholder="6000000000000" value="' + esc(S.threshold) + '"></div>')
       + '  </div>'
@@ -512,20 +564,24 @@
 
       + '<h3 class="step-h"><span class="n">2</span>Timing</h3>'
       + '<section class="card qform">'
-      + '  <div class="qcols">'
-      + '    <div class="field"><label>Predictions close</label>'
-      + '      <input type="datetime-local" id="mkf-close" value="' + esc(S.closeAt) + '">'
-      + '      <div class="mkf-note">' + (S.closeAt ? esc(utcText(S.closeAt, true)) : 'Until this moment people can take a side.') + '</div></div>'
-      + '    <div class="field"><label>Resolution</label>'
-      + '      <input type="datetime-local" id="mkf-resolve" value="' + esc(S.resolveAt) + '">'
-      + '      <div class="mkf-note">' + (S.resolveAt ? esc(utcText(S.resolveAt, true)) : 'When the value is read.') + '</div></div>'
+      + '  <div class="field"><label>Resolution</label>' + dateFields()
+      + '    <div class="mkf-note">The value is read at this moment. Always UTC, the same for everyone.</div>'
+      + '  </div>'
+      + '  <div class="field"><label>Predictions close</label>'
+      + '    <div class="chips" id="mkf-lead">'
+      + LEADS.map(function (l) {
+        return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (S.lead === l.secs) + '">' + l.label + '</button>';
+      }).join('')
+      + '    </div>'
+      + '    <div class="mkf-note">Betting stops <b>' + esc(utcText(closeTs(), true))
+      + '</b>. The gap exists so nobody can bet once the outcome is visible.</div>'
       + '  </div>'
       + '  <div class="mkf-note">'
       + (S.height
         ? 'Reading is taken at block <b>' + S.height + '</b>, estimated from '
         + S.blockSecs.toFixed(2) + 's per block. Blocks drift, so the height is what settles the '
         + 'market and the date is an approximation of it.'
-        : 'Pick a resolution time to see which block the reading comes from.')
+        : 'Waiting for the chain to estimate the block height.')
       + '  </div>'
       + '</section>'
 
@@ -537,19 +593,19 @@
 
       + '<h3 class="step-h"><span class="n">4</span>Preview</h3>'
       + '<section class="card qform mkf-preview">'
-      + '  <div class="mkf-pcard" style="--c:' + catRgb(S.category) + '">'
+      + '  <div class="mkf-pcard" style="--c:' + (typeof catRgb === 'function' ? catRgb(S.category) : '139,150,184') + '">'
       + '    <div class="mkf-ptags"><span class="cat">' + esc(S.category) + '</span>'
       + '      <span class="cat src on">on-chain spec</span></div>'
       + '    <h4>' + (q ? esc(q) : '<span class="mkf-hint">The question appears once the condition is filled in.</span>') + '</h4>'
       + '    <div class="mkf-podds"><span class="y">YES 50%</span><span class="n">NO 50%</span></div>'
       + '    <div class="mkf-pdates">'
-      + '      <div><span>Predictions close</span><b>' + (esc(utcText(S.closeAt, true)) || '—') + '</b></div>'
-      + '      <div><span>Resolution</span><b>' + (esc(utcText(S.resolveAt, true)) || '—') + '</b></div>'
+      + '      <div><span>Predictions close</span><b>' + esc(utcText(closeTs(), true)) + '</b></div>'
+      + '      <div><span>Resolution</span><b>' + esc(utcText(resolveTs(), true)) + '</b></div>'
       + '    </div>'
       + '  </div>'
       + '  <div class="mkf-rule"><span>How this resolves</span>' + esc(resolutionRule()) + '</div>'
-      + '  <div class="mkf-lock">Once published, the question, the metric, the threshold, the '
-      + 'block and the resolution rule are fixed. Nobody can change them afterwards, including you.</div>'
+      + '  <div class="mkf-lock">Once published, the question, the metric, the value, the block and '
+      + 'the resolution rule are fixed. Nobody can change them afterwards, including you.</div>'
       + '</section>'
 
       + '<section class="card summary">'
@@ -562,7 +618,7 @@
         : '<div class="mkf-ok-line">Bond comes back when the market settles. It is only lost if the '
         + 'question turns out to be unverifiable.</div>')
       + '  </div>'
-      + '  <div class="price"><b>' + fmtLunc(total) + ' LUNC</b><span>refundable bond'
+      + '  <div class="price"><b>' + fmtLuncLocal(total) + ' LUNC</b><span>refundable bond'
       + (S.promoted && promo ? ' + promo' : '') + '</span></div>'
       + '  <button class="ask-go" id="mkf-go"' + (errs.length ? ' disabled style="opacity:.45;"' : '') + '>'
       + 'Publish prediction &rarr;</button>'
@@ -571,6 +627,7 @@
     wire();
   }
 
+  function recalcHeight() { S.height = heightAt(resolveTs()); }
 
   function wire() {
     var cats = document.getElementById('mkf-cats');
@@ -578,31 +635,39 @@
       var b = e.target.closest('button[data-cat]');
       if (!b) return;
       S.category = b.dataset.cat;
-      cats.querySelectorAll('button').forEach(function (x) {
-        x.setAttribute('aria-pressed', String(x === b));
-      });
+      // Метрика обязана принадлежать категории, иначе заголовок обещает
+      // одно, а спека читает другое.
+      var list = metricsFor(S.category);
+      if (list.indexOf(S.metric) === -1) switchMetric(list[0], true);
+      else render();
+    });
+
+    var lead = document.getElementById('mkf-lead');
+    if (lead) lead.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-lead]');
+      if (!b) return;
+      S.lead = Number(b.dataset.lead);
       render();
     });
 
-    bind('mkf-metric', 'change', function (v) {
-      S.metric = v; S.param = ''; S.threshold = '';
-      var m = METRICS[S.metric];
-      if (m.param && m.param.kind === 'denom') S.param = DENOMS[0];
-      if (m.cats.indexOf(S.category) === -1) S.category = m.cats[0];
-      render();
+    onDD('metric', function (v) { switchMetric(v, true); });
+    onDD('cmp', function (v) { S.comparator = v; render(); });
+    onDD('param', function (v) { S.param = v; render(); });
+    onDD('resD', function (v) { S.resD = Number(v); recalcHeight(); render(); });
+    onDD('resM', function (v) {
+      S.resM = Number(v);
+      if (S.resD > daysInMonth(S.resY, S.resM)) S.resD = daysInMonth(S.resY, S.resM);
+      recalcHeight(); render();
     });
-    // Предпросмотр обязан обновляться на каждый символ: он и есть вопрос,
-    // который увидят люди.
+    onDD('resY', function (v) {
+      S.resY = Number(v);
+      if (S.resD > daysInMonth(S.resY, S.resM)) S.resD = daysInMonth(S.resY, S.resM);
+      recalcHeight(); render();
+    });
+    onDD('resH', function (v) { S.resH = Number(v); recalcHeight(); render(); });
+
     bind('mkf-param', 'input', function (v) { S.param = v; refreshPreview(); });
-    bind('mkf-param', 'change', function (v) { S.param = v; refreshPreview(); });
-    bind('mkf-cmp', 'change', function (v) { S.comparator = v; refreshPreview(); });
     bind('mkf-th', 'input', function (v) { S.threshold = v; refreshPreview(); });
-    bind('mkf-close', 'change', function (v) { S.closeAt = v; render(); });
-    bind('mkf-resolve', 'change', function (v) {
-      S.resolveAt = v;
-      S.height = heightAt(tsOf(v));
-      render();
-    });
 
     var run = document.getElementById('mkf-run');
     if (run) run.addEventListener('click', runCheck);
@@ -611,8 +676,22 @@
     if (go) go.addEventListener('click', submit);
   }
 
-  /** Обновление предпросмотра без полной перерисовки: render() сбрасывает
-   *  фокус и каретку, и набирать порог становится невозможно. */
+  function switchMetric(key, redraw) {
+    S.metric = key;
+    S.param = '';
+    S.threshold = '';
+    var nm = METRICS[key];
+    if (nm.param && nm.param.kind === 'denom') S.param = DENOMS[0];
+    if (redraw) render();
+  }
+
+  function bind(id, ev, fn) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(ev, function () { fn(this.value); });
+  }
+
+  /** Обновление без полной перерисовки: render() сбрасывает фокус и
+   *  каретку, и набирать значение становится невозможно. */
   function refreshPreview() {
     var q = questionText();
     var h = document.querySelector('.mkf-pcard h4');
@@ -620,24 +699,10 @@
       : '<span class="mkf-hint">The question appears once the condition is filled in.</span>';
     var r = document.querySelector('.mkf-rule');
     if (r) r.innerHTML = '<span>How this resolves</span>' + esc(resolutionRule());
-    refreshSummary();
-  }
 
-
-  function bind(id, ev, fn) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener(ev, function () { fn(this.value); });
-  }
-
-  // Пересчёт только сводки: полный render сбрасывает фокус и каретку в поле,
-  // из-за чего набирать текст становится невозможно.
-  function refreshSummary() {
     var errs = problems();
     var go = document.getElementById('mkf-go');
-    if (go) {
-      go.disabled = errs.length > 0;
-      go.style.opacity = errs.length ? '.45' : '';
-    }
+    if (go) { go.disabled = errs.length > 0; go.style.opacity = errs.length ? '.45' : ''; }
     var box = document.querySelector('.mkf-errs');
     if (box) {
       box.innerHTML = errs.map(function (e) { return '<div>' + esc(e) + '</div>'; }).join('');
@@ -665,8 +730,8 @@
           question: questionText(),
           category: S.category,
           spec: spec,
-          bets_close_at: tsOf(S.closeAt),
-          resolve_after: tsOf(S.resolveAt),
+          bets_close_at: closeTs(),
+          resolve_after: resolveTs(),
           promoted: !!S.promoted,
         },
       },
@@ -682,11 +747,11 @@
     }).catch(function (e) {
       alert(e.message || 'Transaction failed');
       go.disabled = false;
-      go.textContent = 'Create market →';
+      go.textContent = 'Publish prediction →';
     });
   }
 
-  // ── открытие и закрытие панели ────────────────────────────────────────────
+  // ── открытие и закрытие ───────────────────────────────────────────────────
 
   function openCreate() {
     var panel = document.getElementById('mk-create');
@@ -695,10 +760,8 @@
     panel.style.display = '';
     if (list) list.style.display = 'none';
 
-    if (!S.cfg) {
-      query({ config: {} }).then(function (c) { S.cfg = c; render(); }).catch(function () { render(); });
-    }
-    if (!S.chain) loadChainTip().then(render).catch(function () {});
+    if (!S.cfg) query({ config: {} }).then(function (c) { S.cfg = c; render(); }).catch(function () {});
+    if (!S.chain) loadChainTip().then(function () { recalcHeight(); render(); }).catch(function () {});
     render();
   }
 

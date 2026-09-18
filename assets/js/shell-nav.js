@@ -8,6 +8,13 @@
 (function () {
   'use strict';
 
+  // Ключ предпросмотра ставится сразу при загрузке, а не внутри обработчика:
+  // до клика по меню надо ещё дожить, а адрес с ?preview=1 теряется при
+  // первом же переходе, потому что showPage переписывает путь.
+  if (location.search.indexOf('preview=1') > -1) {
+    try { sessionStorage.setItem('mkPreview', '1'); } catch (e) {}
+  }
+
   // имя вида в оболочке -> что делать
   var ROUTE = {
     home:       function () { showPage('home'); },
@@ -24,7 +31,14 @@
     // на проде. Разметка раздела всё равно уезжает в index.html, так что
     // это защита от случайного захода, а не запрет.
     markets:    function () {
-      if (location.search.indexOf('preview=1') > -1) showPage('markets');
+      // Ключ запоминается на вкладку: showPage переписывает адрес на
+      // чистый путь, и ?preview=1 терялся после первого же перехода.
+      if (location.search.indexOf('preview=1') > -1) {
+        try { sessionStorage.setItem('mkPreview', '1'); } catch (e) {}
+      }
+      var on = false;
+      try { on = sessionStorage.getItem('mkPreview') === '1'; } catch (e) {}
+      if (on) showPage('markets');
     },
     achievements: null   // тоже нет
   };
