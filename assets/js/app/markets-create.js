@@ -117,10 +117,95 @@
     'uinr', 'ucad', 'uchf', 'uhkd', 'uaud', 'usgd', 'uthb', 'usek', 'unok',
     'udkk', 'uidr', 'uphp'];
 
+  // ── вопрос и правило из условия ───────────────────────────────────────────
+  //
+  // Единственный источник истины - введённое условие. Заголовок и criterion
+  // выводятся из него, поэтому разойтись, как случилось у тестового рынка,
+  // им нечем.
+
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  /** Дата всегда в UTC: цепочка живёт в UTC, и рынок должны одинаково
+   *  понимать из любого часового пояса. */
+  function utcText(local, withTime) {
+    if (!local) return '';
+    var d = new Date(local);
+    if (isNaN(d.getTime())) return '';
+    var s = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    return withTime ? s + ', ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ' UTC' : s;
+  }
+
+  var PHRASE = {
+    total_supply:    function () { return 'the total LUNC supply'; },
+    oracle_rate:     function (p) { return 'the LUNC oracle rate in ' + String(p || '').replace(/^u/, '').toUpperCase(); },
+    staking_ratio:   function () { return 'the share of LUNC staked'; },
+    community_pool:  function () { return 'the community pool'; },
+    validator_power: function (p) { return 'the stake delegated to ' + shortAddr(p); },
+    proposal_passed: function (p) { return 'governance proposal #' + (p || '?'); },
+  };
+
+  var CMP_WORD = { gt: 'above', gte: 'at least', lt: 'below', lte: 'at most' };
+
+  function shortAddr(a) {
+    var s = String(a || '');
+    return s.length > 20 ? s.slice(0, 12) + '…' + s.slice(-4) : (s || 'the validator');
+  }
+
+  /** Порог в том же виде, в каком его увидит читатель: 6T LUNC, а не
+   *  6000000000000000000. Считается из введённого значения, не из
+   *  микроединиц. */
+  function thresholdText(m, typed) {
+    var v = Number(String(typed).replace(/[^0-9.]/g, ''));
+    if (!isFinite(v)) return '';
+    if (m.unit.name === 'LUNC') {
+      var exact = v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      if (v >= 1e12) return (+(v / 1e12).toFixed(2)) + 'T LUNC';
+      if (v >= 1e9) return (+(v / 1e9).toFixed(2)) + 'B LUNC';
+      if (v >= 1e6) return (+(v / 1e6).toFixed(2)) + 'M LUNC';
+      return exact + ' LUNC';
+    }
+    if (m.unit.name === '%') return v + '%';
+    return String(typed).trim();
+  }
+
+  /** Заголовок рынка. Без времени: точный момент живёт в правиле ниже и
+   *  в блоке сроков, а в вопрос он влезает плохо. */
+  function questionText() {
+    var m = METRICS[S.metric];
+    var what = (PHRASE[S.metric] || function () { return S.metric; })(S.param);
+    var when = utcText(S.resolveAt, false);
+    var tail = when ? ' on ' + when + '?' : '?';
+    if (m.discrete) return 'Will ' + what + ' have passed' + tail;
+    var cmp = CMP_WORD[S.comparator] || S.comparator;
+    var th = thresholdText(m, S.threshold);
+    if (!th) return '';
+    return 'Will ' + what + ' be ' + cmp + ' ' + th + tail;
+  }
+
+  /** Правило расчёта. Уходит в контракт как criterion и остаётся там
+   *  навсегда, поэтому пишется полностью и без сокращений: что читаем,
+   *  где читаем, с чем сравниваем и что означает YES. */
+  function resolutionRule() {
+    var m = METRICS[S.metric];
+    var what = (PHRASE[S.metric] || function () { return S.metric; })(S.param);
+    var at = 'at block ' + (S.height || '?')
+      + (S.resolveAt ? ' (' + utcText(S.resolveAt, true) + ')' : '');
+    if (m.discrete) {
+      return 'YES if the status of ' + what + ' reported by the Terra Classic chain '
+        + at + ' is PROPOSAL_STATUS_PASSED. Otherwise NO. Source: ' + m.note + '.';
+    }
+    var cmp = CMP_WORD[S.comparator] || S.comparator;
+    var th = thresholdText(m, S.threshold);
+    return 'YES if ' + what + ' reported by the Terra Classic chain ' + at
+      + ' is ' + cmp + ' ' + th + '. Otherwise NO. Source: ' + m.note + '.';
+  }
+
   // ── состояние формы ───────────────────────────────────────────────────────
 
   var S = {
-    question: '',
     category: 'economy',
     metric: 'total_supply',
     param: '',
@@ -240,7 +325,10 @@
         raw = v;
       }
     }
-    var human = m.note;
+    // В контракт уходит полное правило, а не служебная подпись к метрике:
+    // criterion неизменяем и остаётся единственным человеческим описанием
+    // того, за что держат деньги.
+    var human = resolutionRule();
     return {
       metric: S.metric,
       param: m.param ? (S.param || null) : null,
@@ -358,7 +446,7 @@
     var close = tsOf(S.closeAt), resolve = tsOf(S.resolveAt);
     var cut = S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600;
 
-    if (S.question.trim().length < 12) out.push('Write the question people will read.');
+    if (!questionText()) out.push('Fill in the condition - the question is built from it.');
     if (m.param && !S.param.trim()) out.push(m.param.label + ' is required.');
     if (!m.discrete && !String(S.threshold).trim()) out.push('A threshold is required.');
     if (!close) out.push('Set when betting closes.');
@@ -382,15 +470,11 @@
     var promo = S.cfg ? Number(S.cfg.promo_fee) : 0;
     var total = bond + (S.promoted ? promo : 0);
     var errs = problems();
+    var q = questionText();
 
     host.innerHTML = ''
-      + '<h3 class="step-h"><span class="n">1</span>Ask something the chain can answer</h3>'
+      + '<h3 class="step-h"><span class="n">1</span>What do you want to predict?</h3>'
       + '<section class="card qform">'
-      + '  <div class="field">'
-      + '    <label>Your question</label>'
-      + '    <textarea id="mkf-q" rows="3" maxlength="180" placeholder="Will LUNC supply fall below 6T by year end 2026?">' + esc(S.question) + '</textarea>'
-      + '    <div class="count">' + S.question.length + ' / 180</div>'
-      + '  </div>'
       + '  <div class="field">'
       + '    <label>Category</label>'
       + '    <div class="chips" id="mkf-cats">'
@@ -399,10 +483,6 @@
       }).join('')
       + '    </div>'
       + '  </div>'
-      + '</section>'
-
-      + '<h3 class="step-h"><span class="n">2</span>What decides the outcome</h3>'
-      + '<section class="card qform">'
       + '  <div class="qcols">'
       + '    <div class="field">'
       + '      <label>Metric</label>'
@@ -411,7 +491,6 @@
         return '<option value="' + k + '"' + (S.metric === k ? ' selected' : '') + '>' + METRICS[k].label + '</option>';
       }).join('')
       + '      </select>'
-      + '      <div class="mkf-note">' + esc(m.note) + '</div>'
       + '    </div>'
       + (m.param ? '<div class="field"><label>' + esc(m.param.label) + '</label>'
         + (m.param.kind === 'denom'
@@ -425,41 +504,59 @@
         + '<select id="mkf-cmp">' + COMPARATORS.map(function (c) {
           return '<option value="' + c.id + '"' + (S.comparator === c.id ? ' selected' : '') + '>' + c.label + '</option>';
         }).join('') + '</select></div>'
-        + '<div class="field"><label>Threshold <span class="opt">in ' + esc(m.unit.name) + '</span></label>'
+        + '<div class="field"><label>Value <span class="opt">in ' + esc(m.unit.name) + '</span></label>'
         + '<input type="text" id="mkf-th" inputmode="decimal" placeholder="6000000000000" value="' + esc(S.threshold) + '"></div>')
       + '  </div>'
+      + '  <div class="mkf-note">' + esc(m.note) + '</div>'
       + '</section>'
 
-      + '<h3 class="step-h"><span class="n">3</span>Timing</h3>'
+      + '<h3 class="step-h"><span class="n">2</span>Timing</h3>'
       + '<section class="card qform">'
       + '  <div class="qcols">'
-      + '    <div class="field"><label>Betting closes</label>'
-      + '      <input type="datetime-local" id="mkf-close" value="' + esc(S.closeAt) + '"></div>'
-      + '    <div class="field"><label>Resolves after</label>'
-      + '      <input type="datetime-local" id="mkf-resolve" value="' + esc(S.resolveAt) + '"></div>'
+      + '    <div class="field"><label>Predictions close</label>'
+      + '      <input type="datetime-local" id="mkf-close" value="' + esc(S.closeAt) + '">'
+      + '      <div class="mkf-note">' + (S.closeAt ? esc(utcText(S.closeAt, true)) : 'Until this moment people can take a side.') + '</div></div>'
+      + '    <div class="field"><label>Resolution</label>'
+      + '      <input type="datetime-local" id="mkf-resolve" value="' + esc(S.resolveAt) + '">'
+      + '      <div class="mkf-note">' + (S.resolveAt ? esc(utcText(S.resolveAt, true)) : 'When the value is read.') + '</div></div>'
       + '  </div>'
       + '  <div class="mkf-note">'
       + (S.height
         ? 'Reading is taken at block <b>' + S.height + '</b>, estimated from '
-        + S.blockSecs.toFixed(2) + 's per block. Blocks drift, so treat the date as approximate - '
-        + 'the height is what the market settles on.'
+        + S.blockSecs.toFixed(2) + 's per block. Blocks drift, so the height is what settles the '
+        + 'market and the date is an approximation of it.'
         : 'Pick a resolution time to see which block the reading comes from.')
       + '  </div>'
       + '</section>'
 
-      + '<h3 class="step-h"><span class="n">4</span>Check it before you pay</h3>'
+      + '<h3 class="step-h"><span class="n">3</span>Check it before you pay</h3>'
       + '<section class="card qform">'
-      + '  <div id="mkf-check" class="mkf-check">' + hint('Fill the spec above, then run the check.') + '</div>'
+      + '  <div id="mkf-check" class="mkf-check">' + hint('Fill the condition above, then run the check.') + '</div>'
       + '  <button type="button" class="ghost sm" id="mkf-run" style="margin-top:12px;">Run the check</button>'
       + '</section>'
 
-      + '<h3 class="step-h"><span class="n">5</span>Create</h3>'
+      + '<h3 class="step-h"><span class="n">4</span>Preview</h3>'
+      + '<section class="card qform mkf-preview">'
+      + '  <div class="mkf-pcard" style="--c:' + catRgb(S.category) + '">'
+      + '    <div class="mkf-ptags"><span class="cat">' + esc(S.category) + '</span>'
+      + '      <span class="cat src on">on-chain spec</span></div>'
+      + '    <h4>' + (q ? esc(q) : '<span class="mkf-hint">The question appears once the condition is filled in.</span>') + '</h4>'
+      + '    <div class="mkf-podds"><span class="y">YES 50%</span><span class="n">NO 50%</span></div>'
+      + '    <div class="mkf-pdates">'
+      + '      <div><span>Predictions close</span><b>' + (esc(utcText(S.closeAt, true)) || '—') + '</b></div>'
+      + '      <div><span>Resolution</span><b>' + (esc(utcText(S.resolveAt, true)) || '—') + '</b></div>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div class="mkf-rule"><span>How this resolves</span>' + esc(resolutionRule()) + '</div>'
+      + '  <div class="mkf-lock">Once published, the question, the metric, the threshold, the '
+      + 'block and the resolution rule are fixed. Nobody can change them afterwards, including you.</div>'
+      + '</section>'
+
       + '<section class="card summary">'
       + '  <img src="assets/img/icons/markets.webp" alt="" width="56" height="56">'
       + '  <div>'
-      + '    <div class="t">Market summary</div>'
-      + '    <div class="line">' + esc(S.category) + ' · settles at block <b>' + (S.height || '—') + '</b>'
-      + ' · creator fee <b>3%</b> of the losing pot</div>'
+      + '    <div class="t">Ready to publish</div>'
+      + '    <div class="line">' + esc(S.category) + ' · creator fee <b>3%</b> of the losing pot</div>'
       + (errs.length
         ? '<div class="mkf-errs">' + errs.map(function (e) { return '<div>' + esc(e) + '</div>'; }).join('') + '</div>'
         : '<div class="mkf-ok-line">Bond comes back when the market settles. It is only lost if the '
@@ -468,21 +565,14 @@
       + '  <div class="price"><b>' + fmtLunc(total) + ' LUNC</b><span>refundable bond'
       + (S.promoted && promo ? ' + promo' : '') + '</span></div>'
       + '  <button class="ask-go" id="mkf-go"' + (errs.length ? ' disabled style="opacity:.45;"' : '') + '>'
-      + 'Create market &rarr;</button>'
+      + 'Publish prediction &rarr;</button>'
       + '</section>';
 
     wire();
   }
 
-  function wire() {
-    var q = document.getElementById('mkf-q');
-    if (q) q.addEventListener('input', function () {
-      S.question = this.value.slice(0, 180);
-      var c = this.parentNode.querySelector('.count');
-      if (c) c.textContent = S.question.length + ' / 180';
-      refreshSummary();
-    });
 
+  function wire() {
     var cats = document.getElementById('mkf-cats');
     if (cats) cats.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-cat]');
@@ -491,7 +581,7 @@
       cats.querySelectorAll('button').forEach(function (x) {
         x.setAttribute('aria-pressed', String(x === b));
       });
-      refreshSummary();
+      render();
     });
 
     bind('mkf-metric', 'change', function (v) {
@@ -501,11 +591,13 @@
       if (m.cats.indexOf(S.category) === -1) S.category = m.cats[0];
       render();
     });
-    bind('mkf-param', 'input', function (v) { S.param = v; });
-    bind('mkf-param', 'change', function (v) { S.param = v; });
-    bind('mkf-cmp', 'change', function (v) { S.comparator = v; });
-    bind('mkf-th', 'input', function (v) { S.threshold = v; refreshSummary(); });
-    bind('mkf-close', 'change', function (v) { S.closeAt = v; refreshSummary(); });
+    // Предпросмотр обязан обновляться на каждый символ: он и есть вопрос,
+    // который увидят люди.
+    bind('mkf-param', 'input', function (v) { S.param = v; refreshPreview(); });
+    bind('mkf-param', 'change', function (v) { S.param = v; refreshPreview(); });
+    bind('mkf-cmp', 'change', function (v) { S.comparator = v; refreshPreview(); });
+    bind('mkf-th', 'input', function (v) { S.threshold = v; refreshPreview(); });
+    bind('mkf-close', 'change', function (v) { S.closeAt = v; render(); });
     bind('mkf-resolve', 'change', function (v) {
       S.resolveAt = v;
       S.height = heightAt(tsOf(v));
@@ -518,6 +610,19 @@
     var go = document.getElementById('mkf-go');
     if (go) go.addEventListener('click', submit);
   }
+
+  /** Обновление предпросмотра без полной перерисовки: render() сбрасывает
+   *  фокус и каретку, и набирать порог становится невозможно. */
+  function refreshPreview() {
+    var q = questionText();
+    var h = document.querySelector('.mkf-pcard h4');
+    if (h) h.innerHTML = q ? esc(q)
+      : '<span class="mkf-hint">The question appears once the condition is filled in.</span>';
+    var r = document.querySelector('.mkf-rule');
+    if (r) r.innerHTML = '<span>How this resolves</span>' + esc(resolutionRule());
+    refreshSummary();
+  }
+
 
   function bind(id, ev, fn) {
     var el = document.getElementById(id);
@@ -557,7 +662,7 @@
       window.globalWalletAddress, CONTRACT,
       {
         create: {
-          question: S.question.trim(),
+          question: questionText(),
           category: S.category,
           spec: spec,
           bets_close_at: tsOf(S.closeAt),
