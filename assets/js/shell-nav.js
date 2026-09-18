@@ -19,7 +19,13 @@
     reputation: function () { showRepPage('leaderboard'); },
     draw:       function () { showPage('draw'); },
     board:      function () { showPage('board'); },
-    markets:    function () { showPage('markets'); },
+    // Markets не готов и публично закрыт. Открывается только адресом с
+    // ключом: /markets?preview=1 - чтобы смотреть незаконченный раздел
+    // на проде. Разметка раздела всё равно уезжает в index.html, так что
+    // это защита от случайного захода, а не запрет.
+    markets:    function () {
+      if (location.search.indexOf('preview=1') > -1) showPage('markets');
+    },
     achievements: null   // тоже нет
   };
 
@@ -31,7 +37,8 @@
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
     if (p === 'treasury') return 'treasury';
-    if (p === 'chat' || p === 'ask' || p === 'board' || p === 'markets') return p;
+    if (p === 'chat' || p === 'ask' || p === 'board') return p;
+    // markets намеренно не подсвечиваем: пункт закрыт, см. таблицу выше
     return null;   // about, profile - пунктов в новом меню нет
   }
 
