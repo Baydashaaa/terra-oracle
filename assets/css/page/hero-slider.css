@@ -1,0 +1,61 @@
+/* Hero news slider. Slide 0 is the original hero (art + copy); news slides fade in on top of it. */
+#page-home .hero{position:relative;overflow:hidden}
+
+.hero-news{
+  position:absolute;inset:0;z-index:5;container-type:size;
+  opacity:0;visibility:hidden;
+  transition:opacity .8s ease,visibility 0s linear .8s;
+  background:#f4f5f7;
+}
+.hero-news.is-active{opacity:1;visibility:visible;transition:opacity .8s ease,visibility 0s}
+
+/* Frame keeps the banner's own aspect ratio and covers the hero, anchored left so the
+   banner's text column is never cropped. Overlay positions are % of the banner itself. */
+.hero-news .frame{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  aspect-ratio:var(--ar,2/1);
+  height:max(100cqh, calc(100cqw / (var(--ar,2/1))));
+  container-type:inline-size;
+}
+.hero-news .frame > img{width:100%;height:100%;display:block;object-fit:cover}
+
+.hero-news .hn-btn{
+  position:absolute;display:flex;align-items:center;justify-content:center;gap:.9em;
+  background:linear-gradient(135deg,#16171b 0%,#1c1d22 60%,#34353b 100%);
+  color:#fff;border-radius:.45cqw;text-decoration:none;white-space:nowrap;
+  font:500 1.02cqw/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-shadow:0 .3cqw .9cqw rgba(0,0,0,.18);
+  transition:transform .2s,box-shadow .2s,filter .2s;
+}
+.hero-news .hn-btn:hover{transform:translateY(-1px);filter:brightness(1.25);box-shadow:0 .5cqw 1.3cqw rgba(0,0,0,.25)}
+.hero-news .hn-btn:focus-visible{outline:2px solid var(--cyan,#22d3ee);outline-offset:3px}
+.hero-news .hn-btn svg{width:1.15em;height:1.15em;flex:none}
+
+/* Indicators, bottom right */
+.hero-dots{
+  position:absolute;right:18px;bottom:16px;z-index:6;
+  display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;
+  background:rgba(12,9,30,.5);border:1px solid rgba(255,255,255,.08);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.hero-dot{
+  appearance:none;border:0;background:none;padding:0;margin:0;cursor:pointer;
+  position:relative;width:18px;height:20px;transition:width .4s ease;
+}
+.hero-dot .bar{
+  position:absolute;left:2px;right:2px;top:8px;height:4px;border-radius:999px;
+  background:rgba(255,255,255,.3);overflow:hidden;transition:background .2s;
+}
+.hero-dot:hover .bar{background:rgba(255,255,255,.55)}
+.hero-dot .fill{position:absolute;inset:0;background:var(--cyan,#22d3ee);transform:scaleX(0);transform-origin:left}
+.hero-dot.is-active{width:40px}
+.hero-dot.is-active .fill{animation:heroDotFill var(--hero-interval,7s) linear forwards}
+.hero-dot:focus-visible{outline:2px solid var(--cyan,#22d3ee);outline-offset:2px;border-radius:6px}
+#page-home .hero:hover .hero-dot.is-active .fill,
+#page-home .hero:focus-within .hero-dot.is-active .fill{animation-play-state:paused}
+@keyframes heroDotFill{to{transform:scaleX(1)}}
+
+@media (prefers-reduced-motion:reduce){
+  .hero-news,.hero-news.is-active{transition:none}
+  .hero-dot.is-active .fill{animation:none;transform:scaleX(1)}
+}
