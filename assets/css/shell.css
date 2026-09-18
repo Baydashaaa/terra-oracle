@@ -2069,3 +2069,124 @@ img{display:block;max-width:100%}
 .nav.nav-sub[aria-current="page"]{
   border-left-color:rgba(59,130,246,.75);
 }
+
+
+/* ==================================================================
+   Карточка вопроса на Board - строчный вид по образцу: голос слева,
+   фишки, заголовок, автор и время внизу, стрелка справа.
+
+   Классы с приставкой qc2, а не правка старых q-*: старая разметка
+   ещё живёт в раскрытой части (ветка ответов, форма), и общие имена
+   перекрасили бы и её.
+   ================================================================== */
+#page-board .q-card.qc2{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr) 44px;
+  gap:14px;
+  align-items:start;
+  padding:16px 16px 14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  margin-bottom:12px;
+  transition:border-color .16s ease, background .16s ease;
+}
+#page-board .q-card.qc2:hover{
+  border-color:rgba(99,102,241,.45);
+  background:var(--panel-2);
+}
+
+/* Голос */
+#page-board .qc2-vote{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding-top:2px;
+}
+#page-board .qc2-up{
+  width:30px;height:26px;display:grid;place-items:center;
+  background:none;border:0;cursor:pointer;
+  color:var(--ink-3);border-radius:7px;
+  transition:color .16s ease, background .16s ease;
+}
+#page-board .qc2-up svg{width:20px;height:20px}
+#page-board .qc2-up:hover{color:var(--ink);background:rgba(99,102,241,.14)}
+#page-board .qc2-up.voted{color:#6ee7b7}
+#page-board .qc2-vote b{font-size:17px;font-weight:700;color:var(--ink)}
+
+/* Фишки категории и тегов */
+#page-board .qc2-chips{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;
+}
+#page-board .qc2-chips .q-category,
+#page-board .qc2-chips .q-tag{
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;line-height:1;
+}
+#page-board .qc2-chips .q-category{
+  background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.42);color:#9dc0ff;
+}
+#page-board .qc2-chips .q-tag{
+  background:rgba(168,85,247,.14);border:1px solid rgba(168,85,247,.38);color:#d3b4ff;
+  cursor:pointer;
+}
+#page-board .qc2-chips .q-tag.active-tag{
+  background:rgba(168,85,247,.3);border-color:rgba(168,85,247,.7);color:#fff;
+}
+
+/* Заголовок и вторая строка */
+#page-board .qc2-title{
+  font-size:15.5px;font-weight:600;line-height:1.35;color:var(--ink);
+}
+#page-board .qc2-title mark{
+  background:rgba(84,147,247,.25);color:var(--ink);border-radius:2px;padding:0 2px;
+}
+#page-board .qc2-sub{
+  display:block;margin-top:5px;
+  font-size:12.5px;line-height:1.45;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#page-board a.qc2-ev{color:#7fb0ff;text-decoration:none}
+#page-board a.qc2-ev:hover{text-decoration:underline}
+
+/* Автор, время, счётчик ответов */
+#page-board .qc2-meta{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin-top:10px;font-size:12px;color:var(--ink-3);
+}
+#page-board .qc2-ava{width:20px;height:20px;border-radius:50%;object-fit:cover}
+#page-board .qc2-dot{opacity:.5}
+#page-board .qc2-id{margin-left:4px;opacity:.45;font-size:11px}
+#page-board .qc2-answers{
+  margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+  background:none;border:0;cursor:pointer;
+  color:var(--ink-3);font-size:12.5px;padding:4px 6px;border-radius:7px;
+}
+#page-board .qc2-answers svg{width:16px;height:16px}
+#page-board .qc2-answers:hover{color:var(--ink);background:rgba(99,102,241,.14)}
+
+/* Правый столбец */
+#page-board .qc2-side{display:flex;flex-direction:column;gap:8px;align-items:center}
+#page-board .qc2-open,
+#page-board .qc2-add{
+  width:40px;height:40px;display:grid;place-items:center;cursor:pointer;
+  background:rgba(99,102,241,.14);
+  border:1px solid rgba(99,102,241,.4);
+  border-radius:11px;color:#b9c6ff;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+#page-board .qc2-open svg{width:19px;height:19px}
+#page-board .qc2-add{font-size:19px;line-height:1;height:34px}
+#page-board .qc2-open:hover,
+#page-board .qc2-add:hover{background:rgba(99,102,241,.3);border-color:rgba(99,102,241,.75);color:#fff}
+
+/* Раскрытая ветка остаётся прежней, только выравниваем её по телу
+   карточки, иначе ответы прижимались бы к левому краю под голосом. */
+#page-board .q-card.qc2 .answers-section{grid-column:2 / -1}
+#page-board .q-card.qc2 .poll{margin-top:12px}
+
+@media (max-width:640px){
+  #page-board .q-card.qc2{grid-template-columns:40px minmax(0,1fr);gap:10px;padding:13px}
+  #page-board .qc2-side{
+    grid-column:2;flex-direction:row;justify-content:flex-end;margin-top:4px;
+  }
+  #page-board .q-card.qc2 .answers-section{grid-column:1 / -1}
+}

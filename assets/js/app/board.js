@@ -292,36 +292,72 @@ function renderBoard() {
   list.innerHTML = filtered.map((q, qi) => {
     const realQi = questions.indexOf(q);
     return `
-    <div class="q-card${isPinned(q) ? ' q-card--pinned' : ''}" id="qcard-${qi}">
-      <div class="q-meta">
-        ${isPinned(q) ? `<span class="badge-pin">Priority</span><span class="pin-timer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.4 2"/></svg><span class="pin-time" data-pin-until="${q.pinnedUntil}">${pinTimeLeft(q.pinnedUntil - _nowSec)}</span></span>` : ''}
-        ${q.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img src="${getProfileAvatar(q.wallet)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
-        ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${escHtml(q.title)}</span>` : '')}
-        <span class="q-category">${escHtml(q.category)}</span>
-        <span class="q-ref" style="margin-left:auto;">${escHtml(q.time)}&nbsp;&nbsp;${escHtml(q.id)}</span>
+    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}" id="qcard-${qi}">
+
+      <!-- Левый столбец: голос. Стрелка одна - в модели вопроса только
+           счётчик votes и флаг voted, минуса нет. Рисовать неработающую
+           стрелку вниз не стали. -->
+      <div class="qc2-vote">
+        <button class="qc2-up ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})" aria-label="Upvote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>
+        </button>
+        <b>${q.votes}</b>
       </div>
-      ${q.tags && q.tags.length ? `<div class="q-tags">${q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" data-q-tag="${escHtml(t)}">#${escHtml(t)}</span>`).join('')}</div>` : ''}
-      ${(() => {
-        const u = q.evidence ? safeUrl(q.evidence) : null;
-        if (!u) return '';
-        const shown = u.length > 58 ? u.slice(0, 58) + '…' : u;
-        return `<div class="q-evidence"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.4 4.53"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.4-1.42"/></svg><a href="${escHtml(u)}" target="_blank" rel="noopener noreferrer">${escHtml(shown)}</a></div>`;
-      })()}
-      <div class="q-text">${(() => {
-        const safe = escHtml(q.text);
-        if (!boardSearch) return safe;
-        const needle = escHtml(boardSearch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return safe.replace(new RegExp('(' + needle + ')', 'gi'), '<mark style="background:rgba(84,147,247,0.25);color:var(--accent);border-radius:2px;padding:0 2px;">$1</mark>');
-      })()}</div>
-      ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
-      <div class="q-footer">
-        <div class="q-votes">
-          <button class="vote-btn ${q.voted ? 'voted' : ''}" onclick="voteQuestion(${realQi})"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;filter:drop-shadow(0 0 4px currentColor);"><path d="M12 19.6V5.4"/><path d="M6.2 11.2 12 5.4l5.8 5.8"/></svg> ${q.votes}</button>
+
+      <div class="qc2-body">
+        <div class="qc2-chips">
+          ${isPinned(q) ? `<span class="badge-pin">Priority</span><span class="pin-timer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.4 2"/></svg><span class="pin-time" data-pin-until="${q.pinnedUntil}">${pinTimeLeft(q.pinnedUntil - _nowSec)}</span></span>` : ''}
+          <span class="q-category">${escHtml(q.category)}</span>
+          ${q.tags && q.tags.length ? q.tags.map(t => `<span class="q-tag ${boardSearch === '#'+t || boardSearch === t ? 'active-tag' : ''}" data-q-tag="${escHtml(t)}">${escHtml(t)}</span>`).join('') : ''}
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-sm btn-answer-view" onclick="toggleAnswers(${realQi})">💬 ${q.answers.length} answer${q.answers.length !== 1 ? 's' : ''}</button>
-          <button class="btn btn-sm btn-answer-add" onclick="toggleAnswerForm(${realQi})">+ Answer</button>
+
+        <div class="qc2-title">${(() => {
+          const safe = escHtml(q.text);
+          if (!boardSearch) return safe;
+          const needle = escHtml(boardSearch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return safe.replace(new RegExp('(' + needle + ')', 'gi'), '<mark>$1</mark>');
+        })()}</div>
+
+        ${(() => {
+          // Вторая строка по цепочке: ссылка-подтверждение, если есть;
+          // иначе начало принятого ответа; если нет ни того ни другого -
+          // строки нет вовсе. Своего поля с описанием у вопроса нет.
+          const u = q.evidence ? safeUrl(q.evidence) : null;
+          if (u) {
+            const shown = u.length > 58 ? u.slice(0, 58) + '\u2026' : u;
+            return `<a class="qc2-sub qc2-ev" href="${escHtml(u)}" target="_blank" rel="noopener nofollow">${escHtml(shown)}</a>`;
+          }
+          const best = q.chosenAnswerId ? q.answers.find(a => a.id === q.chosenAnswerId) : null;
+          if (best && best.text) {
+            const t = best.text.length > 120 ? best.text.slice(0, 120) + '\u2026' : best.text;
+            return `<div class="qc2-sub">${escHtml(t)}</div>`;
+          }
+          return '';
+        })()}
+
+        <div class="qc2-meta">
+          ${q.isAdmin ? `<span class="badge-admin">\u{1F6E1}\uFE0F Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img class="qc2-ava" src="${getProfileAvatar(q.wallet)}" alt="">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
+          ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${escHtml(q.title)}</span>` : '')}
+          <span class="qc2-dot">\u00b7</span><span class="qc2-time">${escHtml(q.time)}</span>
+          <span class="qc2-id">${escHtml(q.id)}</span>
+
+          <button class="qc2-answers" onclick="toggleAnswers(${realQi})" title="Show answers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"/></svg>
+            ${q.answers.length}
+          </button>
         </div>
+
+        ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
+      </div>
+
+      <!-- Стрелка справа раскрывает вопрос, как на образце. Кнопка
+           ответа рядом: без неё пришлось бы открывать ветку, чтобы
+           найти форму. -->
+      <div class="qc2-side">
+        <button class="qc2-open" onclick="toggleAnswers(${realQi})" aria-label="Open question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="qc2-add" onclick="toggleAnswerForm(${realQi})" title="Answer">+</button>
       </div>
       <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}">
         ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet - be the first!</div>` : ''}
