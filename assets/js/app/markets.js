@@ -22,6 +22,14 @@ const PROPHECY_LCD = [
 // Цвет темы одинаков в значке и в подписи. Категория приходит из контракта
 // строкой, незнакомая получает нейтральный цвет, а не ломает вёрстку.
 const MARKET_COLORS = {
+  economy: '#f4d03f',
+  governance: '#a855f7',
+  protocol: '#22d3ee',
+  validators: '#4ade80',
+  network: '#38bdf8',
+  community: '#fb7185',
+  macro: '#fb923c',
+  // прежние значения - у рынков, созданных до переименования
   chain: '#22d3ee',
   crypto: '#f4d03f',
   sport: '#4ade80',
@@ -61,10 +69,17 @@ async function prophecyQuery(msg) {
   const q = btoa(JSON.stringify(msg));
   for (const base of PROPHECY_LCD) {
     try {
-      const r = await fetch(`${base}/cosmwasm/wasm/v1/contract/${PROPHECY_CONTRACT}/smart/${q}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(10000),
-      });
+      // AbortSignal.timeout не работает в части кошельковых браузеров:
+      // запрос молча не уходит, и страница показывает "Chain unavailable".
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 10000);
+      let r;
+      try {
+        r = await fetch(`${base}/cosmwasm/wasm/v1/contract/${PROPHECY_CONTRACT}/smart/${q}`, {
+          headers: { Accept: 'application/json' },
+          signal: ctl.signal,
+        });
+      } finally { clearTimeout(timer); }
       if (!r.ok) continue;
       return (await r.json()).data;
     } catch (e) { /* следующий узел */ }
@@ -133,62 +148,206 @@ function timeLeft(ts) {
   return `${m}m`;
 }
 
+// ── спека человеческим языком ───────────────────────────────────────────────
+//
+// Человек, решающий, ставить ли деньги, не должен читать "lt 6000000000000".
+// Техническая правда никуда не девается - она уезжает под спойлер ниже.
+
+const METRIC_TEXT = {
+  total_supply:    { t: () => 'the total LUNC supply', u: 'lunc' },
+  oracle_rate:     { t: (p) => `the LUNC oracle rate in ${String(p || '').replace(/^u/, '').toUpperCase()}`, u: 'raw' },
+  staking_ratio:   { t: () => 'the share of LUNC staked', u: 'pct' },
+  community_pool:  { t: () => 'the community pool', u: 'lunc' },
+  validator_power: { t: (p) => `the stake delegated to ${shortAddr(p)}`, u: 'lunc' },
+  proposal_passed: { t: (p) => `governance proposal #${mktEsc(p)}`, u: null },
+};
+
+const COMPARATOR_TEXT = { gt: 'above', gte: 'at least', lt: 'below', lte: 'at most' };
+
+/** Большие числа словами: 6,000,000,000,000 читается хуже, чем 6T. Точное
+ *  значение остаётся рядом в скобках, чтобы ничего не пряталось. */
+function bigLunc(uluna) {
+  const v = Number(uluna || 0) / 1e6;
+  const exact = v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (v >= 1e12) return `${+(v / 1e12).toFixed(2)}T LUNC <span class="exact">(${exact})</span>`;
+  if (v >= 1e9) return `${+(v / 1e9).toFixed(2)}B LUNC <span class="exact">(${exact})</span>`;
+  if (v >= 1e6) return `${+(v / 1e6).toFixed(2)}M LUNC <span class="exact">(${exact})</span>`;
+  return `${exact} LUNC`;
+}
+
+/** Высота блока в примерную дату. Кэш общий на страницу: тянуть последний
+ *  блок на каждый рынок незачем. */
+let _tip = null;
+async function chainTip() {
+  if (_tip) return _tip;
+  for (const base of PROPHECY_LCD) {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 8000);
+      let r;
+      try {
+        r = await fetch(`${base}/cosmos/base/tendermint/v1beta1/blocks/latest`,
+          { headers: { Accept: 'application/json' }, signal: ctl.signal });
+      } finally { clearTimeout(timer); }
+      if (!r.ok) continue;
+      const j = await r.json();
+      _tip = { height: Number(j.block.header.height), time: Date.parse(j.block.header.time) / 1000 };
+      return _tip;
+    } catch (e) { /* следующий узел */ }
+  }
+  return null;
+}
+
+function approxDateText(height, tip) {
+  if (!tip || !height) return '';
+  const secs = tip.time + (Number(height) - tip.height) * 6;
+  const d = new Date(secs * 1000);
+  if (isNaN(d)) return '';
+  const when = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number(height) > tip.height ? ` &mdash; around ${when}` : ` &mdash; ${when}`;
+}
+
+/** Одна фраза, по которой понятно, за что держат деньги. */
+function plainSpec(m, tip) {
+  if (!m.spec.metric) {
+    return `Settled by people against a stated criterion: ${mktEsc(m.spec.criterion)}`;
+  }
+  const info = METRIC_TEXT[m.spec.metric];
+  const what = info ? info.t(m.spec.param) : mktEsc(m.spec.metric);
+  const at = `at block <b>${Number(m.spec.height).toLocaleString('en-US')}</b>${approxDateText(m.spec.height, tip)}`;
+
+  if (!info || info.u === null) return `Settles <b class="y">YES</b> if ${what} has passed, ${at}.`;
+
+  const cmp = COMPARATOR_TEXT[m.spec.comparator] || m.spec.comparator;
+  let th;
+  if (info.u === 'lunc') th = bigLunc(m.spec.threshold);
+  else if (info.u === 'pct') th = `${m.spec.threshold}%`;
+  else th = mktEsc(m.spec.threshold);
+
+  return `Settles <b class="y">YES</b> if ${what} is ${cmp} ${th}, ${at}.`;
+}
+
 // ── отрисовка ───────────────────────────────────────────────────────────────
 
-function marketCard(m) {
+/** Цвет категории в виде "r,g,b": CSS прототипа кладёт его в --c и сам
+ *  разводит по рамке, тексту и фону. */
+function catRgb(cat) {
+  const hex = (MARKET_COLORS[cat] || '#8b96b8').replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
+}
+
+function shortAddr(a) {
+  const s = String(a || '');
+  return s.length > 16 ? s.slice(0, 9) + '…' + s.slice(-4) : s;
+}
+
+/** Строка состояния в шапке. Один текст на все виды карточек, чтобы
+ *  крупная и обычная не разъезжались. */
+function statusLine(m) {
+  const left = timeLeft(m.bets_close_at);
+  if (m.status === 'settled') {
+    return `<b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b> · settled`;
+  }
+  if (m.status === 'void') return 'void · stakes returned';
+  if (m.status === 'proposed') return '<b class="p">outcome proposed</b>';
+  return left ? 'closes in ' + left : 'bets closed';
+}
+
+/** Состояние стороны рынка: открыт, закрыт, выиграла, проиграла.
+ *  Одно место на карточку и на экран рынка, чтобы они не расходились. */
+function sideState(m, isYes) {
+  if (m.status === 'settled' && m.outcome !== null && m.outcome !== undefined) {
+    return m.outcome === isYes ? 'won' : 'lost';
+  }
+  if (m.status === 'void') return 'void';
+  if (m.status === 'open' && timeLeft(m.bets_close_at)) return 'open';
+  return 'closed';
+}
+
+function oddsBlock(m) {
   const yes = Number(m.pot_yes), no = Number(m.pot_no);
   const total = yes + no;
   // Пустой рынок рисуем ровно посередине: 50 на 50 честнее, чем ноль,
   // который выглядит как проигрыш одной стороны.
   const pct = total ? Math.round((yes / total) * 100) : 50;
-  const color = MARKET_COLORS[m.category] || '#8b96b8';
-  const chain = !!m.spec.metric;
-  const left = timeLeft(m.bets_close_at);
   const my = payoutMultiplier(m, true), mn = payoutMultiplier(m, false);
-
-  const status = m.status === 'settled'
-    ? `<span style="color:${m.outcome ? '#22d3ee' : '#f472b6'};font-weight:600;">
-         ${m.outcome ? 'YES' : 'NO'} · settled</span>`
-    : m.status === 'void'
-      ? '<span style="color:var(--muted);">void · stakes returned</span>'
-      : m.status === 'proposed'
-        ? '<span style="color:#f4d03f;">outcome proposed · challenge window</span>'
-        : left ? `closes in ${left}` : 'bets closed';
-
-  return `
-  <div onclick="openProphecyMarket(${m.id})" style="border:1px solid var(--border);border-radius:16px;
-              background:var(--surface);padding:18px;margin-bottom:12px;position:relative;
-              overflow:hidden;cursor:pointer;">
-    <div style="position:absolute;inset:0;pointer-events:none;
-                background:linear-gradient(90deg,rgba(34,211,238,0.10) ${pct}%,rgba(244,114,182,0.08) ${pct}%);"></div>
-    <div style="position:relative;">
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
-        <span style="font-size:11px;font-weight:600;color:${color};border:1px solid ${color}55;
-                     background:${color}18;padding:3px 9px;border-radius:8px;">
-          ${mktEsc(m.category)}${chain ? ' · operator-resolved' : ''}</span>
-        <span style="font-size:12px;color:var(--muted);margin-left:auto;">${status}</span>
-      </div>
-      <div style="font-size:17px;font-weight:600;line-height:1.3;margin-bottom:12px;">
-        ${mktEsc(m.question)}</div>
-      <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
-        <div><div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;color:#22d3ee;">
-          ${pct}%</div>
-          <div style="font-size:11px;color:var(--muted);">yes${my ? ` · ×${my.toFixed(2)}` : ''}</div></div>
-        <div><div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;color:#f472b6;">
-          ${100 - pct}%</div>
-          <div style="font-size:11px;color:var(--muted);">no${mn ? ` · ×${mn.toFixed(2)}` : ''}</div></div>
-        <div style="margin-left:auto;text-align:right;">
-          <div style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;">
-            ${fmtLunc(total + Number(m.boost || 0))} LUNC</div>
-          <div style="font-size:11px;color:var(--muted);">
-            ${m.bettors_yes + m.bettors_no} players${Number(m.boost) ? ' · boosted' : ''}</div>
-        </div>
-      </div>
-      ${m.reading ? `<div style="margin-top:12px;font-size:11.5px;color:var(--muted);
-        border-top:1px solid var(--border);padding-top:10px;">${mktEsc(m.reading)}</div>` : ''}
-    </div>
-  </div>`;
+  const side = (isYes, label, p, mult) => {
+    const st = sideState(m, isYes);
+    // Коэффициент имеет смысл, только пока можно поставить.
+    const sub = st === 'won' ? '<span class="m">won</span>'
+      : st === 'lost' ? '<span class="m">lost</span>'
+        : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
+          : st === 'closed' ? '<span class="m">closed</span>' : '';
+    return `
+    <button class="${isYes ? 'yes' : 'no'}" type="button" data-state="${st}">
+      <span class="k">${label}</span>
+      <span class="p">${p}%</span>
+      ${sub}
+    </button>`;
+  };
+  return '<div class="odds">' + side(true, 'YES', pct, my)
+    + side(false, 'NO', 100 - pct, mn) + '</div>';
 }
+
+
+function footBlock(m) {
+  const total = Number(m.pot_yes) + Number(m.pot_no) + Number(m.boost || 0);
+  return `
+    <div class="foot">
+      <span><img src="assets/img/icons/c-volume.webp" alt="" loading="lazy"><b>${fmtLunc(total)}</b> LUNC</span>
+      <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> players</span>
+      ${Number(m.boost)
+        ? `<span><img src="assets/img/lunc.webp" alt="" loading="lazy"><b>+${fmtLunc(m.boost)}</b> boost</span>`
+        : ''}
+    </div>`;
+}
+
+/** Метка происхождения исхода. Стоит рядом с категорией, потому что это
+ *  ровно то, чем рынки отличаются друг от друга по доверию. */
+function sourceTag(m) {
+  return m.spec.metric
+    ? '<span class="cat src on">on-chain spec</span>'
+    : '<span class="cat src">human-resolved</span>';
+}
+
+function marketCard(m) {
+  return `
+  <article class="mkc" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
+    <div class="head">
+      <span class="cat">${mktEsc(m.category)}</span>
+      ${sourceTag(m)}
+      <span class="left">${statusLine(m)}</span>
+    </div>
+    <h4>${mktEsc(m.question)}</h4>
+    <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+    ${oddsBlock(m)}
+    ${footBlock(m)}
+  </article>`;
+}
+
+/** Тот же рынок, которому отдано больше места: фон баннера, крупный
+ *  вопрос и проценты. Первый в списке, чтобы страница не начиналась
+ *  плиткой одинаковых карточек. */
+function featuredCard(m) {
+  return `
+  <article class="mkc big" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
+    <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
+    <div class="inner">
+      <div class="head">
+        <span class="cat feat">${m.promoted ? 'Featured' : 'Closing next'}</span>
+        <span class="cat">${mktEsc(m.category)}</span>
+        ${sourceTag(m)}
+        <span class="left">${statusLine(m)}</span>
+      </div>
+      <h4>${mktEsc(m.question)}</h4>
+      <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+      ${m.reading ? `<p class="desc">${mktEsc(m.reading)}</p>` : ''}
+      ${oddsBlock(m)}
+      ${footBlock(m)}
+    </div>
+  </article>`;
+}
+
 
 function emptyPanel(text, sub) {
   return `<div style="border:1px solid var(--border);border-radius:16px;background:var(--surface);
@@ -199,7 +358,7 @@ function emptyPanel(text, sub) {
 }
 
 async function renderMarkets(resolved) {
-  const host = document.getElementById(resolved ? 'resolved-list' : 'markets-list');
+  const host = document.getElementById('markets-list');
   if (!host) return;
   openMarketId = null;
 
@@ -225,13 +384,23 @@ async function renderMarkets(resolved) {
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
   try {
     const all = await loadProphecyMarkets();
+    renderMarketStats(all);
     const live = ['open', 'locked', 'proposed'];
     const list = all.filter((m) => (resolved ? !live.includes(m.status) : live.includes(m.status)));
     // Свежие сверху: у открытых интереснее ближайшие к закрытию, у закрытых -
     // последние рассчитанные.
     list.sort((a, b) => (resolved ? b.id - a.id : a.bets_close_at - b.bets_close_at));
+    // Первым идёт продвинутый рынок, а если такого нет - ближайший к
+    // закрытию: список уже отсортирован. Один рынок на всю ширину, потому
+    // что сетка из одной колонки выглядит как ошибка вёрстки.
+    const feat = list.find((m) => m.promoted) || list[0];
+    const rest = list.filter((m) => m !== feat);
+    const grid = rest.length
+      ? `<div class="mk-grid"><div>${featuredCard(feat)}</div>`
+        + `<div class="mk-list">${rest.map(marketCard).join('')}</div></div>`
+      : featuredCard(feat);
     host.innerHTML = TEST_BANNER + (list.length
-      ? list.map(marketCard).join('')
+      ? grid
       : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
           resolved ? 'Settled and voided markets will be listed here with their readings.'
                    : 'Be the first to open one.'));
@@ -284,10 +453,13 @@ window.submitClaim = submitClaim;
 
 /** Блок проверки: спецификация плюс готовая команда. Строится из полей
  *  рынка, поэтому показывает ровно то условие, на которое ставили люди. */
+/** Техническая часть: ровно то условие, на которое ставили люди, плюс
+ *  готовая команда. Живёт внутри спойлера - нужна проверяющему, а не
+ *  каждому, кто открыл рынок. */
 function verifyBlock(m) {
   if (!m.spec.metric) {
-    return `<div style="font-size:13.5px;color:var(--muted);line-height:1.7;">
-      Resolved by people against a stated criterion:<br>${mktEsc(m.spec.criterion)}</div>`;
+    return `<div class="mk-plain">The agreement is the criterion above. Nothing here is read
+      from the chain, so the outcome is posted by a person.</div>`;
   }
   const path = (METRIC_PATHS[m.spec.metric] || (() => ''))(m.spec.param || '');
   const cmd = `curl -s -H "x-cosmos-block-height: ${m.spec.height}" \\\n  "${PROPHECY_LCD[0]}${path}"`;
@@ -295,70 +467,66 @@ function verifyBlock(m) {
     ? `${mktEsc(m.spec.comparator)} <code>${mktEsc(m.spec.threshold)}</code>`
     : 'proposal passes';
   return `
-    <div style="display:grid;grid-template-columns:160px 1fr;gap:8px 16px;font-size:13.5px;">
-      <div style="color:var(--muted);">Metric</div><div>${mktEsc(m.spec.metric)}${m.spec.param ? ' · ' + mktEsc(m.spec.param) : ''}</div>
-      <div style="color:var(--muted);">Condition</div><div>${cond}</div>
-      <div style="color:var(--muted);">Block height</div><div><code>${m.spec.height}</code></div>
+    <div class="mk-spec">
+      <div>Metric</div><div>${mktEsc(m.spec.metric)}${m.spec.param ? ' · ' + mktEsc(m.spec.param) : ''}</div>
+      <div>Condition</div><div>${cond}</div>
+      <div>Block height</div><div><code>${m.spec.height}</code></div>
     </div>
-    <pre style="background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;
-      padding:14px;overflow-x:auto;font-size:12px;color:#9fb4d8;margin:12px 0 0;">${mktEsc(cmd)}</pre>
-    <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
-      The contract stored this the moment the market opened, so what you check now is the
-      question people actually bet on. The outcome itself is posted by the operator - the
-      contract records the claim, it does not verify the metric. Run the command above to
-      check the claim against the chain.</div>`;
+    <pre>${mktEsc(cmd)}</pre>
+    <div class="mk-plain">The contract stored this the moment the market opened, so what you
+      check now is the question people actually bet on. The outcome itself is posted by the
+      operator: the contract records the claim, it does not verify the metric.</div>`;
 }
 
+
+/** Форма ставки. Выбор стороны переехал в крупные кнопки самого рынка -
+ *  два набора кнопок на одном экране путали: люди жали в карточке и
+ *  думали, что ставка сделана. */
 function betForm(m) {
-  const my = payoutMultiplier(m, true), mn = payoutMultiplier(m, false);
-  const btn = (side, label, mult, color) => `
-    <button onclick="setBetSide(${side})" style="flex:1;padding:14px;border-radius:14px;cursor:pointer;
-      background:${betSide === side ? color + '22' : 'transparent'};
-      border:1px solid ${betSide === side ? color + '99' : 'var(--border)'};
-      color:${betSide === side ? color : 'var(--muted)'};
-      font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;">
-      ${label}${mult ? ' · ×' + mult.toFixed(2) : ''}</button>`;
-
   return `
-  <div style="border:1px solid var(--border);border-radius:16px;background:var(--surface);
-    padding:20px;margin-bottom:12px;">
-    <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;margin-bottom:14px;">Place a bet</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;">${btn(true, 'Yes', my, '#22d3ee')}${btn(false, 'No', mn, '#f472b6')}</div>
-    <input id="bet-amount" type="text" inputmode="numeric" placeholder="Amount in LUNC"
-      oninput="updateBetCalc()" style="width:100%;background:rgba(255,255,255,.04);
-      border:1px solid var(--border);border-radius:12px;color:var(--text);
-      font-family:'Rajdhani',sans-serif;font-weight:600;font-size:18px;padding:13px 15px;
-      outline:none;margin-bottom:12px;box-sizing:border-box;">
-    <div id="bet-calc" style="background:rgba(255,255,255,.03);border:1px solid var(--border);
-      border-radius:12px;padding:13px 15px;font-size:13px;color:var(--muted);line-height:1.7;
-      margin-bottom:14px;">Enter an amount to see what a correct call pays.</div>
-    <button onclick="submitBet()" id="bet-go" style="width:100%;padding:15px;border-radius:14px;
-      border:1px solid rgba(34,211,238,.5);background:rgba(34,211,238,.14);color:#22d3ee;
-      font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;cursor:pointer;">Place bet</button>
-    <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">
-      Payouts arrive about 1.5% smaller than shown: Terra Classic taxes every transfer.</div>
-  </div>`;
+  <section class="card mk-bet">
+    <h3>Place a bet</h3>
+    <label class="mk-amount">
+      <span>Amount</span>
+      <input id="bet-amount" type="text" inputmode="numeric" placeholder="0"
+             oninput="updateBetCalc()" autocomplete="off">
+      <em>LUNC</em>
+    </label>
+    <div id="bet-calc" class="mk-calc">Pick a side above and enter an amount.</div>
+    <button onclick="submitBet()" id="bet-go" class="ask-go mk-place">Place bet &rarr;</button>
+    <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about
+      1.5% smaller than the figure shown.</div>
+  </section>`;
 }
+
 
 function positionBlock(m, pos) {
   if (!pos || (!Number(pos.yes) && !Number(pos.no))) return '';
   const won = m.status === 'settled' && Number(m.outcome ? pos.yes : pos.no) > 0;
   const canClaim = (m.status === 'settled' && won) || m.status === 'void';
+  const side = Number(pos.yes)
+    ? `<b class="y">${fmtLunc(pos.yes)} LUNC</b> on yes`
+    : '';
+  const side2 = Number(pos.no)
+    ? `<b class="n">${fmtLunc(pos.no)} LUNC</b> on no`
+    : '';
   return `
-  <div style="border:1px dashed rgba(168,85,247,.45);border-radius:16px;padding:16px 18px;
-       margin-bottom:12px;font-size:13.5px;">
-    Your position:
-    ${Number(pos.yes) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmtLunc(pos.yes)} LUNC on yes</b> ` : ''}
-    ${Number(pos.no) ? `<b style="font-family:'Rajdhani',sans-serif;font-size:16px;">${fmtLunc(pos.no)} LUNC on no</b>` : ''}
-    ${Number(pos.payout) ? `<div style="margin-top:8px;">Pays <b style="color:#22d3ee;">${fmtLunc(pos.payout)} LUNC</b>${
-      m.status === 'proposed' ? ' once the challenge window closes' : ''}</div>` : ''}
-    ${pos.claimed ? '<div style="margin-top:8px;color:var(--muted);">Already claimed.</div>'
-      : canClaim ? `<button onclick="submitClaim()" style="margin-top:10px;padding:12px 22px;
-          border-radius:12px;border:1px solid rgba(34,211,238,.5);background:rgba(34,211,238,.14);
-          color:#22d3ee;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;
-          cursor:pointer;">${m.status === 'void' ? 'Take the refund' : 'Collect'}</button>` : ''}
-  </div>`;
+  <section class="card mk-pos">
+    <h3>Your position</h3>
+    <div class="mk-pos-line">${[side, side2].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
+    ${Number(pos.payout)
+      ? `<div class="mk-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b>${
+          m.status === 'proposed' ? ' once the challenge window closes' : ''}</div>`
+      : ''}
+    ${pos.claimed
+      ? '<div class="mk-plain">Already claimed.</div>'
+      : canClaim
+        ? `<button onclick="submitClaim()" class="ask-go mk-place">${
+            m.status === 'void' ? 'Take the refund' : 'Collect'} &rarr;</button>`
+        : ''}
+  </section>`;
 }
+
 
 /**
  * Одно место с тремя состояниями. Пока рынок принимает ставки - форма сверху.
@@ -367,11 +535,15 @@ function positionBlock(m, pos) {
  */
 async function openProphecyMarket(id) {
   openMarketId = id;
-  const host = document.getElementById(boardTab === 'resolved' ? 'resolved-list' : 'markets-list');
+  const host = document.getElementById('markets-list');
   if (!host) return;
-  host.innerHTML = '<div style="color:var(--muted);padding:20px;">Loading…</div>';
+  host.innerHTML = '<div class="mk-loading">Loading…</div>';
+  // Открытие рынка из середины списка оставляло страницу прокрученной,
+  // и экран начинался с середины карточки.
+  const main = document.querySelector('.main');
+  if (main) main.scrollTop = 0;
 
-  let m, pos = null;
+  let m, pos = null, tip = null;
   try {
     m = await prophecyQuery({ market: { market_id: id } });
     if (window.globalWalletAddress) {
@@ -381,86 +553,109 @@ async function openProphecyMarket(id) {
     host.innerHTML = emptyPanel('Chain unavailable', 'Could not load this market.');
     return;
   }
+  try { tip = await chainTip(); } catch (e) { /* дата необязательна */ }
   window._prophecyMarket = m;
 
-  const yes = Number(m.pot_yes), no = Number(m.pot_no), total = yes + no;
-  const pct = total ? Math.round((yes / total) * 100) : 50;
-  const left = timeLeft(m.bets_close_at);
-  const color = MARKET_COLORS[m.category] || '#8b96b8';
+  const open = m.status === 'open' && timeLeft(m.bets_close_at);
 
   let banner = '';
   if (m.status === 'proposed') {
-    banner = `<div style="border:1px solid rgba(244,208,63,.4);background:rgba(244,208,63,.08);
-      border-radius:14px;padding:16px 18px;margin-bottom:14px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;">
-        Proposed: ${m.outcome ? 'YES' : 'NO'}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px;">
-        Payouts stay shut until the challenge window closes. Until then the reading can be disputed.</div>
-      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:8px;">${mktEsc(m.reading)}</div>` : ''}
-    </div>`;
+    banner = `<div class="mk-banner warn">
+      <h3>Proposed: ${m.outcome ? 'YES' : 'NO'}</h3>
+      <p>Payouts stay shut until the challenge window closes. Until then the reading can be disputed.</p>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'settled') {
-    banner = `<div style="border:1px solid rgba(34,211,238,.4);background:rgba(34,211,238,.1);
-      border-radius:14px;padding:16px 18px;margin-bottom:14px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;">
-        Settled: ${m.outcome ? 'YES' : 'NO'}</div>
-      ${m.reading ? `<div style="font-size:12.5px;color:#9fb4d8;margin-top:6px;">${mktEsc(m.reading)}</div>` : ''}
-    </div>`;
+    banner = `<div class="mk-banner done">
+      <h3>Settled: ${m.outcome ? 'YES' : 'NO'}</h3>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'void') {
-    banner = `<div style="border:1px solid var(--border);border-radius:14px;padding:16px 18px;
-      margin-bottom:14px;color:var(--muted);font-size:13.5px;">
-      Void. Every stake goes back untouched.${m.reading ? '<br>' + mktEsc(m.reading) : ''}</div>`;
+    banner = `<div class="mk-banner">
+      <h3>Void</h3><p>Every stake goes back untouched.</p>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   }
 
+  // Стороны рынка и есть выбор ставки: одни и те же кнопки, чтобы не было
+  // двух мест, где можно "выбрать" yes.
+  const yes = Number(m.pot_yes), no = Number(m.pot_no);
+  const total = yes + no;
+  const pct = total ? Math.round((yes / total) * 100) : 50;
+  const my = payoutMultiplier(m, true), mn = payoutMultiplier(m, false);
+  const sideBtn = (isYes, label, p, mult, pot, players) => {
+    const st = sideState(m, isYes);
+    const sub = st === 'won' ? '<span class="m badge">WON</span>'
+      : st === 'lost' ? '<span class="m">did not happen</span>'
+        : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
+          : st === 'closed' ? '<span class="m">betting closed</span>' : '';
+    return `
+    <button class="${isYes ? 'yes' : 'no'}" type="button" data-state="${st}"
+            data-side="${isYes ? 1 : 0}" aria-pressed="${open && betSide === isYes}"
+            ${open ? `onclick="setBetSide(${isYes})"` : 'disabled'}>
+      <span class="k">${label}</span>
+      <span class="p">${p}%</span>
+      ${sub}
+      <span class="s">${fmtLunc(pot)} LUNC · ${players} ${players === 1 ? 'player' : 'players'}</span>
+    </button>`;
+  };
+
   host.innerHTML = `
-    <div onclick="renderMarkets(${boardTab === 'resolved'})" style="color:var(--muted);font-size:13px;
-      cursor:pointer;margin-bottom:14px;display:inline-block;">&larr; All markets</div>
+    <div class="mk-back" onclick="renderMarkets(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
     ${banner}
-    <div style="border:1px solid var(--border);border-radius:16px;background:var(--surface);
-      padding:22px;margin-bottom:12px;">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-        <span style="font-size:11.5px;font-weight:600;color:${color};border:1px solid ${color}55;
-          background:${color}18;padding:3px 10px;border-radius:8px;">
-          ${mktEsc(m.category)}${m.spec.metric ? ' · operator-resolved' : ''}</span>
-        <span style="margin-left:auto;font-family:'Rajdhani',sans-serif;font-weight:700;
-          font-size:16px;color:#f4d03f;">${left ? 'closes in ' + left : ''}</span>
-      </div>
-      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:27px;
-        line-height:1.2;margin-bottom:16px;">${mktEsc(m.question)}</div>
-      <div style="display:flex;height:66px;border-radius:14px;overflow:hidden;
-        border:1px solid var(--border);margin-bottom:14px;">
-        <div style="flex:0 0 ${pct}%;display:flex;flex-direction:column;justify-content:center;
-          padding:0 16px;background:linear-gradient(180deg,rgba(34,211,238,.22),rgba(34,211,238,.06));">
-          <b style="font-family:'Rajdhani',sans-serif;font-size:20px;color:#22d3ee;">Yes · ${pct}%</b>
-          <span style="font-size:11.5px;color:var(--muted);">${fmtLunc(yes)} LUNC · ${m.bettors_yes} players</span>
+    <article class="mkc big mk-detail" style="--c:${catRgb(m.category)}">
+      <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
+      <div class="inner">
+        <div class="head">
+          <span class="cat">${mktEsc(m.category)}</span>
+          ${sourceTag(m)}
+          <span class="left">${statusLine(m)}</span>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;
-          padding:0 16px;text-align:right;background:linear-gradient(180deg,rgba(244,114,182,.2),rgba(244,114,182,.05));">
-          <b style="font-family:'Rajdhani',sans-serif;font-size:20px;color:#f472b6;">${100 - pct}% · No</b>
-          <span style="font-size:11.5px;color:var(--muted);">${fmtLunc(no)} LUNC · ${m.bettors_no} players</span>
+        <h4>${mktEsc(m.question)}</h4>
+        <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+        <div class="odds" id="bet-side-row">
+          ${sideBtn(true, 'YES', pct, my, yes, m.bettors_yes)}
+          ${sideBtn(false, 'NO', 100 - pct, mn, no, m.bettors_no)}
         </div>
+        ${open ? '' : `<div class="mk-shut">${
+          m.status === 'settled' ? 'This market is settled. Betting is closed.'
+            : m.status === 'void' ? 'This market was voided. Stakes went back.'
+              : m.status === 'proposed' ? 'An outcome has been proposed. Betting is closed.'
+                : 'Betting is closed, waiting for the outcome.'}</div>`}
+        ${footBlock(m)}
       </div>
-      <div style="display:flex;gap:24px;flex-wrap:wrap;">
-        <div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;">${fmtLunc(total + Number(m.boost || 0))}</b>
-          <div style="font-size:11.5px;color:var(--muted);">pot, LUNC</div></div>
-        ${Number(m.boost) ? `<div><b style="font-family:'Rajdhani',sans-serif;font-size:18px;color:#f4d03f;">+${fmtLunc(m.boost)}</b>
-          <div style="font-size:11.5px;color:var(--muted);">treasury boost</div></div>` : ''}
-      </div>
-    </div>
+    </article>
     ${positionBlock(m, pos)}
-    ${m.status === 'open' && left ? betForm(m) : ''}
-    <div style="border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:20px;">
-      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;margin-bottom:14px;">
-        ${m.status === 'settled' || m.status === 'proposed' ? 'Verify it yourself' : 'How this settles'}</div>
-      ${verifyBlock(m)}
-    </div>`;
+    ${open ? betForm(m) : ''}
+    <section class="card mk-how">
+      <h3>How this settles</h3>
+      <p class="mk-lead">${plainSpec(m, tip)}</p>
+      <details class="mk-verify">
+        <summary>Check it against the chain yourself</summary>
+        ${verifyBlock(m)}
+      </details>
+    </section>`;
 }
+
 
 // ── ставка и выплата ────────────────────────────────────────────────────────
 
+/**
+ * Переключение стороны меняет только подсветку кнопок и пересчитывает выплату.
+ * Полная перерисовка тянула цепочку заново и стирала введённую сумму: человек
+ * набирал 50,000, менял сторону и обнаруживал пустое поле.
+ */
+/**
+ * Переключение стороны меняет только состояние кнопок и пересчитывает
+ * выплату. Полная перерисовка тянула цепочку заново и стирала введённую
+ * сумму: человек набирал 50,000, менял сторону и обнаруживал пустое поле.
+ */
 function setBetSide(side) {
   betSide = side;
-  if (openMarketId) openProphecyMarket(openMarketId);
+  if (!window._prophecyMarket) return;
+  document.querySelectorAll('#bet-side-row button').forEach((b) => {
+    b.setAttribute('aria-pressed', String((b.dataset.side === '1') === betSide));
+  });
+  updateBetCalc();
 }
+
 
 function updateBetCalc() {
   const m = window._prophecyMarket;
@@ -476,11 +671,10 @@ function updateBetCalc() {
   // считает по коэффициенту, которого уже не будет.
   const mult = payoutMultiplier(m, betSide, lunc * 1e6);
   const payout = Math.floor(lunc * mult);
-  box.innerHTML = `If ${betSide ? 'yes' : 'no'} wins you collect
-    <b style="color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;">
-    ${payout.toLocaleString('en-US')} LUNC</b> - your ${lunc.toLocaleString('en-US')} back plus
-    ${(payout - lunc).toLocaleString('en-US')} from the losing pot.<br>
-    If it does not, the stake is gone.`;
+  box.innerHTML = `<div class="row"><span>You stake</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
+    <div class="row"><span>If ${betSide ? 'YES' : 'NO'} wins</span><b class="y">${payout.toLocaleString('en-US')} LUNC</b></div>
+    <div class="row"><span>Profit</span><b class="y">+${(payout - lunc).toLocaleString('en-US')} LUNC</b></div>
+    <div class="row muted"><span>If it does not</span><b>the stake is gone</b></div>`;
 }
 
 async function submitBet() {
@@ -527,3 +721,31 @@ async function submitClaim() {
     alert(e.message || 'Transaction failed');
   }
 }
+
+
+// ── страница Markets: статистика и переключатель ────────────────────────────
+
+function renderMarketStats(all) {
+  const live = ['open', 'locked', 'proposed'];
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+  };
+  const staked = all.reduce((s, m) => s + Number(m.pot_yes) + Number(m.pot_no), 0);
+  const players = all.reduce((s, m) => s + m.bettors_yes + m.bettors_no, 0);
+  set('mk-stat-open', all.filter((m) => live.includes(m.status)).length);
+  set('mk-stat-vol', fmtLunc(staked));
+  set('mk-stat-settled', all.filter((m) => m.status === 'settled').length);
+  set('mk-stat-players', players.toLocaleString('en-US'));
+}
+
+function switchMarketView(btn, resolved) {
+  const row = document.getElementById('mkTabs');
+  if (row) row.querySelectorAll('button').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b === btn));
+  });
+  renderMarkets(resolved);
+}
+
+window.switchMarketView = switchMarketView;
+window.renderMarketStats = renderMarketStats;

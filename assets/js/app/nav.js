@@ -13,6 +13,7 @@ function showPage(name, e, skipHistory) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); loadVotesFromWorker(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
+  if (name === 'markets') renderMarkets(false);
   // Mobile chat: hide footer, expand messages area
   const footer = document.querySelector('footer');
   if (_isMobileChat()) {

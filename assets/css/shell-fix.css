@@ -1015,3 +1015,283 @@
    стоят вплотную к шапке, а содержимое Draw начиналось сразу под ними. */
 #page-draw #drawFrame{margin-top:4px}
 #page-draw .draw-nav{padding-top:4px}
+
+
+/* ==================================================================
+   16. Markets
+   Раздел рисуется скриптами, которые писались под старую палитру,
+   поэтому переопределяем сами переменные - тот же приём, что в чате
+   и в Ask, без правки разметки.
+   ================================================================== */
+#page-markets{
+  --surface:var(--panel);
+  --surface2:var(--bg-2);
+  --border:var(--line);
+  --text:var(--ink);
+  --ink-3:#a3aed6;
+  --muted:#a3aed6;
+  --accent:var(--violet-hi);
+  --accent-dark:var(--violet-2);
+  --green:var(--lime);
+  --gold:var(--amber);
+}
+
+/* Промежутки от .shell-page доходят только до прямых детей страницы.
+   Список и форма лежат внутри своих контейнеров, поэтому разносим их
+   здесь - так же, как #rep-tab-content выше. Без этого кнопки Open и
+   Settled и кружки с номерами шагов налезали на соседние рамки. */
+#page-markets #mk-browse,
+#page-markets #mk-create-host{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  min-width:0;
+}
+#page-markets #mk-browse > *,
+#page-markets #mk-create-host > *{flex:0 0 auto}
+
+/* Раздел 1 сбрасывает .card в padding:0 - возвращаем, иначе текст
+   упирается в рамку. */
+#page-markets .card{padding:22px 24px;border-radius:var(--r-lg)}
+
+#page-markets label{
+  text-transform:none;
+  letter-spacing:0;
+  font-size:12.5px;
+  color:var(--ink);
+}
+#page-markets ::placeholder{color:#7d88b4;opacity:1}
+#page-markets .field .opt{color:#98a3cc}
+#page-markets textarea,
+#page-markets input,
+#page-markets select{color:var(--ink)}
+
+/* Класс .count в shell.css занят плашками статистики на главной: рамка,
+   padding и центрирование. Под полем вопроса это выглядело как ещё одно
+   пустое поле ввода. */
+#page-markets .field .count{
+  display:block;
+  background:none;border:0;padding:0;
+  margin-top:7px;text-align:right;
+  font-family:inherit;font-size:11px;letter-spacing:0;color:var(--ink-3);
+}
+
+/* Заголовок шага: промежуток даёт flex-gap контейнера, свой отступ
+   сверху только сдвигал кружок на рамку предыдущей карточки. */
+#page-markets .step-h{margin:0}
+
+/* Сводка растёт вниз списком ошибок - прижимаем содержимое к верху,
+   иначе цена и кнопка уезжают в середину. */
+#page-markets .summary{align-items:start}
+#page-markets .summary .price,
+#page-markets .summary .ask-go{align-self:center}
+#page-markets .summary .ask-go{border:0;color:#fff;cursor:pointer}
+
+/* Полоса фильтров: своя рамка не нужна, промежуток уже есть. */
+#page-markets .mk-bar{margin:0}
+
+
+/* ---- Markets: карточки ----
+   Разметку даёт markets.js, оформление - .mkc из shell.css. Здесь только
+   то, чего в прототипе не было: метка происхождения исхода, коэффициент
+   на кнопке и цвет вердикта у рассчитанных рынков. */
+#page-markets #markets-list{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  min-width:0;
+}
+#page-markets .mkc{cursor:pointer}
+#page-markets .mkc h4{font-family:var(--dis);letter-spacing:.01em}
+
+/* Откуда берётся исход. Ончейн-спека - спокойный синий, человек -
+   приглушённый серый: разница должна читаться до клика. */
+#page-markets .mkc .cat.src{--c:139,150,184}
+#page-markets .mkc .cat.src.on{--c:34,211,238}
+
+#page-markets .mkc .odds button{cursor:pointer;line-height:1.25}
+#page-markets .mkc .odds .m{
+  display:block;margin-top:4px;
+  font-size:10.5px;letter-spacing:.02em;opacity:.8;
+}
+#page-markets .mkc .left b.y{color:var(--lime)}
+#page-markets .mkc .left b.n{color:var(--pink)}
+#page-markets .mkc .left b.p{color:var(--amber)}
+#page-markets .mkc .foot{gap:16px}
+
+/* Крупная карточка: вопрос на фоне баннера должен оставаться читаемым
+   на любой длине, поэтому подложка плотнее прототипной. */
+#page-markets .mkc.big::after{
+  background:linear-gradient(180deg,rgba(8,11,30,.72),rgba(8,11,30,.94));
+}
+#page-markets .mkc.big .desc{
+  border-left:2px solid rgba(var(--c),.5);
+  padding-left:11px;color:var(--ink-3);font-size:11.5px;
+}
+
+
+/* ---- Markets: экран одного рынка ----
+   Раньше он рисовался инлайновыми стилями, написанными до редизайна.
+   Теперь это та же .mkc.big, что и крупная карточка в списке, плюс
+   обычные .card под ставку и объяснение. */
+#page-markets .mk-back{
+  display:inline-block;font-size:12.5px;color:var(--ink-3);cursor:pointer;
+}
+#page-markets .mk-back:hover{color:var(--ink)}
+#page-markets .mk-loading{font-size:13px;color:var(--ink-3);padding:20px 0}
+
+#page-markets .mk-detail .inner{padding:24px 26px;gap:14px}
+#page-markets .mk-detail h4{font-size:26px;line-height:1.25}
+#page-markets .mk-detail .odds button{padding:16px 14px}
+#page-markets .mk-detail .odds .p{font-size:32px}
+#page-markets .mk-detail .odds .s{
+  display:block;margin-top:6px;font-size:11px;letter-spacing:0;opacity:.75;
+}
+
+/* Выбранная сторона. Без этого кнопки выглядели одинаково, и было
+   непонятно, на что именно уйдут деньги. */
+#page-markets .odds button[aria-pressed="true"]{
+  background:rgba(var(--o),.30);
+  box-shadow:inset 0 0 0 1px rgba(var(--o),.9);
+}
+#page-markets .odds button[disabled]{cursor:default;opacity:.75}
+
+#page-markets .mk-banner{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 18px;
+}
+#page-markets .mk-banner h3{margin:0;font-family:var(--dis);font-size:19px;font-weight:700}
+#page-markets .mk-banner p{margin:6px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
+#page-markets .mk-banner .read{color:var(--cyan);font-size:12px}
+#page-markets .mk-banner.warn{border-color:rgba(244,208,63,.4);background:rgba(244,208,63,.07)}
+#page-markets .mk-banner.done{border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.08)}
+
+#page-markets .card h3{
+  margin:0 0 14px;font-family:var(--dis);font-size:18px;font-weight:700;
+}
+
+/* Ставка: одно поле и понятный расчёт строками. */
+#page-markets .mk-amount{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:4px 14px;
+}
+#page-markets .mk-amount span{font-size:11.5px;color:var(--ink-3)}
+#page-markets .mk-amount em{font-style:normal;font-size:12.5px;color:var(--ink-3)}
+#page-markets .mk-amount input{
+  flex:1;min-width:0;background:none;border:0;outline:none;color:var(--ink);
+  font-family:var(--dis);font-size:22px;font-weight:700;padding:11px 0;
+}
+#page-markets .mk-calc{
+  margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-size:12.5px;color:var(--ink-3);
+}
+#page-markets .mk-calc .row{
+  display:flex;justify-content:space-between;gap:14px;padding:4px 0;
+}
+#page-markets .mk-calc .row b{color:var(--ink);font-family:var(--dis);font-size:14px}
+#page-markets .mk-calc .row b.y{color:var(--lime)}
+#page-markets .mk-calc .row.muted b{color:var(--ink-3);font-family:inherit;font-size:12.5px;font-weight:400}
+#page-markets .mk-place{
+  width:100%;justify-content:center;margin-top:14px;border:0;color:#fff;cursor:pointer;
+}
+#page-markets .mk-place[disabled]{opacity:.5;cursor:default}
+
+#page-markets .mk-pos-line{font-size:14px}
+#page-markets .mk-pos-line b.y{color:var(--lime)}
+#page-markets .mk-pos-line b.n{color:var(--pink)}
+#page-markets .mk-pos-pay{margin-top:8px;font-size:12.5px;color:var(--ink-3)}
+#page-markets .mk-pos-pay b{color:var(--cyan)}
+
+/* Объяснение: одна фраза крупно, техника под спойлером. */
+#page-markets .mk-lead{
+  margin:0;font-size:15px;line-height:1.65;color:var(--ink);
+}
+#page-markets .mk-lead b{color:var(--cyan);font-weight:600}
+#page-markets .mk-lead b.y{color:var(--lime)}
+#page-markets .mk-lead .exact{font-size:12px;color:var(--ink-3)}
+#page-markets .mk-plain{margin-top:10px;font-size:11.5px;color:var(--ink-3);line-height:1.65}
+#page-markets .mk-verify{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+#page-markets .mk-verify summary{
+  cursor:pointer;font-size:12.5px;color:var(--ink-3);list-style:none;
+  display:flex;align-items:center;gap:9px;
+}
+#page-markets .mk-verify summary::-webkit-details-marker{display:none}
+#page-markets .mk-verify summary::before{
+  content:"+";width:20px;height:20px;flex:none;border-radius:6px;
+  border:1px solid var(--line-2);display:grid;place-items:center;font-size:13px;
+}
+#page-markets .mk-verify[open] summary::before{content:"\2212"}
+#page-markets .mk-verify summary:hover{color:var(--ink)}
+#page-markets .mk-spec{
+  display:grid;grid-template-columns:140px minmax(0,1fr);gap:7px 16px;
+  margin-top:14px;font-size:12.5px;
+}
+#page-markets .mk-spec > div:nth-child(odd){color:var(--ink-3)}
+#page-markets .mk-verify pre{
+  margin:12px 0 0;padding:12px 13px;border-radius:9px;overflow-x:auto;
+  background:rgba(0,0,0,.35);border:1px solid var(--line);
+  font-size:11.5px;color:#9fb4d8;white-space:pre;
+}
+
+
+/* ---- Markets: закрытые и рассчитанные стороны ----
+   Отличаться должен не только курсор: раньше проигравшая сторона была
+   такой же яркой, как выигравшая, и отличалась только прозрачностью. */
+#page-markets .odds button[data-state="lost"],
+#page-markets .odds button[data-state="closed"],
+#page-markets .odds button[data-state="void"]{
+  --o:126,136,168;
+  background:rgba(126,136,168,.07);
+  border-color:rgba(126,136,168,.28);
+  color:#8b96b8;
+}
+#page-markets .odds button[data-state="lost"]:hover,
+#page-markets .odds button[data-state="closed"]:hover,
+#page-markets .odds button[data-state="void"]:hover{
+  background:rgba(126,136,168,.07);
+}
+#page-markets .odds button[data-state="won"]{
+  box-shadow:inset 0 0 0 1px rgba(var(--o),.85), 0 0 26px -12px rgb(var(--o));
+}
+#page-markets .odds .m.badge{
+  display:inline-block;margin-top:5px;padding:2px 9px;border-radius:999px;
+  background:rgba(var(--o),.22);border:1px solid rgba(var(--o),.55);
+  font-size:10px;letter-spacing:.14em;opacity:1;
+}
+#page-markets .odds button[disabled]{cursor:default;opacity:1}
+
+#page-markets .mk-shut{
+  font-size:12px;color:var(--ink-3);
+  border-top:1px solid var(--line);padding-top:12px;
+}
+
+/* Крупная карточка в списке тянется на всю высоту колонки, а подвал
+   прижат к низу через margin-top:auto - так подвалы плиток стоят на
+   одной линии. На экране рынка карточка одна, растягиваться не за чем,
+   и это правило оставляло пустую полосу под текстом. */
+#page-markets .mk-detail{min-height:0}
+#page-markets .mk-detail .foot{margin-top:0}
+
+
+/* ---- Markets: блок проверки спеки ----
+   Значение и порог показываются рядом и в одних единицах: расхождение
+   должно быть видно глазом, а не считаться в уме по числу нулей. */
+#page-markets .mkf-row{
+  display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:5px 0;
+}
+#page-markets .mkf-row + .mkf-row{border-top:1px solid var(--line)}
+#page-markets .mkf-row span{color:var(--ink-3);font-size:12px}
+#page-markets .mkf-row b{font-family:var(--dis);font-size:14px;color:var(--ink);text-align:right}
+#page-markets .mkf-row b.y{color:var(--lime)}
+#page-markets .mkf-row b.n{color:var(--pink)}
+#page-markets .mkf-check.warn{
+  border-color:rgba(244,208,63,.45);background:rgba(244,208,63,.07);
+}
+#page-markets .mkf-warn{
+  margin-top:11px;padding:11px 12px;border-radius:9px;
+  background:rgba(244,208,63,.10);border:1px solid rgba(244,208,63,.35);
+  font-size:12px;line-height:1.6;color:#f4d03f;
+}
+#page-markets .mkf-warn b{color:#f4d03f}
+#page-markets .mkf-warn sup{font-size:9px}

@@ -2058,15 +2058,25 @@ img{display:block;max-width:100%}
    видимой и когда пункт активен, иначе в этом состоянии связь с
    родителем терялась бы. */
 .nav.nav-sub{
-  margin-left:18px;
-  padding-left:14px;
-  font-size:13.5px;
+  /* Иконки нет намеренно: подпункт не должен выглядеть равным
+     основным строкам. Цифры не произвольные - у пункта меню padding 12,
+     иконка 32, зазор 12, значит подпись родителя начинается на 56.
+     28 отступа плюс 28 внутреннего дают ровно 56, и Board встаёт под
+     словом "Ask Oracle". Линия проходит на 28 - по центру иконки
+     родителя, поэтому читается как ветка от него. */
+  margin-left:28px;
+  padding:7px 12px 7px 28px;
+  font-size:13px;
+  color:var(--ink-3);
   border-left:1px solid var(--line);
   border-radius:0 var(--r-sm) var(--r-sm) 0;
 }
-.nav.nav-sub .ico img{width:17px;height:17px}
-.nav.nav-sub:hover{border-left-color:rgba(168,85,247,.55)}
+.nav.nav-sub:hover{
+  color:var(--ink);
+  border-left-color:rgba(168,85,247,.55);
+}
 .nav.nav-sub[aria-current="page"]{
+  color:var(--ink);
   border-left-color:rgba(59,130,246,.75);
 }
 
@@ -2189,4 +2199,38 @@ img{display:block;max-width:100%}
     grid-column:2;flex-direction:row;justify-content:flex-end;margin-top:4px;
   }
   #page-board .q-card.qc2 .answers-section{grid-column:1 / -1}
+}
+
+
+/* ---- market creation form ---- */
+.mkf-back{
+  display:inline-block;margin:2px 0 14px;font-size:12.5px;color:var(--ink-3);cursor:pointer;
+}
+.mkf-back:hover{color:var(--ink)}
+.mkf-note{margin-top:7px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+.mkf-note b{color:var(--cyan);font-weight:600}
+.mkf-hint{font-size:12.5px;color:var(--ink-3)}
+.mkf-check{
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:14px 15px;font-size:12.5px;line-height:1.65;color:var(--ink-2);
+}
+.mkf-check.ok{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.06)}
+.mkf-check.bad{border-color:rgba(209,96,143,.45);background:rgba(209,96,143,.07)}
+.mkf-check b.y{color:var(--lime)}
+.mkf-check b.n{color:var(--pink)}
+.mkf-check pre{
+  margin:11px 0 0;padding:11px 12px;border-radius:9px;overflow-x:auto;
+  background:rgba(0,0,0,.35);border:1px solid var(--line);
+  font-size:11.5px;color:#9fb4d8;white-space:pre;
+}
+.mkf-errs{margin-top:7px;font-size:11.5px;color:var(--pink);line-height:1.7}
+.mkf-ok-line{margin-top:7px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+.field textarea{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;color:var(--ink);font:inherit;font-size:13px;outline:none;resize:vertical;
+}
+.field input[type=datetime-local]{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:10px 13px;color:var(--ink);font:inherit;font-size:13px;outline:none;
+  color-scheme:dark;
 }

@@ -19,7 +19,7 @@
     reputation: function () { showRepPage('leaderboard'); },
     draw:       function () { showPage('draw'); },
     board:      function () { showPage('board'); },
-    markets:      null,  // раздела на боевом сайте пока нет
+    markets:    function () { showPage('markets'); },
     achievements: null   // тоже нет
   };
 
@@ -31,7 +31,7 @@
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
     if (p === 'treasury') return 'treasury';
-    if (p === 'chat' || p === 'ask' || p === 'board') return p;
+    if (p === 'chat' || p === 'ask' || p === 'board' || p === 'markets') return p;
     return null;   // about, profile - пунктов в новом меню нет
   }
 
