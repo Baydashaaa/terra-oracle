@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="3ade248192 2026-09-18">
+  <meta name="oracle-build" content="03b9436610 2026-09-18">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=290815bb86">
   <link rel="stylesheet" href="assets/css/page/about.css?v=56a0cbf533">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=04e3017037">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=4a678ddbdf">
 
 
   <!-- Charts -->
@@ -1892,11 +1892,47 @@
 <script src="assets/js/page/ask-shell.js?v=3f75bb1b18"></script>
 <script src="assets/js/page/side-leaderboard.js?v=1348eb77a1"></script>
 <script src="assets/js/page/side-reputation.js?v=53918c8395"></script>
+<script src="assets/js/page/mobile-more.js?v=637864ae3e"></script>
 <script src="assets/js/shell-nav.js?v=09648b3c16"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
 <script src="assets/js/page/side-activity.js?v=b063f996f1"></script>
 <script src="assets/js/page/side-draw.js?v=a32502c1a9"></script>
 <script src="assets/js/page/draw-tabs.js?v=e0e09294cb"></script>
 <script src="assets/js/page/draw-frame.js?v=d532a46710"></script>
+
+<!-- ═══ MORE SHEET (mobile) ═══
+     Открывается кнопкой More в нижней панели. Здесь разделы, которых в
+     панели нет: она вмещает четыре штуки плюс саму кнопку.
+     Открытием занимается assets/js/page/mobile-more.js. -->
+<div class="scrim-modal sheet-bottom" id="mMore" role="dialog" aria-modal="true" aria-labelledby="mMoreTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <h2 id="mMoreTitle">Everything else</h2>
+        <p>Sections and links</p>
+      </div>
+      <button class="sheet-close" data-close aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="more-grid">
+      <a href="?v=chat" data-view="chat"><img src="assets/img/icons/chat.webp" alt="" width="96" height="96" loading="lazy">Chat</a>
+      <a href="?v=board" data-view="board"><img src="assets/img/icons/ask.webp" alt="" width="96" height="96" loading="lazy">Board</a>
+      <a href="?v=governance" data-view="governance"><img src="assets/img/icons/governance.webp" alt="" width="96" height="96" loading="lazy">Governance</a>
+      <a href="?v=treasury" data-view="treasury"><img src="assets/img/icons/treasury.webp" alt="" width="96" height="96" loading="lazy">Treasury</a>
+      <a href="?v=reputation" data-view="reputation"><img src="assets/img/icons/reputation.webp" alt="" width="96" height="96" loading="lazy">Reputation</a>
+      <a href="?v=nft" data-view="nft"><img src="assets/img/icons/nft.webp" alt="" width="96" height="96" loading="lazy">NFT collection</a>
+    </div>
+
+    <div class="more-links">
+      <a href="https://x.com/terraoracledraw" target="_blank" rel="noopener"><img src="assets/img/icons/s-x.webp" alt="" width="128" height="128" loading="lazy">X</a>
+      <a href="https://t.me/terra_oracle" target="_blank" rel="noopener"><img src="assets/img/icons/s-tg.webp" alt="" width="128" height="128" loading="lazy">Telegram</a>
+      <a href="https://github.com/Baydashaaa/terra-oracle" target="_blank" rel="noopener"><img src="assets/img/icons/s-github.webp" alt="" width="128" height="128" loading="lazy">GitHub</a>
+      <a href="https://docs.terraoracle.io/?from=oracle" target="_blank" rel="noopener"><img src="assets/img/icons/s-docs.webp" alt="" width="128" height="128" loading="lazy">Docs</a>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

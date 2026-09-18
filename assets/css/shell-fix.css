@@ -142,12 +142,27 @@
 }
 @media (max-width:860px){
   .app nav.tabbar{
+    /* top:auto - ключевая строка. Голое правило nav{} из style.css
+       ставит position:sticky и top:0; position мы перебиваем на fixed в
+       shell.css, а top остаётся, и панель с заданными одновременно top и
+       bottom растягивается на всю высоту экрана. Выглядело это как
+       "меню посередине". Выше, для nav.group, позиционирование уже
+       гасится - здесь та же болезнь. */
+    position:fixed;
+    top:auto;
+    left:0;
+    right:0;
+    bottom:0;
+    height:auto;
     padding:7px 4px calc(7px + env(safe-area-inset-bottom));
     background:rgba(9,12,32,.94);
     backdrop-filter:blur(12px);
     border-top:1px solid var(--line);
     z-index:60;
   }
+  /* Панель накрывает низ страницы - последнему блоку нужен воздух,
+     иначе он оказывается под ней. */
+  .app .main{padding-bottom:78px}
 }
 
 /* Кнопка кошелька приехала из старого навбара со своими классами:
