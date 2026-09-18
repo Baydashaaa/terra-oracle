@@ -5,7 +5,7 @@
   position:absolute;inset:0;z-index:5;container-type:size;
   opacity:0;visibility:hidden;
   transition:opacity .8s ease,visibility 0s linear .8s;
-  background:#f4f5f7;
+  background:#0b0d18;
 }
 .hero-news.is-active{opacity:1;visibility:visible;transition:opacity .8s ease,visibility 0s}
 
@@ -59,3 +59,11 @@
   .hero-news,.hero-news.is-active{transition:none}
   .hero-dot.is-active .fill{animation:none;transform:scaleX(1)}
 }
+
+/* Gold button variant (LUNC Daily dark banner) */
+.hero-news .hn-btn--gold{
+  background:linear-gradient(180deg,#fcda66 0%,#f7c450 50%,#e3a832 100%);
+  color:#241a02;font-weight:600;
+  box-shadow:0 0 1.2cqw rgba(247,190,60,.35),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.hero-news .hn-btn--gold:hover{filter:brightness(1.08);box-shadow:0 0 1.8cqw rgba(247,190,60,.55),inset 0 1px 0 rgba(255,255,255,.4)}
