@@ -41,6 +41,7 @@
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=1">
   <link rel="stylesheet" href="assets/css/page/global-search.css?v=1">
   <link rel="stylesheet" href="assets/css/page/wallet-profile.css?v=3">
+  <link rel="stylesheet" href="assets/css/page/board.css?v=1">
   <link rel="stylesheet" href="assets/css/page/mobile.css?v=8">
   <script src="assets/js/page/hero-slider.js?v=1" defer></script>
 
@@ -377,58 +378,57 @@
 </div>
 
 <div class="page" id="page-board" style="min-height:60vh;">
- <div class="board-header">
- <div>
- <div class="board-title" id="board-title">Active Questions</div>
- <div class="board-count" id="board-count">Loading...</div>
- </div>
- <!-- Ask переехал сюда из верхнего меню: в навбаре только места, куда можно
-      прийти, а действия живут кнопкой внутри своего места. Когда появятся
-      рынки, рядом встанут вкладки, и надпись будет меняться по вкладке. -->
- <button class="btn btn-primary btn-sm" id="board-action" onclick="showPage('ask')"
-   style="flex-shrink:0;white-space:nowrap;">Ask a question</button>
+ <div class="bd-head">
+  <div>
+   <h2 class="bd-title" id="board-title">Active Questions</h2>
+   <div class="bd-count" id="board-count">Loading...</div>
+  </div>
+  <!-- Ask живёт кнопкой внутри своего места, а не в меню. -->
+  <button class="bd-ask" id="board-action" onclick="showPage('ask')">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+   Ask a question
+  </button>
  </div>
 
- <!-- Рынки и вопросы - родственники: и там, и там человек спрашивает
-      сообщество, разница только в том, чем платят за ответ. Поэтому не два
-      пункта меню, а две вкладки одного места. Счётчики работают приманкой:
-      видно, что в соседней вкладке тоже что-то происходит. -->
- <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+ <!-- Вкладки Board. Пока вкладка одна, ряд скрыт; когда появятся рынки,
+      switchBoardTab (markets.js) и эти id понадобятся снова. -->
+ <div class="bd-tabs" hidden>
   <button class="vote-tab active" id="board-tab-questions" onclick="switchBoardTab('questions')">Questions</button>
  </div>
 
+ <div id="board-pane-questions" class="bd-layout">
+  <div class="bd-toolbar">
+   <label class="bd-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="board-search" placeholder="Search questions..." oninput="setBoardSearch(this.value)" autocomplete="off">
+    <button type="button" id="search-clear" onclick="clearSearch()" aria-label="Clear search" style="display:none">&#x2715;</button>
+   </label>
+   <div class="bd-sort" role="tablist" aria-label="Sort">
+    <button class="vote-tab active" id="sort-new" onclick="setBoardSort('new')"><svg viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.6l1.5 3.8 3.8 1.5-3.8 1.5-1.5 3.8-1.5-3.8L5.3 8.9l3.8-1.5z"/><path d="M17.6 14.4v4.4M15.4 16.6h4.4"/></svg>Latest</button>
+    <button class="vote-tab" id="sort-hot" onclick="setBoardSort('hot')"><svg viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6c3.2 0 5.7-2.2 5.7-5.3 0-3.6-2.9-5.6-4.2-9.6-2 1.6-3 3.3-3 5 0 1.2.5 2 .5 2.9 0 .9-.7 1.6-1.6 1.6-.85 0-1.45-.55-1.65-1.45-1 1.2-1.55 2.6-1.55 4.05 0 3 2.5 4.8 5.75 4.8z"/></svg>Trending</button>
+    <button class="vote-tab" id="sort-unanswered" onclick="setBoardSort('unanswered')"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.2c0 3.7-3.8 6.8-8.5 6.8-1 0-2-.14-2.95-.4L3.9 19.8l1.55-3.35C4.2 15.15 3.4 13.3 3.4 11.2c0-3.75 3.85-6.8 8.55-6.8s8.55 3.05 8.55 6.8z"/></svg>Unanswered</button>
+   </div>
+  </div>
 
- <div id="board-pane-questions">
- <div style="position:relative;margin-bottom:14px;">
- <input type="text" id="board-search" placeholder="Search questions..."
- oninput="setBoardSearch(this.value)"
- style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
- color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;
- padding:12px 16px 12px 40px;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
- <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:0.35;pointer-events:none;"
- width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
- <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
- </svg>
- <button id="search-clear" onclick="clearSearch()"
- style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);
- background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;">✕</button>
- </div>
- <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
- <div style="display:flex;gap:6px;flex-wrap:wrap;">
- <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
- <button class="vote-tab" id="filter-security" onclick="setBoardFilter('security')">Security</button>
- <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('tech')">Tech</button>
- <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('gov')">Gov</button>
- <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('comm')">Community</button>
- <button class="vote-tab" id="filter-other" onclick="setBoardFilter('other')">Other</button>
- </div>
- <div style="margin-left:auto;display:flex;gap:6px;">
- <button class="vote-tab active" id="sort-new" onclick="setBoardSort('new')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #00D4FF88);"><path d="M10.6 3.6l1.5 3.8 3.8 1.5-3.8 1.5-1.5 3.8-1.5-3.8L5.3 8.9l3.8-1.5z"/><path d="M17.6 14.4v4.4M15.4 16.6h4.4"/></svg> New</button>
- <button class="vote-tab" id="sort-hot" onclick="setBoardSort('hot')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFA53D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #FFA53D88);"><path d="M12 20.6c3.2 0 5.7-2.2 5.7-5.3 0-3.6-2.9-5.6-4.2-9.6-2 1.6-3 3.3-3 5 0 1.2.5 2 .5 2.9 0 .9-.7 1.6-1.6 1.6-.85 0-1.45-.55-1.65-1.45-1 1.2-1.55 2.6-1.55 4.05 0 3 2.5 4.8 5.75 4.8z"/></svg> Hot</button>
- <button class="vote-tab" id="sort-unanswered" onclick="setBoardSort('unanswered')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;filter:drop-shadow(0 0 4px #a78bfa88);"><path d="M20.5 11.2c0 3.7-3.8 6.8-8.5 6.8-1 0-2-.14-2.95-.4L3.9 19.8l1.55-3.35C4.2 15.15 3.4 13.3 3.4 11.2c0-3.75 3.85-6.8 8.55-6.8s8.55 3.05 8.55 6.8z"/><path d="M10.45 9.4a1.68 1.68 0 013.15.78c-.35.56-1.02.79-1.3 1.3-.16.29-.22.58-.22.92"/><path d="M12.05 14.3h.01"/></svg> Unanswered</button>
- </div>
- </div>
- <div id="questions-list"></div>
+  <aside class="bd-side">
+   <div class="bd-card">
+    <h4>Categories</h4>
+    <div class="bd-chips">
+     <button class="vote-tab active" id="filter-all" onclick="setBoardFilter('all')">All</button>
+     <button class="vote-tab" id="filter-security" onclick="setBoardFilter('security')" style="--c:248,113,113">Security</button>
+     <button class="vote-tab" id="filter-tech" onclick="setBoardFilter('tech')" style="--c:34,211,238">Tech</button>
+     <button class="vote-tab" id="filter-gov" onclick="setBoardFilter('gov')" style="--c:167,139,250">Governance</button>
+     <button class="vote-tab" id="filter-comm" onclick="setBoardFilter('comm')" style="--c:74,222,128">Community</button>
+     <button class="vote-tab" id="filter-other" onclick="setBoardFilter('other')" style="--c:148,163,184">Other</button>
+    </div>
+   </div>
+   <div class="bd-card" id="bd-tags-card" hidden>
+    <h4>Popular tags</h4>
+    <div class="bd-chips" id="bd-tags"></div>
+   </div>
+  </aside>
+
+  <div id="questions-list"></div>
  </div>
 </div>
 <div class="page shell-page" id="page-ask">
@@ -1734,7 +1734,7 @@
        Тот же порядок продублирован в dev/_verify_split.cjs -->
   <script src="assets/js/app/core.js?v=ba73347f27"></script>
   <script src="assets/js/app/nav.js?v=7561ca01ef"></script>
-  <script src="assets/js/app/board.js?v=b4"></script>
+  <script src="assets/js/app/board.js?v=b5"></script>
   <script src="assets/js/app/ask.js?v=548fa9b33b"></script>
   <script src="assets/js/app/sign.js?v=b216b21fc5"></script>
   <script src="assets/js/app/wallet.js?v=b5af1a0289"></script>

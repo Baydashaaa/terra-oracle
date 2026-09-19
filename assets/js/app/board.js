@@ -258,6 +258,7 @@ function startPinTicker() {
 function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
+  renderPopularTags();
 
   let filtered = boardFilter === 'all'
     ? [...questions]
@@ -461,6 +462,35 @@ function renderBoard() {
     if (qid && qid === _focusQid) { t.focus({ preventScroll: true }); try { t.setSelectionRange(_selA, _selB); } catch (e) {} }
   });
 }
+
+// Popular tags в боковой панели Board: считаются по всем вопросам, топ-10.
+// Клик ставит поиск по тегу (#tag), повторный клик снимает.
+function renderPopularTags() {
+  const box = document.getElementById('bd-tags');
+  const card = document.getElementById('bd-tags-card');
+  if (!box || !card) return;
+  const cnt = {};
+  questions.forEach(q => (q.tags || []).forEach(t => {
+    const k = String(t).toLowerCase();
+    cnt[k] = (cnt[k] || 0) + 1;
+  }));
+  const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b)).slice(0, 10);
+  card.hidden = !top.length;
+  const pal = ['167,139,250', '34,211,238', '245,197,66', '74,222,128', '244,114,182', '96,165,250', '251,146,60'];
+  box.innerHTML = top.map((t, i) =>
+    `<button type="button" class="bd-tag${boardSearch === '#' + t ? ' on' : ''}" data-bd-tag="${escHtml(t)}" style="--c:${pal[i % pal.length]}">#${escHtml(t)}</button>`
+  ).join('');
+}
+
+document.addEventListener('click', function (e) {
+  const b = e.target.closest('[data-bd-tag]');
+  if (!b) return;
+  const t = '#' + b.getAttribute('data-bd-tag');
+  if (boardSearch === t) { clearSearch(); return; }
+  const inp = document.getElementById('board-search');
+  if (inp) inp.value = t;
+  setBoardSearch(t);
+});
 
 function toggleAnswers(qi) {
   const q = questions[qi];
