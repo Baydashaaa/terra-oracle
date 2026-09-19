@@ -31,16 +31,32 @@
   // высота до него: на телефоне содержимое бывает заметно короче.
   var FLOOR = 320;
 
+  // Страховка от любой петли "рамка выше -> содержимое выше". Настоящий
+  // рост содержимого (открыли вкладку, подгрузился список) - это один-два
+  // скачка. Петля - серия мелких прибавок подряд. Если за 4 секунды было
+  // 4 мелких роста, дальнейшие мелкие прибавки 10 секунд не принимаем.
+  var smallGrowth = [], frozenUntil = 0;
+
   function setHeight(px) {
     var f = frame();
     if (!f) return;
-    // Защита от петли по vh: если внутри сообщают ровно текущую высоту
-    // рамки, это не содержимое, а что-то растянутое на 100vh (vh внутри
-    // рамки = её высота). Растить рамку в ответ нельзя: +PAD за круг,
-    // и так до MAX. Так было на телефоне в 2026-09.
     var cur = parseFloat(f.style.height) || 0;
-    if (cur && Math.abs(px + PAD - cur) <= 2 || cur && Math.abs(px - cur) <= 2) return;
+    // Внутри сообщили ровно высоту рамки (или её минус запас): это не
+    // содержимое, а что-то растянутое по vh. Не растём.
+    if (cur && (Math.abs(px - cur) <= 2 || Math.abs(px + PAD - cur) <= 2)) return;
     var want = Math.min(MAX, Math.max(FLOOR, Math.ceil(px) + PAD));
+    var now = Date.now();
+    if (cur && want > cur && want - cur < 120) {
+      if (now < frozenUntil) return;
+      smallGrowth = smallGrowth.filter(function (t) { return now - t < 4000; });
+      smallGrowth.push(now);
+      if (smallGrowth.length >= 4) {
+        frozenUntil = now + 10000;
+        smallGrowth = [];
+        if (window.console) console.warn('[draw-frame] repeated small growth, looks like a height loop; holding at', cur);
+        return;
+      }
+    }
     var h = want + 'px';
     if (f.style.height !== h) f.style.height = h;
   }

@@ -28,3 +28,18 @@
   #chat-page-input + .chat-send-row{flex:1 1 100%;justify-content:flex-end !important;gap:10px !important;padding:0 12px 10px !important}
   #chat-input-bar{padding-bottom:12px !important}
 }
+
+/* Chat send button: icon centred and readable (all widths) */
+#chat-page-send-btn{display:grid !important;place-items:center !important;padding:0 !important;color:#fff !important}
+#chat-page-send-btn svg{width:20px !important;height:20px !important;stroke:#fff;stroke-width:2;display:block;transform:translate(-1px,1px)}
+
+/* NFT participation history on phones: one line per round - date, pool, NFT count, result */
+@media (max-width:680px){
+  #o-bag-hist-table thead{display:none}
+  #o-bag-hist-table,#o-bag-hist-table tbody{display:block;width:100%}
+  #o-bag-hist-table tr{display:grid !important;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px}
+  #o-bag-hist-table td{display:block !important;padding:0 !important;border:0 !important;text-align:left !important;white-space:nowrap}
+  #o-bag-hist-table td:nth-child(3){font-size:12px;color:var(--ink-2,#c9c6e0)}
+  #o-bag-hist-table td:nth-child(3)::after{content:" NFT";color:var(--ink-3,#8d89ab)}
+  #o-bag-hist-table td:nth-child(4){text-align:right !important}
+}
