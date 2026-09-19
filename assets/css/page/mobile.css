@@ -72,3 +72,12 @@
 }
 #mMore .more-grid img{width:30px !important;height:30px !important}
 #mMore .sheet-head p{color:var(--ink-2,#c9c6e0) !important}
+
+/* Home: Ecosystem stats - readable labels and heading */
+.stats > h3{color:var(--ink,#fff) !important;opacity:1 !important}
+.stats .stat .lbl{color:var(--ink-2,#c9c6e0) !important;opacity:1 !important;font-size:12px;letter-spacing:.04em}
+.stats .stat .chg,.stats .chainbox .sub{color:var(--ink-2,#c9c6e0) !important;opacity:.85}
+@media (max-width:760px){
+  .stats > h3{font-size:14px !important}
+  .stats .stat .lbl{font-size:12.5px}
+}
