@@ -233,6 +233,13 @@ function pinTimeLeft(sec) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 let _pinTickerId = null;
+
+// Какие вопросы раскрыты и недописанные ответы - по id вопроса, а не в
+// самих объектах. Список questions перезагружается целиком, и флаг
+// q.open пропадал вместе со старыми объектами: ветка сама закрывалась,
+// а набранный ответ стирался.
+const _boardOpen = new Set();
+const _boardDrafts = {};
 function startPinTicker() {
   if (_pinTickerId) return;
   _pinTickerId = setInterval(() => {
@@ -289,10 +296,29 @@ function renderBoard() {
     return;
   }
 
+  // Раскрытие: одно действие на вопрос. Раскрытая ветка сразу показывает
+  // и ответы, и форму ответа.
+  questions.forEach(q => {
+    const id = String(q.id);
+    if (q.open) _boardOpen.add(id);
+    q.open = _boardOpen.has(id);
+    q.formOpen = q.open;
+  });
+
+  // Сохраняем недописанные ответы и фокус до перерисовки.
+  let _focusQid = null, _selA = 0, _selB = 0;
+  list.querySelectorAll('textarea[id^="atext-"]').forEach(t => {
+    const sec = t.closest('.answers-section');
+    const qid = sec && sec.dataset.qid;
+    if (!qid) return;
+    _boardDrafts[qid] = t.value;
+    if (document.activeElement === t) { _focusQid = qid; _selA = t.selectionStart; _selB = t.selectionEnd; }
+  });
+
   list.innerHTML = filtered.map((q, qi) => {
     const realQi = questions.indexOf(q);
     return `
-    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}" id="qcard-${qi}">
+    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}${q.open ? ' is-open' : ''}" id="qcard-${qi}" data-qi="${realQi}">
 
       <!-- Левый столбец: голос. Стрелка одна - в модели вопроса только
            счётчик votes и флаг voted, минуса нет. Рисовать неработающую
@@ -341,23 +367,21 @@ function renderBoard() {
           <span class="qc2-dot">\u00b7</span><span class="qc2-time">${escHtml(q.time)}</span>
           <span class="qc2-id">${escHtml(q.id)}</span>
 
-          <button class="qc2-answers" onclick="toggleAnswers(${realQi})" title="Show answers">
+          <span class="qc2-answers" title="${q.answers.length} answer${q.answers.length === 1 ? '' : 's'}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"/></svg>
             ${q.answers.length}
-          </button>
+          </span>
         </div>
 
         ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
       </div>
 
-      <!-- Стрелка справа раскрывает вопрос, как на образце. Кнопка
-           ответа рядом: без неё пришлось бы открывать ветку, чтобы
-           найти форму. -->
+      <!-- Одно действие "открыть вопрос": стрелка, клик по карточке или по
+           счётчику ответов. Форма ответа живёт внутри раскрытой ветки. -->
       <div class="qc2-side">
-        <button class="qc2-open" onclick="toggleAnswers(${realQi})" aria-label="Open question">
+        <button class="qc2-open" onclick="toggleAnswers(${realQi})" aria-label="${q.open ? 'Close question' : 'Open question'}" aria-expanded="${q.open ? 'true' : 'false'}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
-        <button class="qc2-add" onclick="toggleAnswerForm(${realQi})" title="Answer">+</button>
       </div>
       <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}" data-qid="${escHtml(String(q.id || ''))}">
         ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet - be the first!</div>` : ''}
@@ -409,7 +433,7 @@ function renderBoard() {
           </div>
         `).join('')}
         <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${realQi}">
-          <div class="answer-form-title">Submit an answer</div>
+          <div class="answer-form-title">Write an answer</div>
           <div id="board-reply-block-${realQi}" style="display:none;align-items:flex-start;gap:8px;margin-bottom:12px;padding:8px 10px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.15);border-radius:8px;">
             <div style="flex:1;padding:4px 8px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;">
               <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span>&#x21A9;&#xFE0E;</span><span class="board-reply-author"></span></div>
@@ -428,12 +452,41 @@ function renderBoard() {
       </div>
     </div>
   `; }).join('');
+
+  // Возвращаем недописанные ответы и курсор.
+  list.querySelectorAll('textarea[id^="atext-"]').forEach(t => {
+    const sec = t.closest('.answers-section');
+    const qid = sec && sec.dataset.qid;
+    if (qid && _boardDrafts[qid]) t.value = _boardDrafts[qid];
+    if (qid && qid === _focusQid) { t.focus({ preventScroll: true }); try { t.setSelectionRange(_selA, _selB); } catch (e) {} }
+  });
 }
 
+function toggleAnswers(qi) {
+  const q = questions[qi];
+  if (!q) return;
+  const id = String(q.id);
+  if (_boardOpen.has(id)) { _boardOpen.delete(id); q.open = false; }
+  else { _boardOpen.add(id); q.open = true; }
+  renderBoard();
+}
+// Старое имя оставлено: его могут звать другие места. Теперь то же, что раскрыть.
+function toggleAnswerForm(qi) {
+  const q = questions[qi];
+  if (!q) return;
+  if (!_boardOpen.has(String(q.id))) toggleAnswers(qi);
+}
 
-
-function toggleAnswers(qi) { questions[qi].open = !questions[qi].open; renderBoard(); }
-function toggleAnswerForm(qi) { questions[qi].formOpen = !questions[qi].formOpen; questions[qi].open = true; renderBoard(); }
+// Клик по пустому месту карточки тоже раскрывает вопрос. Кнопки, ссылки,
+// теги, ник автора, опрос и сама ветка ответов живут своей жизнью.
+document.addEventListener('click', function (e) {
+  const card = e.target.closest('#questions-list .qc2');
+  if (!card) return;
+  if (e.target.closest('button, a, input, textarea, select, label, .q-tag, [data-profile], .answers-section, .qc2-poll, .poll, [onclick]')) return;
+  if (window.getSelection && String(window.getSelection()).length) return;   // выделяли текст
+  const qi = Number(card.dataset.qi);
+  if (isFinite(qi)) toggleAnswers(qi);
+});
 
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-delete-qi]');
@@ -549,6 +602,7 @@ async function submitAnswer(qi) {
     });
     questions[qi].formOpen = false;
     questions[qi].open = true;
+    delete _boardDrafts[String(questions[qi].id)];
     window.clearBoardReply(qi);
     renderBoard();
   } catch(e) {
