@@ -77,9 +77,9 @@ async function tFetchPrice() {
     }
   } catch(e) {}
   try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd', { signal: AbortSignal.timeout(8000) });
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna-classic&vs_currencies=usd', { signal: AbortSignal.timeout(8000) });
     const d = await r.json();
-    if (d['terra-luna']?.usd) return d['terra-luna'].usd;
+    if (d['terra-luna-classic']?.usd) return d['terra-luna-classic'].usd;
   } catch(e) {}
   return 0.00009;
 }
