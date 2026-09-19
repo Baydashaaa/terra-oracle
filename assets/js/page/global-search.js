@@ -8,6 +8,7 @@
 //
 // Переход по результату идёт через OracleActivity.go из side-activity.js,
 // поэтому вопрос открывается и подсвечивается так же, как из Recent activity.
+// Кошелёк открывает карточку участника (OracleProfile из wallet-profile.js).
 (function () {
   'use strict';
 
@@ -129,6 +130,10 @@
       return w.wallet.toLowerCase().indexOf(q) > -1 || nick(w).toLowerCase().indexOf(q) > -1;
     });
     wHits.sort(function (a, b) { return b.rep - a.rep; });
+    // Полный адрес, которого нет в данных, всё равно можно открыть.
+    if (/^terra1[0-9a-z]{38,58}$/.test(q) && !wHits.some(function (w) { return w.wallet === q; })) {
+      wHits.unshift({ wallet: q, rep: 0 });
+    }
     wHits.slice(0, PER).forEach(function (w) {
       var nm = nick(w);
       out.push({
@@ -190,7 +195,10 @@
       if (window.OracleActivity && typeof window.OracleActivity.go === 'function') window.OracleActivity.go(r.item);
       return;
     }
-    if (r.wallet) openWallet(r.wallet);
+    if (r.wallet) {
+      if (window.OracleProfile) window.OracleProfile.open(r.wallet);
+      else openWallet(r.wallet);
+    }
   }
 
   // Профиля чужого кошелька на сайте пока нет, поэтому открываем
