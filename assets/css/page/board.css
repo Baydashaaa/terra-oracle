@@ -118,3 +118,6 @@ html.qm-lock{overflow:hidden}
   #page-board .qm-overlay{padding:56px 8px 24px}
   #page-board .qm-x{top:-46px;right:4px}
 }
+
+/* Category chips are built from the Ask form; "All" keeps its neutral colour */
+#page-board .bd-chips .vote-tab[data-filter="all"]{--c:199,210,254}

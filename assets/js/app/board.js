@@ -113,36 +113,56 @@ function clearSearch() {
 }
 
 // ─── BOARD FILTERS ────────────────────────────────────────────
-// The ask form offers eight categories; the board had six chips, and the two
-// lists were never reconciled. "Security / Vulnerability" matched no chip and
-// could only be found under ALL, while MARKET filtered on a category the form
-// has never offered and was therefore always empty.
-//
-// One definition now drives both the chips and the filtering. Every category in
-// the form belongs to exactly one group, so nothing can become unreachable
-// again - the check below fails loudly if a new category is added here and
-// forgotten in the form, or the other way round.
-const BOARD_GROUPS = {
-  security: { label: 'Security',  cats: ['Security / Vulnerability', 'Fraud / Manipulation'] },
-  tech:     { label: 'Tech',      cats: ['Protocol Bug', 'Validator Issue'] },
-  gov:      { label: 'Governance',cats: ['Governance', 'Proposal / Idea'] },
-  comm:     { label: 'Community', cats: ['Community'] },
-  other:    { label: 'Other',     cats: ['Other'] },
+// Категории Board = категории формы Ask. Второго списка нет: чипы строятся
+// из кнопок [data-cat] формы, поэтому новая категория в Ask сама
+// появляется на Board, и разойтись им больше нельзя. Раньше тут были
+// группы (Security / Tech / ...), и формулировки в двух местах не совпадали.
+// Вопросы со старыми категориями, которых в форме уже нет, видны в Other.
+const BOARD_CAT_COLORS = {
+  'Governance': '167,139,250', 'Protocol Bug': '34,211,238', 'Validator Issue': '96,165,250',
+  'Security / Vulnerability': '248,113,113', 'Community': '74,222,128', 'Proposal / Idea': '245,197,66',
+  'Partnership / Collaboration': '244,114,182', 'Fraud / Manipulation': '251,146,60', 'Other': '148,163,184',
 };
 
-function boardGroupOf(category) {
-  for (const [key, g] of Object.entries(BOARD_GROUPS)) {
-    if (g.cats.includes(category)) return key;
-  }
-  return 'other';   // an unknown or legacy category is still findable
+function boardCategories() {
+  return Array.from(document.querySelectorAll('#page-ask [data-cat]'))
+    .map(b => b.getAttribute('data-cat'))
+    .filter((v, i, a) => v && a.indexOf(v) === i);
+}
+
+function boardMatchesFilter(q) {
+  if (boardFilter === 'all') return true;
+  const c = q.category || '';
+  if (boardFilter === 'Other') return c === 'Other' || boardCategories().indexOf(c) < 0;
+  return c === boardFilter;
+}
+
+function markBoardFilter() {
+  document.querySelectorAll('#page-board [data-filter]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-filter') === boardFilter));
+}
+
+function renderBoardCategories() {
+  const box = document.querySelector('#page-board .bd-side .bd-card .bd-chips');
+  if (!box || box.dataset.built) return;
+  const cats = boardCategories();
+  if (!cats.length) return;
+  box.dataset.built = '1';
+  box.innerHTML = '<button type="button" class="vote-tab" data-filter="all">All</button>' +
+    cats.map(c => `<button type="button" class="vote-tab" data-filter="${escHtml(c)}" style="--c:${BOARD_CAT_COLORS[c] || '124,58,237'}">${escHtml(c)}</button>`).join('');
+  markBoardFilter();
 }
 
 function setBoardFilter(cat) {
   boardFilter = cat;
-  document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('active'));
-  document.getElementById('filter-' + cat)?.classList.add('active');
+  markBoardFilter();
   renderBoard();
 }
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('#page-board [data-filter]');
+  if (b) setBoardFilter(b.getAttribute('data-filter'));
+});
 
 function setBoardSort(s) {
   boardSort = s;
@@ -258,6 +278,7 @@ function startPinTicker() {
 function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
+  renderBoardCategories();
   renderPopularTags();
   document.querySelectorAll('#qmodal textarea[id^="atext-"]').forEach(t => {
     const sec = t.closest('.answers-section');
@@ -268,7 +289,7 @@ function renderBoard() {
 
   let filtered = boardFilter === 'all'
     ? [...questions]
-    : questions.filter(q => boardGroupOf(q.category || '') === boardFilter);
+    : questions.filter(boardMatchesFilter);
 
   if (boardSearch) {
     const searchTag = boardSearch.startsWith('#') ? boardSearch.slice(1) : null;
