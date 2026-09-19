@@ -37,7 +37,7 @@
 
       var mine = (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) || '';
       box.innerHTML = top.map(function (x, i) {
-        return '<li' + (x.w === mine ? ' class="me"' : '') + '>' +
+        return '<li data-profile="' + x.w + '"' + (x.w === mine ? ' class="me"' : '') + '>' +
           '<span class="pos">' + (i + 1) + '</span>' +
           '<span class="nm">' + short(x.w) + '</span>' +
           '<span class="sc">' + x.s.toLocaleString('en-US') + '</span></li>';

@@ -404,7 +404,7 @@ function renderLeaderboardPage(page) {
     const repGlow  = ms ? `0 0 12px rgba(${ms.rgba},0.5)` : w.rank.glow;
     const repSize  = ms ? '24px' : '20px';
     return `
-      <div class="lb-row${ms ? ' top' + (globalIdx + 1) : ''}${isMe ? ' me' : ''}" style="--m:${ms ? ms.rgba : '110,135,235'}">
+      <div class="lb-row${ms ? ' top' + (globalIdx + 1) : ''}${isMe ? ' me' : ''}" data-profile="${w.wallet || ''}" style="--m:${ms ? ms.rgba : '110,135,235'}">
         <span class="pos">${medal}</span>
         <span class="wal">${w.wallet ? w.wallet.slice(0,8) + '\u2026' + w.wallet.slice(-4) : 'Anonymous'}${isMe ? '<b class="you">YOU</b>' : ''}</span>
         <span class="rnk" style="color:${w.rank.color}">

@@ -336,7 +336,7 @@ function renderBoard() {
         })()}
 
         <div class="qc2-meta">
-          ${q.isAdmin ? `<span class="badge-admin">\u{1F6E1}\uFE0F Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img class="qc2-ava" src="${getProfileAvatar(q.wallet)}" alt="">` : ''}<span class="q-alias">${_getDisplayName(q.wallet, q.alias)}</span>`}
+          ${q.isAdmin ? `<span class="badge-admin">\u{1F6E1}\uFE0F Admin</span>` : `${_getProfileAvatar(q.wallet) ? `<img class="qc2-ava" src="${getProfileAvatar(q.wallet)}" alt="">` : ''}<span class="q-alias" data-profile="${escHtml(q.wallet || '')}">${_getDisplayName(q.wallet, q.alias)}</span>`}
           ${!q.isAdmin && q.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[q.wallet] || 0) : (q.title && !q.isAdmin ? `<span class="badge-title">${escHtml(q.title)}</span>` : '')}
           <span class="qc2-dot">\u00b7</span><span class="qc2-time">${escHtml(q.time)}</span>
           <span class="qc2-id">${escHtml(q.id)}</span>
@@ -364,7 +364,7 @@ function renderBoard() {
         ${q.answers.map((a, ai) => `
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}" data-answer-id="${escHtml(String(a.id || ''))}">
             <div class="answer-meta">
-              ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(a.wallet, a.alias)}</span>`}
+              ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias" data-profile="${escHtml(a.wallet || '')}">${_getDisplayName(a.wallet, a.alias)}</span>`}
               ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${escHtml(a.title)}</span>` : '')}
               ${a.id === q.chosenAnswerId ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#66ffaa;background:rgba(102,255,170,0.08);border:1px solid rgba(102,255,170,0.35);padding:1px 7px;border-radius:4px;">&#10003; ACCEPTED</span>` : ''}
             </div>

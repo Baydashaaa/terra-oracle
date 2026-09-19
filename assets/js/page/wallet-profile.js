@@ -1,4 +1,5 @@
-// Публичная карточка участника: OracleProfile.open('terra1...').
+// Публичная карточка участника: OracleProfile.open('terra1...'),
+// или клик по любому элементу с data-profile="terra1...".
 //
 // Открывается окном поверх страницы и работает без подключённого кошелька:
 // всё берётся из публичных данных.
@@ -293,6 +294,19 @@
     modal.hidden = true;
     document.documentElement.classList.remove('act-lock');
   }
+
+  // Любой элемент с data-profile="terra1..." открывает карточку по клику.
+  // Фаза перехвата и stopPropagation: клик по нику в карточке вопроса
+  // не должен заодно раскрывать сам вопрос.
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-profile]');
+    if (!el || (modal && modal.contains(el))) return;
+    var w = el.getAttribute('data-profile');
+    if (!/^terra1[0-9a-z]{38,58}$/.test(w)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    open(w);
+  }, true);
 
   window.OracleProfile = { open: open, close: close };
 })();
