@@ -99,3 +99,7 @@
     .pin-timer svg{animation:none;}
   }
  
+
+/* Step headers ("1 Choose question type", "2 Create your question"): keep them off the cards below.
+   :is(#page-ask, .shell-page) carries id specificity, so this wins over a page-scoped rule. */
+:is(#page-ask, .shell-page) h3.step-h{margin-bottom:18px}

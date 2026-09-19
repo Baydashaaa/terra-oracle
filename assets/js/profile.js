@@ -161,8 +161,16 @@ function getRankBadgeHTML(score) {
   if (score === undefined || score === null) return '';
   const rank = getRank(score);
   if (!rank) return '';
-  const isInitiate = rank.name === 'INITIATE';
-  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;letter-spacing:0.08em;color:${rank.color};${isInitiate ? 'opacity:0.5;' : `text-shadow:0 0 6px ${rank.glow};`}background:rgba(0,0,0,0.2);border:1px solid ${rank.color}${isInitiate ? '55' : '88'};padding:1px 7px;border-radius:4px;">${rank.icon} ${rank.name}</span>`;
+  // Один бейдж на весь сайт: Board, чат, карточка участника.
+  // Иконка ранга та же, что в таблице Reputation; цвет с альфой - hex + 2 знака.
+  const c = rank.color;
+  const dim = rank.name === 'INITIATE';
+  const glow = dim ? '' : `box-shadow:0 0 10px ${rank.glow};`;
+  return `<span class="rank-badge" style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle;` +
+    `font-size:11.5px;font-weight:700;letter-spacing:.08em;line-height:1;white-space:nowrap;color:${c};` +
+    `background:${c}1a;border:1px solid ${c}${dim ? '55' : '80'};padding:3px 9px 3px 4px;border-radius:999px;${glow}">` +
+    `<img src="assets/img/icons/r-${rank.name.toLowerCase()}.webp" alt="" width="18" height="18" ` +
+    `style="width:18px;height:18px;object-fit:contain;flex:none;" onerror="this.remove()">${rank.name}</span>`;
 }
 
 // ── On-chain reputation ─────────────────────────────────────────────────────
