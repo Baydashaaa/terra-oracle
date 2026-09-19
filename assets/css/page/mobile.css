@@ -50,3 +50,13 @@
   #chat-mobile-bar{display:none !important}
   #chat-input-bar:has(#chat-entry-progress[style*="block"]) .chat-mobile-badge{display:none !important}
 }
+
+/* Chat fills the screen between the top bar and the bottom nav (sizes from mobile-layout.js) */
+@media (hover:none),(max-width:900px){
+  .page#page-chat.active{top:var(--m-top,60px) !important;bottom:var(--m-nav,0px) !important;padding-bottom:8px !important}
+  #chat-shell{flex:1 1 auto !important;height:auto !important;max-height:none !important}
+}
+
+/* "Everything else" sheet: never taller than the screen, scrolls inside, clears the iPhone home bar */
+#mMore > .sheet{max-height:calc(100dvh - 12px) !important;overflow-y:auto !important;overscroll-behavior:contain;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)) !important}

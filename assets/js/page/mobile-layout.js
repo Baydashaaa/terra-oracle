@@ -32,6 +32,42 @@
     place();
     if (mq.addEventListener) mq.addEventListener('change', place);
     else if (mq.addListener) mq.addListener(place);
+
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    // Шапка и нижнее меню могут поменять высоту (шрифты, поворот), а чат
+    // растягивается ровно между ними - пока чат открыт, сверяемся.
+    setInterval(function () {
+      var chat = document.getElementById('page-chat');
+      if (chat && chat.classList.contains('active')) measure();
+    }, 800);
+  }
+
+  // Чат на телефоне - fixed-страница между шапкой и нижним меню. Их высоты
+  // меряем и отдаём в CSS как --m-top и --m-nav (правила в mobile.css).
+  var navEl = null;
+  function bottomNav() {
+    if (navEl && navEl.isConnected) return navEl;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var list = document.querySelectorAll('nav, [class*="nav"], [class*="tab"], [id*="nav"], [id*="tab"]');
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (getComputedStyle(e).position !== 'fixed') continue;
+      var r = e.getBoundingClientRect();
+      if (r.height > 30 && r.height < 140 && r.width >= vw * 0.8 && r.bottom >= vh - 2) { navEl = e; return e; }
+    }
+    return null;
+  }
+
+  function measure() {
+    var root = document.documentElement;
+    var tb = document.querySelector('.topbar');
+    var top = tb ? Math.max(0, Math.round(tb.getBoundingClientRect().bottom)) + 8 : 60;
+    var nav = bottomNav();
+    var navH = nav ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
+    root.style.setProperty('--m-top', top + 'px');
+    root.style.setProperty('--m-nav', navH + 'px');
   }
 
   if (document.readyState === 'loading') {
