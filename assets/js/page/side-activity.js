@@ -284,8 +284,8 @@
   function openView(view) {
     // Тот же путь, что у меню и карточек модулей: кликаем по ссылке
     // с нужным data-view, её обработчик уже умеет открывать раздел.
-    var link = document.querySelector('.side [data-view="' + view + '"]') ||
-               document.querySelector('[data-view="' + view + '"]:not([aria-disabled="true"])');
+    var link = document.querySelector('.side [data-view="' + view + '"]:not([data-draw-tab])') ||
+               document.querySelector('[data-view="' + view + '"]:not([aria-disabled="true"]):not([data-draw-tab])');
     if (link) { link.click(); return; }
     location.href = '?v=' + encodeURIComponent(view);
   }
@@ -416,6 +416,17 @@
 
   // Переход к событию нужен и поиску в шапке.
   window.OracleActivity = { go: go };
+
+  // Ссылки с data-draw-tab (например, карточка Circuit на главной) ведут
+  // не просто на Draw, а сразу на нужную вкладку. Перехват в фазе capture,
+  // чтобы обычный обработчик data-view не успел открыть Draw на Daily.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('[data-draw-tab]');
+    if (!a) return;
+    e.preventDefault();
+    e.stopPropagation();
+    go({ type: 'nav', view: 'draw', target: { tab: a.getAttribute('data-draw-tab') } });
+  }, true);
 
   // ─── запуск ──────────────────────────────────────────────────
 
