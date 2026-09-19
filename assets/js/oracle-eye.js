@@ -82,8 +82,6 @@
     + '#oe-restore{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:#16233f;border:1px solid rgba(84,147,247,0.4);align-items:center;justify-content:center;cursor:pointer;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;overflow:hidden;padding:0;touch-action:manipulation;}'
     + '#oe-restore.show{display:flex;}'
     + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
-    + '#oe-restore.show{display:flex;}'
-    + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
 
   /* ── The Eye SVG-ish markup (sizes via .scale wrapper) ───────── */
   // size: button = 56, modal = 90 wide stage
@@ -145,7 +143,31 @@
     restoreBtn.addEventListener('click', function () { expand(); });
     document.body.appendChild(restoreBtn);
 
+    // Свёрнутый глаз встаёт туда, где стоял маскот, а не в угол по умолчанию.
+    // Видимая кнопка - берём её центр; скрытая (перезагрузка в свёрнутом
+    // виде) - сохранённую позицию. Без сохранённой остаётся угол из CSS.
+    function placeRestore() {
+      var x = null, y = null, r = btn.getBoundingClientRect();
+      if (r.width) { x = r.left + (r.width - 50) / 2; y = r.top + (r.height - 50) / 2; }
+      else {
+        try {
+          var sv = JSON.parse(localStorage.getItem('oe-btn-pos') || 'null');
+          if (sv && sv.left && sv.top) { x = parseFloat(sv.left) + 26; y = parseFloat(sv.top) + 26; }
+        } catch (e) {}
+      }
+      if (x === null || !isFinite(x) || !isFinite(y)) {
+        restoreBtn.style.left = restoreBtn.style.top = restoreBtn.style.right = restoreBtn.style.bottom = '';
+        return;
+      }
+      x = Math.max(4, Math.min(window.innerWidth - 54, x));
+      y = Math.max(4, Math.min(window.innerHeight - 54, y));
+      restoreBtn.style.left = x + 'px'; restoreBtn.style.top = y + 'px';
+      restoreBtn.style.right = 'auto'; restoreBtn.style.bottom = 'auto';
+    }
+    window.addEventListener('resize', function () { if (restoreBtn.classList.contains('show')) placeRestore(); });
+
     function collapse() {
+      placeRestore();
       btn.style.display = 'none';
       bubble.classList.remove('show');
       restoreBtn.classList.add('show');
@@ -202,7 +224,7 @@
     // Restore collapsed state immediately (before first paint of this
     // widget) so returning visitors who hid it don't see it flash back on.
     try {
-      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); }
+      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); placeRestore(); }
     } catch (e) {}
   }
 
@@ -484,8 +506,20 @@
       if (saved && saved.left && saved.top) {
         btn.style.left = saved.left; btn.style.top = saved.top;
         btn.style.bottom = 'auto'; btn.style.right = 'auto';
+        clampBtn();
       }
     } catch (e) {}
+
+    // Позиция сохраняется в px, поэтому после поворота телефона или на
+    // окне поменьше маскот мог оказаться за краем. Возвращаем в видимую зону.
+    function clampBtn() {
+      if (!btn.style.left || btn.style.left === 'auto') return;
+      var L = parseFloat(btn.style.left), T = parseFloat(btn.style.top);
+      if (!isFinite(L) || !isFinite(T)) return;
+      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, L)) + 'px';
+      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, T)) + 'px';
+    }
+    window.addEventListener('resize', clampBtn);
 
     btn.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return;

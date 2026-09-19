@@ -1,0 +1,20 @@
+/* Mobile / tablet fixes. One file for all of them, loaded last. */
+
+/* Right column moved into the home page by mobile-layout.js */
+.side.side-in-home{margin-top:var(--gap,16px)}
+
+/* Ask: "Review and submit" card stacks on phones:
+   icon + summary in a row, then the price, then a full-width button. */
+@media (max-width:680px){
+  :is(#page-ask, .shell-page) .card.summary{
+    display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px 14px;align-items:start;
+  }
+  :is(#page-ask, .shell-page) .card.summary > img{width:44px;height:44px;margin:0}
+  :is(#page-ask, .shell-page) .card.summary > div:not(.price){min-width:0}
+  :is(#page-ask, .shell-page) .card.summary .price{
+    grid-column:1 / -1;margin:0;text-align:left;justify-content:flex-start;
+  }
+  :is(#page-ask, .shell-page) .card.summary .ask-go{
+    grid-column:1 / -1;width:100%;margin:0;justify-content:center;position:static;
+  }
+}
