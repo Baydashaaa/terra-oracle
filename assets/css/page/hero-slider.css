@@ -71,7 +71,7 @@
 /* Home hero: larger brand block on wide screens, spacing tightened to stay within max-height */
 @media (min-width:1100px){
   #page-home .hero .hmark{width:72px;height:72px;margin-bottom:18px}
-  #page-home .hero h2{font-size:clamp(40px,3.4vw,58px);line-height:1.02}
+  #page-home .hero h2{font-size:clamp(40px,3.4vw,58px);line-height:1.02;margin-left:-.05em}
   #page-home .hero .classic{font-size:15px}
   #page-home .hero .tagline{font-size:17px;margin-top:22px}
   #page-home .hero .meta{font-size:14.5px;color:var(--ink-2)}
