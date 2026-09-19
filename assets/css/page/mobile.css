@@ -53,7 +53,7 @@
 
 /* Chat fills the screen between the top bar and the bottom nav (sizes from mobile-layout.js) */
 @media (hover:none),(max-width:900px){
-  .page#page-chat.active{top:var(--m-top,60px) !important;bottom:var(--m-nav,0px) !important;padding-bottom:8px !important}
+  .page#page-chat.active{height:var(--m-chat-h,auto) !important;min-height:0 !important;box-sizing:border-box !important}
   #chat-shell{flex:1 1 auto !important;height:auto !important;max-height:none !important}
 }
 

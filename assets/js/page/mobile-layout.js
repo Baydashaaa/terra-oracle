@@ -68,6 +68,15 @@
     var navH = nav ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
     root.style.setProperty('--m-top', top + 'px');
     root.style.setProperty('--m-nav', navH + 'px');
+
+    // Страница чата в потоке (position:static), поэтому ей нужна точная
+    // высота: от её верха в документе до нижнего меню, с зазором 8 px.
+    var chat = document.getElementById('page-chat');
+    if (chat && chat.classList.contains('active')) {
+      var docTop = chat.getBoundingClientRect().top + window.scrollY;
+      var h = Math.round(window.innerHeight - docTop - navH - 8);
+      if (h > 240) root.style.setProperty('--m-chat-h', h + 'px');
+    }
   }
 
   if (document.readyState === 'loading') {
