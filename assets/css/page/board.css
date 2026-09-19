@@ -77,3 +77,22 @@
   #page-board .bd-toolbar{flex-direction:column;align-items:stretch}
   #page-board .bd-sort .vote-tab{flex:1;justify-content:center;padding:0 8px;height:40px;font-size:13px}
 }
+
+/* Full width of the main column (an old max-width left the page ~710px wide),
+   and layout decisions based on the page's own width, not the window. */
+#page-board{max-width:none !important;width:auto !important;margin-left:0 !important;margin-right:0 !important;container-type:inline-size}
+#page-board .bd-search{min-width:220px}
+@container (max-width:860px){
+  #page-board .bd-layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"tool" "side" "list"}
+  #page-board .bd-side{position:static;gap:10px}
+  #page-board .bd-card{padding:0;background:none;border:0}
+  #page-board .bd-card h4{display:none}
+  #page-board .bd-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  #page-board .bd-chips::-webkit-scrollbar{display:none}
+  #page-board .bd-chips > *{flex:none}
+}
+@container (max-width:560px){
+  #page-board .bd-toolbar{flex-direction:column;align-items:stretch}
+  #page-board .bd-search{min-width:0}
+  #page-board .bd-sort .vote-tab{flex:1;justify-content:center;padding:0 8px;height:40px;font-size:13px}
+}
