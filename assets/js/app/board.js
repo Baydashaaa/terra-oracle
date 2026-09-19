@@ -359,10 +359,10 @@ function renderBoard() {
         </button>
         <button class="qc2-add" onclick="toggleAnswerForm(${realQi})" title="Answer">+</button>
       </div>
-      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}">
+      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}" data-qid="${escHtml(String(q.id || ''))}">
         ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet - be the first!</div>` : ''}
         ${q.answers.map((a, ai) => `
-          <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}">
+          <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}" data-answer-id="${escHtml(String(a.id || ''))}">
             <div class="answer-meta">
               ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias">${_getDisplayName(a.wallet, a.alias)}</span>`}
               ${!a.isAdmin && a.wallet && window._walletScores ? getRankBadgeHTML(window._walletScores[a.wallet] || 0) : (a.title && !a.isAdmin ? `<span class="badge-title">${escHtml(a.title)}</span>` : '')}

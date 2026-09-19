@@ -1,0 +1,40 @@
+/* Recent activity: clickable rows + "View all activity" modal */
+.acts .act-go{cursor:pointer;border-radius:10px;transition:background .15s}
+.acts .act-go:hover{background:rgba(124,58,237,.10)}
+.acts .act-go:focus-visible{outline:2px solid var(--cyan,#22d3ee);outline-offset:-2px}
+
+.act-flash{animation:actFlash 2.4s ease-out}
+@keyframes actFlash{
+  0%,30%{box-shadow:0 0 0 2px var(--cyan,#22d3ee),0 0 24px rgba(34,211,238,.45)}
+  100%{box-shadow:0 0 0 2px transparent,0 0 0 transparent}
+}
+
+html.act-lock{overflow:hidden}
+.act-modal{
+  position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;
+  background:rgba(5,4,15,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.act-modal[hidden]{display:none}
+.act-dialog{
+  width:min(560px,100%);max-height:min(80vh,760px);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(22,18,52,.98),rgba(12,10,32,.98));
+  border:1px solid rgba(124,58,237,.35);border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 40px rgba(124,58,237,.18);
+  padding:18px 18px 12px;
+}
+.act-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.act-head h3{margin:0;display:flex;align-items:center;gap:10px}
+.act-head .hdr{width:26px;height:26px}
+.act-x{
+  appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  color:var(--ink-2,#c9c6e0);width:34px;height:34px;border-radius:10px;font-size:20px;line-height:1;cursor:pointer;
+}
+.act-x:hover{background:rgba(255,255,255,.09);color:#fff}
+.act-chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 10px}
+.act-chips button{
+  appearance:none;cursor:pointer;padding:6px 12px;border-radius:999px;font:inherit;font-size:12.5px;
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--ink-3,#8d89ab);
+}
+.act-chips button:hover{color:var(--ink,#fff)}
+.act-chips button.on{background:rgba(124,58,237,.9);border-color:transparent;color:#fff}
+.act-dialog .act-all{overflow-y:auto;margin:0;padding:0 4px 0 0;flex:1;min-height:120px}
