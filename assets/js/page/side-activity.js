@@ -414,6 +414,9 @@
     document.documentElement.classList.remove('act-lock');
   }
 
+  // Переход к событию нужен и поиску в шапке.
+  window.OracleActivity = { go: go };
+
   // ─── запуск ──────────────────────────────────────────────────
 
   function load() {
