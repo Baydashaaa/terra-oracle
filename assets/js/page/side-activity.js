@@ -172,7 +172,7 @@
   function fromNFT() {
     return smart({ extension: { msg: { stats: {} } } }).then(function (st) {
       if (!st) return [];
-      var key = 'actNft:' + st.total_minted;
+      var key = 'actNft2:' + st.total_minted;
       try {
         var hit = sessionStorage.getItem(key);
         if (hit) return JSON.parse(hit);
@@ -195,11 +195,13 @@
             var m = (d && (d.extension || d.metadata)) || {};
             var tier = String(m.tier || p.id.split('-')[0]).toLowerCase();
             if (!m.minted_at) return null;
+            var pool = String(m.pool || '').toLowerCase();
+            pool = pool === 'weekly' || pool === 'daily' ? pool : '';
             return {
-              type: 'nft', view: 'nft', target: { token: p.id },
+              type: 'nft', view: pool ? 'draw' : 'nft', target: pool ? { tab: pool } : { token: p.id },
               ts:   Number(m.minted_at),
               ic:   'nft.webp',
-              text: 'NFT minted',
+              text: pool ? (pool === 'weekly' ? 'Weekly' : 'Daily') + ' draw entry' : 'NFT minted',
               amt:  tier.charAt(0).toUpperCase() + tier.slice(1) + ' NFT',
               tone: TIER_TONE[tier] || 'var(--ink-2)'
             };
@@ -294,7 +296,10 @@
     (function look() {
       var node = null;
       try { node = find(); } catch (e) {}
-      if (node && node.offsetParent !== null) return cb(node);
+      // Скрытый узел (закрытая секция ответов) тоже годится,
+      // если видна его карточка: значит раздел уже открыт.
+      if (node && (node.offsetParent !== null ||
+          (node.parentElement && node.parentElement.offsetParent !== null))) return cb(node);
       if (++tries < 25) setTimeout(look, 150);
     })();
   }
