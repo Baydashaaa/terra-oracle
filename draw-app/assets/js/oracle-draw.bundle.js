@@ -3266,9 +3266,9 @@ class DrawScheduler {
 
 
 const ART = {
-    common: "/nfts/common-md.png",
-    rare: "/nfts/rare-md.png",
-    legendary: "/nfts/legendary-md.png"
+    common: "nfts/common-md.webp",
+    rare: "nfts/rare-md.webp",
+    legendary: "nfts/legendary-md.webp"
 };
 
 const ID = "oracle-sector-details";
