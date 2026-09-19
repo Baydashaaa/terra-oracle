@@ -43,3 +43,10 @@
   #o-bag-hist-table td:nth-child(3)::after{content:" NFT";color:var(--ink-3,#8d89ab)}
   #o-bag-hist-table td:nth-child(4){text-align:right !important}
 }
+
+/* Chat on phones: drop duplicates. The cost is already in the chat subtitle,
+   and "every 10th message" is repeated by the progress bar when it is shown. */
+@media (max-width:680px){
+  #chat-mobile-bar{display:none !important}
+  #chat-input-bar:has(#chat-entry-progress[style*="block"]) .chat-mobile-badge{display:none !important}
+}
