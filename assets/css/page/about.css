@@ -367,3 +367,27 @@
 @media (prefers-reduced-motion:reduce){
   #page-about .fx-run,#page-about .fx-seed{animation:none !important}
 }
+
+/* About hero v2: new art (1916x821). Text sits left of the "Questions build people" slab;
+   on narrower heroes the scrim widens and simply dims the slab under the text. */
+/* Height follows the art but can still grow with the text:
+   aspect-ratio would clip it, because the hero has overflow:hidden. */
+#page-about .ab-hero{container-type:inline-size}
+#page-about .ab-hero::before{content:"";flex:0 0 0;padding-top:42.85%}
+#page-about .ab-hero .art{object-position:50% 50%}
+#page-about .ab-hero .scrim{
+  background:linear-gradient(100deg,
+    rgba(5,7,15,.92) 0%, rgba(5,7,15,.78) 24%,
+    rgba(5,7,15,.30) 38%, transparent 50%);
+}
+#page-about .ab-hero .copy{max-width:min(500px,42%);box-sizing:border-box}
+#page-about .ab-hero h1 em{display:block}
+@container (max-width:1100px){
+  #page-about .ab-hero .copy{max-width:min(560px,58%)}
+  #page-about .ab-hero .scrim{background:linear-gradient(100deg,
+    rgba(5,7,15,.94) 0%, rgba(5,7,15,.82) 38%, rgba(5,7,15,.35) 60%, transparent 78%)}
+}
+@container (max-width:640px){
+  #page-about .ab-hero .copy{max-width:none}
+  #page-about .ab-hero .scrim{background:linear-gradient(180deg,rgba(5,7,15,.55) 0%,rgba(5,7,15,.88) 100%)}
+}
