@@ -81,6 +81,8 @@
     + '#oe-hide-link:hover{color:#9fb4d8;}'
     + '#oe-restore{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:#16233f;border:1px solid rgba(84,147,247,0.4);align-items:center;justify-content:center;cursor:pointer;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;overflow:hidden;padding:0;touch-action:manipulation;}'
     + '#oe-restore.show{display:flex;}'
+    + '#oe-restore.in-bar{position:static;width:38px;height:38px;flex:none;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;}'
+    + '#oe-restore.in-bar:hover{border:0;filter:brightness(1.15);}'
     + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
 
   /* ── The Eye SVG-ish markup (sizes via .scale wrapper) ───────── */
@@ -140,13 +142,18 @@
     restoreBtn.title = 'Show Oracle Eye';
     restoreBtn.setAttribute('aria-label', 'Show Oracle Eye');
     restoreBtn.innerHTML = restoreIconMarkup();
-    restoreBtn.addEventListener('click', function () { expand(); });
+    // На десктопе свёрнутый глазок разворачивает маскота. В шапке телефона
+    // он сразу открывает форму отзыва, а вернуть маскота можно из формы.
+    restoreBtn.addEventListener('click', function () {
+      if (restoreBtn.classList.contains('in-bar')) openModal(); else expand();
+    });
     document.body.appendChild(restoreBtn);
 
     // Свёрнутый глаз встаёт туда, где стоял маскот, а не в угол по умолчанию.
     // Видимая кнопка - берём её центр; скрытая (перезагрузка в свёрнутом
     // виде) - сохранённую позицию. Без сохранённой остаётся угол из CSS.
     function placeRestore() {
+      if (restoreBtn.classList.contains('in-bar')) return;
       var x = null, y = null, r = btn.getBoundingClientRect();
       if (r.width) { x = r.left + (r.width - 50) / 2; y = r.top + (r.height - 50) / 2; }
       else {
@@ -166,9 +173,37 @@
     }
     window.addEventListener('resize', function () { if (restoreBtn.classList.contains('show')) placeRestore(); });
 
+    // Телефон (до 760 px, как в shell.css): свёрнутый глазок живёт в шапке,
+    // сразу после .spacer, без круга и фона. Шире - снова плавает на экране.
+    var mqBar = window.matchMedia('(max-width:760px)');
+    function placeRestoreSpot() {
+      var bar = document.querySelector('.topbar');
+      if (mqBar.matches && bar) {
+        var sp = bar.querySelector('.spacer');
+        if (restoreBtn.parentNode !== bar) {
+          if (sp && sp.nextSibling) bar.insertBefore(restoreBtn, sp.nextSibling); else bar.appendChild(restoreBtn);
+        }
+        restoreBtn.classList.add('in-bar');
+        restoreBtn.style.left = restoreBtn.style.top = restoreBtn.style.right = restoreBtn.style.bottom = '';
+      } else {
+        if (restoreBtn.parentNode !== document.body) document.body.appendChild(restoreBtn);
+        restoreBtn.classList.remove('in-bar');
+        if (restoreBtn.classList.contains('show')) placeRestore();
+      }
+    }
+    if (mqBar.addEventListener) mqBar.addEventListener('change', placeRestoreSpot);
+    else if (mqBar.addListener) mqBar.addListener(placeRestoreSpot);
+
+    function setHideLabel(collapsed) {
+      var l = document.getElementById('oe-hide-link');
+      if (l) l.textContent = collapsed ? 'Show mascot' : 'Hide this mascot';
+    }
+
     function collapse() {
       placeRestore();
       btn.style.display = 'none';
+      placeRestoreSpot();
+      setHideLabel(true);
       bubble.classList.remove('show');
       restoreBtn.classList.add('show');
       try { localStorage.setItem('oe-collapsed', '1'); } catch (e) {}
@@ -176,6 +211,7 @@
     function expand() {
       btn.style.display = '';
       restoreBtn.classList.remove('show');
+      setHideLabel(false);
       try { localStorage.removeItem('oe-collapsed'); } catch (e) {}
     }
     window.OracleEye_hide = collapse;
@@ -213,7 +249,7 @@
     document.body.appendChild(overlay);
     overlay.querySelector('#oe-hide-link').addEventListener('click', function (e) {
       e.stopPropagation();
-      collapse();
+      if (restoreBtn.classList.contains('show')) expand(); else collapse();
       closeModal();
     });
 
@@ -224,7 +260,7 @@
     // Restore collapsed state immediately (before first paint of this
     // widget) so returning visitors who hid it don't see it flash back on.
     try {
-      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); placeRestore(); }
+      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); placeRestore(); placeRestoreSpot(); setHideLabel(true); }
     } catch (e) {}
   }
 
