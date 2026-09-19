@@ -9,6 +9,7 @@
 //   Circuit      /circuit/history      blocks[].wallet
 //   розыгрыши    winners.json          запись раунда содержит адрес победителя
 //   NFT          NFT-контракт          owner_tokens с метаданными (tier, pool, minted_at)
+//   чат, стрик   /chat/count, /streak  те же ручки, что у старой карточки в chat.js
 // Ранги НЕ дублируем: берём getRank / getRankBadgeHTML / RANKS из profile.js.
 (function () {
   'use strict';
@@ -99,13 +100,17 @@
       getJSON(Q_WORKER + '/questions'),
       getJSON(DRAW_WORKER + '/circuit/history?limit=50'),
       getJSON(DATA_ORIGIN + '/winners.json?t=' + Math.floor(Date.now() / 3600000)),
-      nftTokens(w)
+      nftTokens(w),
+      getJSON(Q_WORKER + '/chat/count?wallet=' + encodeURIComponent(w)),
+      getJSON(Q_WORKER + '/streak?wallet=' + encodeURIComponent(w))
     ]).then(function (res) {
       var sc = res[0] || {};
       var rep = (sc.onchain && sc.onchain[w] != null) ? Number(sc.onchain[w]) : Number((sc.scores || {})[w]) || 0;
 
       var st = { rep: rep, asked: 0, answers: 0, accepted: 0, upvotes: 0,
-                 zones: 0, zonesPaid: 0, wins: 0, won: 0, nft: [], alias: '' };
+                 zones: 0, zonesPaid: 0, wins: 0, won: 0, nft: [], alias: '',
+                 chat: Number(res[5] && res[5].total) || 0,
+                 streak: Number(res[6] && res[6].currentStreak) || 0 };
       var items = [];
 
       ((res[1] && res[1].questions) || []).forEach(function (q) {
@@ -223,7 +228,9 @@
       '</div>' +
       '<div class="wp-grid">' +
         stat(st.asked, 'Questions') + stat(st.answers, 'Answers') + stat(st.accepted, 'Accepted') + stat(st.upvotes, 'Upvotes') +
+        stat(num(st.chat), 'Chat msgs') +
         stat(st.nft.length, 'NFTs') + stat(st.zones, 'Circuit zones') + stat(st.wins, 'Draw wins') + stat(lunc(st.zonesPaid), 'LUNC in Circuit') +
+        stat(st.streak + 'd', 'Streak') +
       '</div>' +
       '<div class="wp-nft">' + nftLine + '</div>' +
       '<div class="wp-h">Activity</div>' +
