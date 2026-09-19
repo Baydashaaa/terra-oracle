@@ -27,10 +27,20 @@
   // сразу, - а не полотно в десятки тысяч пикселей.
   var MAX = 6000;
 
+  // Нижняя граница после первого сообщения. MIN (900) - только стартовая
+  // высота до него: на телефоне содержимое бывает заметно короче.
+  var FLOOR = 320;
+
   function setHeight(px) {
     var f = frame();
     if (!f) return;
-    var want = Math.min(MAX, Math.max(MIN, Math.ceil(px) + PAD));
+    // Защита от петли по vh: если внутри сообщают ровно текущую высоту
+    // рамки, это не содержимое, а что-то растянутое на 100vh (vh внутри
+    // рамки = её высота). Растить рамку в ответ нельзя: +PAD за круг,
+    // и так до MAX. Так было на телефоне в 2026-09.
+    var cur = parseFloat(f.style.height) || 0;
+    if (cur && Math.abs(px + PAD - cur) <= 2 || cur && Math.abs(px - cur) <= 2) return;
+    var want = Math.min(MAX, Math.max(FLOOR, Math.ceil(px) + PAD));
     var h = want + 'px';
     if (f.style.height !== h) f.style.height = h;
   }
