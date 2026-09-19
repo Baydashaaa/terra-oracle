@@ -60,3 +60,15 @@
 /* "Everything else" sheet: never taller than the screen, scrolls inside, clears the iPhone home bar */
 #mMore > .sheet{max-height:calc(100dvh - 12px) !important;overflow-y:auto !important;overscroll-behavior:contain;
   padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)) !important}
+
+/* "Everything else" sheet: brighter tiles, labels and icons */
+#mMore .more-grid a,#mMore .more-links a{
+  color:var(--ink,#fff) !important;opacity:1 !important;font-weight:600;font-size:12.5px;
+  background:rgba(124,58,237,.10) !important;border-color:rgba(167,139,250,.28) !important;
+}
+#mMore .more-grid a:active,#mMore .more-links a:active{background:rgba(124,58,237,.24) !important;border-color:rgba(167,139,250,.6) !important}
+#mMore .more-grid img,#mMore .more-links img{
+  opacity:1 !important;filter:drop-shadow(0 0 6px rgba(124,58,237,.55)) saturate(1.15) brightness(1.1) !important;
+}
+#mMore .more-grid img{width:30px !important;height:30px !important}
+#mMore .sheet-head p{color:var(--ink-2,#c9c6e0) !important}
