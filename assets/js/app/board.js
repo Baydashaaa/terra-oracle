@@ -183,7 +183,7 @@ function renderPoll(q, qi) {
 
 
 async function votePoll(qi, optionIdx) {
-  if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  if (!(globalWalletAddress || connectedAddress)) { alert('Connect wallet to vote'); return; }
   const q = questions[qi];
   if (!q.poll) return;
   if (q.myPollVote !== undefined && q.myPollVote !== null) return; // already voted
@@ -259,6 +259,12 @@ function renderBoard() {
   const list = document.getElementById('questions-list');
   const count = document.getElementById('board-count');
   renderPopularTags();
+  document.querySelectorAll('#qmodal textarea[id^="atext-"]').forEach(t => {
+    const sec = t.closest('.answers-section');
+    if (sec && sec.dataset.qid) _boardDrafts[sec.dataset.qid] = t.value;
+  });
+  _renderQModal();
+  _tryDeepQuestion();
 
   let filtered = boardFilter === 'all'
     ? [...questions]
@@ -308,7 +314,7 @@ function renderBoard() {
 
   // Сохраняем недописанные ответы и фокус до перерисовки.
   let _focusQid = null, _selA = 0, _selB = 0;
-  list.querySelectorAll('textarea[id^="atext-"]').forEach(t => {
+  document.querySelectorAll('#questions-list textarea[id^="atext-"], #qmodal textarea[id^="atext-"]').forEach(t => {
     const sec = t.closest('.answers-section');
     const qid = sec && sec.dataset.qid;
     if (!qid) return;
@@ -316,10 +322,26 @@ function renderBoard() {
     if (document.activeElement === t) { _focusQid = qid; _selA = t.selectionStart; _selB = t.selectionEnd; }
   });
 
-  list.innerHTML = filtered.map((q, qi) => {
-    const realQi = questions.indexOf(q);
-    return `
-    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}${q.open ? ' is-open' : ''}" id="qcard-${qi}" data-qi="${realQi}">
+  list.innerHTML = filtered.map((q, qi) => _qCardHTML(q, qi, questions.indexOf(q), 'list')).join('');
+
+  // Возвращаем недописанные ответы и курсор.
+  _restoreBoardDrafts(list, _focusQid, _selA, _selB);
+}
+
+// Шаблон карточки вопроса. mode 'list' - строка списка, 'modal' - страница
+// вопроса в окне: ветка всегда раскрыта, принятый ответ сверху, вместо
+// стрелки кнопка Copy link. Пока вопрос открыт в окне, в списке его ветку
+// не рисуем: иначе id формы ответа (atext-N и т.п.) оказались бы дважды.
+function _qCardHTML(q, qi, realQi, mode) {
+  const _nowSec  = Math.floor(Date.now() / 1000);
+  const isPinned = x => (x.pinnedUntil || 0) > _nowSec;
+  const inModal = mode === 'modal';
+  const skipThread = !inModal && _modalQid === String(q.id);
+  const answersView = inModal
+    ? q.answers.map((a, ai) => [a, ai]).sort((x, y) => (y[0].id === q.chosenAnswerId) - (x[0].id === q.chosenAnswerId))
+    : q.answers.map((a, ai) => [a, ai]);
+  return `
+    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}${(q.open || inModal) ? ' is-open' : ''}${inModal ? ' qc2-modal' : ''}" id="${inModal ? 'qmodal-card' : 'qcard-' + qi}" data-qi="${realQi}">
 
       <!-- Левый столбец: голос. Стрелка одна - в модели вопроса только
            счётчик votes и флаг voted, минуса нет. Рисовать неработающую
@@ -368,25 +390,27 @@ function renderBoard() {
           <span class="qc2-dot">\u00b7</span><span class="qc2-time">${escHtml(q.time)}</span>
           <span class="qc2-id">${escHtml(q.id)}</span>
 
-          <span class="qc2-answers" title="${q.answers.length} answer${q.answers.length === 1 ? '' : 's'}">
+          <${inModal ? 'span' : 'button type="button" onclick="toggleAnswers(' + realQi + ')"'} class="qc2-answers" title="${inModal ? q.answers.length + ' answers' : 'Show answers here'}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"/></svg>
             ${q.answers.length}
-          </span>
+          </${inModal ? 'span' : 'button'}>
         </div>
 
-        ${q.poll && q.poll.length >= 2 ? renderPoll(q, realQi) : ''}
+        ${q.poll && q.poll.length >= 2 && !skipThread ? renderPoll(q, realQi) : ''}
       </div>
 
       <!-- Одно действие "открыть вопрос": стрелка, клик по карточке или по
            счётчику ответов. Форма ответа живёт внутри раскрытой ветки. -->
       <div class="qc2-side">
-        <button class="qc2-open" onclick="toggleAnswers(${realQi})" aria-label="${q.open ? 'Close question' : 'Open question'}" aria-expanded="${q.open ? 'true' : 'false'}">
+        ${inModal ? `<button type="button" class="qc2-open qc2-link" data-copy-q="${escHtml(q.id)}" aria-label="Copy link" title="Copy link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        </button>` : `<button type="button" class="qc2-open" onclick="openQuestionModal(${realQi})" aria-label="Open question page" title="Open question">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
+        </button>`}
       </div>
-      <div class="answers-section ${q.open ? 'open' : ''}" id="answers-${realQi}" data-qid="${escHtml(String(q.id || ''))}">
+      ${skipThread ? '' : `<div class="answers-section ${(q.open || inModal) ? 'open' : ''}" id="answers-${realQi}" data-qid="${escHtml(String(q.id || ''))}">
         ${q.answers.length === 0 ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;">No answers yet - be the first!</div>` : ''}
-        ${q.answers.map((a, ai) => `
+        ${answersView.map(([a, ai]) => `
           <div class="answer-item ${a.isAdmin ? 'admin-answer' : ''}" data-answer-id="${escHtml(String(a.id || ''))}">
             <div class="answer-meta">
               ${a.isAdmin ? `<span class="badge-admin">🛡️ Admin</span>` : `${_getProfileAvatar(a.wallet) ? `<img src="${getProfileAvatar(a.wallet)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;">` : ''}<span class="q-alias" data-profile="${escHtml(a.wallet || '')}">${_getDisplayName(a.wallet, a.alias)}</span>`}
@@ -433,7 +457,7 @@ function renderBoard() {
             </div>
           </div>
         `).join('')}
-        <div class="answer-form ${q.formOpen ? 'open' : ''}" id="aform-${realQi}">
+        <div class="answer-form ${(q.formOpen || inModal) ? 'open' : ''}" id="aform-${realQi}">
           <div class="answer-form-title">Write an answer</div>
           <div id="board-reply-block-${realQi}" style="display:none;align-items:flex-start;gap:8px;margin-bottom:12px;padding:8px 10px;background:rgba(84,147,247,0.06);border:1px solid rgba(84,147,247,0.15);border-radius:8px;">
             <div style="flex:1;padding:4px 8px;background:rgba(84,147,247,0.07);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;">
@@ -450,17 +474,113 @@ function renderBoard() {
             <button class="btn btn-primary btn-sm" onclick="submitAnswer(${realQi})">Post Answer</button>
           </div>
         </div>
-      </div>
+      </div>`}
     </div>
-  `; }).join('');
+  `;
+}
 
-  // Возвращаем недописанные ответы и курсор.
-  list.querySelectorAll('textarea[id^="atext-"]').forEach(t => {
+function _restoreBoardDrafts(root, focusQid, a, b) {
+  root.querySelectorAll('textarea[id^="atext-"]').forEach(t => {
     const sec = t.closest('.answers-section');
     const qid = sec && sec.dataset.qid;
     if (qid && _boardDrafts[qid]) t.value = _boardDrafts[qid];
-    if (qid && qid === _focusQid) { t.focus({ preventScroll: true }); try { t.setSelectionRange(_selA, _selB); } catch (e) {} }
+    if (qid && qid === focusQid) { t.focus({ preventScroll: true }); try { t.setSelectionRange(a, b); } catch (e) {} }
   });
+}
+
+// ─── Страница вопроса (окно) ─────────────────────────────────────
+// Стрелка на карточке открывает вопрос целиком: опрос, все ответы
+// (принятый сверху), форма ответа и Copy link. Ссылка вида /?q=ID
+// открывает этот вопрос сразу при загрузке сайта.
+let _modalQid = null;
+const _deepQ = (() => { try { return new URLSearchParams(location.search).get('q'); } catch (e) { return null; } })();
+let _deepQDone = false;
+
+function _qModalEl() {
+  let ov = document.getElementById('qmodal');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'qmodal';
+  ov.className = 'qm-overlay';
+  ov.hidden = true;
+  ov.innerHTML = '<div class="qm-dialog" role="dialog" aria-modal="true" aria-label="Question">' +
+    '<button type="button" class="qm-x" aria-label="Close">\u00d7</button><div class="qm-body"></div></div>';
+  // Внутри #page-board, чтобы на карточку действовали стили Board.
+  (document.getElementById('page-board') || document.body).appendChild(ov);
+  ov.addEventListener('click', e => {
+    if (e.target === ov || e.target.closest('.qm-x')) closeQuestionModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !ov.hidden) closeQuestionModal();
+  });
+  return ov;
+}
+
+function _renderQModal() {
+  if (!_modalQid) return;
+  const realQi = questions.findIndex(q => String(q.id) === _modalQid);
+  const ov = _qModalEl();
+  if (realQi < 0) { closeQuestionModal(); return; }
+  const body = ov.querySelector('.qm-body');
+  let focusQid = null, a = 0, b = 0;
+  const t = body.querySelector('textarea[id^="atext-"]');
+  if (t && document.activeElement === t) { focusQid = _modalQid; a = t.selectionStart; b = t.selectionEnd; }
+  body.innerHTML = _qCardHTML(questions[realQi], -1, realQi, 'modal');
+  _restoreBoardDrafts(body, focusQid, a, b);
+}
+
+function openQuestionModal(realQi, answerId) {
+  const q = questions[realQi];
+  if (!q) return;
+  _modalQid = String(q.id);
+  const ov = _qModalEl();
+  ov.hidden = false;
+  document.documentElement.classList.add('qm-lock');
+  renderBoard();
+  const body = ov.querySelector('.qm-body');
+  ov.scrollTop = 0;
+  if (answerId) {
+    const el = body.querySelector('[data-answer-id="' + CSS.escape(String(answerId)) + '"]');
+    if (el) setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.remove('act-flash'); void el.offsetWidth; el.classList.add('act-flash');
+    }, 60);
+  }
+}
+
+function openQuestionById(id, answerId) {
+  const i = questions.findIndex(q => String(q.id) === String(id));
+  if (i >= 0) openQuestionModal(i, answerId);
+  return i >= 0;
+}
+window.openQuestionById = openQuestionById;
+
+function closeQuestionModal() {
+  const ov = document.getElementById('qmodal');
+  _modalQid = null;
+  if (ov) { ov.hidden = true; ov.querySelector('.qm-body').innerHTML = ''; }
+  document.documentElement.classList.remove('qm-lock');
+  renderBoard();
+}
+
+// Copy link: адрес, который сразу открывает этот вопрос.
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-copy-q]');
+  if (!b) return;
+  const url = location.origin + '/?q=' + encodeURIComponent(b.getAttribute('data-copy-q'));
+  const done = () => { b.classList.add('copied'); b.title = 'Link copied'; setTimeout(() => { b.classList.remove('copied'); b.title = 'Copy link'; }, 1600); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => prompt('Copy this link:', url));
+  else prompt('Copy this link:', url);
+});
+
+// Ссылка /?q=ID: как только вопросы загрузились, открываем Board и вопрос.
+function _tryDeepQuestion() {
+  if (!_deepQ || _deepQDone || !questions.length) return;
+  const i = questions.findIndex(q => String(q.id) === _deepQ);
+  _deepQDone = true;
+  if (i < 0) return;
+  if (typeof showPage === 'function') { try { showPage('board'); } catch (e) {} }
+  setTimeout(() => openQuestionModal(i), 50);
 }
 
 // Popular tags в боковой панели Board: считаются по всем вопросам, топ-10.
@@ -691,7 +811,7 @@ async function voteAnswer(qi, ai) {
   const answer = questions[qi].answers[ai];
   if (answer.voted) return;
   if (answer._voting) return; // guard against double-click
-  if (!globalWalletAddress) { alert('Connect wallet to vote'); return; }
+  if (!(globalWalletAddress || connectedAddress)) { alert('Connect wallet to vote'); return; }
   answer._voting = true;
 
   // Optimistic update

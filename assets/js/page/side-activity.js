@@ -339,7 +339,11 @@
         return document.querySelector('#drawModes [data-t="' + t.tab + '"]');
       }, function (tab) { tab.click(); });
     }
-    if (it.view === 'board') focusQuestion(t);
+    if (it.view === 'board') {
+      // Есть страница вопроса - открываем её, иначе прокрутка к карточке.
+      var opened = t.q && typeof window.openQuestionById === 'function' && window.openQuestionById(t.q, t.a);
+      if (!opened) focusQuestion(t);
+    }
     // Модули, которые умеют больше, могут слушать это событие.
     document.dispatchEvent(new CustomEvent('oracle:focus', { detail: { type: it.type, view: it.view, target: t } }));
   }

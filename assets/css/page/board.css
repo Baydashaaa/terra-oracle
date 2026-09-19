@@ -96,3 +96,25 @@
   #page-board .bd-search{min-width:0}
   #page-board .bd-sort .vote-tab{flex:1;justify-content:center;padding:0 8px;height:40px;font-size:13px}
 }
+
+/* Question page (modal) opened by the arrow on a card */
+html.qm-lock{overflow:hidden}
+#page-board .qm-overlay{
+  position:fixed;inset:0;z-index:950;display:flex;align-items:flex-start;justify-content:center;
+  padding:6vh 16px 40px;overflow-y:auto;overscroll-behavior:contain;
+  background:rgba(5,4,15,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+#page-board .qm-overlay[hidden]{display:none}
+#page-board .qm-dialog{position:relative;width:min(860px,100%)}
+#page-board .qm-x{
+  position:absolute;top:-16px;right:-16px;z-index:2;width:38px;height:38px;border-radius:12px;cursor:pointer;
+  font-size:22px;line-height:1;color:#fff;background:#1b1838;border:1px solid rgba(167,139,250,.45);
+}
+#page-board .qm-x:hover{background:#2a2552}
+#page-board .q-card.qc2.qc2-modal{cursor:default;margin:0;box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 1px rgba(167,139,250,.3)}
+#page-board .qc2-modal .qc2-title{font-size:19px;line-height:1.35}
+#page-board .qc2-link.copied{color:#4ade80;border-color:rgba(74,222,128,.6)}
+@media (max-width:680px){
+  #page-board .qm-overlay{padding:56px 8px 24px}
+  #page-board .qm-x{top:-46px;right:4px}
+}
