@@ -46,12 +46,30 @@ function updatePoolDisplay() {
   const minNotice = document.getElementById('pool-min-notice');
   const _minEntries = typeof poolMinEntries === 'function'
     ? poolMinEntries(currentLottery) : MIN_TICKETS;
-  if (minNotice && count < _minEntries && count > 0) {
-    // Текст собираем здесь, а не в разметке: порог живёт в контракте, и
-    // зашитая в index.html «пятёрка» обещала перенос там, где контракт
-    // раунд разыграет.
-    minNotice.innerHTML = '<svg class="oi oi--amber"><use href="#i-warning"/></svg> Less than ' +
-      _minEntries + ' NFT' + (_minEntries !== 1 ? 's' : '') + ' minted - pool rolls over to next draw';
+  const _minPot = typeof poolMinPot === 'function' ? poolMinPot(currentLottery) : 0;
+
+  // Порог считается во ВХОДАХ, а не в NFT: Common даёт 1, Rare 5,
+  // Legendary 10, плюс бесплатные билеты с Q&A. Один Rare закрывает порог
+  // в пять, а прежний текст обещал, что нужно пять штук.
+  const _needParts = [];
+  if (_minEntries > 0 && count < _minEntries) {
+    const _d = _minEntries - count;
+    _needParts.push('Need ' + _d + ' more ' + (_d === 1 ? 'entry' : 'entries'));
+  }
+  if (_minPot > 0 && _realBalance < _minPot) {
+    _needParts.push('Need ' + fmt(Math.ceil(_minPot - _realBalance)) + ' more LUNC');
+  }
+  // Читает embed-host.js и отдаёт карточке Next draw на главной. Только
+  // для ОТКРЫТОЙ игры: у неё одной здесь есть настоящий список входов.
+  window.__drawNeed = _needParts.length
+    ? { game: currentLottery, text: _needParts.join(' \u00b7 ') + ' to draw' }
+    : { game: currentLottery, text: null };
+
+  // Условие без `count > 0`: ноль входов - это как раз тот случай, когда
+  // объяснение нужнее всего, а раньше оно там и пропадало.
+  if (minNotice && _needParts.length) {
+    minNotice.innerHTML = '<svg class="oi oi--amber"><use href="#i-warning"/></svg> ' +
+      window.__drawNeed.text + ' - pool rolls over to the next one';
     minNotice.style.display = 'block';
   } else if (minNotice) {
     minNotice.style.display = 'none';

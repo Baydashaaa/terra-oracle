@@ -13,6 +13,7 @@
   var card = null;
   var stats = {};      // последнее, что прислала рамка
   var msAt = {};       // {игра: {ms, at}} - остаток и когда он получен
+  var need = null;     // {game, text} - чего не хватает раунду до старта
 
   function $(sel) { return card ? card.querySelector(sel) : null; }
 
@@ -74,6 +75,16 @@
       }
     }
 
+    // Строка "чего не хватает". Рамка считает её для ОТКРЫТОЙ игры, а она
+    // всегда совпадает с выбранной вкладкой: переключатель ведёт обе.
+    // Условие выполнено - строки нет, лишний элемент в карточке ни к чему.
+    var needEl = $('[data-pool-need]');
+    if (needEl) {
+      var show = need && need.game === tab && need.text;
+      needEl.textContent = show ? need.text : '';
+      needEl.style.display = show ? '' : 'none';
+    }
+
     var lbl = $('[data-pool-label]');
     if (lbl) {
       lbl.textContent = tab === 'circuit' ? 'Zones claimed'
@@ -107,6 +118,7 @@
     var d = e.data;
     if (!d || d.type !== 'oracle-draw:stats') return;
     stats = d.games || {};
+    need  = d.need || null;
     // Запоминаем момент получения: между сообщениями карточка тикает сама.
     Object.keys(stats).forEach(function (g) {
       var v = stats[g] && stats[g].ms;

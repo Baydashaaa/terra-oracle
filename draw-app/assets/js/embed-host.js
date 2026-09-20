@@ -274,8 +274,12 @@
   }
 
   function broadcast() {
+    // need - чего не хватает раунду до старта. Считает pool-timer.js, и
+    // только для открытой игры: список входов есть лишь у неё.
+    var need = window.__drawNeed || null;
     parent.postMessage({
       type: 'oracle-draw:stats',
+      need: need,
       games: {
         daily:   { pool: txt('dg-daily-pool'),   tick: txt('dg-daily-tick'),   ms: msLeft('daily') },
         weekly:  { pool: txt('dg-weekly-pool'),  tick: txt('dg-weekly-tick'),  ms: msLeft('weekly') },
