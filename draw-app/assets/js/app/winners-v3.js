@@ -30,14 +30,21 @@ function mapCircuitRound(r, roundNumber) {
     zonesBy[b.wallet] = (zonesBy[b.wallet] || 0) + (b.to - b.from + 1);
   });
 
-  var prize = (r.split && r.split.prize) ? Math.round(r.split.prize / 1e6) : null;
+  // Тонкая запись из /circuit/log идёт без blocks: участники в ней числом, а
+  // приз лежит готовым в uluna. Полная запись из /circuit/history считается
+  // как раньше, по blocks и разбивке.
+  var participantCount = (r.blocks && r.blocks.length)
+    ? Object.keys(zonesBy).length
+    : (r.participants || 0);
+  var prizeUluna = (r.split && r.split.prize) || r.prize || 0;
+  var prize = prizeUluna ? Math.round(prizeUluna / 1e6) : null;
 
   return {
     type: 'circuit',
     round: roundNumber,
     roundId: r.roundId,
     tickets: r.sold || 0,
-    participants: Object.keys(zonesBy).length,
+    participants: participantCount,
     blockHeight: r.blockHeight || null,
     blockHash: r.blockHash || null,
     time: r.closedAt ? Math.floor(new Date(r.closedAt).getTime() / 1000) : 0,
@@ -55,9 +62,19 @@ function mapCircuitRound(r, roundNumber) {
 
 async function loadCircuitWinners() {
   try {
-    var res = await fetch(DRAW_WORKER + '/circuit/history?limit=60');
-    if (!res.ok) return;
-    var data = await res.json();
+    // Журнал помнит все закрытые раунды. История режется воркером до 50 и
+    // остаётся запасным путём - на случай, если журнал ещё не заполнен.
+    var res = await fetch(DRAW_WORKER + '/circuit/log?limit=200');
+    var data = null;
+    if (res.ok) {
+      data = await res.json();
+      if (!data || !((data.rounds || []).length)) data = null;
+    }
+    if (!data) {
+      res = await fetch(DRAW_WORKER + '/circuit/history?limit=60');
+      if (!res.ok) return;
+      data = await res.json();
+    }
     var rounds = (data && data.rounds) || [];
     var closed = rounds.filter(function (r) { return r && r.status === 'closed'; });
     // История приходит новыми вперёд, а номер раунда должен расти со временем
