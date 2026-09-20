@@ -75,8 +75,28 @@
   // список (winners-v3.js), поэтому его "total paid out" больше, чем сумма по
   // winners.json. Здесь тот же источник и та же формула приза, иначе две
   // страницы сайта показывают разные числа.
-  // Возвращает null при любой ошибке - остальные кафели от этого не страдают.
+  //
+  // Основной источник - накопитель /circuit/totals: он копится при закрытии
+  // каждого раунда и не зависит от глубины истории. История идёт запасным
+  // путём, на случай если накопитель ещё пуст.
   async function loadCircuit() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/circuit/totals', { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        var t = await r.json();
+        if (!t.empty && (t.rounds || t.paidLunc)) {
+          return { paid: t.paidLunc || 0, rounds: t.rounds || 0, entries: t.zones || 0 };
+        }
+      }
+    } catch (e) {
+      console.warn('[home] circuit totals:', e);
+    }
+    return loadCircuitFromHistory();
+  }
+
+  // Запасной путь: те же числа, но по последним 50 раундам. Суммы здесь
+  // неполные по определению - история режется в воркере.
+  async function loadCircuitFromHistory() {
     try {
       var r = await fetch(DRAW_WORKER + '/circuit/history?limit=60', { signal: AbortSignal.timeout(8000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
