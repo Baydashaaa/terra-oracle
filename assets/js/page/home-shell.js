@@ -66,10 +66,15 @@
       var live = function (a) { return (a || []).filter(function (x) { return !x.skipped; }); };
       var daily = live(w.daily), weekly = live(w.weekly);
 
+      // Поле приза у daily называется по-разному: ранние записи писали
+      // `prize`, поздние `prize_lunc`. Winners на draw.terraoracle.io берёт
+      // оба (mapWinnerEntry: `w.prize_lunc || w.prize`), а здесь стоял
+      // только второй - старые раунды считались нулём, и сумма на главной
+      // выходила меньше, чем в разделе Winners.
       var paid = 0;
-      daily.forEach(function (x) { paid += x.prize_lunc || 0; });
+      daily.forEach(function (x) { paid += x.prize_lunc || x.prize || 0; });
       weekly.forEach(function (x) {
-        (x.winners || []).forEach(function (p) { paid += p.amount_lunc || p.prize_lunc || 0; });
+        (x.winners || []).forEach(function (p) { paid += p.amount_lunc || p.prize_lunc || p.prize || 0; });
       });
 
       var entries = 0, players = 0;
