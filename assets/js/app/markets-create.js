@@ -85,7 +85,7 @@
     validator_power: {
       label: 'Validator stake',
       cats: ['validators'],
-      param: { label: 'Validator address', kind: 'text', placeholder: 'terravaloper1…' },
+      param: { label: 'Validator', kind: 'validator' },
       path: function (p) { return '/cosmos/staking/v1beta1/validators/' + p; },
       pick: function (j) { return j && j.validator ? num(j.validator.tokens) : null; },
       unit: { name: 'LUNC', mul: 1e6, dec: 0 },
@@ -179,6 +179,8 @@
     resY: 0, resM: 0, resD: 0, resH: 20,   // момент разрешения, UTC
     lead: 86400,                            // за сколько закрывается приём
     promoted: false,
+    validators: null,   // список с цепочки, грузится один раз
+    vMoniker: '',       // название выбранного, только для показа
     height: null,
     cfg: null,
     chain: null,
@@ -253,6 +255,29 @@
     });
   }
 
+  /**
+   * Активные валидаторы с цепочки. Берём только bonded: предсказывать
+   * стейк валидатора, который сейчас вне активного набора, можно, но
+   * в списке он только мешает искать.
+   */
+  function loadValidators() {
+    if (S.validators) return Promise.resolve(S.validators);
+    return lcdGet('/cosmos/staking/v1beta1/validators'
+        + '?status=BOND_STATUS_BONDED&pagination.limit=500')
+      .then(function (j) {
+        S.validators = (j.validators || [])
+          .map(function (v) {
+            return {
+              v: v.operator_address,
+              label: (v.description && v.description.moniker) || v.operator_address,
+              tokens: Number(v.tokens || 0),
+            };
+          })
+          .sort(function (a, b) { return b.tokens - a.tokens; });
+        return S.validators;
+      });
+  }
+
   function heightAt(ts) {
     if (!S.chain || !ts) return null;
     var d = ts - S.chain.time;
@@ -267,7 +292,11 @@
     oracle_rate:     function (p) { return 'the LUNC oracle rate in ' + String(p || '').replace(/^u/, '').toUpperCase(); },
     staking_ratio:   function () { return 'the share of LUNC staked'; },
     community_pool:  function () { return 'the community pool'; },
-    validator_power: function (p) { return 'the stake delegated to ' + shortAddr(p); },
+    // Название плюс короткий адрес: moniker не уникален и меняется,
+    // так что одного названия для вопроса про деньги мало.
+    validator_power: function (p) {
+      return 'the stake delegated to ' + (S.vMoniker ? S.vMoniker + ' (' + shortAddr(p) + ')' : shortAddr(p));
+    },
     proposal_passed: function (p) { return 'governance proposal #' + (p || '?'); },
   };
 
@@ -323,6 +352,12 @@
   function resolutionRule() {
     var m = METRICS[S.metric];
     var what = (PHRASE[S.metric] || function () { return S.metric; })(S.param);
+    // В правиле - полный адрес: сравнивается он, а не название, которое
+    // владелец может сменить хоть завтра.
+    if (S.metric === 'validator_power' && S.param) {
+      what = 'the stake delegated to validator ' + S.param
+        + (S.vMoniker ? ' (' + S.vMoniker + ' at the time the market was created)' : '');
+    }
     var at = 'at block ' + (S.height || '?') + ' (' + utcText(resolveTs(), true) + ')';
     if (m.discrete) {
       return 'YES if the status of ' + what + ' reported by the Terra Classic chain ' + at
@@ -474,35 +509,72 @@
 
   var ddHandlers = {};
 
-  function dd(id, options, value, width) {
+  function dd(id, options, value, width, opts) {
+    opts = opts || {};
     var cur = null;
     for (var i = 0; i < options.length; i++) if (String(options[i].v) === String(value)) cur = options[i];
     return '<div class="mkf-dd" data-dd="' + id + '"' + (width ? ' style="max-width:' + width + '"' : '') + '>'
-      + '<button type="button" class="mkf-dd-btn"><span>' + esc(cur ? cur.label : '—') + '</span>'
+      + '<button type="button" class="mkf-dd-btn"><span>'
+      + esc(cur ? cur.label : (opts.placeholder || '—')) + '</span>'
       + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>'
       + '<div class="mkf-dd-list">'
+      + (opts.search
+        ? '<input type="text" class="mkf-dd-find" placeholder="' + esc(opts.search) + '" autocomplete="off">'
+        : '')
+      + '<div class="mkf-dd-opts">'
       + options.map(function (o) {
-        return '<button type="button" data-v="' + esc(o.v) + '"'
-          + (String(o.v) === String(value) ? ' aria-selected="true"' : '') + '>' + esc(o.label) + '</button>';
+        return '<button type="button" data-v="' + esc(o.v) + '" data-find="' + esc(String(o.label).toLowerCase()) + '"'
+          + (String(o.v) === String(value) ? ' aria-selected="true"' : '') + '>'
+          + esc(o.label) + (o.hint ? '<em>' + esc(o.hint) + '</em>' : '') + '</button>';
       }).join('')
-      + '</div></div>';
+      + '</div></div></div>';
   }
 
   function onDD(id, fn) { ddHandlers[id] = fn; }
 
   document.addEventListener('click', function (e) {
+    var inside = e.target.closest('.mkf-dd');
     var btn = e.target.closest('.mkf-dd-btn');
-    var item = e.target.closest('.mkf-dd-list button');
+    var item = e.target.closest('.mkf-dd-opts button');
+    // Закрываем все, кроме того, внутри которого кликнули: иначе клик по
+    // полю поиска закрывал бы собственный список.
     document.querySelectorAll('.mkf-dd.open').forEach(function (d) {
-      if (!btn || d !== btn.parentNode) d.classList.remove('open');
+      if (d !== inside) d.classList.remove('open');
     });
-    if (btn) { btn.parentNode.classList.toggle('open'); return; }
-    if (item) {
-      var host = item.closest('.mkf-dd');
-      host.classList.remove('open');
-      var fn = ddHandlers[host.dataset.dd];
-      if (fn) fn(item.dataset.v);
+    if (btn) {
+      var host = btn.parentNode;
+      host.classList.toggle('open');
+      var find = host.querySelector('.mkf-dd-find');
+      if (find && host.classList.contains('open')) { find.value = ''; filterDD(host); find.focus(); }
+      return;
     }
+    if (item) {
+      var h = item.closest('.mkf-dd');
+      h.classList.remove('open');
+      var fn = ddHandlers[h.dataset.dd];
+      if (fn) fn(item.dataset.v, item.textContent);
+    }
+  });
+
+  function filterDD(host) {
+    var q = (host.querySelector('.mkf-dd-find').value || '').toLowerCase().trim();
+    var any = false;
+    host.querySelectorAll('.mkf-dd-opts button').forEach(function (b) {
+      var hit = !q || b.dataset.find.indexOf(q) > -1;
+      b.style.display = hit ? '' : 'none';
+      if (hit) any = true;
+    });
+    var empty = host.querySelector('.mkf-dd-empty');
+    if (!any && !empty) {
+      var d = document.createElement('div');
+      d.className = 'mkf-dd-empty';
+      d.textContent = 'Nothing matches';
+      host.querySelector('.mkf-dd-opts').appendChild(d);
+    } else if (any && empty) { empty.remove(); }
+  }
+
+  document.addEventListener('input', function (e) {
+    if (e.target.classList.contains('mkf-dd-find')) filterDD(e.target.closest('.mkf-dd'));
   });
 
   // ── разметка ──────────────────────────────────────────────────────────────
@@ -552,7 +624,13 @@
       + (m.param ? '<div class="field"><label>' + esc(m.param.label) + '</label>'
         + (m.param.kind === 'denom'
           ? dd('param', DENOMS.map(function (d) { return { v: d, label: d.replace(/^u/, '').toUpperCase() }; }), S.param)
-          : '<input type="text" id="mkf-param" placeholder="' + esc(m.param.placeholder || '') + '" value="' + esc(S.param) + '">')
+          : m.param.kind === 'validator'
+            ? (S.validators
+              ? dd('param', S.validators.map(function (v) {
+                return { v: v.v, label: v.label, hint: fmtLuncLocal(v.tokens) + ' LUNC' };
+              }), S.param, null, { search: 'Type a validator name…', placeholder: 'Pick a validator' })
+              : '<div class="mkf-hint">Loading the validator set…</div>')
+            : '<input type="text" id="mkf-param" placeholder="' + esc(m.param.placeholder || '') + '" value="' + esc(S.param) + '">')
         + '</div>' : '')
       + (m.discrete ? '' :
         '<div class="field"><label>Condition</label>' + dd('cmp', COMPARATORS, S.comparator) + '</div>'
@@ -652,7 +730,14 @@
 
     onDD('metric', function (v) { switchMetric(v, true); });
     onDD('cmp', function (v) { S.comparator = v; render(); });
-    onDD('param', function (v) { S.param = v; render(); });
+    onDD('param', function (v) {
+      S.param = v;
+      if (S.metric === 'validator_power' && S.validators) {
+        var hit = S.validators.filter(function (x) { return x.v === v; })[0];
+        S.vMoniker = hit ? hit.label : '';
+      }
+      render();
+    });
     onDD('resD', function (v) { S.resD = Number(v); recalcHeight(); render(); });
     onDD('resM', function (v) {
       S.resM = Number(v);
@@ -680,8 +765,13 @@
     S.metric = key;
     S.param = '';
     S.threshold = '';
+    S.vMoniker = '';
     var nm = METRICS[key];
     if (nm.param && nm.param.kind === 'denom') S.param = DENOMS[0];
+    // Список валидаторов тянем только когда он понадобился, и один раз.
+    if (nm.param && nm.param.kind === 'validator' && !S.validators) {
+      loadValidators().then(render).catch(function () {});
+    }
     if (redraw) render();
   }
 

@@ -110,7 +110,7 @@
         out.push({
           type: 'circuit', view: 'draw', target: { tab: 'circuit', zone: from },
           ts:   Math.floor(b.at / 1000),         // здесь миллисекунды
-          ic:   'circuit.webp',
+          ic:   't-circuit.webp',
           text: zones === 1 ? 'Circuit zone claimed' : 'Circuit zones claimed \u00d7' + zones,
           amt:  zones === 1 && isFinite(from) ? 'Zone #' + from : (b.paid ? lunc(b.paid / 1e6) + ' LUNC' : ''),
           tone: 'var(--amber)'
@@ -132,7 +132,8 @@
         out.push({
           type: 'draws', view: 'draw', target: { tab: pool },
           ts:   ts,
-          ic:   'draw.webp',
+          // Та же иконка, что у кошелька этого пула в Treasury.
+          ic:   pool === 'weekly' ? 't-weekly.webp' : 't-daily.webp',
           text: (pool === 'weekly' ? 'Weekly' : 'Daily') + ' draw settled',
           amt:  w.prize_lunc ? lunc(w.prize_lunc) + ' LUNC' : '',
           tone: 'var(--cyan)'

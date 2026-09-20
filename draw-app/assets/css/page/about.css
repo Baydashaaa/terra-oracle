@@ -1,0 +1,205 @@
+/* ═══ About / домашняя страница Oracle Draw ═══════════════════════════════
+   Раздел About в рамке на terraoracle.io/draw - это страница #page-home
+   внутри draw-app (см. MAP в assets/js/embed-host.js). Раньше вся вёрстка
+   жила инлайновыми стилями прямо в index.html; здесь она вынесена в классы.
+
+   Шрифты берутся те, что реально подключены в index.html: 'Exo 2' для
+   заголовков, 'Rajdhani' для чисел. 'Cinzel' в старой разметке НЕ был
+   загружен и молча падал в serif - поэтому его тут нет.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.oda{
+  --oda-line:rgba(124,92,255,.16);
+  --oda-card:rgba(18,24,42,.72);
+  max-width:1120px;
+  margin:0 auto;
+  padding:44px 20px 72px;
+  text-align:left;
+}
+
+/* ── шапка ─────────────────────────────────────────────────────────────── */
+.oda-hero{text-align:center;margin-bottom:40px}
+.oda-eyebrow{
+  display:inline-block;margin-bottom:20px;padding:6px 18px;
+  border:1px solid rgba(124,92,255,.3);border-radius:999px;
+  background:rgba(124,92,255,.06);
+  font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);
+}
+.oda-hero h1{
+  margin:0 0 16px;font-family:'Exo 2',sans-serif;font-weight:800;
+  font-size:clamp(38px,6.5vw,72px);line-height:1;letter-spacing:.02em;color:#fff;
+  text-shadow:0 0 60px rgba(124,92,255,.35);
+}
+.oda-hero h1 span{
+  background:linear-gradient(135deg,#7C5CFF,#5B8CFF);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.oda-lead{margin:0 0 10px;font-size:17px;color:var(--text)}
+.oda-sub{margin:0 auto 24px;max-width:640px;font-size:14px;line-height:1.7;color:var(--muted)}
+
+/* Четыре свойства протокола одной строкой. Не карточки - строка меток:
+   это обещание, а не раздел, и место им соответствующее. */
+.oda-badges{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  list-style:none;margin:0 0 26px;padding:0;
+}
+.oda-badges li{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:10px 16px;border:1px solid var(--oda-line);border-radius:12px;
+  background:var(--oda-card);
+  font-size:12px;letter-spacing:.04em;color:var(--text);
+}
+.oda-badges .oi{font-size:17px}
+
+.oda-cta{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:15px 34px;border:0;border-radius:14px;cursor:pointer;
+  background:linear-gradient(135deg,#7C5CFF,#5B8CFF);color:#fff;
+  font-family:'Exo 2',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  box-shadow:0 0 24px rgba(124,92,255,.45);
+  transition:transform .25s,box-shadow .25s;
+}
+.oda-cta:hover{transform:translateY(-2px);box-shadow:0 0 38px rgba(124,92,255,.65)}
+.oda-cta .oi{font-size:18px}
+
+/* ── три числа ─────────────────────────────────────────────────────────── */
+.oda-stats{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+  margin-bottom:56px;
+}
+.oda-stat{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 20px;border:1px solid var(--oda-line);border-radius:18px;
+  background:var(--oda-card);
+}
+.oda-stat .oi{font-size:26px;flex:none}
+/* Иконки-картинки из репо: те же, что в Treasury, Ecosystem stats и
+   Recent activity на terraoracle.io. Рисуются крупнее спрайтовых, потому
+   что это отрисованные значки, а не однотонные глифы. */
+.oda-ic{width:38px;height:38px;flex:none;object-fit:contain;display:block}
+.oda-ic--lg{width:46px;height:46px}
+.oda-stat b{
+  display:block;font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;
+  line-height:1.1;color:#fff;
+}
+.oda-stat span{
+  display:block;margin-top:2px;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-weak);
+}
+
+/* ── секции ────────────────────────────────────────────────────────────── */
+.oda-sec{margin-bottom:54px}
+.oda-sec > h2{
+  position:relative;margin:0 0 4px;padding-left:14px;
+  font-family:'Exo 2',sans-serif;font-size:23px;font-weight:700;letter-spacing:.01em;color:#fff;
+}
+/* Полоска слева вместо подчёркивания по центру: заголовки теперь слева,
+   и центральная черта висела бы сама по себе. */
+.oda-sec > h2::before{
+  content:"";position:absolute;left:0;top:.18em;bottom:.18em;width:3px;border-radius:2px;
+  background:linear-gradient(180deg,#7C5CFF,#5B8CFF);
+}
+.oda-dek{margin:0 0 22px;padding-left:14px;font-size:13px;color:var(--text-weak)}
+
+.oda-card{
+  border:1px solid var(--oda-line);border-radius:18px;
+  background:var(--oda-card);padding:22px;
+  transition:transform .25s,border-color .25s;
+}
+.oda-card:hover{transform:translateY(-4px);border-color:rgba(124,92,255,.42)}
+
+/* ── три игры ──────────────────────────────────────────────────────────── */
+.oda-games{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.oda-game{border-top:2px solid var(--tone,#7C5CFF)}
+.oda-game .oi{font-size:26px}
+.oda-game h3{
+  margin:12px 0 2px;font-family:'Exo 2',sans-serif;font-size:17px;font-weight:700;color:#fff;
+}
+.oda-when{
+  margin:0 0 10px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tone,#7C5CFF);
+}
+.oda-game p:last-child{margin:0;font-size:13px;line-height:1.65;color:var(--muted)}
+.oda-game--daily{--tone:#F5C842}
+.oda-game--weekly{--tone:#9B7BFF}
+.oda-game--circuit{--tone:#38D9D0}
+
+/* ── шаги ──────────────────────────────────────────────────────────────── */
+.oda-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.oda-step{text-align:center;padding:22px 16px}
+.oda-step img{width:66px;height:66px;object-fit:contain;margin-bottom:12px}
+.oda-step .oda-num{
+  display:block;margin-bottom:6px;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-weak);
+}
+.oda-step h3{margin:0 0 8px;font-size:14px;font-weight:700;color:#fff}
+.oda-step p{margin:0;font-size:12.5px;line-height:1.6;color:var(--muted)}
+
+/* ── разбивка пула ─────────────────────────────────────────────────────── */
+.oda-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.oda-share{display:flex;gap:16px;align-items:flex-start}
+.oda-share .pct{
+  font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;line-height:1;
+  color:var(--tone,#7C5CFF);text-shadow:0 0 20px rgba(124,92,255,.35);flex:none;
+}
+.oda-share h3{margin:0 0 6px;font-size:13.5px;font-weight:700;color:#fff}
+.oda-share p{margin:0;font-size:12.5px;line-height:1.6;color:var(--muted)}
+.oda-share--prize{--tone:#F5C842}
+.oda-share--seed{--tone:#5B8CFF}
+.oda-share--treasury{--tone:#9B7BFF}
+
+/* ── Circuit ───────────────────────────────────────────────────────────── */
+.oda-circuit{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:14px;
+}
+.oda-rules{list-style:none;margin:14px 0 0;padding:0}
+.oda-rules li{
+  position:relative;padding:0 0 12px 22px;font-size:13px;line-height:1.6;color:var(--muted);
+}
+.oda-rules li:last-child{padding-bottom:0}
+.oda-rules li::before{
+  content:"";position:absolute;left:4px;top:.55em;width:6px;height:6px;border-radius:50%;
+  background:#38D9D0;box-shadow:0 0 8px rgba(56,217,208,.7);
+}
+.oda-rules b{color:var(--text);font-weight:600}
+.oda-facts{display:grid;gap:10px;align-content:start}
+.oda-fact{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 16px;border:1px solid var(--oda-line);border-radius:14px;
+  background:rgba(56,217,208,.05);
+}
+.oda-fact span{font-size:12px;color:var(--muted)}
+.oda-fact b{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:#38D9D0}
+
+/* ── маски ─────────────────────────────────────────────────────────────── */
+.oda-tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.oda-tier{text-align:center;padding:26px 18px 22px;border-color:rgba(var(--rgb),.4)}
+.oda-tier:hover{border-color:rgba(var(--rgb),.75)}
+.oda-tier img{width:128px;height:128px;object-fit:contain;margin-bottom:10px}
+.oda-tier .nm{
+  display:block;margin-bottom:6px;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgb(var(--rgb));
+}
+.oda-tier .entries{display:block;margin-bottom:6px;font-size:11.5px;color:var(--muted)}
+.oda-tier .price{
+  display:block;font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;
+  color:rgb(var(--rgb));
+}
+.oda-tier--common{--rgb:200,212,232}
+.oda-tier--rare{--rgb:96,165,250}
+.oda-tier--legendary{--rgb:251,146,60;background:linear-gradient(160deg,rgba(21,10,0,.9),rgba(13,6,0,.9))}
+
+/* ── планшет и телефон ─────────────────────────────────────────────────── */
+@media (max-width:900px){
+  .oda-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .oda-circuit{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:680px){
+  .oda{padding:28px 14px 56px}
+  .oda-stats,.oda-games,.oda-split,.oda-tiers{grid-template-columns:minmax(0,1fr)}
+  .oda-stat{padding:14px 16px}
+  .oda-sec{margin-bottom:40px}
+  .oda-badges li{font-size:11.5px;padding:9px 13px}
+  .oda-tier img{width:108px;height:108px}
+}

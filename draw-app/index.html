@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="assets/css/page/winners-v2.css?v=890aa6ce5b">
   <link rel="stylesheet" href="assets/css/page/verify-v2.css?v=703c407c77">
   <link rel="stylesheet" href="assets/css/page/footer-spin.css?v=77f3400b7b">
+  <link rel="stylesheet" href="assets/css/page/about.css?v=1">
 <script>
 // iOS zoom: don't fight it - survive it by redrawing canvas on scale change
 (function() {
@@ -314,126 +315,208 @@
 
 <!-- ═══ HOME PAGE ═══ -->
 <div id="page-home" class="tab-page" style="display:block;">
- <div style="max-width:900px;margin:0 auto;padding:60px 32px 80px;text-align:center;">
+<div class="oda">
 
-  <!-- Hero -->
-  <div style="margin-bottom:60px;">
-   <div style="display:inline-block;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--accent,#7C5CFF);border:1px solid rgba(124,92,255,0.3);padding:6px 18px;border-radius:20px;margin-bottom:24px;background:rgba(124,92,255,0.06);">Terra Classic · LUNC Ecosystem</div>
-   <h1 style="font-family:'Cinzel',serif;font-weight:900;font-size:clamp(48px,7vw,88px);line-height:0.95;color:#fff;margin-bottom:24px;letter-spacing:0.5px;text-shadow:0 0 60px rgba(124,92,255,0.3);">ORACLE<br><span style="color:#7C5CFF;">DRAW</span></h1>
-   <p style="font-size:18px;color:#9FB0D0;max-width:560px;margin:0 auto 40px;line-height:1.7;">A decentralized NFT draw protocol built on Terra Classic. Mint Oracle Mask NFTs to enter - your purchase automatically adds you to the daily or weekly prize draw.</p>
-   <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-    <button onclick="showTab('draw')" style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;border-radius:14px;cursor:pointer;font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.12em;font-weight:700;text-transform:uppercase;background:linear-gradient(135deg,#7C5CFF,#5B8CFF);border:none;color:#fff;box-shadow:0 0 24px rgba(124,92,255,0.5);transition:all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 0 40px rgba(124,92,255,0.7)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 0 24px rgba(124,92,255,0.5)'">
-      Launch App
-    </button>
+ <!-- ═══ шапка ═══════════════════════════════════════════════════════ -->
+ <header class="oda-hero">
+  <span class="oda-eyebrow">Terra Classic &middot; NFT draw protocol</span>
+  <h1>ORACLE <span>DRAW</span></h1>
+  <p class="oda-lead">A decentralized draw protocol built on Terra Classic.</p>
+  <p class="oda-sub">Mint an Oracle Mask and the purchase itself enters you into the draw.
+   Every winner is picked from on-chain block data, and the prize lands in the wallet
+   without a claim.</p>
+  <ul class="oda-badges">
+   <li><svg class="oi oi--cyan"><use href="#i-shield"/></svg>Fair &amp; transparent</li>
+   <li><svg class="oi oi--violet"><use href="#i-bolt"/></svg>On-chain randomness</li>
+   <li><svg class="oi oi--gold"><use href="#i-mask"/></svg>NFT rewards</li>
+   <li><svg class="oi oi--green"><use href="#i-users"/></svg>Built for community</li>
+  </ul>
+  <button class="oda-cta" onclick="showTab('draw')">
+   <svg class="oi"><use href="#i-rocket"/></svg>Launch app
+  </button>
+ </header>
 
+ <!-- Первые два числа заполняют config.js, data.js и pool-timer.js по
+      прежним идентификаторам. Третье - about-stats.js. -->
+ <div class="oda-stats">
+  <div class="oda-stat">
+   <img class="oda-ic" src="assets/img/Step4-v1.png" alt="" width="128" height="128" loading="lazy">
+   <div><b id="home-stat-draws">-</b><span>Draws completed</span></div>
+  </div>
+  <div class="oda-stat">
+   <img class="oda-ic" src="assets/img/icons/nft.webp" alt="" width="96" height="96" loading="lazy">
+   <div><b id="home-stat-nfts">-</b><span>Masks minted</span></div>
+  </div>
+  <div class="oda-stat">
+   <img class="oda-ic" src="assets/img/icons/stat-paid.webp" alt="" width="128" height="128" loading="lazy">
+   <div><b id="home-stat-paid">-</b><span>Paid out, LUNC</span></div>
+  </div>
+ </div>
+
+ <!-- ═══ три игры ════════════════════════════════════════════════════ -->
+ <section class="oda-sec">
+  <h2>Three ways to play</h2>
+  <p class="oda-dek">One mask, three draws. Every one of them settles on chain.</p>
+  <div class="oda-games">
+
+   <article class="oda-card oda-game oda-game--daily">
+    <img class="oda-ic oda-ic--lg" src="assets/img/icons/t-daily.webp" alt="" width="128" height="128" loading="lazy">
+    <h3>Daily</h3>
+    <p class="oda-when">Every day at 20:00 UTC</p>
+    <p>The short game. Mint a mask, and it enters the same day&rsquo;s pool - Common gives
+     one entry, Rare five, Legendary ten. One winner takes the prize, and the payout
+     leaves the same minute the block is read.</p>
+   </article>
+
+   <article class="oda-card oda-game oda-game--weekly">
+    <img class="oda-ic oda-ic--lg" src="assets/img/icons/t-weekly.webp" alt="" width="128" height="128" loading="lazy">
+    <h3>Weekly</h3>
+    <p class="oda-when">Mondays at 20:00 UTC</p>
+    <p>The same masks, a bigger pool and three winners instead of one: the prize share
+     is split 48 / 20 / 12 between first, second and third place. If the pool stays
+     below its minimum, nothing is drawn and everything rolls into the next week.</p>
+   </article>
+
+   <article class="oda-card oda-game oda-game--circuit">
+    <img class="oda-ic oda-ic--lg" src="assets/img/icons/t-circuit.webp" alt="" width="128" height="128" loading="lazy">
+    <h3>Circuit</h3>
+    <p class="oda-when">A new board every three hours</p>
+    <p>A board of 250 zones. Your mask is the pass, the zones are bought with LUNC, and
+     the block hash at the deadline points at one zone. Whoever holds it takes the pool.</p>
+   </article>
+
+  </div>
+ </section>
+
+ <!-- ═══ как это работает ════════════════════════════════════════════ -->
+ <section class="oda-sec">
+  <h2>How it works</h2>
+  <p class="oda-dek">Four steps, none of which asks you to trust anyone.</p>
+  <div class="oda-steps">
+   <div class="oda-card oda-step">
+    <img src="assets/img/step1-v1.png" alt="" loading="lazy">
+    <span class="oda-num">Step 01</span>
+    <h3>Mint a mask</h3>
+    <p>Pick the draw and the tier - Common, Rare or Legendary. Pay in LUNC.</p>
+   </div>
+   <div class="oda-card oda-step">
+    <img src="assets/img/step2-v1.png" alt="" loading="lazy">
+    <span class="oda-num">Step 02</span>
+    <h3>Entered at once</h3>
+    <p>The purchase registers the entry itself. Nothing else to press.</p>
+   </div>
+   <div class="oda-card oda-step">
+    <img src="assets/img/step3-v1.png" alt="" loading="lazy">
+    <span class="oda-num">Step 03</span>
+    <h3>Verifiable draw</h3>
+    <p>The winner comes from the hash of a block nobody can pick in advance.</p>
+   </div>
+   <div class="oda-card oda-step">
+    <img src="assets/img/Step4-v1.png" alt="" loading="lazy">
+    <span class="oda-num">Step 04</span>
+    <h3>Automatic payout</h3>
+    <p>The prize is sent to the wallet on chain. There is no claim button.</p>
    </div>
   </div>
+ </section>
 
-  <!-- Stats row -->
-  <div class="home-stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:72px;">
-   <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px;backdrop-filter:blur(12px);">
-    <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#fff;text-shadow:0 0 10px rgba(124,92,255,0.3);" id="home-stat-draws">-</div>
-    <div style="font-size:11px;color:#6B7AA6;text-transform:uppercase;letter-spacing:0.12em;margin-top:6px;">Draws Completed</div>
-   </div>
-   <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px;backdrop-filter:blur(12px);">
-    <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#fff;text-shadow:0 0 10px rgba(124,92,255,0.3);" id="home-stat-nfts">-</div>
-    <div style="font-size:11px;color:#6B7AA6;text-transform:uppercase;letter-spacing:0.12em;margin-top:6px;">NFTs Minted</div>
-   </div>
-   <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px;backdrop-filter:blur(12px);">
-    <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#f5c842;text-shadow:0 0 10px rgba(212,160,23,0.3);" id="home-stat-chain">LUNC</div>
-    <div style="font-size:11px;color:#6B7AA6;text-transform:uppercase;letter-spacing:0.12em;margin-top:6px;">Terra Classic Chain</div>
-   </div>
-  </div>
-
-  <!-- How It Works -->
-  <div style="margin-bottom:72px;">
-   <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:0.5px;">How It Works</div>
-   <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#7C5CFF,transparent);margin:0 auto 48px;opacity:0.7;"></div>
-   <div class="home-steps-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px 16px;backdrop-filter:blur(12px);transition:all 0.3s;" onmouseover="this.style.transform='translateY(-5px)';this.style.borderColor='rgba(124,92,255,0.4)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(124,92,255,0.15)'">
-     <div style="margin-bottom:14px;"><img src="assets/img/step1-v1.png" style="width:72px;height:72px;object-fit:contain;"></div>
-     <div style="font-size:10px;color:#6B7AA6;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Step 01</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px;">Mint Oracle Mask</div>
-     <div style="font-size:13px;color:#9FB0D0;line-height:1.65;">Choose Daily or Weekly draw. Pick Common, Rare or Legendary. Pay in LUNC.</div>
+ <!-- ═══ разбивка пула ═══════════════════════════════════════════════ -->
+ <section class="oda-sec">
+  <h2>Where the money goes</h2>
+  <p class="oda-dek">Daily and Weekly. Circuit splits its pool differently - see below.</p>
+  <div class="oda-split">
+   <div class="oda-card oda-share oda-share--prize">
+    <span class="pct">80%</span>
+    <div>
+     <h3>Prize pool</h3>
+     <p>Straight to the winners&rsquo; wallets, paid out on chain.</p>
     </div>
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px 16px;backdrop-filter:blur(12px);transition:all 0.3s;" onmouseover="this.style.transform='translateY(-5px)';this.style.borderColor='rgba(124,92,255,0.4)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(124,92,255,0.15)'">
-     <div style="margin-bottom:14px;"><img src="assets/img/step2-v1.png" style="width:72px;height:72px;object-fit:contain;"></div>
-     <div style="font-size:10px;color:#6B7AA6;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Step 02</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px;">Auto-Entered</div>
-     <div style="font-size:13px;color:#9FB0D0;line-height:1.65;">Your purchase automatically registers your entry for Daily or Weekly draw.</div>
+   </div>
+   <div class="oda-card oda-share oda-share--seed">
+    <span class="pct">10%</span>
+    <div>
+     <h3>Seeds the next round</h3>
+     <p>Stays in the pool as the starting prize for the next draw.</p>
     </div>
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px 16px;backdrop-filter:blur(12px);transition:all 0.3s;" onmouseover="this.style.transform='translateY(-5px)';this.style.borderColor='rgba(124,92,255,0.4)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(124,92,255,0.15)'">
-     <div style="margin-bottom:14px;"><img src="assets/img/step3-v1.png" style="width:72px;height:72px;object-fit:contain;"></div>
-     <div style="font-size:10px;color:#6B7AA6;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Step 03</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px;">Verifiable Draw</div>
-     <div style="font-size:13px;color:#9FB0D0;line-height:1.65;">Winner selected using on-chain block data. Fully transparent and verifiable.</div>
-    </div>
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:24px 16px;backdrop-filter:blur(12px);transition:all 0.3s;" onmouseover="this.style.transform='translateY(-5px)';this.style.borderColor='rgba(124,92,255,0.4)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(124,92,255,0.15)'">
-     <div style="margin-bottom:14px;"><img src="assets/img/Step4-v1.png" style="width:72px;height:72px;object-fit:contain;"></div>
-     <div style="font-size:10px;color:#6B7AA6;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">Step 04</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px;">Auto Payout</div>
-     <div style="font-size:13px;color:#9FB0D0;line-height:1.65;">Prize sent automatically to your wallet. No claiming required.</div>
+   </div>
+   <div class="oda-card oda-share oda-share--treasury">
+    <span class="pct">10%</span>
+    <div>
+     <h3>Protocol treasury</h3>
+     <p>Development, liquidity and everything the protocol runs on.</p>
     </div>
    </div>
   </div>
+ </section>
 
-  <!-- Prize Distribution -->
-  <div style="margin-bottom:40px;">
-   <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:0.5px;">Prize Distribution</div>
-   <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#7C5CFF,transparent);margin:0 auto 48px;opacity:0.7;"></div>
-   <div class="home-distrib-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:28px 16px;backdrop-filter:blur(12px);">
-     <div style="font-family:'Cinzel',serif;font-size:42px;font-weight:900;color:#F5C842;text-shadow:0 0 20px rgba(245,200,66,0.4);margin-bottom:10px;">80%</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;"> Prize Pool</div>
-     <div style="font-size:12px;color:#9FB0D0;line-height:1.5;">Directly to the winner's wallet - automatic on-chain payout.</div>
-    </div>
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:28px 16px;backdrop-filter:blur(12px);">
-     <div style="font-family:'Cinzel',serif;font-size:42px;font-weight:900;color:#60a5fa;text-shadow:0 0 20px rgba(96,165,250,0.4);margin-bottom:10px;">10%</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;"> Seeds Next Round</div>
-     <div style="font-size:12px;color:#9FB0D0;line-height:1.5;">Stays in the pool as the starting prize for the next draw. For Weekly: if minimum pool not reached, all funds roll over to next week.</div>
-    </div>
-    <div style="background:rgba(18,24,42,0.7);border:1px solid rgba(124,92,255,0.15);border-radius:20px;padding:28px 16px;backdrop-filter:blur(12px);">
-     <div style="font-family:'Cinzel',serif;font-size:42px;font-weight:900;color:#7C5CFF;text-shadow:0 0 20px rgba(124,92,255,0.4);margin-bottom:10px;">10%</div>
-     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;"> Protocol Treasury</div>
-     <div style="font-size:12px;color:#9FB0D0;line-height:1.5;">Funds development, liquidity provision and protocol growth.</div>
+ <!-- ═══ Circuit ═════════════════════════════════════════════════════ -->
+ <section class="oda-sec">
+  <h2>Circuit</h2>
+  <p class="oda-dek">The board game of the protocol. Three hours per round, eight rounds a day.</p>
+  <div class="oda-circuit">
+
+   <div class="oda-card">
+    <p style="margin:0;font-size:13.5px;line-height:1.7;color:var(--muted)">
+     A round is a board of 250 zones. Zones are sold strictly in a row, with no gaps, so
+     the board fills from the left. When the round closes, the hash of the deadline block
+     is taken modulo the number of zones sold - that zone wins, and its owner takes the
+     prize. Unsold zones never take part.
+    </p>
+    <ul class="oda-rules">
+     <li><b>Your mask is the pass.</b> It is bought once and works in every round.
+      The tier sets the ceiling per round: Common 10 zones, Rare 25, Legendary 50.</li>
+     <li><b>Zones cost more as you take more.</b> The first is 1,000 LUNC, and every next
+      zone in the same wallet costs 5% more. Small players barely notice it; a whale
+      buying the board pays many times over.</li>
+     <li><b>A round needs 20 zones to draw.</b> Below that nothing is drawn: the zones,
+      their owners and the pool all carry into the next round.</li>
+     <li><b>The board can end a round early.</b> Fill all 250 zones and the round closes
+      before its three hours are up.</li>
+    </ul>
+   </div>
+
+   <div class="oda-facts">
+    <div class="oda-fact"><span>Zones on the board</span><b>250</b></div>
+    <div class="oda-fact"><span>Minimum to draw</span><b>20</b></div>
+    <div class="oda-fact"><span>Round length</span><b>3h</b></div>
+    <div class="oda-fact"><span>Prize share of the pool</span><b>80%</b></div>
+    <div class="oda-card" style="padding:16px">
+     <h3 style="margin:0 0 6px;font-size:13px;font-weight:700;color:#fff">The other 20%</h3>
+     <p style="margin:0;font-size:12.5px;line-height:1.6;color:var(--muted)">
+      8% goes to the protocol treasury. 12% buys TCO: half of it is shared back to
+      everyone who held zones that round, half is taken out of circulation.
+     </p>
     </div>
    </div>
+
   </div>
+ </section>
 
-  <!-- NFT Tiers -->
-  <div>
-   <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:0.5px;">Oracle Mask NFTs</div>
-   <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#7C5CFF,transparent);margin:0 auto 48px;opacity:0.7;"></div>
-   <div class="home-tiers-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-
-    <!-- Common -->
-    <div style="position:relative;background:#12182A;border:1px solid rgba(180,190,210,0.35);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 20px rgba(180,190,210,0.08);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 30px rgba(180,190,210,0.2)';this.style.borderColor='rgba(180,190,210,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 20px rgba(180,190,210,0.08)';this.style.borderColor='rgba(180,190,210,0.35)'">
-     <div style="margin-bottom:6px;"><img src="nfts/common-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
-     <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BED2;margin-bottom:6px;">Common</div>
-     <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">1 entry</div>
-     <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#C8D4E8;margin-bottom:4px;">25,000 LUNC</div>
-    </div>
-
-    <!-- Rare -->
-    <div style="position:relative;background:#0E1525;border:1px solid rgba(59,130,246,0.45);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 24px rgba(59,130,246,0.12);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 36px rgba(59,130,246,0.28)';this.style.borderColor='rgba(59,130,246,0.7)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 24px rgba(59,130,246,0.12)';this.style.borderColor='rgba(59,130,246,0.45)'">
-
-     <div style="margin-bottom:6px;"><img src="nfts/rare-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
-     <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#60a5fa;margin-bottom:6px;">Rare</div>
-     <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">5 entries</div>
-     <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#60a5fa;margin-bottom:4px;">125,000 LUNC</div>
-    </div>
-
-    <!-- Legendary -->
-    <div style="position:relative;background:linear-gradient(160deg,#150A00,#0D0600);border:1px solid rgba(251,146,60,0.45);border-radius:20px;padding:32px 20px 24px;backdrop-filter:blur(12px);text-align:center;transition:all 0.3s;box-shadow:0 0 24px rgba(251,146,60,0.12);" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 40px rgba(251,146,60,0.28)';this.style.borderColor='rgba(251,146,60,0.7)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 0 24px rgba(251,146,60,0.12)';this.style.borderColor='rgba(251,146,60,0.45)'">
-
-     <div style="margin-bottom:6px;"><img src="nfts/legendary-md.webp" style="width:140px;height:140px;object-fit:contain;"></div>
-     <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#fb923c;margin-bottom:6px;">Legendary</div>
-     <div style="font-size:11px;color:#9FB0D0;margin-bottom:4px;">10 entries</div>
-     <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#fb923c;margin-bottom:4px;">250,000 LUNC</div>
-    </div>
-
+ <!-- ═══ маски ═══════════════════════════════════════════════════════ -->
+ <section class="oda-sec" style="margin-bottom:0">
+  <h2>Oracle Mask NFTs</h2>
+  <p class="oda-dek">The ticket to Daily and Weekly, the pass to Circuit. Yours to keep either way.</p>
+  <div class="oda-tiers">
+   <div class="oda-card oda-tier oda-tier--common">
+    <img src="nfts/common-md.webp" alt="Common Oracle Mask" loading="lazy">
+    <span class="nm">Common</span>
+    <span class="entries">1 entry &middot; 10 zones</span>
+    <span class="price">25,000 LUNC</span>
+   </div>
+   <div class="oda-card oda-tier oda-tier--rare">
+    <img src="nfts/rare-md.webp" alt="Rare Oracle Mask" loading="lazy">
+    <span class="nm">Rare</span>
+    <span class="entries">5 entries &middot; 25 zones</span>
+    <span class="price">125,000 LUNC</span>
+   </div>
+   <div class="oda-card oda-tier oda-tier--legendary">
+    <img src="nfts/legendary-md.webp" alt="Legendary Oracle Mask" loading="lazy">
+    <span class="nm">Legendary</span>
+    <span class="entries">10 entries &middot; 50 zones</span>
+    <span class="price">250,000 LUNC</span>
    </div>
   </div>
+ </section>
 
  </div>
 </div>
@@ -1491,6 +1574,7 @@ for place p in 0, 1, 2:
 
 
 <script src="assets/js/page/game-switcher.js?v=32127bf49e"></script>
+<script src="assets/js/page/about-stats.js?v=1" defer></script>
 <script src="assets/js/embed-host.js?v=2393af6526"></script>
 </body>
 </html>
