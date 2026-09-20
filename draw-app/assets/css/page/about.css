@@ -79,6 +79,9 @@
    что это отрисованные значки, а не однотонные глифы. */
 .oda-ic{width:38px;height:38px;flex:none;object-fit:contain;display:block}
 .oda-ic--lg{width:46px;height:46px}
+/* Step4-v1.png нарисована с большими полями внутри кадра, поэтому при
+   одинаковой коробке выглядит мельче соседних. Догоняем размером. */
+.oda-ic--draws{width:50px;height:50px;margin:-6px 0}
 .oda-stat b{
   display:block;font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;
   line-height:1.1;color:#fff;
