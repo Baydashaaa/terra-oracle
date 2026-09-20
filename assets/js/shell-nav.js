@@ -46,7 +46,12 @@
   // обратная таблица: адрес -> имя вида, чтобы подсветить пункт меню
   function viewFromPath() {
     var p = location.pathname.replace(/^\/+|\/+$/g, '').split('/')[0];
-    if (p === '' || p === 'index.html') return 'home';
+    // Пустой путь, /index.html и /home - это одна и та же главная. Ветку
+    // 'home' пришлось добавить 20 сентября: при заходе на сайт board.js
+    // переписывает адрес на /home через replaceState, а клик по Home
+    // кладёт туда же pushState. viewFromPath про такой путь не знал и
+    // возвращал null, поэтому пункт Home не подсвечивался никогда.
+    if (p === '' || p === 'index.html' || p === 'home') return 'home';
     if (p === 'vote') return 'governance';
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
