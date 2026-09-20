@@ -3,7 +3,7 @@
 <head>
   <base href="/draw-app/">
   <script src="assets/js/data-origin.js?v=914a445b19"></script>
-  <meta name="oracle-build" content="07ee5f474f 2026-09-20">
+  <meta name="oracle-build" content="42a820d03c 2026-09-20">
   <script src="/assets/js/oa.js?v=784a0f8a6b" defer></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -860,8 +860,9 @@
  <div class="section-title">How the Draw Works</div>
  <div class="section-line"></div>
  <p class="vf-intro" style="text-align:center;max-width:560px;margin:0 auto 22px;">
-  Nobody picks the winner. The result comes out of a Terra Classic block that did not
-  exist yet when entries closed - and anyone can replay it afterwards.
+  Nobody picks the winner. The contract locks in a secret before entries close, every
+  entry stirs in entropy nobody can predict, and the two are combined only at settlement
+  - so neither side can steer it, and anyone can replay it afterwards.
  </p>
 
  <div class="vf-card">
@@ -885,35 +886,52 @@
  </div>
 
  <div class="vf-card">
-  <div class="vf-h">Step 2 &middot; The block</div>
-  <p class="vf-intro" style="margin-bottom:0;">
-   The draw uses the <em>first block produced at or after 20:00&nbsp;UTC</em> of the round
-   deadline - not whichever block happens to be latest when the script runs.
-   That block is fixed by the schedule, so re-running the draw later cannot change the
-   winner, and nobody can wait for a hash they like.
-   Validators produce it independently; no one involved in the draw can influence it.
+  <div class="vf-h">Step 2 &middot; The commitment</div>
+  <p class="vf-intro" style="margin-bottom:10px;">
+   When a round opens, the operator picks a secret and the contract stores only its
+   hash. The secret itself stays hidden until the round is settled, so the promise is
+   public long before anyone knows what it leads to.
+  </p>
+  <p class="vf-intro" style="margin-bottom:10px;">
+   Meanwhile every entry stirs the pot. The contract folds each minter's address and
+   their mint into a running value, starting from the round id and the committed hash:
+  </p>
+  <pre class="hw-code">entropy = sha256(round_id + seed_hash)
+for each entry:
+  entropy = sha256(entropy + minter + entry_entropy)</pre>
+  <p class="vf-intro" style="margin:12px 0 0;">
+   At settlement the secret is revealed. The contract checks it against the commitment
+   and combines the two halves into the result:
+  </p>
+  <pre class="hw-code">sha256(secret) == seed_hash      &larr; the promise held
+result = sha256(secret + entropy + round_id)</pre>
+  <p class="vf-intro" style="margin:12px 0 0;">
+   Neither half is enough on its own. The operator chose the secret before seeing the
+   entries; the participants added entropy the operator could not predict. Change either
+   one and the commitment stops matching, in public, forever.
   </p>
  </div>
 
  <div class="vf-card">
   <div class="vf-h">Step 3 &middot; The winner</div>
   <p class="vf-intro" style="margin-bottom:12px;">
-   The two draws use different rules, because Weekly has to pick several different people.
+   Both draws start from that same result. They differ because Weekly has to pick several
+   different people.
   </p>
 
   <div class="hw-split">
    <div class="hw-half">
     <div class="hw-badge d">Daily &middot; one winner</div>
-    <pre class="hw-code">index = BigInt("0x" + block_hash) % total_entries</pre>
+    <pre class="hw-code">index = BigInt("0x" + result) % total_entries</pre>
     <p class="vf-intro" style="margin:0;">
-     The hash read as one huge number, divided by the entry count. The remainder is the
+     The result read as one huge number, divided by the entry count. The remainder is the
      winning entry.
     </p>
    </div>
 
    <div class="hw-half">
     <div class="hw-badge w">Weekly &middot; up to three places</div>
-    <pre class="hw-code">seed = block_hash
+    <pre class="hw-code">seed = result
 for place p in 0, 1, 2:
   seed  = sha256(seed + p)
   index = BigInt("0x" + seed) % total_entries
@@ -927,6 +945,17 @@ for place p in 0, 1, 2:
     </p>
    </div>
   </div>
+ </div>
+
+ <div class="vf-card">
+  <div class="vf-h">Rounds drawn before 31 August 2026</div>
+  <p class="vf-intro" style="margin-bottom:0;">
+   Earlier rounds ran without the contract. They took their randomness from the first
+   Terra Classic block produced at or after the round deadline - fixed by the schedule,
+   so nobody could wait for a hash they liked, but with no commitment made in advance.
+   Those rounds are still replayable: pick one below and the check switches to the rule
+   that applied when it ran.
+  </p>
  </div>
 
  <p class="vf-intro" style="text-align:center;max-width:560px;margin:2px auto 34px;">
