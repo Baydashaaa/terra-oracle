@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="d2f08a051b 2026-09-20">
+  <meta name="oracle-build" content="1e0f0c9573 2026-09-20">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=290815bb86">
   <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=93382f7d4d">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=5e8613dd2f">
   <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
   <link rel="stylesheet" href="assets/css/page/global-search.css?v=84387a298e">
@@ -264,7 +264,13 @@
   </div>
   <div class="hero-news" style="--ar:1280/548" aria-label="LUNC Daily">
     <div class="frame">
-      <img src="assets/img/news/lunc-daily.webp?v=02c3c8a7e6" alt="LUNC Daily - latest Terra Classic news" width="1280" height="548" loading="lazy" decoding="async">
+      <picture>
+        <!-- Телефон получает вертикальный баннер: горизонтальный 1280x548
+             обрезался по ширине. Порог тот же, что у остальной мобильной
+             вёрстки главной - 760px. -->
+        <source media="(max-width:760px)" srcset="assets/img/news/lunc-daily-mob.webp" width="900" height="986">
+        <img src="assets/img/news/lunc-daily.webp?v=02c3c8a7e6" alt="LUNC Daily - latest Terra Classic news" width="1280" height="548" loading="lazy" decoding="async">
+      </picture>
       <a class="hn-btn hn-btn--gold" href="https://luncdaily.com/" target="_blank" rel="noopener" style="left:5.55%;top:62.23%;width:14.3%;height:7.85%">Read Latest News <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
@@ -1905,7 +1911,7 @@
 
 <script src="assets/js/page/gov-shell.js?v=5067359821"></script>
 <script src="assets/js/page/about-shell.js?v=451f5ffde7"></script>
-<script src="assets/js/page/home-shell.js?v=9936394c6f"></script>
+<script src="assets/js/page/home-shell.js?v=87e3f95ff6"></script>
 <script src="assets/js/page/ask-shell.js?v=3f75bb1b18"></script>
 <script src="assets/js/page/side-leaderboard.js?v=e9e1f98d76"></script>
 <script src="assets/js/page/side-reputation.js?v=53918c8395"></script>
