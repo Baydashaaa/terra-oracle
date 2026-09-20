@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="oracle-build" content="d2f81ba12b 2026-09-18">
+  <meta name="oracle-build" content="632196a2f0 2026-09-20">
   <script src="/assets/js/oa.js?v=d663327c59" defer></script>
   <meta charset="UTF-8">
   <!-- Forces all relative asset paths (assets/js/app.js etc, no leading
@@ -31,19 +31,19 @@
   <link rel="stylesheet" href="assets/css/page/mobile-drawer.css?v=61bda13320">
   <link rel="stylesheet" href="assets/css/page/android-paint.css?v=611b191a0c">
   <link rel="stylesheet" href="assets/css/page/oc3-ring.css?v=1634e8c3b7">
-  <link rel="stylesheet" href="assets/css/page/tariffs.css?v=rk1">
+  <link rel="stylesheet" href="assets/css/page/tariffs.css?v=d6affc1278">
   <link rel="stylesheet" href="assets/css/page/treasury.css?v=3ecc3f620b">
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=290815bb86">
-  <link rel="stylesheet" href="assets/css/page/about.css?v=2">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=202609190006">
-  <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=4">
-  <link rel="stylesheet" href="assets/css/page/side-activity.css?v=1">
-  <link rel="stylesheet" href="assets/css/page/global-search.css?v=1">
-  <link rel="stylesheet" href="assets/css/page/wallet-profile.css?v=3">
-  <link rel="stylesheet" href="assets/css/page/board.css?v=4">
-  <link rel="stylesheet" href="assets/css/page/mobile.css?v=8">
-  <script src="assets/js/page/hero-slider.js?v=1" defer></script>
+  <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=9df7441e8b">
+  <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
+  <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
+  <link rel="stylesheet" href="assets/css/page/global-search.css?v=84387a298e">
+  <link rel="stylesheet" href="assets/css/page/wallet-profile.css?v=cd29603684">
+  <link rel="stylesheet" href="assets/css/page/board.css?v=7ef53a807f">
+  <link rel="stylesheet" href="assets/css/page/mobile.css?v=0f61707a03">
+  <script src="assets/js/page/hero-slider.js?v=e6d8f9b258" defer></script>
 
 
   <!-- Charts -->
@@ -264,7 +264,7 @@
   </div>
   <div class="hero-news" style="--ar:1280/548" aria-label="LUNC Daily">
     <div class="frame">
-      <img src="assets/img/news/lunc-daily.webp?v=2" alt="LUNC Daily - latest Terra Classic news" width="1280" height="548" loading="lazy" decoding="async">
+      <img src="assets/img/news/lunc-daily.webp?v=02c3c8a7e6" alt="LUNC Daily - latest Terra Classic news" width="1280" height="548" loading="lazy" decoding="async">
       <a class="hn-btn hn-btn--gold" href="https://luncdaily.com/" target="_blank" rel="noopener" style="left:5.55%;top:62.23%;width:14.3%;height:7.85%">Read Latest News <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
@@ -272,13 +272,13 @@
 
 <!-- module cards -->
 <section class="mods" aria-label="Modules">
-  <a class="mod" data-tone="blue" href="?v=chat" data-view="chat">
-    <img src="assets/img/mod-chat.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+  <a class="mod" data-tone="gold" href="?v=draw" data-view="draw">
+    <img src="assets/img/mod-draw.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
     <span class="scrim"></span>
     <span class="body">
-      <h3>Chat</h3>
-      <p>Anonymous discussions, stored on chain forever.</p>
-      <span class="go">Open chat <i data-i="arrow"></i></span>
+      <h3>Oracle Draw</h3>
+      <p>Daily and weekly draws, verifiable on chain.</p>
+      <span class="go">View draws <i data-i="arrow"></i></span>
     </span>
   </a>
   <a class="mod" data-tone="violet" href="?v=ask" data-view="ask">
@@ -290,13 +290,13 @@
       <span class="go">Ask a question <i data-i="arrow"></i></span>
     </span>
   </a>
-  <a class="mod" data-tone="gold" href="?v=draw" data-view="draw">
-    <img src="assets/img/mod-draw.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
+  <a class="mod" data-tone="blue" href="?v=chat" data-view="chat">
+    <img src="assets/img/mod-chat.webp" alt="" loading="lazy" decoding="async" width="600" height="900">
     <span class="scrim"></span>
     <span class="body">
-      <h3>Oracle Draw</h3>
-      <p>Daily and weekly draws, verifiable on chain.</p>
-      <span class="go">View draws <i data-i="arrow"></i></span>
+      <h3>Chat</h3>
+      <p>Anonymous discussions, stored on chain forever.</p>
+      <span class="go">Open chat <i data-i="arrow"></i></span>
     </span>
   </a>
   <a class="mod" data-tone="cyan" href="?v=draw" data-view="draw" data-draw-tab="circuit">
@@ -1724,7 +1724,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=02321a6b89"></script>
-  <script src="assets/js/treasury.js?v=tp1"></script>
+  <script src="assets/js/treasury.js?v=9e74cad0a5"></script>
   <script src="assets/js/treasury-chart.js?v=c9260a5285"></script>
   <script src="assets/js/signAction.js?v=f72ef609e3"></script>
   <!-- Клиент контракта Oracle Mask: источник списка NFT вместо nft.lunc.tools -->
@@ -1739,18 +1739,18 @@
        Тот же порядок продублирован в dev/_verify_split.cjs -->
   <script src="assets/js/app/core.js?v=ba73347f27"></script>
   <script src="assets/js/app/nav.js?v=7561ca01ef"></script>
-  <script src="assets/js/app/board.js?v=b7"></script>
+  <script src="assets/js/app/board.js?v=79c4934237"></script>
   <script src="assets/js/app/ask.js?v=548fa9b33b"></script>
   <script src="assets/js/app/sign.js?v=b216b21fc5"></script>
   <script src="assets/js/app/wallet.js?v=b5af1a0289"></script>
-  <script src="assets/js/app/chat.js?v=p1"></script>
+  <script src="assets/js/app/chat.js?v=30a7649573"></script>
   <script src="assets/js/app/vote.js?v=26d1f80065"></script>
   <script src="assets/js/contract-exec.js?v=390682fb7a"></script>
-  <script src="assets/js/app/markets.js?v=0519882d43"></script>
-  <script src="assets/js/app/markets-create.js?v=202609190016"></script>
+  <script src="assets/js/app/markets.js?v=13793f89c9"></script>
+  <script src="assets/js/app/markets-create.js?v=03e62b3111"></script>
   <script src="assets/js/app/hooks.js?v=408ad07d36"></script>
-  <script src="assets/js/profile.js?v=rk1"></script>
-  <script src="assets/js/reputation.js?v=p1"></script>
+  <script src="assets/js/profile.js?v=2c55d3a827"></script>
+  <script src="assets/js/reputation.js?v=ddec33018c"></script>
 <script src="assets/js/page/mobile-nav.js?v=1179055d90"></script>
 
 
@@ -1899,7 +1899,7 @@
 <script src="assets/js/page/luncdash.js?v=2052753373"></script>
 
 <!-- ═══ ORACLE EYE (mascot + feedback) - external module ═══ -->
-<script src="assets/js/oracle-eye.js?v=eye2"></script>
+<script src="assets/js/oracle-eye.js?v=7901744ed0"></script>
 <script src="assets/js/oracle-notify.js?v=aca175ed77"></script>
 
 
@@ -1907,21 +1907,21 @@
 <script src="assets/js/page/about-shell.js?v=451f5ffde7"></script>
 <script src="assets/js/page/home-shell.js?v=488205572c"></script>
 <script src="assets/js/page/ask-shell.js?v=3f75bb1b18"></script>
-<script src="assets/js/page/side-leaderboard.js?v=p1"></script>
+<script src="assets/js/page/side-leaderboard.js?v=e9e1f98d76"></script>
 <script src="assets/js/page/side-reputation.js?v=53918c8395"></script>
 <script src="assets/js/page/mobile-more.js?v=637864ae3e"></script>
-<script src="assets/js/shell-nav.js?v=202609182350"></script>
+<script src="assets/js/shell-nav.js?v=5b678ab508"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
-<script src="assets/js/page/side-activity.js?v=7"></script>
-<script src="assets/js/page/header-ticker.js?v=2"></script>
-<script src="assets/js/page/global-search.js?v=2"></script>
-<script src="assets/js/page/wallet-profile.js?v=3"></script>
-<script src="assets/js/page/mobile-layout.js?v=3"></script>
-<script src="assets/js/page/nft-view.js?v=1"></script>
-<script src="assets/js/page/fx-mobile.js?v=2"></script>
+<script src="assets/js/page/side-activity.js?v=e38f5216dc"></script>
+<script src="assets/js/page/header-ticker.js?v=a6698d03fa"></script>
+<script src="assets/js/page/global-search.js?v=ebdf26f03e"></script>
+<script src="assets/js/page/wallet-profile.js?v=91dcdf2b9e"></script>
+<script src="assets/js/page/mobile-layout.js?v=df4f530007"></script>
+<script src="assets/js/page/nft-view.js?v=8857fc314e"></script>
+<script src="assets/js/page/fx-mobile.js?v=2c7899f6e9"></script>
 <script src="assets/js/page/side-draw.js?v=a32502c1a9"></script>
 <script src="assets/js/page/draw-tabs.js?v=e0e09294cb"></script>
-<script src="assets/js/page/draw-frame.js?v=df2"></script>
+<script src="assets/js/page/draw-frame.js?v=92f9f317f2"></script>
 
 <!-- ═══ MORE SHEET (mobile) ═══
      Открывается кнопкой More в нижней панели. Здесь разделы, которых в
