@@ -51,7 +51,10 @@
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
     if (p === 'treasury') return 'treasury';
-    if (p === 'chat' || p === 'ask' || p === 'board') return p;
+    if (p === 'chat' || p === 'ask' || p === 'board' || p === 'draw') return p;
+    // draw попал сюда 20 сентября: без него нижняя панель на телефоне не
+    // подсвечивала раздел Draw - viewFromPath возвращал null, и highlight()
+    // снимал aria-current со всех пунктов разом.
     // markets намеренно не подсвечиваем: пункт закрыт, см. таблицу выше
     return null;   // about, profile - пунктов в новом меню нет
   }
