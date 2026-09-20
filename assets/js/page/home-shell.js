@@ -53,6 +53,23 @@
     }
   }
 
+  // ---------- уникальные кошельки ----------
+  // Кафель считал сумму participants по раундам, то есть участия: один
+  // кошелёк в тридцати раундах давал тридцать. Списка участников в
+  // winners.json нет, поэтому уникальных отдаёт воркер - он объединяет
+  // адреса из used_nfts (daily и weekly) и circuit_history.
+  async function loadWallets() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/stats/wallets', { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var d = await r.json();
+      return (typeof d.unique === 'number') ? d : null;
+    } catch (e) {
+      console.warn('[home] wallets:', e);
+      return null;
+    }
+  }
+
   // ---------- Circuit ----------
   // Раздел Winners на draw.terraoracle.io подмешивает раунды Circuit в общий
   // список (winners-v3.js), поэтому его "total paid out" больше, чем сумма по
@@ -88,6 +105,7 @@
   // ---------- розыгрыши ----------
   async function loadDraws() {
     var cir = await loadCircuit();
+    var wal = await loadWallets();
     try {
       // Данные живут в репо oracle-draw, копии в draw-app/ больше нет -
       // см. draw-app/assets/js/data-origin.js. Внешний сайт никогда не
@@ -110,23 +128,20 @@
         (x.winners || []).forEach(function (p) { paid += p.amount_lunc || p.prize_lunc || p.prize || 0; });
       });
 
-      var entries = 0, players = 0;
-      daily.concat(weekly).forEach(function (x) {
-        entries += x.entries || 0;
-        players += x.participants || 0;
-      });
+      var entries = 0;
+      daily.concat(weekly).forEach(function (x) { entries += x.entries || 0; });
 
       var rounds = daily.length + weekly.length;
       var sub = n(daily.length) + ' daily · ' + n(weekly.length) + ' weekly';
       if (cir) {
         paid    += cir.paid;
         entries += cir.entries;
-        players += cir.players;
         rounds  += cir.rounds;
         sub     += ' · ' + n(cir.rounds) + ' circuit';
       }
 
-      txt('stPlayers', n(players));
+      // Прочерк честнее суммы участий: подпись обещает кошельки.
+      txt('stPlayers', wal ? n(wal.unique) : '-');
       txt('stPlayersSub', n(entries) + ' entries total');
 
       set('stPaid', compact(paid) + '<small>LUNC</small>');
