@@ -1644,3 +1644,57 @@
     box-shadow:0 0 10px rgba(247,190,60,.35),inset 0 1px 0 rgba(255,255,255,.35);
   }
 }
+
+/* ==================================================================
+   15. Телефон: правки после первого взгляда на живую страницу
+   Три вещи: подписи на карточках, воздух в hero, оживление полосы
+   статистики. Блок идёт последним, поэтому перебивает п.12 и п.14
+   без повышения веса селекторов.
+   ================================================================== */
+@media (max-width:760px){
+
+  /* --- 1. Карточки: заголовок дублирует кнопку ------------------------
+     "Chat" над кнопкой "Open chat", "Ask Oracle" над "Ask a question".
+     Убираем заголовки, освободившееся место отдаём картинке. Описание
+     у крупной карточки остаётся - оно единственное, что объясняет игру.
+     Вернуть заголовок крупной карточке: убрать её из списка ниже. */
+  #page-home > .mods .mod h3{display:none}
+  #page-home > .mods .mod .body{padding-bottom:11px}
+
+  /* --- 2. Hero: высота больше не фиксированная ------------------------
+     .shell-page .hero держит height:clamp(430px,34vw,510px). На телефоне
+     clamp всегда упирается в 430px, а блок с текстом занимает около 300 -
+     остальное расходилось поровну сверху и снизу пустотой. Отдаём высоту
+     содержимому и заодно увеличиваем логотип с заголовком. */
+  #page-home .hero{height:auto;min-height:380px}
+  #page-home .hero .copy{justify-content:flex-start;padding:26px 18px 26px}
+  #page-home .hero .hmark{width:56px;height:56px;margin-bottom:16px}
+  #page-home .hero h2{font-size:33px;letter-spacing:.04em}
+  #page-home .hero .classic{font-size:12.5px;letter-spacing:.34em}
+  #page-home .hero .tagline{margin-top:16px;font-size:13px;letter-spacing:.14em}
+  #page-home .hero .meta{font-size:12px}
+  #page-home .hero .lunc{margin-top:18px}
+  #page-home .hero .btns{margin-top:20px}
+
+  /* --- 3. Полоса статистики: вернуть иконки и развести цветом ---------
+     В п.14 иконки скрыты ради места, и четыре одинаковых столбца слились
+     в серую таблицу. Возвращаем их мелкими, по 26px, и красим число с
+     подсветкой иконки в свой цвет - глаз цепляется за цвет быстрее, чем
+     за подпись. Цвета те же, что у разделов сайта. */
+  #page-home > .stats .stat{padding:8px 5px 10px}
+  #page-home > .stats .stat .ico{
+    display:block;width:26px;height:26px;margin:0 auto 3px;
+    object-fit:contain;
+    filter:drop-shadow(0 0 8px var(--cg,rgba(139,92,246,.45)));
+  }
+  #page-home > .stats .stat .num{font-size:15px;color:var(--c,var(--ink))}
+  #page-home > .stats .stat .num small{color:var(--ink-3)}
+  #page-home > .stats .stat .lbl{color:var(--ink-3)}
+
+  /* Порядок детей .stats: h3, четыре кафеля, chainbox. Поэтому первый
+     кафель - это nth-child(2). */
+  #page-home > .stats .stat:nth-child(2){--c:#22d3ee;--cg:rgba(34,211,238,.45)}  /* Treasury TVL */
+  #page-home > .stats .stat:nth-child(3){--c:#a78bfa;--cg:rgba(167,139,250,.45)} /* Unique wallets */
+  #page-home > .stats .stat:nth-child(4){--c:#fbbf24;--cg:rgba(251,191,36,.45)}  /* Total paid */
+  #page-home > .stats .stat:nth-child(5){--c:#34d399;--cg:rgba(52,211,153,.45)}  /* Rounds settled */
+}
