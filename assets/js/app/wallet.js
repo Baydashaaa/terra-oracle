@@ -186,6 +186,9 @@ window.disconnectWallet = function() {
   globalWalletAddress = null;
   connectedAddress = null;
   clearWalletSession();
+  // Разрешение голосовать тоже снимаем: раньше оно оставалось на диске
+  // после Disconnect, и отключение было только визуальным.
+  if (typeof clearVoteSession === 'function') clearVoteSession();
   window._activeWalletProvider = null;
   try { localStorage.removeItem('wallet_provider'); } catch(e) {}
   document.getElementById('wallet-btn-label').textContent = 'Connect';

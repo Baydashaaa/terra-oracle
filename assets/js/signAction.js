@@ -78,3 +78,14 @@ async function voteSession() {
 
 window.voteSession = voteSession;
 
+// Убрать разрешение с диска. Живёт рядом с самой сессией намеренно: имя
+// ключа знает только этот файл, и чистка не отстанет от переименования.
+//
+// ВНИМАНИЕ: это удаление, а не отзыв. Уже снятая копия останется валидной
+// до истечения срока - проверяет её сервер, а не браузер. Настоящий отзыв
+// потребует серверного списка или одноразового nonce.
+function clearVoteSession() {
+  try { localStorage.removeItem(VOTE_SESSION_KEY); } catch (e) {}
+}
+window.clearVoteSession = clearVoteSession;
+

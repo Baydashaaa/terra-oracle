@@ -283,6 +283,10 @@ if (document.readyState === 'loading') {
 // перезагрузки страницы - вплоть до отправки транзакции не с того кошелька.
 window.addEventListener('keplr_keystorechange', function () {
   if (typeof getActiveProvider === 'function' && getActiveProvider() !== 'keplr') return;
+  // Сменился аккаунт - прежнее разрешение голосовать к нему не относится.
+  // voteSession() и так сверяет адрес и чужую сессию не отдаст, но держать
+  // её на диске незачем.
+  if (typeof clearVoteSession === 'function') clearVoteSession();
   if (!loadWalletSession()) return;   // не подключены - навязываться не надо
   restoreWalletSession();
 });
