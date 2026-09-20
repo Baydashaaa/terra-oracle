@@ -13,7 +13,7 @@
   var card = null;
   var stats = {};      // последнее, что прислала рамка
   var msAt = {};       // {игра: {ms, at}} - остаток и когда он получен
-  var need = null;     // {game, text} - чего не хватает раунду до старта
+  var need = {};       // {игра: строка|null} - чего не хватает до старта
 
   function $(sel) { return card ? card.querySelector(sel) : null; }
 
@@ -75,14 +75,14 @@
       }
     }
 
-    // Строка "чего не хватает". Рамка считает её для ОТКРЫТОЙ игры, а она
-    // всегда совпадает с выбранной вкладкой: переключатель ведёт обе.
-    // Условие выполнено - строки нет, лишний элемент в карточке ни к чему.
+    // Строка "чего не хватает". Рамка присылает её для обеих игр, берём
+    // по своей вкладке. Условие выполнено или игра без порогов (Circuit) -
+    // строки нет, лишний элемент в карточке ни к чему.
     var needEl = $('[data-pool-need]');
     if (needEl) {
-      var show = need && need.game === tab && need.text;
-      needEl.textContent = show ? need.text : '';
-      needEl.style.display = show ? '' : 'none';
+      var txt = need && need[tab];
+      needEl.textContent = txt || '';
+      needEl.style.display = txt ? '' : 'none';
     }
 
     var lbl = $('[data-pool-label]');
@@ -118,7 +118,9 @@
     var d = e.data;
     if (!d || d.type !== 'oracle-draw:stats') return;
     stats = d.games || {};
-    need  = d.need || null;
+    // Пустую посылку не принимаем: рамка могла прислать статистику
+    // раньше, чем посчитался need, и строка мигнула бы на пустоту.
+    if (d.need) need = d.need;
     // Запоминаем момент получения: между сообщениями карточка тикает сама.
     Object.keys(stats).forEach(function (g) {
       var v = stats[g] && stats[g].ms;

@@ -51,25 +51,45 @@ function updatePoolDisplay() {
   // Порог считается во ВХОДАХ, а не в NFT: Common даёт 1, Rare 5,
   // Legendary 10, плюс бесплатные билеты с Q&A. Один Rare закрывает порог
   // в пять, а прежний текст обещал, что нужно пять штук.
-  const _needParts = [];
-  if (_minEntries > 0 && count < _minEntries) {
-    const _d = _minEntries - count;
-    _needParts.push('Need ' + _d + ' more ' + (_d === 1 ? 'entry' : 'entries'));
-  }
-  if (_minPot > 0 && _realBalance < _minPot) {
-    _needParts.push('Need ' + fmt(Math.ceil(_minPot - _realBalance)) + ' more LUNC');
-  }
-  // Читает embed-host.js и отдаёт карточке Next draw на главной. Только
-  // для ОТКРЫТОЙ игры: у неё одной здесь есть настоящий список входов.
-  window.__drawNeed = _needParts.length
-    ? { game: currentLottery, text: _needParts.join(' \u00b7 ') + ' to draw' }
-    : { game: currentLottery, text: null };
+  //
+  // Считаем сразу для ОБЕИХ игр, а не только для открытой. Вкладки на
+  // /draw и вкладки карточки Next draw переключаются независимо - можно
+  // смотреть Daily слева и Weekly справа. Раньше при таком расхождении
+  // строка пропадала и появлялась обратно при возврате.
+  //
+  // Данных хватает: data.js грузит dailyTickets и weeklyTickets одним
+  // Promise.all, а балансы обоих пулов лежат в window.
+  window.__drawNeed = (function () {
+    const out = {};
+    const rows = [
+      ['daily',  dailyTickets,  window._dailyPoolBalance],
+      ['weekly', weeklyTickets, window._weeklyPoolBalance],
+    ];
+    for (const [game, list, bal] of rows) {
+      const entries = (list || []).length;
+      const minE = typeof poolMinEntries === 'function' ? poolMinEntries(game) : 0;
+      const minP = typeof poolMinPot === 'function' ? poolMinPot(game) : 0;
+      const parts = [];
+      if (minE > 0 && entries < minE) {
+        const d = minE - entries;
+        parts.push('Need ' + d + ' more ' + (d === 1 ? 'entry' : 'entries'));
+      }
+      // Баланс может быть ещё не загружен - тогда про деньги молчим,
+      // а не рисуем нехватку на весь порог.
+      if (minP > 0 && typeof bal === 'number' && bal < minP) {
+        parts.push('Need ' + fmt(Math.ceil(minP - bal)) + ' more LUNC');
+      }
+      out[game] = parts.length ? parts.join(' \u00b7 ') + ' to draw' : null;
+    }
+    return out;
+  })();
 
   // Условие без `count > 0`: ноль входов - это как раз тот случай, когда
   // объяснение нужнее всего, а раньше оно там и пропадало.
-  if (minNotice && _needParts.length) {
+  const _needHere = window.__drawNeed[currentLottery];
+  if (minNotice && _needHere) {
     minNotice.innerHTML = '<svg class="oi oi--amber"><use href="#i-warning"/></svg> ' +
-      window.__drawNeed.text + ' - pool rolls over to the next one';
+      _needHere + ' - pool rolls over to the next one';
     minNotice.style.display = 'block';
   } else if (minNotice) {
     minNotice.style.display = 'none';
