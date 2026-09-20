@@ -874,22 +874,34 @@ async function loadStatsData() {
 function renderHowItWorksHTML() {
   const ranks = typeof RANKS !== 'undefined' ? RANKS : [];
 
-  // Способы заработать REP. Значения те же, что были, добавлены иконки.
+  // Способы заработать REP. Числа сверены с конфигом контракта oracle-score
+  // 20 сентября 2026 (запрос actions, веса в микроединицах).
+  //
+  // Пятый элемент - поясняющая строка. Она ВИДНА ВСЕГДА, а не по наведению:
+  // на телефоне наведения нет, а именно эти правила и приводили к неверным
+  // ожиданиям. Пустая строка - карточка остаётся двухстрочной, как была.
   const EARN = [
-    ['Ask a question',    '+40 REP per question', 'assets/img/icons/ask.webp',         '168,85,247'],
-    ['Answer a question', '+40 REP per answer',   'assets/img/icons/chat.webp',        '34,211,238'],
-    ['Answer accepted',   '+60 REP when chosen',  'assets/img/icons/reputation.webp',  '34,197,94'],
-    ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208'],
-    ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66'],
-    ['Chat message',      '+5 REP per message',   'assets/img/icons/p-messages.webp',  '76,125,255'],
-    ['Mint Common',       '+25 REP per mint',     '/draw-app/nfts/common-sm.webp',      '200,205,216'],
-    ['Mint Rare',         '+125 REP per mint',    '/draw-app/nfts/rare-sm.webp',        '77,155,255'],
-    ['Mint Legendary',    '+250 REP per mint',    '/draw-app/nfts/legendary-sm.webp',   '244,191,77'],
+    ['Ask a question',    '+40 REP per question', 'assets/img/icons/ask.webp',         '168,85,247',
+     'Basic and Priority both earn 40. The tier changes the price and draw entries, not the REP.'],
+    ['Answer a question', '+40 REP, then +10',    'assets/img/icons/chat.webp',        '34,211,238',
+     'First 3 answers each UTC day earn 40 REP. Answers 4 to 10 earn 10. Nothing beyond that until the day rolls over.'],
+    ['Answer accepted',   '+60 REP when chosen',  'assets/img/icons/reputation.webp',  '34,197,94', ''],
+    ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208', ''],
+    ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66',
+     'Only upvotes on answers are scored. Upvotes on questions are shown but earn nothing.'],
+    ['Chat message',      '+5 REP per message',   'assets/img/icons/p-messages.webp',  '76,125,255',
+     'Each message costs 5,000 LUNC.'],
+    ['Mint Common',       '+25 REP per mint',     '/draw-app/nfts/common-sm.webp',      '200,205,216', ''],
+    ['Mint Rare',         '+125 REP per mint',    '/draw-app/nfts/rare-sm.webp',        '77,155,255', ''],
+    ['Mint Legendary',    '+250 REP per mint',    '/draw-app/nfts/legendary-sm.webp',   '244,191,77', ''],
   ];
 
-  const earn = EARN.map(([k, v, ic, c]) =>
-    '<div class="earn" style="--c:' + c + '"><img src="' + ic + '" alt="" loading="lazy">' +
-    '<div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('');
+  const earn = EARN.map(([k, v, ic, c, h]) =>
+    '<div class="earn' + (h ? ' has-h' : '') + '" style="--c:' + c + '">' +
+    '<img src="' + ic + '" alt="" loading="lazy">' +
+    '<div class="k">' + k + '</div><div class="v">' + v + '</div>' +
+    (h ? '<div class="h">' + h + '</div>' : '') +
+    '</div>').join('');
 
   // Лестница рангов. INITIATE пропускаем - это стартовое состояние, а не ступень.
   const asc = ranks.slice(1).map(r =>

@@ -229,9 +229,13 @@ window.adminBody = adminBody;
 //   Priority 200,000 = 100,000 pool + 100,000 treasury → +4 entries + 24h pin
 //
 // Rank/streak discounts reduce ONLY the treasury leg; the pool leg is fixed.
+// rep - сколько REP начисляет контракт за вопрос этого типа. Запасное
+// значение, настоящее приходит из refreshTiersFromChain вместе с ценой.
+// На сентябрь 2026 у обоих типов вес одинаковый: Priority меняет цену,
+// закрепление и число билетов, но НЕ репутацию.
 const QUESTION_TIERS = {
-  basic:    { key:'basic',    total: 50000,  poolLeg: 25000,  entries: 1, pin: false, label: 'Basic'    },
-  priority: { key:'priority', total: 200000, poolLeg: 100000, entries: 4, pin: true,  label: 'Priority' },
+  basic:    { key:'basic',    total: 50000,  poolLeg: 25000,  entries: 1, rep: 40, pin: false, label: 'Basic'    },
+  priority: { key:'priority', total: 200000, poolLeg: 100000, entries: 4, rep: 40, pin: true,  label: 'Priority' },
 };
 // Reads the tier picker if present. Falls back to Priority so that a page whose
 // HTML has not been updated yet keeps behaving exactly as before.
@@ -277,12 +281,25 @@ async function refreshTiersFromChain() {
       }
       t.total = total;
       t.poolLeg = poolLeg;
+
+      // Вес REP лежит в том же ответе, в микроединицах. Раньше он нигде не
+      // читался, и форма показывала захардкоженное число, разъехавшееся с
+      // контрактом и со страницей Reputation.
+      const rep = Math.round(Number(a.params.weight || 0) / 1e6);
+      if (rep) {
+        if (t.rep !== rep) {
+          console.warn(`[tiers] ${key}: page says ${t.rep} REP, chain says ${rep} - using the chain`);
+        }
+        t.rep = rep;
+      }
     }
 
     // Подписи на самих карточках тарифа тоже приходят с цепочки: раньше
     // расхождение только писалось в консоль, а на экране оставались
     // числа из разметки.
     paintTierLabels();
+    // Итоговая карточка держит своё число REP - пусть перечитает.
+    document.dispatchEvent(new CustomEvent('oracle:tiers-updated'));
 
     // Цена на кнопке и в панели выгоды пересчитывается при любом состоянии
     // кошелька - скидку персонализируем только при наличии адреса.

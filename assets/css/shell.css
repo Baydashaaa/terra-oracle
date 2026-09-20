@@ -1653,6 +1653,11 @@ img{display:block;max-width:100%}
 .earn img{width:42px;height:42px;grid-row:span 2;object-fit:contain}
 .earn .k{font-size:12.5px}
 .earn .v{font-family:var(--dis);font-size:13px;font-weight:700;color:rgb(var(--c))}
+/* Поясняющая строка на карточке. Видна всегда: наведения на телефоне нет,
+   а это правила начисления, а не украшение. Иконка растягивается на три
+   строки только там, где пояснение есть - остальные карточки не меняются. */
+.earn.has-h img{grid-row:span 3;align-self:start}
+.earn .h{grid-column:2;font-size:11px;line-height:1.5;color:var(--muted);margin-top:2px}
 
 .asc-line{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:12px}
 .asc{text-align:center;padding:12px 8px;border:1px solid rgba(var(--c),.35);border-radius:var(--r);

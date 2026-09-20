@@ -127,10 +127,16 @@ function calcReputation(qStats, chatStats) {
   const msgCount = chatStats?.msgCount || 0;
 
   // Action Score
+  // ВНИМАНИЕ: прикидка, а не боевой счёт. Контракт начисляет за ответы по
+  // суточной лестнице (TIER_COUNT ключуется парой сутки+пользователь):
+  // первые 3 ответа за сутки по 40 REP, с 4-го по 10-й по 10, дальше ноль -
+  // у действия answer базовый вес нулевой. Смоделировать это здесь нельзя:
+  // в списке ответов нет разбивки по суткам UTC. Поэтому число ниже - ВЕРХНЯЯ
+  // граница, и настоящее значение берётся с цепочки (lifetime_earned).
   const actionScore =
-    myQuestions.length * 40 +   // Ask question: +40 REP
-    myAnswers.length   * 40 +   // Answer: +40 REP (flat estimate - see note above)
-    msgCount * 5;               // Chat: +5 REP per message, no limit
+    myQuestions.length * 40 +   // Ask question: +40 REP, одинаково для Basic и Priority
+    myAnswers.length   * 40 +   // Answer: верхняя граница, см. комментарий выше
+    msgCount * 5;               // Chat: +5 REP per message
 
   // Quality Score
   const qualityScore = scoredUpvotes * 20; // Upvote on an answer: +20 REP

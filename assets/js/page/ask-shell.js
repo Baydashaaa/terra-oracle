@@ -5,10 +5,24 @@
 (function () {
   'use strict';
 
-  var TIERS = {
-    basic:    { label: 'Basic',    entries: '+1', rep: '+50' },
-    priority: { label: 'Priority', entries: '+4', rep: '+50' }
+  // Своей таблицы тарифов здесь больше нет. Она держала rep: '+50' для обоих
+  // типов, тогда как контракт начисляет 40 и за Basic, и за Priority - форма
+  // спорила и с правилами на странице Reputation, и с документацией.
+  // Источник один: QUESTION_TIERS из ask.js, куда числа приходят с цепочки.
+  var FALLBACK = {
+    basic:    { label: 'Basic',    entries: 1, rep: 40 },
+    priority: { label: 'Priority', entries: 4, rep: 40 }
   };
+
+  function tierData(key) {
+    var chain = (typeof QUESTION_TIERS !== 'undefined' && QUESTION_TIERS[key]) || null;
+    var back = FALLBACK[key] || FALLBACK.basic;
+    return {
+      label:   (chain && chain.label)   || back.label,
+      entries: (chain && chain.entries) || back.entries,
+      rep:     (chain && chain.rep)     || back.rep
+    };
+  }
 
   var ARROW = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
               ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
@@ -38,7 +52,7 @@
 
   function currentTier() {
     var r = document.querySelector('#tier-picker input[name="question-tier"]:checked');
-    return TIERS[r && r.value] || TIERS.basic;
+    return tierData(((r && r.value) || 'basic').toLowerCase());
   }
 
   // ---------- итоговая карточка ----------
@@ -52,8 +66,8 @@
     if (line) {
       line.innerHTML = t.label +
         ' \u00b7 Category: <b>' + (cat || 'not chosen') + '</b>' +
-        ' \u00b7 Weekly entries: <b>' + t.entries + '</b>' +
-        ' \u00b7 REP available: <b>' + t.rep + '</b>';
+        ' \u00b7 Weekly entries: <b>+' + t.entries + '</b>' +
+        ' \u00b7 REP available: <b>+' + t.rep + '</b>';
     }
 
     var nowB = document.querySelector('#ask-price-now b');
@@ -162,6 +176,9 @@
     document.addEventListener('change', function (e) {
       if (e.target.name === 'question-tier') syncSummary();
     });
+
+    // Тарифы приходят с контракта уже после отрисовки - перечитываем.
+    document.addEventListener('oracle:tiers-updated', syncSummary);
 
     syncSummary();
     syncLock();
