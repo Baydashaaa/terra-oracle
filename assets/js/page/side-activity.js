@@ -132,8 +132,9 @@
         out.push({
           type: 'draws', view: 'draw', target: { tab: pool },
           ts:   ts,
-          // Та же иконка, что у кошелька этого пула в Treasury.
-          ic:   pool === 'weekly' ? 't-weekly.webp' : 't-daily.webp',
+          // Итог розыгрыша - одна иконка на оба пула: строка и так
+          // начинается со слова Daily или Weekly.
+          ic:   'nft.webp',
           text: (pool === 'weekly' ? 'Weekly' : 'Daily') + ' draw settled',
           amt:  w.prize_lunc ? lunc(w.prize_lunc) + ' LUNC' : '',
           tone: 'var(--cyan)'
@@ -201,7 +202,9 @@
             return {
               type: 'nft', view: pool ? 'draw' : 'nft', target: pool ? { tab: pool } : { token: p.id },
               ts:   Number(m.minted_at),
-              ic:   'nft.webp',
+              // Иконка кошелька этого пула из Treasury. Без пула это
+              // просто минт маски - там остаётся общая.
+              ic:   pool ? (pool === 'weekly' ? 't-weekly.webp' : 't-daily.webp') : 'nft.webp',
               text: pool ? (pool === 'weekly' ? 'Weekly' : 'Daily') + ' draw entry' : 'NFT minted',
               amt:  tier.charAt(0).toUpperCase() + tier.slice(1) + ' NFT',
               tone: TIER_TONE[tier] || 'var(--ink-2)'
