@@ -319,7 +319,6 @@
 
  <!-- ═══ шапка ═══════════════════════════════════════════════════════ -->
  <header class="oda-hero">
-  <span class="oda-eyebrow">Terra Classic &middot; NFT draw protocol</span>
   <h1>ORACLE <span>DRAW</span></h1>
   <p class="oda-lead">A decentralized draw protocol built on Terra Classic.</p>
   <p class="oda-sub">Mint an Oracle Mask and the purchase itself enters you into the draw.
@@ -330,9 +329,6 @@
    <li><svg class="oi oi--violet"><use href="#i-bolt"/></svg>On-chain randomness</li>
    <li><svg class="oi oi--green"><use href="#i-users"/></svg>Built for community</li>
   </ul>
-  <button class="oda-cta" onclick="showTab('draw')">
-   <svg class="oi"><use href="#i-rocket"/></svg>Launch app
-  </button>
  </header>
 
  <!-- Первые два числа заполняют config.js, data.js и pool-timer.js по
@@ -361,10 +357,11 @@
    <article class="oda-card oda-game oda-game--daily">
     <img class="oda-ic oda-ic--lg" src="assets/img/icons/t-daily.webp" alt="" width="128" height="128" loading="lazy">
     <h3>Daily</h3>
-    <p class="oda-when">Every day at 20:00 UTC</p>
+    <p class="oda-when">Every day except Monday, 20:00 UTC</p>
     <p>The short game. Mint a mask, and it enters the same day&rsquo;s pool - Common gives
      one entry, Rare five, Legendary ten. One winner takes the prize, and the payout
-     leaves the same minute the block is read.</p>
+     leaves the same minute the block is read. Monday&rsquo;s 20:00 slot belongs to the
+     Weekly draw, so Daily runs the other six days.</p>
    </article>
 
    <article class="oda-card oda-game oda-game--weekly">
