@@ -250,11 +250,14 @@ async function renderDrawVerify(idx) {
       addrOk:  addr ? s.address === addr : null
     };
   });
-  const allOk = checks.length > 0 && checks.every(c => c.indexOk !== false && c.addrOk !== false);
-  const anyRecorded = checks.some(c => c.recorded !== undefined);
+  // Строгая оценка. Раньше здесь стояли проверки вида `!== false`, а они
+  // пропускают null - то есть "сравнивать не с чем" засчитывалось как
+  // успех. Отсутствующее поле теперь означает неполную проверку, а не
+  // подтверждение.
+  const proof = vfProofState(checks, chain);
 
   host.innerHTML =
-    vfVerdictHtml(allOk && (!chain || chain.resultOk !== false), anyRecorded, w) +
+    vfVerdictHtml(proof) +
     (chain ? vfCommitHtml(chain, snap) : '') +
     vfInputsHtml(w, snap) +
     vfStepsHtml(checks, tickets.length, w) +
@@ -262,17 +265,66 @@ async function renderDrawVerify(idx) {
     vfReproduceHtml(w, snap, tickets.length, chain);
 }
 
-function vfVerdictHtml(ok, anyRecorded, w) {
-  if (!anyRecorded) {
-    return '<div class="vf-verdict vf-na"><b>Replayed, nothing to compare against</b>' +
-      '<span>This round has no recorded winner index, so the replay cannot be ' +
-      'checked against it. The wallets below still come from the real algorithm.</span></div>';
+/**
+ * Что именно удалось подтвердить. Три исхода вместо двух:
+ *
+ *   ok          - сошлось всё, что должно было сойтись;
+ *   bad         - что-то явно расходится с записью;
+ *   incomplete  - расхождений нет, но и подтвердить нечем: не хватает
+ *                 поля, без которого проверка ничего не доказывает.
+ *
+ * Третий исход и есть суть правки. Зелёная галка должна означать
+ * "проверено", а не "не опровергнуто".
+ */
+function vfProofState(checks, chain) {
+  const wrong = [];
+  const missing = [];
+
+  if (!checks.length) missing.push('there are no places to replay');
+
+  checks.forEach((c, i) => {
+    const place = 'place ' + (i + 1);
+    if (c.indexOk === false)      wrong.push(place + ': the replayed index differs from the record');
+    else if (c.indexOk === null)  missing.push(place + ': no winning index was recorded');
+    if (c.addrOk === false)       wrong.push(place + ': the wallet differs from the record');
+    else if (c.addrOk === null)   missing.push(place + ': no winning wallet was recorded');
+  });
+
+  // Раунды контракта: обязательство и результат обязаны сойтись. seedHashOk
+  // раньше вычислялся и нигде не проверялся - именно отсюда бралась зелёная
+  // галка на подделанном seed_hash.
+  if (chain) {
+    if (chain.seedHashOk === false)     wrong.push('the revealed secret does not match the commitment made when the round opened');
+    else if (chain.seedHashOk === null) missing.push('no commitment (seed_hash) was recorded for this round');
+    if (chain.resultOk === false)       wrong.push('the derived result does not match the recorded one');
+    else if (chain.resultOk === null)   missing.push('no result was recorded for this round');
   }
-  return ok
-    ? '<div class="vf-verdict vf-ok"><b>Verified</b><span>Replaying the draw in your ' +
-      'browser produces exactly the indices and wallets recorded on chain.</span></div>'
-    : '<div class="vf-verdict vf-bad"><b>Mismatch</b><span>The replay does not match the ' +
-      'recorded result. Something is wrong - please report this round.</span></div>';
+
+  if (wrong.length)   return { state: 'bad', reasons: wrong };
+  if (missing.length) return { state: 'incomplete', reasons: missing };
+  return { state: 'ok', reasons: [] };
+}
+
+function vfReasonsHtml(reasons) {
+  if (!reasons.length) return '';
+  return '<ul style="margin:8px 0 0 18px;padding:0;line-height:1.7;">' +
+    reasons.map(r => '<li>' + r + '</li>').join('') + '</ul>';
+}
+
+function vfVerdictHtml(proof) {
+  if (proof.state === 'ok') {
+    return '<div class="vf-verdict vf-ok"><b>Verified</b><span>Replaying the draw in your ' +
+      'browser produces exactly the indices and wallets recorded on chain, and the revealed ' +
+      'secret matches the commitment made before entries closed.</span></div>';
+  }
+  if (proof.state === 'incomplete') {
+    return '<div class="vf-verdict vf-na"><b>Proof incomplete</b><span>Nothing contradicts the ' +
+      'recorded result, but this round cannot be fully verified - something needed for the ' +
+      'check is missing:' + vfReasonsHtml(proof.reasons) + '</span></div>';
+  }
+  return '<div class="vf-verdict vf-bad"><b>Mismatch</b><span>The replay does not match the ' +
+    'recorded result. Something is wrong - please report this round:' +
+    vfReasonsHtml(proof.reasons) + '</span></div>';
 }
 
 /**
@@ -470,13 +522,24 @@ function vfCircuitHtml(w, snap) {
 
   const zoneOk = snap.winner_zone !== undefined ? zone === Number(snap.winner_zone) : null;
   const addrOk = snap.winner ? addr === snap.winner : null;
-  const allOk  = zoneOk !== false && addrOk !== false;
 
-  const verdict = allOk
-    ? '<div class="vf-verdict vf-ok"><b>Verified</b><span>Recomputing the zone in your ' +
-      'browser gives exactly the zone and wallet recorded for this round.</span></div>'
-    : '<div class="vf-verdict vf-bad"><b>Mismatch</b><span>The recomputed zone does not ' +
-      'match the recorded result. Something is wrong - please report this round.</span></div>';
+  // Раньше здесь стояло `zoneOk !== false && addrOk !== false`, и раунд без
+  // записанной зоны и без победителя объявлялся проверенным, не сравнив
+  // ничего. Отсутствие записи - это неполная проверка, а не успех.
+  const cWrong = [];
+  const cMissing = [];
+  if (zoneOk === false)      cWrong.push('the recomputed zone differs from the recorded one');
+  else if (zoneOk === null)  cMissing.push('no winning zone was recorded');
+  if (addrOk === false)      cWrong.push('the owner of that zone differs from the recorded winner');
+  else if (addrOk === null)  cMissing.push('no winner was recorded');
+  if (!(snap.blocks && snap.blocks.length)) cMissing.push('the board snapshot has no zone owners');
+
+  const verdict = cWrong.length
+    ? vfVerdictHtml({ state: 'bad', reasons: cWrong })
+    : cMissing.length
+      ? vfVerdictHtml({ state: 'incomplete', reasons: cMissing })
+      : '<div class="vf-verdict vf-ok"><b>Verified</b><span>Recomputing the zone in your ' +
+        'browser gives exactly the zone and wallet recorded for this round.</span></div>';
 
   const rows = [
     ['Pool',          'Circuit'],
