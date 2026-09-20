@@ -33,9 +33,6 @@ function smoothScrollTop() {
 }
 window.addEventListener('load', () => { window.scrollTo(0, 0); });
 
-// ─── ADMIN KEY ───────────────────────────────────────────────
-const ADMIN_KEY = 'TerraOracle#9X4K-2025';
-
 // ─── DEMO QUESTIONS ───────────────────────────────────────────
 const DEMO_QUESTIONS = [
   {
