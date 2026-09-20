@@ -243,41 +243,15 @@ function shortAddr(a) {
 
 /** Строка состояния в шапке. Один текст на все виды карточек, чтобы
  *  крупная и обычная не разъезжались. */
-/** Строка состояния в шапке. Один текст на все виды карточек, чтобы
- *  крупная и обычная не разъезжались. */
 function statusLine(m) {
+  const left = timeLeft(m.bets_close_at);
   if (m.status === 'settled') {
     return `<b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b> · settled`;
   }
   if (m.status === 'void') return 'void · stakes returned';
-  if (m.status === 'proposed') {
-    // "Proposed" человеку ничего не говорит. Важно другое: идёт окно, внутри
-    // которого исход ещё можно оспорить, и сколько его осталось.
-    const left = challengeLeft(m);
-    return `<b class="p">verifying</b>${left ? ' · ' + left + ' left' : ''}`;
-  }
-  const left = timeLeft(m.bets_close_at);
-  return left ? 'closes in ' + left : 'awaiting resolution';
+  if (m.status === 'proposed') return '<b class="p">outcome proposed</b>';
+  return left ? 'closes in ' + left : 'bets closed';
 }
-
-/** Сколько осталось от окна оспаривания. */
-function challengeLeft(m) {
-  if (!prophecyCfg || !m.proposed_at) return '';
-  const ends = Number(m.proposed_at) + Number(prophecyCfg.challenge_secs);
-  const s = ends - Math.floor(Date.now() / 1000);
-  if (s <= 0) return '';
-  const h = Math.floor(s / 3600), mn = Math.floor((s % 3600) / 60);
-  return h ? `${h}h ${mn}m` : `${mn}m`;
-}
-
-/** Подпись над процентами. Пока приём открыт, это текущее распределение;
- *  после закрытия банки уже не меняются, и это зафиксированный прогноз. */
-function oddsCaption(m) {
-  if (m.status === 'open' && timeLeft(m.bets_close_at)) return '';
-  if (m.status === 'settled' || m.status === 'void') return 'Forecast at close';
-  return 'Forecast at close · no more bets';
-}
-
 
 /** Состояние стороны рынка: открыт, закрыт, выиграла, проиграла.
  *  Одно место на карточку и на экран рынка, чтобы они не расходились. */
@@ -311,9 +285,7 @@ function oddsBlock(m) {
       ${sub}
     </button>`;
   };
-  const cap = oddsCaption(m);
-  return (cap ? `<div class="odds-cap">${cap}</div>` : '')
-    + '<div class="odds">' + side(true, 'YES', pct, my)
+  return '<div class="odds">' + side(true, 'YES', pct, my)
     + side(false, 'NO', 100 - pct, mn) + '</div>';
 }
 
@@ -400,17 +372,7 @@ async function renderMarkets(resolved) {
 
   // Контракт помечен в цепочке как TEST, admin и resolver - один кошелёк.
   // Пока это так, интерфейс обязан говорить об этом прямо.
-  // Окно оспаривания живёт в конфиге контракта, а не в рынке: держим копию,
-// чтобы показывать, сколько его осталось.
-let prophecyCfg = null;
-
-async function loadProphecyConfig() {
-  if (prophecyCfg) return prophecyCfg;
-  try { prophecyCfg = await prophecyQuery({ config: {} }); } catch (e) { /* не критично */ }
-  return prophecyCfg;
-}
-
-const TEST_BANNER = `
+  const TEST_BANNER = `
     <div style="border:1px solid rgba(255,170,60,0.35);background:rgba(255,170,60,0.07);
       border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;
       color:#ffb14e;line-height:1.6;">
@@ -421,7 +383,6 @@ const TEST_BANNER = `
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
   try {
-    await loadProphecyConfig();
     const all = await loadProphecyMarkets();
     renderMarketStats(all);
     const live = ['open', 'locked', 'proposed'];
@@ -572,24 +533,6 @@ function positionBlock(m, pos) {
  * Как только исход объявлен, форма исчезает совсем: ставить уже нельзя, и
  * предлагать бессмысленно. После расчёта экран превращается в доказательство.
  */
-/** Рассчитанный рынок как доказательство: что прочитали, с чем сравнили
- *  и почему получился такой исход. Одна строка "Settled: NO" оставляла
- *  человека гадать. */
-function evidenceBlock(m) {
-  const cond = m.spec.metric && m.spec.comparator
-    ? `${mktEsc(m.spec.comparator)} ${mktEsc(m.spec.threshold)}`
-    : m.spec.metric ? 'proposal passed' : 'stated criterion';
-  return `
-    <div class="mk-banner done mk-evidence">
-      <h3>Settled · <b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b></h3>
-      ${m.reading ? `<div class="ev-row"><span>Reading</span><b>${mktEsc(m.reading)}</b></div>` : ''}
-      <div class="ev-row"><span>Condition</span><b>${cond}</b></div>
-      ${m.spec.height ? `<div class="ev-row"><span>Block</span><b>${m.spec.height}</b></div>` : ''}
-      <div class="ev-row"><span>Therefore</span><b class="${m.outcome ? 'y' : 'n'}">${
-        m.outcome ? 'YES' : 'NO'}</b></div>
-    </div>`;
-}
-
 async function openProphecyMarket(id) {
   openMarketId = id;
   const host = document.getElementById('markets-list');
@@ -601,7 +544,6 @@ async function openProphecyMarket(id) {
   if (main) main.scrollTop = 0;
 
   let m, pos = null, tip = null;
-  await loadProphecyConfig();
   try {
     m = await prophecyQuery({ market: { market_id: id } });
     if (window.globalWalletAddress) {
@@ -618,21 +560,18 @@ async function openProphecyMarket(id) {
 
   let banner = '';
   if (m.status === 'proposed') {
-    const left = challengeLeft(m);
     banner = `<div class="mk-banner warn">
-      <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
-      <p>A reading has been posted and payouts stay shut while it can still be disputed${
-        left ? `. <b>${left}</b> left` : ''}.</p>
+      <h3>Proposed: ${m.outcome ? 'YES' : 'NO'}</h3>
+      <p>Payouts stay shut until the challenge window closes. Until then the reading can be disputed.</p>
       ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'settled') {
-    banner = evidenceBlock(m);
+    banner = `<div class="mk-banner done">
+      <h3>Settled: ${m.outcome ? 'YES' : 'NO'}</h3>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'void') {
-    // Причина аннулирования хранится только в атрибутах транзакции, в самом
-    // рынке её нет - не выдумываем её здесь.
     banner = `<div class="mk-banner">
-      <h3>Void · nobody won or lost</h3>
-      <p>Every stake goes back untouched. A market is voided when the reading cannot be taken
-      or when one side stayed empty.</p></div>`;
+      <h3>Void</h3><p>Every stake goes back untouched.</p>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   }
 
   // Стороны рынка и есть выбор ставки: одни и те же кнопки, чтобы не было
@@ -671,7 +610,6 @@ async function openProphecyMarket(id) {
         </div>
         <h4>${mktEsc(m.question)}</h4>
         <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
-        ${oddsCaption(m) ? `<div class="odds-cap">${oddsCaption(m)}</div>` : ''}
         <div class="odds" id="bet-side-row">
           ${sideBtn(true, 'YES', pct, my, yes, m.bettors_yes)}
           ${sideBtn(false, 'NO', 100 - pct, mn, no, m.bettors_no)}
