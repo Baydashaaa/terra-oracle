@@ -53,8 +53,41 @@
     }
   }
 
+  // ---------- Circuit ----------
+  // Раздел Winners на draw.terraoracle.io подмешивает раунды Circuit в общий
+  // список (winners-v3.js), поэтому его "total paid out" больше, чем сумма по
+  // winners.json. Здесь тот же источник и та же формула приза, иначе две
+  // страницы сайта показывают разные числа.
+  // Возвращает null при любой ошибке - остальные кафели от этого не страдают.
+  async function loadCircuit() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/circuit/history?limit=60', { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var d = await r.json();
+      var closed = (d.rounds || []).filter(function (x) {
+        return x && x.status === 'closed' && typeof x.winnerZone === 'number';
+      });
+
+      var out = { paid: 0, rounds: closed.length, players: 0, entries: 0 };
+      closed.forEach(function (x) {
+        // Приз - доля prize из разбивки раунда, в uluna. Так же считает
+        // mapCircuitRound в winners-v3.js.
+        if (x.split && x.split.prize) out.paid += Math.round(x.split.prize / 1e6);
+        out.entries += x.sold || 0;
+        var wallets = {};
+        (x.blocks || []).forEach(function (b) { wallets[b.wallet] = 1; });
+        out.players += Object.keys(wallets).length;
+      });
+      return out;
+    } catch (e) {
+      console.warn('[home] circuit:', e);
+      return null;
+    }
+  }
+
   // ---------- розыгрыши ----------
   async function loadDraws() {
+    var cir = await loadCircuit();
     try {
       // Данные живут в репо oracle-draw, копии в draw-app/ больше нет -
       // см. draw-app/assets/js/data-origin.js. Внешний сайт никогда не
@@ -83,14 +116,24 @@
         players += x.participants || 0;
       });
 
+      var rounds = daily.length + weekly.length;
+      var sub = n(daily.length) + ' daily · ' + n(weekly.length) + ' weekly';
+      if (cir) {
+        paid    += cir.paid;
+        entries += cir.entries;
+        players += cir.players;
+        rounds  += cir.rounds;
+        sub     += ' · ' + n(cir.rounds) + ' circuit';
+      }
+
       txt('stPlayers', n(players));
       txt('stPlayersSub', n(entries) + ' entries total');
 
       set('stPaid', compact(paid) + '<small>LUNC</small>');
       txt('stPaidSub', 'paid out to winners');
 
-      txt('stRounds', n(daily.length + weekly.length));
-      txt('stRoundsSub', n(daily.length) + ' daily · ' + n(weekly.length) + ' weekly');
+      txt('stRounds', n(rounds));
+      txt('stRoundsSub', sub);
     } catch (e) {
       ['stPlayers', 'stPaid', 'stRounds'].forEach(function (id) { txt(id, '-'); });
       ['stPlayersSub', 'stPaidSub', 'stRoundsSub'].forEach(function (id) { txt(id, 'draw data unavailable'); });
