@@ -1,8 +1,15 @@
 // About Protocol: живые цифры в блоке Ecosystem at a glance.
-// Источники те же, что у главной - winners.json для розыгрышей и
-// воркер вопросов для доски. Второго расчёта нет.
+// Источники те же, что у главной - winners.json плюс накопитель Circuit
+// в воркере для розыгрышей и воркер вопросов для доски.
+//
+// До 20 сентября 2026 здесь складывались только daily и weekly, а главная
+// подмешивала ещё и Circuit - отсюда 19 раундов против 44 и 7.00M против
+// 7.60M на двух страницах одного сайта. Формулы ниже повторяют home-shell.js
+// дословно: если менять, то в обоих файлах сразу.
 (function () {
   'use strict';
+
+  var DRAW_WORKER = 'https://oracle-draw.vladislav-baydan.workers.dev';
 
   function n(x) { return Number(x || 0).toLocaleString('en-US'); }
   function compact(x) {
@@ -14,7 +21,63 @@
   }
   function set(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
 
+  // ---------- Circuit ----------
+  // Основной источник - накопитель /circuit/totals, он не зависит от
+  // глубины истории. История - запасной путь, если накопитель пуст.
+  async function loadCircuit() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/circuit/totals', { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        var t = await r.json();
+        if (!t.empty && (t.rounds || t.paidLunc)) {
+          return { paid: t.paidLunc || 0, rounds: t.rounds || 0 };
+        }
+      }
+    } catch (e) {
+      console.warn('[about] circuit totals:', e);
+    }
+    return loadCircuitFromHistory();
+  }
+
+  async function loadCircuitFromHistory() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/circuit/history?limit=60', { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var d = await r.json();
+      var closed = (d.rounds || []).filter(function (x) {
+        return x && x.status === 'closed' && typeof x.winnerZone === 'number';
+      });
+      var out = { paid: 0, rounds: closed.length };
+      closed.forEach(function (x) {
+        // Приз - доля prize из разбивки раунда, в uluna. Та же формула,
+        // что в mapCircuitRound (winners-v3.js) и в home-shell.js.
+        if (x.split && x.split.prize) out.paid += Math.round(x.split.prize / 1e6);
+      });
+      return out;
+    } catch (e) {
+      console.warn('[about] circuit:', e);
+      return null;
+    }
+  }
+
+  // ---------- уникальные кошельки ----------
+  // Сумма participants по раундам - это УЧАСТИЯ: один кошелёк в тридцати
+  // раундах давал тридцать. Уникальных отдаёт воркер, как на главной.
+  async function loadWallets() {
+    try {
+      var r = await fetch(DRAW_WORKER + '/stats/wallets', { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var d = await r.json();
+      return (typeof d.unique === 'number') ? d : null;
+    } catch (e) {
+      console.warn('[about] wallets:', e);
+      return null;
+    }
+  }
+
   async function draws() {
+    var cir = await loadCircuit();
+    var wal = await loadWallets();
     try {
       // Данные живут в репо oracle-draw, копии в draw-app/ больше нет -
       // см. draw-app/assets/js/data-origin.js. Внешний сайт никогда не
@@ -32,9 +95,16 @@
         (x.winners || []).forEach(function (p) { paid += p.amount_lunc || p.prize_lunc || 0; });
       });
 
-      set('ab-players', n(players));
+      if (cir) {
+        paid += cir.paid || 0;
+      }
+      var rounds = d.length + k.length + ((cir && cir.rounds) || 0);
+
+      // Уникальные кошельки, если воркер ответил; иначе прежний счёт
+      // участий - он завышен, но лучше пустой клетки.
+      set('ab-players', n(wal ? wal.unique : players));
       set('ab-paid', compact(paid));
-      set('ab-rounds', n(d.length + k.length));
+      set('ab-rounds', n(rounds));
     } catch (e) {
       console.warn('[about] draws:', e);
     }

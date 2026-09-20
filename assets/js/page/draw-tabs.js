@@ -3,8 +3,12 @@
 // Winners, Verify & proof, About.
 //
 // Сама механика живёт в рамке, поэтому вкладка не переключает разметку,
-// а шлёт команду внутрь через postMessage. Ответ не нужен: если рамка
-// ещё не загрузилась, команда просто повторится по её сигналу готовности.
+// а шлёт команду внутрь через postMessage.
+//
+// Связь двусторонняя: рамка умеет переключать вкладку сама (кнопка verify
+// на карточке победителей зовёт openVerifyForRound -> showTab('verify')),
+// и тогда она присылает обратно oracle-draw:tab. Без этого ряд вкладок
+// оставался на Winners, хотя внутри уже открыта проверка.
 (function () {
   'use strict';
 
@@ -37,9 +41,25 @@
     if (page && t) page.style.setProperty('--tone', t[2]);
   }
 
+  function known(name) {
+    return TABS.some(function (t) { return t[0] === name; });
+  }
+
   window.addEventListener('message', function (e) {
     if (e.origin !== location.origin) return;
-    if (!e.data || e.data.type !== 'oracle-draw:ready') return;
+    if (!e.data) return;
+
+    // Рамка сама сменила вкладку. Только красим ряд, команду обратно НЕ
+    // шлём - иначе рамка и сайт начнут перекидывать сообщение по кругу.
+    if (e.data.type === 'oracle-draw:tab') {
+      if (!known(e.data.tab) || e.data.tab === tab) return;
+      tab = e.data.tab;
+      var nav = document.getElementById('drawModes');
+      if (nav) paint(nav);
+      return;
+    }
+
+    if (e.data.type !== 'oracle-draw:ready') return;
     ready = true;
     send();   // рамка поднялась - повторяем выбранную вкладку
   });

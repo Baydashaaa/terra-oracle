@@ -62,12 +62,48 @@
     goTimer = setTimeout(function () { apply(name); }, 40);
   }
 
+  // Обратная карта: внутренняя вкладка -> имя во внешнем ряду.
+  // Ветка 'draw' сюда не входит намеренно: какая игра открыта, решает
+  // рельс (game-switcher.js), и сообщать за него мы не вправе.
+  var BACK = { winners: 'winners', verify: 'verify', home: 'about' };
+  var applying = false;
+
+  // Рамка может сменить вкладку сама: кнопка verify на карточке победителя
+  // зовёт openVerifyForRound -> showTab('verify'). Внешний ряд вкладок об
+  // этом узнавал только от нас, а мы молчали - отсюда подсветка Winners
+  // поверх открытой проверки.
+  function hookShowTab() {
+    if (typeof window.showTab !== 'function' || window.showTab.__reports) return;
+    var orig = window.showTab;
+    var wrapped = function (tab) {
+      var res = orig.apply(this, arguments);
+      try {
+        var name = BACK[tab];
+        // applying - это наш собственный вызов из apply(): он пришёл
+        // снаружи, докладывать о нём обратно незачем.
+        if (name && !applying && name !== lastGo) {
+          lastGo = name;
+          parent.postMessage({ type: 'oracle-draw:tab', tab: name }, location.origin);
+        }
+      } catch (e) {}
+      return res;
+    };
+    wrapped.__reports = true;
+    window.showTab = wrapped;
+  }
+
   function apply(name) {
+    hookShowTab();
     var m = MAP[name] || MAP.daily;
     // Домашняя страница скрыта стилями всегда - иначе она мелькает до
     // того, как отработает скрипт. Показываем её только для About.
     document.body.classList.toggle('show-home', m[0] === 'home');
-    if (typeof window.showTab === 'function') window.showTab(m[0], true);
+    applying = true;
+    try {
+      if (typeof window.showTab === 'function') window.showTab(m[0], true);
+    } finally {
+      applying = false;
+    }
     if (!m[1]) return;
     // selectGame - штатный переключатель рельса из game-switcher.js.
     // Он и прячет ненужную сцену, и для daily/weekly сам зовёт
@@ -147,6 +183,9 @@
   }
 
   function openDefault() {
+    // showTab объявлен в config.js, а тот грузится с defer - к моменту
+    // выполнения этого файла его ещё нет. Поэтому перехват ставим здесь.
+    hookShowTab();
     watchUntil = Date.now() + 8000;
     watchdog();
     if (selfOpened) return;      // хозяин уже открыл нужную вкладку

@@ -279,16 +279,31 @@ async function refreshTiersFromChain() {
       t.poolLeg = poolLeg;
     }
 
-    // The button shows a price, so it has to be redrawn if one changed.
-    // The real name, with the address it needs for the discount. Only when a
-    // wallet is connected - without one there is no price to personalise.
-    const _addr = (typeof connectedAddress !== 'undefined' && connectedAddress) || null;
-    if (_addr && typeof updateVerifyBtnPrice === 'function') {
-      try { updateVerifyBtnPrice(_addr); } catch (e) {}
-    }
+    // Подписи на самих карточках тарифа тоже приходят с цепочки: раньше
+    // расхождение только писалось в консоль, а на экране оставались
+    // числа из разметки.
+    paintTierLabels();
+
+    // Цена на кнопке и в панели выгоды пересчитывается при любом состоянии
+    // кошелька - скидку персонализируем только при наличии адреса.
+    if (typeof repriceAsk === 'function') repriceAsk();
   } catch (e) {
     // A node that will not answer must not stop anyone asking a question.
   }
+}
+
+// Переписывает подписи "50,000 LUNC" / "200,000 LUNC" на карточках выбора
+// типа вопроса значениями из QUESTION_TIERS (после сверки с контрактом).
+function paintTierLabels() {
+  var picker = document.getElementById('tier-picker');
+  if (!picker) return;
+  picker.querySelectorAll('input[name="question-tier"]').forEach(function (r) {
+    var t = QUESTION_TIERS[(r.value || '').toLowerCase()];
+    var box = r.closest('.qtype');
+    if (!t || !box) return;
+    var amt = box.querySelector('.amt');
+    if (amt) amt.textContent = t.total.toLocaleString('en-US') + ' LUNC';
+  });
 }
 
 if (document.readyState === 'loading') {

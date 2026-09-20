@@ -315,8 +315,17 @@ async function getQuestionDiscountPct(addr) {
 // personal price, and a badge explaining WHY (streak vs rank) - driven by
 // the breakdown stashed in getQuestionDiscountPct._last.
 async function updateVerifyBtnPrice(addr) {
+  // Работает и БЕЗ кошелька. Тариф известен всегда, персональная скидка -
+  // нет: без адреса она просто ноль. Раньше эта функция вызывалась только
+  // при подключённом кошельке, поэтому гость переключал Basic/Priority, а
+  // цена оставалась статической из разметки (50,000) - два противоречивых
+  // числа на одном экране.
+  const tick = ++updateVerifyBtnPrice._tick;
   try {
-    const discPct = await getQuestionDiscountPct(addr);
+    const discPct = addr ? await getQuestionDiscountPct(addr) : 0;
+    // Пока шёл запрос скидки, тип вопроса могли переключить ещё раз.
+    // Рисует только самый поздний вызов, ранний выходит молча.
+    if (tick !== updateVerifyBtnPrice._tick) return;
     const tier    = getSelectedTier();
     const price   = tier.total - Math.round(tier.total * (discPct / 100));
     const btnEl   = document.getElementById('verify-btn');
@@ -347,6 +356,29 @@ async function updateVerifyBtnPrice(addr) {
       if (badgeEl) badgeEl.style.display = 'none';
     }
   } catch(e) {}
+}
+// Счётчик вызовов для отсечки устаревших отрисовок (см. выше).
+updateVerifyBtnPrice._tick = 0;
+
+// Единая точка входа: адрес берём, если он есть, и не требуем его.
+function repriceAsk() {
+  if (typeof updateVerifyBtnPrice !== 'function') return;
+  const addr = (typeof connectedAddress !== 'undefined' && connectedAddress) || null;
+  try { updateVerifyBtnPrice(addr); } catch (e) {}
+}
+window.repriceAsk = repriceAsk;
+
+// Переключение типа вопроса перерисовывает цену при любом состоянии
+// кошелька. Слушаем делегированно, чтобы не зависеть от inline-обработчиков
+// в разметке - там стоит своя проверка на подключённый кошелёк.
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.name === 'question-tier') repriceAsk();
+});
+// Стартовая отрисовка: числа в разметке - только заглушка до первого счёта.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', repriceAsk, { once: true });
+} else {
+  repriceAsk();
 }
 
 async function autoPayAndUnlock() {
@@ -430,11 +462,7 @@ async function autoPayAndUnlock() {
     }, 1200);
   } catch(e) {
     btn.disabled = false;
-    if (typeof connectedAddress !== 'undefined' && connectedAddress && typeof updateVerifyBtnPrice === 'function') {
-      updateVerifyBtnPrice(connectedAddress);
-    } else {
-      btn.textContent = `Pay ${getSelectedTier().total.toLocaleString()} LUNC & Unlock`;
-    }
+    repriceAsk();
     showTxStatus('error', '❌ ' + (e.message || 'Transaction cancelled.'));
   }
 }
