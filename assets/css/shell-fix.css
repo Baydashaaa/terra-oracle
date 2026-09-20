@@ -1532,3 +1532,73 @@
   /* Закрытым пунктам подсветка не положена - Markets пока такой. */
   .app .tabbar [aria-disabled="true"]{opacity:.55}
 }
+
+/* ==================================================================
+   14. Телефон: полоса Ecosystem stats над модулями, одной строкой
+   Было: полоса стояла ПОД модулями и занимала две колонки по два
+   кафеля плюс Terra Classic во всю ширину - пять блоков и полтора
+   экрана высоты. Стало: узкая панель из четырёх столбцов с
+   разделителями, сразу под hero, и тонкая строка Terra Classic внизу
+   той же панели.
+   Порядок меняется через order: .page.shell-page.active - это флекс-
+   колонка (см. п.3), поэтому переставить блоки можно без правки
+   разметки. Всем детям главной назначен order 5, а трём нужным -
+   свои номера, иначе блок без order уехал бы наверх.
+   ================================================================== */
+@media (max-width:760px){
+  #page-home > *{order:5}
+  #page-home > .hero{order:1}
+  #page-home > .stats{order:2}
+  #page-home > .mods{order:3}
+
+  #page-home > .stats{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    padding:10px 2px 2px;
+  }
+  /* Заголовок съедал бы целую строку ради двух слов. */
+  #page-home > .stats > h3{display:none}
+
+  #page-home > .stats .stat{
+    position:relative;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:2px;
+    padding:4px 5px 8px;
+    background:none;
+    border:0;
+    border-radius:0;
+  }
+  /* Разделители между столбцами: линия рисуется у каждого кафеля,
+     кроме первого, поэтому по краям панели её нет. */
+  #page-home > .stats .stat + .stat::before{
+    content:"";
+    position:absolute;left:0;top:10%;bottom:10%;
+    width:1px;background:var(--line);
+  }
+  #page-home > .stats .stat .ico{display:none}
+  #page-home > .stats .stat > div{min-width:0}
+  #page-home > .stats .stat .lbl{
+    font-size:8.5px;line-height:1.3;letter-spacing:.04em;text-transform:uppercase;
+  }
+  #page-home > .stats .stat .num{font-size:14px;white-space:normal}
+  #page-home > .stats .stat .num small{display:block;margin:0;font-size:8.5px}
+  /* Вторая строка кафеля (прирост, всего входов) на четырёх столбцах
+     не читается - прячем, на десктопе она остаётся. */
+  #page-home > .stats .stat .chg{display:none}
+
+  /* Terra Classic: тонкая строка по низу той же панели вместо кафеля. */
+  #page-home > .stats .chainbox{
+    grid-column:1 / -1;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:2px;padding:8px 10px;
+    background:none;border:0;border-top:1px solid var(--line);border-radius:0;
+  }
+  #page-home > .stats .chainbox img{width:18px;height:18px}
+  #page-home > .stats .chainbox .nm{font-size:12px}
+  #page-home > .stats .chainbox .sub{display:none}
+  #page-home > .stats .chainbox .tags{
+    grid-column:auto;border:0;padding:0;font-size:10px;
+  }
+}
