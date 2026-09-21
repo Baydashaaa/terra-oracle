@@ -163,23 +163,32 @@ async function broadcastTx(txBytes) {
   if (code !== 0) throw new Error('broadcast rejected: ' + (data?.tx_response?.raw_log || JSON.stringify(data)));
 }
 
+// Четыре исхода, а не три. 'missing' - узел ответил, что такой транзакции нет.
+// 'unknown' - узел не ответил или ответил ошибкой. Раньше оба давали
+// 'missing', и лежащий узел LCD превращал успешную выплату в повторную.
 async function lookupTx(txHash) {
+  let r;
   try {
-    const r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
-    if (r.status === 404) return 'missing';
-    const resp = (await r.json())?.tx_response;
-    if (!resp || !resp.height || resp.height === '0') return 'missing';
-    return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
-  } catch { return 'missing'; }
+    r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
+  } catch { return 'unknown'; }
+  if (r.status === 404) return 'missing';
+  if (!r.ok) return 'unknown';
+  let resp;
+  try { resp = (await r.json())?.tx_response; } catch { return 'unknown'; }
+  if (!resp || !resp.height || resp.height === '0') return 'missing';
+  return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
 }
 
 async function waitForTx(txHash, tries = 20, delayMs = 4000) {
+  let st = 'unknown';
   for (let i = 0; i < tries; i++) {
-    const st = await lookupTx(txHash);
-    if (st !== 'missing') return st;
+    st = await lookupTx(txHash);
+    if (st === 'ok' || st === 'failed') return st;
     await new Promise(r => setTimeout(r, delayMs));
   }
-  return 'missing';
+  // 'missing' или 'unknown' - исход неизвестен. Вызывающий обязан оставить
+  // позицию inflight, а не платить заново.
+  return st;
 }
 
 // Идентификатор недели - дата последнего вторника по UTC, то есть дня запуска
@@ -353,20 +362,23 @@ async function main() {
         it.status = 'pending';
         console.log(`  ↩️ ${it.txHash.slice(0,12)} завершилась ошибкой - вернул в очередь`);
       } else {
-        const age = Date.now() - new Date(it.statusAt || 0).getTime();
-        if (age > 30 * 60 * 1000) {
-          await setItemStatus(week, it.wallet, 'pending', it.txHash, 'tx never landed');
-          it.status = 'pending';
-          console.log(`  ↩️ ${it.txHash.slice(0,12)} не найдена - вернул в очередь`);
-        } else {
-          console.log(`  ⏳ ${it.txHash.slice(0,12)} ещё не видна, оставляю`);
-        }
+        // Исход неизвестен - 'missing' или 'unknown'. В очередь НЕ возвращаем:
+        // "не нашли" не доказывает "не прошла". Раньше через 30 минут позиция
+        // уходила на повторную выплату. Теперь остаётся inflight и ждёт человека.
+        const mins = Math.round((Date.now() - new Date(it.statusAt || 0).getTime()) / 60000);
+        console.log(`  ⚠️ ${it.txHash} - ${st}, ${mins} мин. НУЖНА РУЧНАЯ ПРОВЕРКА: ` +
+          `найди хеш в finder; если транзакции нет - верни позицию в pending вручную.`);
       }
     }
   }
 
-  const todo = manifest.items.filter(i => i.status !== 'paid');
-  if (!todo.length) { console.log('✅ Все выплаты этой недели уже прошли.'); return; }
+  // Только то, что ТОЧНО не оплачено. Раньше здесь было `!== 'paid'`, и
+  // позиция, которую сверка выше только что оставила в inflight, тут же
+  // уходила на вторую выплату в том же прогоне (SEC-01).
+  const todo  = manifest.items.filter(i => i.status !== 'paid' && i.status !== 'inflight');
+  const stuck = manifest.items.filter(i => i.status === 'inflight').length;
+  if (stuck) console.log(`⚠️ ${stuck} в inflight ждут ручной проверки - повторно не отправляю.`);
+  if (!todo.length) { console.log('✅ Отправлять нечего.'); return; }
   console.log(`📤 К отправке: ${todo.length} из ${manifest.items.length}`);
 
   let successCount=0, failCount=0;
@@ -387,7 +399,18 @@ async function main() {
       // останется inflight, и сверка спросит цепочку вместо повторной выплаты.
       await setItemStatus(week, payout.wallet, 'inflight', txHash);
 
-      await broadcastTx(txBytes);
+      try {
+        await broadcastTx(txBytes);
+      } catch (e) {
+        // Явный отказ на приёме - ненулевой код CheckTx: в мемпул не попало,
+        // значит в блок не попадёт никогда. Единственный случай, когда исход
+        // ИЗВЕСТЕН и позицию можно вернуть в очередь сразу. Сетевая ошибка
+        // сюда не относится: там исход неизвестен, остаётся inflight.
+        if (/^broadcast rejected/.test(e.message)) {
+          await setItemStatus(week, payout.wallet, 'pending', txHash, 'broadcast rejected');
+        }
+        throw e;
+      }
       sequence++;   // номер израсходован даже при неудаче в блоке
       console.log(`📡 ${(payout.uluna/1e6).toFixed(3)} LUNC → ${payout.wallet.slice(0,20)}... | tx: ${txHash}`);
 

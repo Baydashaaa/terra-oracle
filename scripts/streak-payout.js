@@ -221,27 +221,34 @@ async function broadcastTx(txBytes) {
   return data?.tx_response?.txhash || data?.txhash;
 }
 
-// Ищет транзакцию в цепочке. Возвращает 'ok', 'failed' или 'missing'.
+// Четыре исхода, а не три. 'missing' - узел ответил, что такой транзакции нет.
+// 'unknown' - узел не ответил или ответил ошибкой. Раньше оба давали
+// 'missing', и лежащий узел LCD превращал успешную выплату в повторную.
 async function lookupTx(txHash) {
+  let r;
   try {
-    const r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
-    if (r.status === 404) return 'missing';
-    const j = await r.json();
-    const resp = j?.tx_response;
-    if (!resp || !resp.height || resp.height === '0') return 'missing';
-    return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
-  } catch { return 'missing'; }
+    r = await safeFetch(`${LCD_URL}/cosmos/tx/v1beta1/txs/${txHash}`);
+  } catch { return 'unknown'; }
+  if (r.status === 404) return 'missing';
+  if (!r.ok) return 'unknown';
+  let resp;
+  try { resp = (await r.json())?.tx_response; } catch { return 'unknown'; }
+  if (!resp || !resp.height || resp.height === '0') return 'missing';
+  return (resp.code ?? 0) === 0 ? 'ok' : 'failed';
 }
 
 // Ждёт включения в блок. Без этого мы отмечаем оплаченным то, что узел лишь
 // принял в мемпул и мог отбросить.
 async function waitForTx(txHash, tries = 20, delayMs = 4000) {
+  let st = 'unknown';
   for (let i = 0; i < tries; i++) {
-    const st = await lookupTx(txHash);
-    if (st !== 'missing') return st;
+    st = await lookupTx(txHash);
+    if (st === 'ok' || st === 'failed') return st;
     await new Promise(r => setTimeout(r, delayMs));
   }
-  return 'missing';
+  // 'missing' или 'unknown' - исход неизвестен. Вызывающий обязан оставить
+  // позицию inflight, а не платить заново.
+  return st;
 }
 
 async function setStatus(key, status, txHash, note) {
@@ -263,14 +270,14 @@ async function markPaid(key, txHash) {
 }
 
 // Сверка зависших. Запись в inflight значит: транзакцию мы подписали, хеш
-// знаем, а чем кончилось - нет. Три исхода, и все три безопасны:
+// знаем, а чем кончилось - нет. Исходы:
 //   ok      - в блоке, помечаем оплаченной, второй раз не платим;
 //   failed  - в блоке с ошибкой, деньги не ушли, возвращаем в очередь;
-//   missing - в цепочке нет, возвращаем в очередь.
-// missing - единственный, где остаётся теоретический риск: транзакция могла
-// висеть в мемпуле и попасть в блок позже. Поэтому в очередь возвращаем не
-// сразу, а только спустя запас по времени.
-const INFLIGHT_GRACE_MS = 30 * 60 * 1000;
+//   missing / unknown - исход НЕИЗВЕСТЕН, в очередь не возвращаем.
+// Раньше missing через 30 минут шёл в очередь. Но "не нашли" не доказывает
+// "не прошла": отставший или лежащий узел LCD давал missing на транзакцию,
+// которая уже в блоке, и она оплачивалась второй раз (SEC-01). Теперь такая
+// позиция остаётся inflight и ждёт человека.
 
 async function reconcileInflight() {
   const res = await safeFetch(`${WORKER_URL}/streak/pending-payouts?status=inflight`, { headers: authHeaders() });
@@ -289,13 +296,9 @@ async function reconcileInflight() {
       await setStatus(p.key, 'pending', p.txHash, 'tx failed on chain');
       console.log(`  ↩️ ${p.txHash.slice(0,12)} завершилась ошибкой - вернул в очередь`);
     } else {
-      const age = Date.now() - new Date(p.statusAt || 0).getTime();
-      if (age > INFLIGHT_GRACE_MS) {
-        await setStatus(p.key, 'pending', p.txHash, 'tx never landed');
-        console.log(`  ↩️ ${p.txHash.slice(0,12)} не найдена - вернул в очередь`);
-      } else {
-        console.log(`  ⏳ ${p.txHash.slice(0,12)} ещё не видна, жду следующего запуска`);
-      }
+      const mins = Math.round((Date.now() - new Date(p.statusAt || 0).getTime()) / 60000);
+      console.log(`  ⚠️ ${p.txHash} - ${st}, ${mins} мин. НУЖНА РУЧНАЯ ПРОВЕРКА: ` +
+        `найди хеш в finder; если транзакции нет - верни выплату в pending вручную.`);
     }
   }
 }
@@ -368,7 +371,17 @@ async function main() {
       // спросит у цепочки, что с ней стало, вместо повторной выплаты.
       await setStatus(payout.key, 'inflight', txHash);
 
-      await broadcastTx(txBytes);
+      try {
+        await broadcastTx(txBytes);
+      } catch (e) {
+        // Явный отказ на приёме - в мемпул не попало, в блок не попадёт
+        // никогда. Исход известен, можно вернуть в очередь сразу. Сетевая
+        // ошибка сюда не относится: исход неизвестен, остаётся inflight.
+        if (/^broadcast rejected/.test(e.message)) {
+          await setStatus(payout.key, 'pending', txHash, 'broadcast rejected');
+        }
+        throw e;
+      }
       sequence++;   // номер израсходован даже при неудаче в блоке
       console.log(`📡 Отправлена, жду блок | tx: ${txHash}`);
 
