@@ -161,6 +161,13 @@
       var signer = _keplr.getOfflineSigner(chainId);
       try { await _keplr.experimentalSuggestChain(TERRA_CHAIN_CONFIG); } catch (e) {}
       await _keplr.enable(chainId);
+      // Не давать кошельку переписывать комиссию. Иначе он подпишет свою
+      // версию authInfo с урезанным gas, и отправить нашу уже не выйдет -
+      // подпись её не покрывает. Держит gas этот флаг, а не подмена байтов.
+      _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
+        sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
+          { preferNoSetFee: true, preferNoSetMemo: true }),
+      });
       var res = await signer.signDirect(fromAddr, {
         bodyBytes: txBodyBytes,
         authInfoBytes: authInfoBytes,
@@ -169,11 +176,18 @@
       });
       var finalBody = toUint8(res.signed.bodyBytes, txBodyBytes);
       var sigBytes  = Uint8Array.from(atob(res.signature.signature), function (c) { return c.charCodeAt(0); });
-      // ВАЖНО: берём СВОЙ authInfoBytes - Keplr переписывает gas limit на 300k,
-      // а минту нужно больше. Та же причина, что в sendTwoMsgSend.
+      // Отправляем ТЕ байты, которые кошелёк подписал. Раньше здесь брался
+      // свой authInfoBytes "чтобы сохранить gas", но подпись покрывает
+      // authInfo: если кошелёк его менял, наша версия с подписью не сходится
+      // и узел отвергает транзакцию. Поднять gas так было нельзя никогда.
+      var finalAuth = toUint8(res.signed.authInfoBytes, authInfoBytes);
+      if (finalAuth.length !== authInfoBytes.length ||
+          finalAuth.some(function (b, i) { return b !== authInfoBytes[i]; })) {
+        console.warn('[tx] wallet changed authInfo (fee/gas) - broadcasting the signed version');
+      }
       txBase64 = btoa(String.fromCharCode.apply(null, concat(
         encodeField(1, 2, finalBody),
-        encodeField(2, 2, authInfoBytes),
+        encodeField(2, 2, finalAuth),
         encodeField(3, 2, sigBytes)
       )));
     }

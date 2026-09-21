@@ -248,6 +248,13 @@ async function sendMsgSends(fromAddr, sends, memo, chainId) {
     const signer = _keplr.getOfflineSigner(chainId);
     try { await _keplr.experimentalSuggestChain(TERRA_CHAIN_CONFIG); } catch(e) {}
     await _keplr.enable(chainId);
+    // Не давать кошельку переписывать комиссию. Иначе он подпишет свою
+    // версию authInfo с урезанным gas, и отправить нашу уже не выйдет -
+    // подпись её не покрывает. Держит gas этот флаг, а не подмена байтов.
+    _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
+      sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
+        { preferNoSetFee: true, preferNoSetMemo: true }),
+    });
     const { signed, signature } = await signer.signDirect(fromAddr, {
       bodyBytes:     txBodyBytes,
       authInfoBytes: authInfoBytes,
@@ -260,13 +267,18 @@ async function sendMsgSends(fromAddr, sends, memo, chainId) {
       if (v.buffer instanceof ArrayBuffer) return new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
       return new Uint8Array(Object.values(v));
     }
-    // Use OUR bodyBytes (Keplr may modify it) but ALWAYS use OUR authInfoBytes
-    // because Keplr overrides gas limit to 300k in signed.authInfoBytes
     const finalBody = toUint8(signed.bodyBytes, txBodyBytes);
     const sigBytes  = Uint8Array.from(atob(signature.signature), c => c.charCodeAt(0));
+    // Отправляем подписанный authInfo. Прежний комментарий обещал "наш
+    // authInfo с 600k gas", но подпись покрывает authInfo: подмена давала
+    // отказ узла, а не 600k. Gas держит флаг preferNoSetFee перед подписью.
+    const finalAuth = toUint8(signed.authInfoBytes, authInfoBytes);
+    if (finalAuth.length !== authInfoBytes.length || finalAuth.some((b, i) => b !== authInfoBytes[i])) {
+      console.warn('[tx] wallet changed authInfo (fee/gas) - broadcasting the signed version');
+    }
     txBase64 = btoa(String.fromCharCode(...concat(
       encodeField(1, 2, finalBody),
-      encodeField(2, 2, authInfoBytes),  // ← our authInfoBytes with 600k gas
+      encodeField(2, 2, finalAuth),
       encodeField(3, 2, sigBytes)
     )));
   }

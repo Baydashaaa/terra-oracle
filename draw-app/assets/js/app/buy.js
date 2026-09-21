@@ -330,6 +330,13 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
     // WalletConnect path - wallet signs remotely on mobile
     txBase64 = await _wcSignAndBroadcast(fromAddr, txBodyBytes, authInfoBytes, accountNumber, chainId);
   } else {
+    // Не давать кошельку переписывать комиссию. Иначе он подпишет свою
+    // версию authInfo с урезанным gas, и отправить нашу уже не выйдет -
+    // подпись её не покрывает. Держит gas этот флаг, а не подмена байтов.
+    _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
+      sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
+        { preferNoSetFee: true, preferNoSetMemo: true }),
+    });
     const directSigner = _keplr.getOfflineSigner(chainId);
     const { signed, signature } = await directSigner.signDirect(fromAddr, {
       bodyBytes:     txBodyBytes,
@@ -346,12 +353,18 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
       return new Uint8Array(Object.values(v));
     }
     const finalBody = toUint8(signed.bodyBytes, txBodyBytes);
-    // Use OUR authInfoBytes - Keplr overrides gas in signed.authInfoBytes
     const sigBytes  = Uint8Array.from(atob(signature.signature), c => c.charCodeAt(0));
+    // Отправляем подписанный authInfo, а не свой: подпись покрывает его, и
+    // подмена давала отказ узла, а не увеличенный gas. Gas держит флаг
+    // preferNoSetFee перед подписью.
+    const finalAuth = toUint8(signed.authInfoBytes, authInfoBytes);
+    if (finalAuth.length !== authInfoBytes.length || finalAuth.some((b, i) => b !== authInfoBytes[i])) {
+      console.warn('[tx] wallet changed authInfo (fee/gas) - broadcasting the signed version');
+    }
 
     txBase64 = btoa(String.fromCharCode(...concat(
       encodeField(1, 2, finalBody),
-      encodeField(2, 2, authInfoBytes),
+      encodeField(2, 2, finalAuth),
       encodeField(3, 2, sigBytes)
     )));
   }
