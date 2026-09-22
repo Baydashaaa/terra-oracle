@@ -6,7 +6,7 @@
 //   REP и ранг   /rep/scores           onchain = all-time REP, от него ранг
 //                                      (как на странице профиля после фикса 2026-08-08)
 //   Q&A          /questions            вопросы, ответы, принятые, апвоуты
-//   Circuit      /circuit/history      blocks[].wallet
+//   Circuit      /circuit/history + /circuit/state (текущий раунд), blocks[].wallet
 //   розыгрыши    winners.json          запись раунда содержит адрес победителя
 //   NFT          NFT-контракт          owner_tokens с метаданными (tier, pool, minted_at)
 //   чат, стрик   /chat/count, /streak  те же ручки, что у старой карточки в chat.js
@@ -102,7 +102,8 @@
       getJSON(DATA_ORIGIN + '/winners.json?t=' + Math.floor(Date.now() / 3600000)),
       nftTokens(w),
       getJSON(Q_WORKER + '/chat/count?wallet=' + encodeURIComponent(w)),
-      getJSON(Q_WORKER + '/streak?wallet=' + encodeURIComponent(w))
+      getJSON(Q_WORKER + '/streak?wallet=' + encodeURIComponent(w)),
+      getJSON(DRAW_WORKER + '/circuit/state')
     ]).then(function (res) {
       var sc = res[0] || {};
       var rep = (sc.onchain && sc.onchain[w] != null) ? Number(sc.onchain[w]) : Number((sc.scores || {})[w]) || 0;
@@ -133,9 +134,16 @@
         });
       });
 
-      ((res[2] && res[2].rounds) || []).forEach(function (r) {
+      // Закрытые раунды плюс текущий. Покупки из недобравшего раунда
+      // переносятся в следующий и бывают в обоих - считаем их один раз.
+      var cRounds = ((res[2] && res[2].rounds) || []).slice(), cSeen = {};
+      if (res[7] && res[7].blocks) cRounds.push(res[7]);
+      cRounds.forEach(function (r) {
         (r.blocks || []).forEach(function (b) {
           if (b.wallet !== w) return;
+          var ck = b.txHash || (b.from + ':' + b.to + ':' + b.at);
+          if (cSeen[ck]) return;
+          cSeen[ck] = 1;
           var z = (Number(b.to) - Number(b.from) + 1) || 1;
           st.zones += z;
           st.zonesPaid += (Number(b.paid) || 0) / 1e6;
