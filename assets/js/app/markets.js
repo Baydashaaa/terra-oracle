@@ -46,6 +46,18 @@ const PROPHECY_LCD = PROPHECY_NET.lcd;
 const PROPHECY_CHAIN = PROPHECY_NET.chainId;
 const COURT_CONTRACT = PROPHECY_NET.court;
 
+/**
+ * Адрес подключённого кошелька. Сайт объявляет его через `let` в wallet.js,
+ * а такая переменная НЕ становится свойством window: обращение через window
+ * всегда undefined, и раздел отвечал "Connect a wallet first" при подключённом
+ * кошельке. Читаем по имени, в том же порядке, что core.js.
+ */
+function mkWallet() {
+  return (typeof globalWalletAddress !== 'undefined' && globalWalletAddress)
+    || (typeof connectedAddress !== 'undefined' && connectedAddress)
+    || null;
+}
+
 // Окно оспаривания живёт в конфиге контракта, а не в рынке: держим копию,
 // чтобы показывать, сколько его осталось.
 let prophecyCfg = null;
@@ -100,6 +112,8 @@ function mktEsc(s) {
 let boardTab = 'questions';
 let openMarketId = null;
 let betSide = true;
+// Какой список был открыт последним - для автообновления.
+let mkLastResolved = false;
 
 // ── чтение цепочки ──────────────────────────────────────────────────────────
 
@@ -292,11 +306,13 @@ function statusLine(m) {
   if (m.status === 'proposed') {
     // "Proposed" человеку ничего не говорит. Важно другое: идёт окно, внутри
     // которого исход ещё можно оспорить, и сколько его осталось.
-    const left = challengeLeft(m);
-    return `<b class="p">verifying</b>${left ? ' · ' + left + ' left' : ''}`;
+    const ends = prophecyCfg && m.proposed_at
+      ? Number(m.proposed_at) + Number(prophecyCfg.challenge_secs) : 0;
+    return `<b class="p">verifying</b>${
+      ends > Math.floor(Date.now() / 1000) ? ' · ' + cd(ends) : ''}`;
   }
   const left = timeLeft(m.bets_close_at);
-  return left ? 'closes in ' + left : 'awaiting resolution';
+  return left ? 'closes in ' + cd(m.bets_close_at) : 'awaiting resolution';
 }
 
 /** Сколько осталось от окна оспаривания. */
@@ -425,6 +441,7 @@ function emptyPanel(text, sub) {
 }
 
 async function renderMarkets(resolved) {
+  mkLastResolved = !!resolved;
   const host = document.getElementById('markets-list');
   if (!host) return;
   openMarketId = null;
@@ -644,8 +661,8 @@ async function openProphecyMarket(id) {
   await loadProphecyConfig();
   try {
     m = await prophecyQuery({ market: { market_id: id } });
-    if (window.globalWalletAddress) {
-      pos = await prophecyQuery({ position: { market_id: id, address: window.globalWalletAddress } });
+    if (mkWallet()) {
+      pos = await prophecyQuery({ position: { market_id: id, address: mkWallet() } });
     }
   } catch (e) {
     host.innerHTML = emptyPanel('Chain unavailable', 'Could not load this market.');
@@ -662,7 +679,7 @@ async function openProphecyMarket(id) {
     banner = `<div class="mk-banner warn">
       <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
       <p>A reading has been posted and payouts stay shut while it can still be disputed${
-        left ? `. <b>${left}</b> left` : ''}.</p>
+        left ? `. <b>${cd(Number(m.proposed_at) + Number(prophecyCfg.challenge_secs))}</b> left` : ''}.</p>
       ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'settled') {
     banner = evidenceBlock(m);
@@ -796,13 +813,13 @@ async function submitBet() {
   const raw = (document.getElementById('bet-amount') || {}).value || '';
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
   if (!m || !lunc || !btn) return;
-  if (!window.globalWalletAddress) { alert('Connect a wallet first.'); return; }
+  if (!mkWallet()) { alert('Connect a wallet first.'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Confirm in your wallet…';
   try {
     const hash = await window.sendExecuteContract(
-      window.globalWalletAddress, PROPHECY_CONTRACT,
+      mkWallet(), PROPHECY_CONTRACT,
       { bet: { market_id: m.id, side: betSide } },
       [{ denom: 'uluna', amount: String(lunc * 1e6) }],
       'oracle-prophecy: bet ' + m.id, PROPHECY_CHAIN, 600000
@@ -821,10 +838,10 @@ async function submitBet() {
 
 async function submitClaim() {
   const m = window._prophecyMarket;
-  if (!m || !window.globalWalletAddress) return;
+  if (!m || !mkWallet()) return;
   try {
     const hash = await window.sendExecuteContract(
-      window.globalWalletAddress, PROPHECY_CONTRACT,
+      mkWallet(), PROPHECY_CONTRACT,
       { claim: { market_id: m.id } }, [],
       'oracle-prophecy: claim ' + m.id, PROPHECY_CHAIN, 800000
     );
@@ -862,3 +879,94 @@ function switchMarketView(btn, resolved) {
 
 window.switchMarketView = switchMarketView;
 window.renderMarketStats = renderMarketStats;
+
+
+// ── живые таймеры и автообновление ─────────────────────────────────────────
+
+/** 25:41, 04:12:33 или 1d 04:12:33. */
+function fmtCountdown(s) {
+  s = Math.max(0, Math.floor(s));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const p = (n) => String(n).padStart(2, '0');
+  if (d) return `${d}d ${p(h)}:${p(m)}:${p(s % 60)}`;
+  if (h) return `${p(h)}:${p(m)}:${p(s % 60)}`;
+  return `${p(m)}:${p(s % 60)}`;
+}
+
+/** Отсчёт до момента `until` (секунды). Тикает один общий таймер ниже. */
+function cd(until) {
+  const s = Number(until) - Math.floor(Date.now() / 1000);
+  return `<span class="mk-cd" data-until="${Number(until)}">${fmtCountdown(s)}</span>`;
+}
+
+function mkPageVisible() {
+  const p = document.getElementById('page-markets');
+  return !!(p && p.classList.contains('active'));
+}
+
+/** Человек печатает - экран не трогаем, иначе набранный текст пропадёт. */
+function mkUserTyping() {
+  return ['ch-reading', 'bet-amount'].some((id) => {
+    const el = document.getElementById(id);
+    return el && (el.value || document.activeElement === el);
+  });
+}
+
+let mkRefreshing = false;
+async function mkRefresh() {
+  if (mkRefreshing || !mkPageVisible() || mkUserTyping()) return;
+  mkRefreshing = true;
+  try {
+    if (openMarketId !== null) await openProphecyMarket(openMarketId);
+    else await renderMarkets(mkLastResolved);
+  } finally {
+    mkRefreshing = false;
+  }
+}
+
+// Один таймер на весь раздел: обновляет все отсчёты раз в секунду.
+setInterval(() => {
+  if (!mkPageVisible()) return;
+  const now = Math.floor(Date.now() / 1000);
+  let expired = false;
+  document.querySelectorAll('#page-markets .mk-cd').forEach((el) => {
+    const left = Number(el.dataset.until) - now;
+    el.textContent = fmtCountdown(left);
+    if (left <= 0 && !el.dataset.done) {
+      el.dataset.done = '1';
+      expired = true;
+    }
+  });
+  // Ноль - значит сменилось состояние: закрылся приём, окно оспаривания или
+  // голосование. Ждём блок, в котором это время уже прошло, и перечитываем.
+  if (expired) setTimeout(mkRefresh, 7000);
+}, 1000);
+
+// Пока рынок в споре или ждёт оспаривания, его меняют другие люди: голоса,
+// чужое оспаривание. Раз в 20 секунд перечитываем. Если статус тот же -
+// перерисовываем только блок суда, без мигания и прокрутки; если сменился -
+// весь экран.
+setInterval(async () => {
+  const cur = window._prophecyMarket;
+  if (openMarketId === null || !cur || !mkPageVisible() || mkUserTyping()) return;
+  if (cur.status !== 'disputed' && cur.status !== 'proposed') return;
+  try {
+    const m = await prophecyQuery({ market: { market_id: openMarketId } });
+    if (m.status !== cur.status) { mkRefresh(); return; }
+    if (m.status === 'disputed' && window.renderDispute) {
+      window._prophecyMarket = m;
+      window.renderDispute(m);
+    }
+  } catch (e) { /* узел не ответил - попробуем в следующий раз */ }
+}, 20000);
+
+// Тестовая сеть видна сразу, чтобы её невозможно было принять за настоящую.
+if (PROPHECY_TESTNET) {
+  const pg = document.getElementById('page-markets');
+  if (pg && !document.getElementById('mk-testnet')) {
+    pg.insertAdjacentHTML('afterbegin',
+      '<div id="mk-testnet" class="mk-testnet">TESTNET · rebel-2 · test contracts, no real money</div>');
+  }
+}

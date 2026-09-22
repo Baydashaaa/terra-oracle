@@ -714,7 +714,7 @@
 
   function submit() {
     if (problems().length) return;
-    if (!window.globalWalletAddress) { alert('Connect a wallet first.'); return; }
+    if (!mkWallet()) { alert('Connect a wallet first.'); return; }
 
     var spec = buildSpec();
     var bond = Number(S.cfg ? S.cfg.creation_bond : 0);
@@ -724,7 +724,7 @@
     go.textContent = 'Confirm in your wallet…';
 
     window.sendExecuteContract(
-      window.globalWalletAddress, CONTRACT,
+      mkWallet(), CONTRACT,
       {
         create: {
           question: questionText(),

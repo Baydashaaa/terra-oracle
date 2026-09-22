@@ -1820,3 +1820,12 @@
 @media (max-width:640px){
   #page-markets .mk-claims{grid-template-columns:1fr}
 }
+
+
+/* ---- Markets: живые таймеры и метка тестовой сети ---- */
+#page-markets .mk-cd{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+#page-markets .mk-testnet{
+  align-self:flex-start;padding:6px 12px;border-radius:999px;
+  background:rgba(244,208,63,.12);border:1px solid rgba(244,208,63,.5);
+  color:#f4d03f;font-size:11px;font-weight:700;letter-spacing:.12em;
+}

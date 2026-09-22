@@ -86,7 +86,7 @@
     const left = leftText(ends);
     if (!left) return '';
     const bond = fmtLunc(cfg.challenge_bond);
-    const me = window.globalWalletAddress;
+    const me = mkWallet();
     const blocked = me && me === cfg.resolver
       ? 'You posted this outcome, so you cannot dispute it.'
       : '';
@@ -94,7 +94,7 @@
     return `
     <section class="card mk-court">
       <h3>Think the outcome is wrong?</h3>
-      <p class="mk-lead-sm">Anyone can dispute it for the next <b>${left}</b>. Attach a bond of
+      <p class="mk-lead-sm">Anyone can dispute it for the next <b>${cd(ends)}</b>. Attach a bond of
         <b>${bond} LUNC</b> and say what the chain actually shows. The court decides.</p>
       <div class="mk-court-rules">
         <div><span class="y">You were right</span>bond back, plus the market's protocol fee</div>
@@ -119,14 +119,14 @@
     const btn = document.getElementById('ch-go');
     const reading = ((document.getElementById('ch-reading') || {}).value || '').trim();
     if (!m || !btn) return;
-    if (!window.globalWalletAddress) { alert('Connect a wallet first.'); return; }
+    if (!mkWallet()) { alert('Connect a wallet first.'); return; }
     if (!reading) { alert('Say what the chain actually shows - the court reads it.'); return; }
 
     btn.disabled = true;
     btn.textContent = 'Confirm in your wallet…';
     try {
       const hash = await window.sendExecuteContract(
-        window.globalWalletAddress, PROPHECY_CONTRACT,
+        mkWallet(), PROPHECY_CONTRACT,
         { challenge: { market_id: m.id, reading } },
         [{ denom: 'uluna', amount: String(cfg.challenge_bond) }],
         'oracle-prophecy: challenge ' + m.id, PROPHECY_CHAIN, 600000
@@ -163,7 +163,7 @@
     const total = y + n + v;
 
     let action = '';
-    const me = window.globalWalletAddress;
+    const me = mkWallet();
     if (!closed && left && me) {
       const [can, mine] = await Promise.all([
         courtQuery({ can_vote: { market_id: m.id, address: me } }).catch(() => null),
@@ -196,7 +196,7 @@
 
     return `
     <section class="card mk-court">
-      <h3>In court${left && !closed ? ` · <span class="mk-left">${left} left</span>` : ''}</h3>
+      <h3>In court${left && !closed ? ` · <span class="mk-left">${cd(endsAt)} left</span>` : ''}</h3>
       <div class="mk-claims">
         <div><span>Resolver says</span><b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b>
           ${m.reading ? `<p>${mktEsc(m.reading)}</p>` : ''}</div>
@@ -208,20 +208,22 @@
         <div class="t n"><b>${n}</b><span>NO</span></div>
         <div class="t v"><b>${v}</b><span>VOID</span></div>
       </div>
-      <div class="mk-plain">${total} of ${quorum} votes needed. A tie at the top, or fewer votes
-        than that, voids the market and refunds everyone.</div>
+      <div class="mk-plain">${total >= quorum
+        ? `${total} votes cast · quorum ${quorum} reached`
+        : `${total} of ${quorum} votes needed`}. A tie at the top, or fewer votes than the
+        quorum, voids the market and refunds everyone.</div>
       ${action}
     </section>`;
   }
 
   window.courtVote = async function (choice) {
     const m = window._prophecyMarket;
-    if (!m || !window.globalWalletAddress) return;
+    if (!m || !mkWallet()) return;
     const label = choice.toUpperCase();
     if (!confirm(`Vote ${label} on this dispute? A vote cannot be changed.`)) return;
     try {
       const hash = await window.sendExecuteContract(
-        window.globalWalletAddress, COURT_CONTRACT,
+        mkWallet(), COURT_CONTRACT,
         { vote: { market_id: m.id, choice } }, [],
         'oracle-court: vote ' + m.id, PROPHECY_CHAIN, 1100000
       );
@@ -235,13 +237,13 @@
   window.courtClose = async function () {
     const m = window._prophecyMarket;
     const btn = document.getElementById('court-close');
-    if (!m || !window.globalWalletAddress) { alert('Connect a wallet first.'); return; }
+    if (!m || !mkWallet()) { alert('Connect a wallet first.'); return; }
     if (btn) { btn.disabled = true; btn.textContent = 'Confirm in your wallet…'; }
     try {
       // Закрытие запускает весь расчёт рынка с выплатами: замер на rebel-2
       // показал около 860 тысяч газа, поэтому лимит с запасом.
       const hash = await window.sendExecuteContract(
-        window.globalWalletAddress, COURT_CONTRACT,
+        mkWallet(), COURT_CONTRACT,
         { close: { market_id: m.id } }, [],
         'oracle-court: close ' + m.id, PROPHECY_CHAIN, 1800000
       );
@@ -262,7 +264,9 @@
     try {
       if (m.status === 'proposed') host.innerHTML = challengeBlock(m);
       else if (m.status === 'disputed') {
-        host.innerHTML = '<div class="mk-loading">Loading the case…</div>';
+        // Заглушка только при первой отрисовке: при опросе раз в 20 секунд
+        // блок не должен мигать.
+        if (!host.innerHTML.trim()) host.innerHTML = '<div class="mk-loading">Loading the case…</div>';
         host.innerHTML = await caseBlock(m);
       } else host.innerHTML = '';
     } catch (e) {
