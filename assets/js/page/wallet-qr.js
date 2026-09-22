@@ -8,12 +8,12 @@ const WQR_CONFIGS = {
   },
   'galaxy-mobile': {
     title: 'Galaxy Station',
-    icon: `<img src="https://docs.station.hexxagon.io/img/galaxy-station-logo.svg" style="width:36px;height:36px;border-radius:10px;display:block;">`,
+    icon: `<img src="/assets/img/wallets/galaxy-station.svg" style="width:36px;height:36px;border-radius:10px;display:block;">`,
     deeplink: (uri) => `galaxystation://wc?uri=${encodeURIComponent(uri)}`,
   },
   'station-mobile': {
     title: 'Terra Station',
-    icon: `<img src="https://classic-docs.terra.money/_images/wallets_station.png" style="width:36px;height:36px;border-radius:10px;display:block;object-fit:cover;">`,
+    icon: `<img src="/assets/img/wallets/station.png" style="width:36px;height:36px;border-radius:10px;display:block;object-fit:cover;">`,
     deeplink: (uri) => `station://wc?uri=${encodeURIComponent(uri)}`,
   },
   'luncdash': {
