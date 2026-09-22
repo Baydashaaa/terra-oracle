@@ -22,11 +22,43 @@
   // поэтому берём с запасом от самого дорогого.
   var GAS_LIMIT = 1800000;
   var GAS_PRICE = 28.325;
-  var LCD_LIST = [
-    'https://terra-classic-lcd.publicnode.com',
-    'https://lcd.terra-classic.hexxagon.io',
-    'https://fcd.terra-classic.hexxagon.io',
-  ];
+  // Узлы по сети. Раньше список был только для mainnet, и транзакция для
+  // rebel-2 уходила на mainnet за номером аккаунта и там же отправлялась.
+  var LCD_BY_CHAIN = {
+    'columbus-5': [
+      'https://terra-classic-lcd.publicnode.com',
+      'https://lcd.terra-classic.hexxagon.io',
+      'https://fcd.terra-classic.hexxagon.io',
+    ],
+    'rebel-2': ['https://lcd.luncblaze.com'],
+  };
+  function lcdFor(chainId) { return LCD_BY_CHAIN[chainId] || LCD_BY_CHAIN['columbus-5']; }
+
+  // Кошелёк не знает тестовую сеть, пока её не предложили.
+  var REBEL_CHAIN_CONFIG = {
+    chainId: 'rebel-2',
+    chainName: 'Terra Classic Testnet',
+    rpc: 'https://rpc.luncblaze.com',
+    rest: 'https://lcd.luncblaze.com',
+    bip44: { coinType: 330 },
+    bech32Config: {
+      bech32PrefixAccAddr: 'terra', bech32PrefixAccPub: 'terrapub',
+      bech32PrefixValAddr: 'terravaloper', bech32PrefixValPub: 'terravaloperpub',
+      bech32PrefixConsAddr: 'terravalcons', bech32PrefixConsPub: 'terravalconspub',
+    },
+    currencies: [{ coinDenom: 'LUNC', coinMinimalDenom: 'uluna', coinDecimals: 6 }],
+    feeCurrencies: [{ coinDenom: 'LUNC', coinMinimalDenom: 'uluna', coinDecimals: 6,
+      gasPriceStep: { low: 28.325, average: 28.325, high: 28.325 } }],
+    stakeCurrency: { coinDenom: 'LUNC', coinMinimalDenom: 'uluna', coinDecimals: 6 },
+  };
+
+  // AbortSignal.timeout поддержан не во всех кошельковых браузерах:
+  // запрос молча не уходит.
+  function timeoutSignal(ms) {
+    var c = new AbortController();
+    setTimeout(function () { c.abort(); }, ms);
+    return c.signal;
+  }
 
   // ── protobuf-хелперы (те же, что в sendTwoMsgSend) ────────────────────────
   var enc = new TextEncoder();
@@ -96,7 +128,11 @@
    * Логика подписи повторяет sendTwoMsgSend из app.js, включая обход
    * подмены gas limit кошельком Keplr.
    */
-  async function sendExecuteContract(fromAddr, contract, msgJson, funds, memo, chainId) {
+  async function sendExecuteContract(fromAddr, contract, msgJson, funds, memo, chainId, gasLimit) {
+    // Лимит газа необязателен: без него прежние GAS_LIMIT, так что oracle-draw
+    // и старые вызовы работают как раньше.
+    var GAS = gasLimit || GAS_LIMIT;
+    var LCD_LIST = lcdFor(chainId);
     // Два сайта называют одни и те же хелперы по-разному: на розыгрыше это
     // getWalletKeplr/_isWCProvider, на terraoracle.io - getActiveKeplr из
     // sign.js. Файл общий, поэтому имена ищутся, а не предполагаются.
@@ -122,7 +158,7 @@
     for (var i = 0; i < LCD_LIST.length; i++) {
       try {
         var r = await fetch(LCD_LIST[i] + '/cosmos/auth/v1beta1/accounts/' + fromAddr,
-                            { signal: AbortSignal.timeout(6000) });
+                            { signal: timeoutSignal(6000) });
         if (!r.ok) continue;
         var d = await r.json();
         var acc = (d.account && (d.account.base_account || d.account)) || d;
@@ -138,6 +174,12 @@
     if (_isWC) {
       pubkeyBytes = await _wcGetPubkey(fromAddr, chainId);
     } else {
+      // Тестовую сеть надо предложить и включить ДО чтения ключа,
+      // иначе getKey падает на незнакомой сети.
+      if (chainId === 'rebel-2') {
+        try { await _keplr.experimentalSuggestChain(REBEL_CHAIN_CONFIG); } catch (e) {}
+        await _keplr.enable(chainId);
+      }
       var key = await _keplr.getKey(chainId);
       pubkeyBytes = toUint8(key.pubKey, null);
     }
@@ -152,14 +194,14 @@
       encodeVarint((3 << 3) | 0), seqBytes
     );
 
-    var totalFee = Math.ceil(GAS_LIMIT * GAS_PRICE);
+    var totalFee = Math.ceil(GAS * GAS_PRICE);
     var feeCoin  = concat(
       encodeField(1, 2, enc.encode('uluna')),
       encodeField(2, 2, enc.encode(String(totalFee)))
     );
     var feeProto = concat(
       encodeField(1, 2, feeCoin),
-      encodeVarint((2 << 3) | 0), encodeVarint(GAS_LIMIT)
+      encodeVarint((2 << 3) | 0), encodeVarint(GAS)
     );
     var authInfoBytes = concat(
       encodeField(1, 2, signerInfo),
@@ -214,7 +256,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tx_bytes: txBase64, mode: 'BROADCAST_MODE_SYNC' }),
-          signal: AbortSignal.timeout(15000),
+          signal: timeoutSignal(15000),
         });
         broadcastData = await br.json();
         break;

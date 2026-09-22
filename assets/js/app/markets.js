@@ -9,15 +9,53 @@
  * честное "скоро открытие" вместо выдуманных рынков.
  */
 
-// Подставить адрес боевого экземпляра при запуске. Тестовый:
-// terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58
-const PROPHECY_CONTRACT = 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58';
+// Сеть раздела. ?testnet=1 ведёт на rebel-2 с тестовыми контрактами,
+// ?testnet=0 возвращает на mainnet. Запоминается на вкладку: адрес теряет
+// параметры при первом же переходе по меню.
+const PROPHECY_TESTNET = (function () {
+  try {
+    if (/[?&]testnet=1/.test(location.search)) sessionStorage.setItem('mkTestnet', '1');
+    if (/[?&]testnet=0/.test(location.search)) sessionStorage.removeItem('mkTestnet');
+    return sessionStorage.getItem('mkTestnet') === '1';
+  } catch (e) { return false; }
+})();
 
-const PROPHECY_LCD = [
-  'https://terra-classic-lcd.publicnode.com',
-  'https://lcd.terra-classic.hexxagon.io',
-  'https://fcd.terra-classic.hexxagon.io',
-];
+const PROPHECY_NET = PROPHECY_TESTNET
+  ? {
+      chainId: 'rebel-2',
+      lcd: ['https://lcd.luncblaze.com'],
+      // oracle-prophecy 0.2.0 (code 2452) и oracle-court 0.1.0 (code 2454)
+      prophecy: 'terra1m7vkkgvu4zz8vnh7c2lyspterzfkaeshnqvrqg4pqf2lkauvw69sgt6ktt',
+      court: 'terra1st3mk29dwgd7wqg4w6zsw4cc78vpulhzed5anhnpshyv49ze446saar2za',
+    }
+  : {
+      chainId: 'columbus-5',
+      lcd: [
+      'https://terra-classic-lcd.publicnode.com',
+      'https://lcd.terra-classic.hexxagon.io',
+      'https://fcd.terra-classic.hexxagon.io',
+      ],
+      // Адреса боевых 0.2.0 и суда подставляются при запуске; пока суда
+      // нет, блоки спора на mainnet не показываются.
+      prophecy: 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58',
+      court: '',
+    };
+
+const PROPHECY_CONTRACT = PROPHECY_NET.prophecy;
+const PROPHECY_LCD = PROPHECY_NET.lcd;
+const PROPHECY_CHAIN = PROPHECY_NET.chainId;
+const COURT_CONTRACT = PROPHECY_NET.court;
+
+// Окно оспаривания живёт в конфиге контракта, а не в рынке: держим копию,
+// чтобы показывать, сколько его осталось.
+let prophecyCfg = null;
+
+async function loadProphecyConfig() {
+  if (prophecyCfg) return prophecyCfg;
+  try { prophecyCfg = await prophecyQuery({ config: {} }); } catch (e) { /* не критично */ }
+  return prophecyCfg;
+}
+
 
 // Цвет темы одинаков в значке и в подписи. Категория приходит из контракта
 // строкой, незнакомая получает нейтральный цвет, а не ломает вёрстку.
@@ -243,15 +281,42 @@ function shortAddr(a) {
 
 /** Строка состояния в шапке. Один текст на все виды карточек, чтобы
  *  крупная и обычная не разъезжались. */
+/** Строка состояния в шапке. Один текст на все виды карточек, чтобы
+ *  крупная и обычная не разъезжались. */
 function statusLine(m) {
-  const left = timeLeft(m.bets_close_at);
   if (m.status === 'settled') {
     return `<b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b> · settled`;
   }
   if (m.status === 'void') return 'void · stakes returned';
-  if (m.status === 'proposed') return '<b class="p">outcome proposed</b>';
-  return left ? 'closes in ' + left : 'bets closed';
+  if (m.status === 'disputed') return '<b class="p">in court</b>';
+  if (m.status === 'proposed') {
+    // "Proposed" человеку ничего не говорит. Важно другое: идёт окно, внутри
+    // которого исход ещё можно оспорить, и сколько его осталось.
+    const left = challengeLeft(m);
+    return `<b class="p">verifying</b>${left ? ' · ' + left + ' left' : ''}`;
+  }
+  const left = timeLeft(m.bets_close_at);
+  return left ? 'closes in ' + left : 'awaiting resolution';
 }
+
+/** Сколько осталось от окна оспаривания. */
+function challengeLeft(m) {
+  if (!prophecyCfg || !m.proposed_at) return '';
+  const ends = Number(m.proposed_at) + Number(prophecyCfg.challenge_secs);
+  const s = ends - Math.floor(Date.now() / 1000);
+  if (s <= 0) return '';
+  const h = Math.floor(s / 3600), mn = Math.floor((s % 3600) / 60);
+  return h ? `${h}h ${mn}m` : `${mn}m`;
+}
+
+/** Подпись над процентами. Пока приём открыт, это текущее распределение;
+ *  после закрытия банки уже не меняются, и это зафиксированный прогноз. */
+function oddsCaption(m) {
+  if (m.status === 'open' && timeLeft(m.bets_close_at)) return '';
+  if (m.status === 'settled' || m.status === 'void') return 'Forecast at close';
+  return 'Forecast at close · no more bets';
+}
+
 
 /** Состояние стороны рынка: открыт, закрыт, выиграла, проиграла.
  *  Одно место на карточку и на экран рынка, чтобы они не расходились. */
@@ -285,7 +350,9 @@ function oddsBlock(m) {
       ${sub}
     </button>`;
   };
-  return '<div class="odds">' + side(true, 'YES', pct, my)
+  const cap = oddsCaption(m);
+  return (cap ? `<div class="odds-cap">${cap}</div>` : '')
+    + '<div class="odds">' + side(true, 'YES', pct, my)
     + side(false, 'NO', 100 - pct, mn) + '</div>';
 }
 
@@ -383,9 +450,10 @@ async function renderMarkets(resolved) {
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
   try {
+    await loadProphecyConfig();
     const all = await loadProphecyMarkets();
     renderMarketStats(all);
-    const live = ['open', 'locked', 'proposed'];
+    const live = ['open', 'locked', 'proposed', 'disputed'];
     const list = all.filter((m) => (resolved ? !live.includes(m.status) : live.includes(m.status)));
     // Свежие сверху: у открытых интереснее ближайшие к закрытию, у закрытых -
     // последние рассчитанные.
@@ -495,7 +563,7 @@ function betForm(m) {
     <div id="bet-calc" class="mk-calc">Pick a side above and enter an amount.</div>
     <button onclick="submitBet()" id="bet-go" class="ask-go mk-place">Place bet &rarr;</button>
     <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about
-      1.5% smaller than the figure shown.</div>
+      0.5% smaller than the figure shown.</div>
   </section>`;
 }
 
@@ -533,6 +601,35 @@ function positionBlock(m, pos) {
  * Как только исход объявлен, форма исчезает совсем: ставить уже нельзя, и
  * предлагать бессмысленно. После расчёта экран превращается в доказательство.
  */
+/** Рассчитанный рынок как доказательство: что прочитали, с чем сравнили
+ *  и почему получился такой исход. Одна строка "Settled: NO" оставляла
+ *  человека гадать. */
+function evidenceBlock(m) {
+  // Условие словами, как в "How this settles": сырое `lt 6000000000000000000`
+  // в карточке, которую читают первой, ничего не говорит.
+  const info = METRIC_TEXT[m.spec.metric];
+  const th = !info ? mktEsc(m.spec.threshold)
+    : info.u === 'lunc' ? bigLunc(m.spec.threshold)
+      : info.u === 'pct' ? mktEsc(m.spec.threshold) + '%' : mktEsc(m.spec.threshold);
+  const cond = m.spec.metric && m.spec.comparator
+    ? `${COMPARATOR_TEXT[m.spec.comparator] || mktEsc(m.spec.comparator)} ${th}`
+    : m.spec.metric ? 'proposal passed' : 'stated criterion';
+  // При споре показание резолвера - одна из сторон, а не установленный
+  // факт: суд мог его отвергнуть. Подписи говорят, кто что утверждал.
+  const disputed = !!m.challenge_reading;
+  return `
+    <div class="mk-banner done mk-evidence">
+      <h3>Settled · <b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b></h3>
+      ${m.reading ? `<div class="ev-row"><span>${disputed ? "Resolver's reading" : 'Reading'}</span><b>${mktEsc(m.reading)}</b></div>` : ''}
+      <div class="ev-row"><span>Condition</span><b>${cond}</b></div>
+      ${m.spec.height ? `<div class="ev-row"><span>Block</span><b>${Number(m.spec.height).toLocaleString('en-US')}</b></div>` : ''}
+      ${m.challenge_reading ? `<div class="ev-row"><span>Challenger's reading</span><b>${mktEsc(m.challenge_reading)}</b></div>` : ''}
+      ${m.ruling ? `<div class="ev-row"><span>Court decision</span><b>${mktEsc(m.ruling)}</b></div>` : ''}
+      <div class="ev-row"><span>Therefore</span><b class="${m.outcome ? 'y' : 'n'}">${
+        m.outcome ? 'YES' : 'NO'}</b></div>
+    </div>`;
+}
+
 async function openProphecyMarket(id) {
   openMarketId = id;
   const host = document.getElementById('markets-list');
@@ -544,6 +641,7 @@ async function openProphecyMarket(id) {
   if (main) main.scrollTop = 0;
 
   let m, pos = null, tip = null;
+  await loadProphecyConfig();
   try {
     m = await prophecyQuery({ market: { market_id: id } });
     if (window.globalWalletAddress) {
@@ -560,18 +658,29 @@ async function openProphecyMarket(id) {
 
   let banner = '';
   if (m.status === 'proposed') {
+    const left = challengeLeft(m);
     banner = `<div class="mk-banner warn">
-      <h3>Proposed: ${m.outcome ? 'YES' : 'NO'}</h3>
-      <p>Payouts stay shut until the challenge window closes. Until then the reading can be disputed.</p>
+      <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
+      <p>A reading has been posted and payouts stay shut while it can still be disputed${
+        left ? `. <b>${left}</b> left` : ''}.</p>
       ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   } else if (m.status === 'settled') {
-    banner = `<div class="mk-banner done">
-      <h3>Settled: ${m.outcome ? 'YES' : 'NO'}</h3>
-      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
+    banner = evidenceBlock(m);
+  } else if (m.status === 'disputed') {
+    banner = `<div class="mk-banner warn">
+      <h3>Disputed · the court is deciding</h3>
+      <p>Someone challenged the posted outcome. Payouts stay shut until the court rules;
+      if it does not rule in time, the market is voided and everyone is refunded.</p></div>`;
   } else if (m.status === 'void') {
+    // Причина аннулирования хранится только в атрибутах транзакции, в самом
+    // рынке её нет - не выдумываем её здесь.
     banner = `<div class="mk-banner">
-      <h3>Void</h3><p>Every stake goes back untouched.</p>
-      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
+      <h3>Void · nobody won or lost</h3>
+      <p>Every stake goes back untouched.</p>
+      ${m.void_reason ? `<p class="read">Reason: ${mktEsc(m.void_reason)}</p>` : ''}
+      ${m.bad_spec
+        ? '<p>The question could not be verified, so the creator\'s bond went to the boost fund.</p>'
+        : '<p>The creator\'s bond is returned.</p>'}</div>`;
   }
 
   // Стороны рынка и есть выбор ставки: одни и те же кнопки, чтобы не было
@@ -610,6 +719,7 @@ async function openProphecyMarket(id) {
         </div>
         <h4>${mktEsc(m.question)}</h4>
         <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+        ${oddsCaption(m) ? `<div class="odds-cap">${oddsCaption(m)}</div>` : ''}
         <div class="odds" id="bet-side-row">
           ${sideBtn(true, 'YES', pct, my, yes, m.bettors_yes)}
           ${sideBtn(false, 'NO', 100 - pct, mn, no, m.bettors_no)}
@@ -617,11 +727,13 @@ async function openProphecyMarket(id) {
         ${open ? '' : `<div class="mk-shut">${
           m.status === 'settled' ? 'This market is settled. Betting is closed.'
             : m.status === 'void' ? 'This market was voided. Stakes went back.'
+              : m.status === 'disputed' ? 'The outcome is disputed. The court is deciding.'
               : m.status === 'proposed' ? 'An outcome has been proposed. Betting is closed.'
                 : 'Betting is closed, waiting for the outcome.'}</div>`}
         ${footBlock(m)}
       </div>
     </article>
+    <div id="mk-dispute"></div>
     ${positionBlock(m, pos)}
     ${open ? betForm(m) : ''}
     <section class="card mk-how">
@@ -632,6 +744,7 @@ async function openProphecyMarket(id) {
         ${verifyBlock(m)}
       </details>
     </section>`;
+  if (window.renderDispute) window.renderDispute(m);
 }
 
 
@@ -692,7 +805,7 @@ async function submitBet() {
       window.globalWalletAddress, PROPHECY_CONTRACT,
       { bet: { market_id: m.id, side: betSide } },
       [{ denom: 'uluna', amount: String(lunc * 1e6) }],
-      'oracle-prophecy: bet ' + m.id, 'columbus-5'
+      'oracle-prophecy: bet ' + m.id, PROPHECY_CHAIN, 600000
     );
     console.log('[prophecy] bet tx', hash);
     btn.textContent = 'Sent, waiting for the block…';
@@ -713,7 +826,7 @@ async function submitClaim() {
     const hash = await window.sendExecuteContract(
       window.globalWalletAddress, PROPHECY_CONTRACT,
       { claim: { market_id: m.id } }, [],
-      'oracle-prophecy: claim ' + m.id, 'columbus-5'
+      'oracle-prophecy: claim ' + m.id, PROPHECY_CHAIN, 800000
     );
     console.log('[prophecy] claim tx', hash);
     setTimeout(() => openProphecyMarket(m.id), 7000);
@@ -726,7 +839,7 @@ async function submitClaim() {
 // ── страница Markets: статистика и переключатель ────────────────────────────
 
 function renderMarketStats(all) {
-  const live = ['open', 'locked', 'proposed'];
+  const live = ['open', 'locked', 'proposed', 'disputed'];
   const set = (id, v) => {
     const el = document.getElementById(id);
     if (el) el.textContent = v;

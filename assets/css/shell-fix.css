@@ -1747,3 +1747,76 @@
     height:7.83% !important;
   }
 }
+
+
+/* ---- Markets: состояния ---- */
+#page-markets .odds-cap{
+  font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  margin-bottom:-4px;
+}
+#page-markets .mkc .left b.p{color:var(--amber)}
+
+/* Рассчитанный рынок подаётся как доказательство: что прочитали, с чем
+   сравнили, почему такой исход. */
+#page-markets .mk-evidence h3 b.y{color:var(--lime)}
+#page-markets .mk-evidence h3 b.n{color:var(--pink)}
+#page-markets .ev-row{
+  display:flex;gap:14px;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-top:1px solid var(--line);font-size:12.5px;
+}
+#page-markets .ev-row:first-of-type{margin-top:12px}
+#page-markets .ev-row span{color:var(--ink-3);flex:none}
+#page-markets .ev-row b{color:var(--ink);text-align:right;font-weight:600;word-break:break-word}
+#page-markets .ev-row b.y{color:var(--lime)}
+#page-markets .ev-row b.n{color:var(--pink)}
+
+
+/* ---- Markets: спор и суд ---- */
+#page-markets .mk-court .mk-lead-sm{margin:0;font-size:13px;line-height:1.65;color:var(--ink-2)}
+#page-markets .mk-court .mk-lead-sm b{color:var(--ink)}
+#page-markets .mk-left{color:var(--amber);font-family:var(--dis)}
+#page-markets .mk-court-rules{
+  display:grid;gap:6px;margin-top:14px;padding:12px 14px;border-radius:10px;
+  background:var(--bg);border:1px solid var(--line);font-size:12px;color:var(--ink-3);
+}
+#page-markets .mk-court-rules span{
+  display:inline-block;min-width:118px;font-weight:600;color:var(--ink-2);
+}
+#page-markets .mk-court-rules span.y{color:var(--lime)}
+#page-markets .mk-court-rules span.n{color:var(--pink)}
+#page-markets .mk-court-field{display:block;margin-top:14px}
+#page-markets .mk-court-field span{display:block;margin-bottom:6px;font-size:12px;color:var(--ink-3)}
+#page-markets .mk-court-field textarea{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;color:var(--ink);font:inherit;font-size:13px;outline:none;resize:vertical;
+}
+#page-markets .mk-claims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#page-markets .mk-claims > div{
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+}
+#page-markets .mk-claims span{display:block;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+#page-markets .mk-claims b{display:block;margin-top:4px;font-family:var(--dis);font-size:18px}
+#page-markets .mk-claims b.y{color:var(--lime)}
+#page-markets .mk-claims b.n{color:var(--pink)}
+#page-markets .mk-claims p{margin:6px 0 0;font-size:11.5px;line-height:1.55;color:var(--ink-3);word-break:break-word}
+#page-markets .mk-tally{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+#page-markets .mk-tally .t{
+  text-align:center;padding:12px 8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);
+}
+#page-markets .mk-tally b{display:block;font-family:var(--dis);font-size:24px;line-height:1}
+#page-markets .mk-tally span{display:block;margin-top:5px;font-size:10.5px;letter-spacing:.12em;color:var(--ink-3)}
+#page-markets .mk-tally .y b{color:var(--lime)}
+#page-markets .mk-tally .n b{color:var(--pink)}
+#page-markets .mk-tally .v b{color:var(--ink-2)}
+#page-markets .mk-vote-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+#page-markets .mk-vote{
+  padding:13px 8px;border-radius:10px;cursor:pointer;
+  font-family:var(--dis);font-size:14px;font-weight:700;letter-spacing:.08em;
+  background:var(--bg);border:1px solid var(--line-2);color:var(--ink);
+}
+#page-markets .mk-vote.y{border-color:rgba(34,197,94,.45);color:var(--lime)}
+#page-markets .mk-vote.n{border-color:rgba(209,96,143,.5);color:var(--pink)}
+#page-markets .mk-vote:hover{background:var(--bg-2)}
+@media (max-width:640px){
+  #page-markets .mk-claims{grid-template-columns:1fr}
+}

@@ -736,7 +736,7 @@
         },
       },
       [{ denom: 'uluna', amount: String(bond + promo) }],
-      'oracle-prophecy: create', 'columbus-5'
+      'oracle-prophecy: create', PROPHECY_CHAIN, 700000
     ).then(function (hash) {
       console.log('[prophecy] create tx', hash);
       go.textContent = 'Sent, waiting for the block…';
