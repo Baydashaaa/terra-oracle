@@ -100,11 +100,18 @@
     return out;
   }
 
-  function fromCircuit(d) {
-    var out = [];
-    ((d && d.rounds) || []).forEach(function (r) {
+  // Закрытые раунды (history) плюс текущий (state). Перенесённые из
+  // недобравшего раунда покупки бывают в обоих - дубли убираем по хэшу.
+  function fromCircuit(d, state) {
+    var out = [], seen = {};
+    var rounds = ((d && d.rounds) || []).slice();
+    if (state && state.blocks) rounds.push(state);
+    rounds.forEach(function (r) {
       (r.blocks || []).forEach(function (b) {
         if (!b.at) return;                       // без времени не берём
+        var key = b.txHash || (b.wallet + ':' + b.at);
+        if (seen[key]) return;
+        seen[key] = 1;
         var from = Number(b.from), to = Number(b.to);
         var zones = (to - from + 1) || 1;
         out.push({
@@ -223,14 +230,15 @@
     return Promise.all([
       getJSON(Q_WORKER + '/questions?limit=' + qLimit),
       getJSON(DRAW_WORKER + '/circuit/history?limit=' + cLimit),
+      getJSON(DRAW_WORKER + '/circuit/state'),
       getJSON(DATA_ORIGIN + '/winners.json?t=' + Math.floor(Date.now() / 3600000)),
       fromNFT()
     ]).then(function (res) {
       var items = []
         .concat(fromQuestions(res[0]))
-        .concat(fromCircuit(res[1]))
-        .concat(fromWinners(res[2]))
-        .concat(res[3] || []);
+        .concat(fromCircuit(res[1], res[2]))
+        .concat(fromWinners(res[3]))
+        .concat(res[4] || []);
 
       // Свежие сверху; будущие метки отбрасываем, чтобы сбитые часы на
       // машине человека не выводили события "через 3 часа".
