@@ -156,7 +156,6 @@ async function tLoadRecentTxs(retries = 5) {
   const T_FCD = [
     'https://fcd.terra-classic.hexxagon.io',
     'https://terra-classic-fcd.publicnode.com',
-    'https://columbus-fcd.terra.dev',
   ];
 
   // dir: 'in' - что пришло на кошелёк, 'out' - что с него ушло

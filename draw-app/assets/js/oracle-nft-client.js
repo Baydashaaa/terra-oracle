@@ -18,7 +18,7 @@
     lcd: [
       'https://terra-classic-lcd.publicnode.com',
       'https://lcd.terra-classic.hexxagon.io',
-      'https://terraclassic-mainnet-lcd.autostake.com',
+      'https://fcd.terra-classic.hexxagon.io',
     ],
     denom: 'uluna',
     timeoutMs: 10000,

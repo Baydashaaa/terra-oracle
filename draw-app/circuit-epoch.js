@@ -71,9 +71,9 @@ const PROOFS_FILE = 'rewards-proofs.json';
 
 const LCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
-  'https://rest.cosmos.directory/terraclassic',
-  'https://terra-classic-lcd.hexxagon.io',
-  'https://lcd.terraclassic.community',
+  'https://terra-classic-fcd.publicnode.com',
+  'https://lcd.terra-classic.hexxagon.io',
+  'https://fcd.terra-classic.hexxagon.io',
 ];
 
 const GAS_PRICE = GasPrice.fromString('28.325uluna');

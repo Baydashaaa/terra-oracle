@@ -16,7 +16,7 @@ const PROPHECY_CONTRACT = 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8l
 const PROPHECY_LCD = [
   'https://terra-classic-lcd.publicnode.com',
   'https://lcd.terra-classic.hexxagon.io',
-  'https://terraclassic-mainnet-lcd.autostake.com',
+  'https://fcd.terra-classic.hexxagon.io',
 ];
 
 // Цвет темы одинаков в значке и в подписи. Категория приходит из контракта

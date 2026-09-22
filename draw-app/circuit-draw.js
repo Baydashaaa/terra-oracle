@@ -53,9 +53,9 @@ const RPC      = process.env.RPC_URL || 'https://terra-classic-rpc.publicnode.co
 
 const LCD_NODES = [
   'https://terra-classic-lcd.publicnode.com',
-  'https://rest.cosmos.directory/terraclassic',
-  'https://terra-classic-lcd.hexxagon.io',
-  'https://lcd.terraclassic.community',
+  'https://terra-classic-fcd.publicnode.com',
+  'https://lcd.terra-classic.hexxagon.io',
+  'https://fcd.terra-classic.hexxagon.io',
 ];
 
 // Утешительная доля соседним блокам. Решение ещё не закреплено, поэтому

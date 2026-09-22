@@ -19,8 +19,8 @@
   var GAS_PRICE = 28.325;              // uluna за единицу газа, минимум сети
   var LCD_LIST = [
     'https://terra-classic-lcd.publicnode.com',
-    'https://lcd-terra-classic.hexxagon.io',
-    'https://terraclassic.community/cosmos',
+    'https://lcd.terra-classic.hexxagon.io',
+    'https://terra-classic-fcd.publicnode.com',
   ];
 
   // ── protobuf-хелперы (те же, что в sendTwoMsgSend) ────────────────────────

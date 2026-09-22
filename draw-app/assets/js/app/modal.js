@@ -48,7 +48,7 @@ async function waitForTxConfirm(txHash, timeoutMs = 180000) { // 3 minutes
   // Fallback: direct LCD calls
   const LCD_LIST = [
     'https://terra-classic-lcd.publicnode.com',
-    'https://rest.cosmos.directory/terraclassic',
+    'https://terra-classic-fcd.publicnode.com',
   ];
 
   const start = Date.now();
@@ -180,7 +180,7 @@ async function sendMsgSends(fromAddr, sends, memo, chainId) {
   const txBodyBytes = concat(...msgFields, encodeField(2, 2, memoBytes));
 
   // ── account info ──
-  const LCD_LIST = ['https://terra-classic-lcd.publicnode.com', 'https://lcd-terra-classic.hexxagon.io', 'https://terraclassic.community/cosmos'];
+  const LCD_LIST = ['https://terra-classic-lcd.publicnode.com', 'https://lcd.terra-classic.hexxagon.io', 'https://terra-classic-fcd.publicnode.com'];
   let accountNumber, sequence, pubkeyBytes;
   for (const lcd of LCD_LIST) {
     try {

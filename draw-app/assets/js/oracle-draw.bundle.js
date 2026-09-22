@@ -37,11 +37,14 @@ const LCD_NODES = [
   // Список из двух, где второй не существовал, стоил трёх минут ожидания на
   // розыгрыше 12 августа: бинарный поиск блока дедлайна шлёт 9–14 запросов
   // подряд, и при первом же отказе publicnode переходить было некуда.
-  // Правильное имя хексагона - terra-classic-lcd, а не lcd-terra-classic.
+  // Правильное имя хексагона - lcd.terra-classic.hexxagon.io. Проверено
+  // запросом 22 сен 2026: оба других написания, terra-classic-lcd и
+  // lcd-terra-classic, не существуют. Прежде чем править этот список -
+  // проверить каждый адрес curl'ом, а не по памяти.
   'https://terra-classic-lcd.publicnode.com',
-  'https://rest.cosmos.directory/terraclassic',
-  'https://terra-classic-lcd.hexxagon.io',
-  'https://lcd.terraclassic.community',
+  'https://terra-classic-fcd.publicnode.com',
+  'https://lcd.terra-classic.hexxagon.io',
+  'https://fcd.terra-classic.hexxagon.io',
 ];
 
 const MIN_ENTRIES = 5;

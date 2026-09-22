@@ -25,7 +25,7 @@
   var LCD_LIST = [
     'https://terra-classic-lcd.publicnode.com',
     'https://lcd.terra-classic.hexxagon.io',
-    'https://terraclassic-mainnet-lcd.autostake.com',
+    'https://fcd.terra-classic.hexxagon.io',
   ];
 
   // ── protobuf-хелперы (те же, что в sendTwoMsgSend) ────────────────────────

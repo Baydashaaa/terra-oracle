@@ -25,8 +25,8 @@
 
   const LCD_NODES = [
     'https://terra-classic-lcd.publicnode.com',
-    'https://rest.cosmos.directory/terraclassic',
-    'https://terra-classic-lcd.hexxagon.io',
+    'https://terra-classic-fcd.publicnode.com',
+    'https://lcd.terra-classic.hexxagon.io',
   ];
 
   // Примерная комиссия claim в LUNC. Ниже этого забирать бессмысленно.

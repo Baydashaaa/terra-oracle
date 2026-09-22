@@ -222,8 +222,8 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
   // искать вслепую.
   const ACC_NODES = [
     LCD_BASE,
-    'https://rest.cosmos.directory/terraclassic',
-    'https://terra-classic-lcd.hexxagon.io',
+    'https://terra-classic-fcd.publicnode.com',
+    'https://lcd.terra-classic.hexxagon.io',
   ];
   let accountNumber, sequence;
   for (const _node of ACC_NODES) {
