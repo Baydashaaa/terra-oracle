@@ -395,6 +395,7 @@
       resetBtn(priceLunc);
 
       if (typeof loadMyBagNFTs === 'function') { try { loadMyBagNFTs(wallet); } catch (e) {} }
+      if (typeof window.refreshWheelSoon === 'function') window.refreshWheelSoon();
 
       return txHash;
     } catch (err) {
@@ -423,3 +424,17 @@
   window.nativeMintV2        = nativeMintV2;
   window.ORACLE_NFT_CONTRACT = CONTRACT;
 })();
+
+// Колесо после минта или ввода NFT в раунд: обновляем сразу и ещё несколько
+// раз в течение полутора минут. Обычно хватает первого запроса (минт сразу
+// регистрируется через /register-mint), повторы - на случай, если
+// регистрация не прошла и NFT подхватит фоновая сверка воркера.
+window.refreshWheelSoon = function () {
+  var d = window.oracleDrawV2;
+  if (!d || typeof d.refresh !== 'function') return;
+  [0, 3000, 8000, 20000, 45000, 90000].forEach(function (t) {
+    setTimeout(function () {
+      try { d.refresh(); if (typeof d.refreshLive === 'function') d.refreshLive(); } catch (e) {}
+    }, t);
+  });
+};

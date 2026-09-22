@@ -109,6 +109,9 @@ async function enterDraw(nftId, pool, entries) {
         <svg class="oi oi--cyan"><use href="#i-link"/></svg> ${txHash.slice(0,16)}…
       </a>`;
 
+    // Сектор на колесе - сразу, без обновления страницы.
+    if (typeof window.refreshWheelSoon === 'function') window.refreshWheelSoon();
+
     // Mark NFT as used locally
     window._bagNFTs = (window._bagNFTs || []).map(n =>
       String(n.id) === String(nftId) ? { ...n, used: true, inCurrentRound: false } : n
