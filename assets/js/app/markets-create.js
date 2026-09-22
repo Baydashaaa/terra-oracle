@@ -714,7 +714,7 @@
 
   function submit() {
     if (problems().length) return;
-    if (!mkWallet()) { alert('Connect a wallet first.'); return; }
+    if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
 
     var spec = buildSpec();
     var bond = Number(S.cfg ? S.cfg.creation_bond : 0);
@@ -745,7 +745,7 @@
         if (typeof renderMarkets === 'function') renderMarkets(false);
       }, 7000);
     }).catch(function (e) {
-      alert(e.message || 'Transaction failed');
+      mkToast(e.message || 'Transaction failed', 'err');
       go.disabled = false;
       go.textContent = 'Publish prediction →';
     });

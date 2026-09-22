@@ -518,7 +518,7 @@ function switchBoardTab(tab) {
     btn.textContent = tab === 'questions' ? 'Ask a question' : 'Open a market';
     btn.onclick = tab === 'questions'
       ? () => showPage('ask')
-      : () => alert('Market creation opens with the contract launch.');
+      : () => mkToast('Market creation opens with the contract launch.');
     btn.style.display = tab === 'resolved' ? 'none' : '';
   }
 
@@ -684,10 +684,9 @@ async function openProphecyMarket(id) {
   } else if (m.status === 'settled') {
     banner = evidenceBlock(m);
   } else if (m.status === 'disputed') {
-    banner = `<div class="mk-banner warn">
-      <h3>Disputed · the court is deciding</h3>
-      <p>Someone challenged the posted outcome. Payouts stay shut until the court rules;
-      if it does not rule in time, the market is voided and everyone is refunded.</p></div>`;
+    // Блок суда ниже говорит то же самое и показывает время - плашка
+    // была третьим повтором одного статуса.
+    banner = '';
   } else if (m.status === 'void') {
     // Причина аннулирования хранится только в атрибутах транзакции, в самом
     // рынке её нет - не выдумываем её здесь.
@@ -741,12 +740,8 @@ async function openProphecyMarket(id) {
           ${sideBtn(true, 'YES', pct, my, yes, m.bettors_yes)}
           ${sideBtn(false, 'NO', 100 - pct, mn, no, m.bettors_no)}
         </div>
-        ${open ? '' : `<div class="mk-shut">${
-          m.status === 'settled' ? 'This market is settled. Betting is closed.'
-            : m.status === 'void' ? 'This market was voided. Stakes went back.'
-              : m.status === 'disputed' ? 'The outcome is disputed. The court is deciding.'
-              : m.status === 'proposed' ? 'An outcome has been proposed. Betting is closed.'
-                : 'Betting is closed, waiting for the outcome.'}</div>`}
+        ${!open && m.status === 'open'
+          ? '<div class="mk-shut">Betting is closed, waiting for the outcome.</div>' : ''}
         ${footBlock(m)}
       </div>
     </article>
@@ -813,7 +808,7 @@ async function submitBet() {
   const raw = (document.getElementById('bet-amount') || {}).value || '';
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
   if (!m || !lunc || !btn) return;
-  if (!mkWallet()) { alert('Connect a wallet first.'); return; }
+  if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Confirm in your wallet…';
@@ -825,12 +820,13 @@ async function submitBet() {
       'oracle-prophecy: bet ' + m.id, PROPHECY_CHAIN, 600000
     );
     console.log('[prophecy] bet tx', hash);
+    mkToast('Bet sent. It shows up after the next block.', 'ok');
     btn.textContent = 'Sent, waiting for the block…';
     // Перерисовка с задержкой: сразу после отправки контракт ещё покажет
     // старые суммы, и человек решит, что ставка не прошла.
     setTimeout(() => openProphecyMarket(m.id), 7000);
   } catch (e) {
-    alert(e.message || 'Transaction failed');
+    mkToast(e.message || 'Transaction failed', 'err');
     btn.disabled = false;
     btn.textContent = 'Place bet';
   }
@@ -846,9 +842,10 @@ async function submitClaim() {
       'oracle-prophecy: claim ' + m.id, PROPHECY_CHAIN, 800000
     );
     console.log('[prophecy] claim tx', hash);
+    mkToast('Payout requested. It arrives after the next block.', 'ok');
     setTimeout(() => openProphecyMarket(m.id), 7000);
   } catch (e) {
-    alert(e.message || 'Transaction failed');
+    mkToast(e.message || 'Transaction failed', 'err');
   }
 }
 
@@ -969,4 +966,33 @@ if (PROPHECY_TESTNET) {
     pg.insertAdjacentHTML('afterbegin',
       '<div id="mk-testnet" class="mk-testnet">TESTNET · rebel-2 · test contracts, no real money</div>');
   }
+}
+
+
+// ── уведомления ────────────────────────────────────────────────────────────
+//
+// Вместо системного alert: снизу, в стиле раздела, исчезают сами. kind -
+// 'ok', 'err' или 'info'.
+function mkToast(msg, kind) {
+  let box = document.getElementById('mk-toasts');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'mk-toasts';
+    document.body.appendChild(box);
+  }
+  const el = document.createElement('div');
+  el.className = 'mk-toast ' + (kind || 'info');
+  // Ошибки кошелька приходят длинными и техническими - оставляем суть.
+  let text = String(msg || '');
+  const raw = text.match(/raw_log['":\s]*(.*)$/);
+  if (raw) text = raw[1];
+  if (/rejected by the user|Request rejected/i.test(text)) text = 'Cancelled in the wallet.';
+  if (/insufficient funds/i.test(text)) text = 'Not enough LUNC to cover this and the network fee.';
+  el.textContent = text.length > 220 ? text.slice(0, 217) + '…' : text;
+  box.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, kind === 'err' ? 8000 : 5000);
 }

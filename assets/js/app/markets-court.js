@@ -119,8 +119,8 @@
     const btn = document.getElementById('ch-go');
     const reading = ((document.getElementById('ch-reading') || {}).value || '').trim();
     if (!m || !btn) return;
-    if (!mkWallet()) { alert('Connect a wallet first.'); return; }
-    if (!reading) { alert('Say what the chain actually shows - the court reads it.'); return; }
+    if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
+    if (!reading) { mkToast('Say what the chain actually shows - the court reads it.'); return; }
 
     btn.disabled = true;
     btn.textContent = 'Confirm in your wallet…';
@@ -132,10 +132,11 @@
         'oracle-prophecy: challenge ' + m.id, PROPHECY_CHAIN, 600000
       );
       console.log('[prophecy] challenge tx', hash);
+      mkToast('Dispute sent. The court opens after the next block.', 'ok');
       btn.textContent = 'Sent, waiting for the block…';
       setTimeout(() => openProphecyMarket(m.id), 7000);
     } catch (e) {
-      alert(e.message || 'Transaction failed');
+      mkToast(e.message || 'Transaction failed', 'err');
       btn.disabled = false;
       btn.textContent = 'Dispute →';
     }
@@ -228,16 +229,17 @@
         'oracle-court: vote ' + m.id, PROPHECY_CHAIN, 1100000
       );
       console.log('[court] vote tx', hash);
+      mkToast('Vote sent.', 'ok');
       setTimeout(() => openProphecyMarket(m.id), 7000);
     } catch (e) {
-      alert(e.message || 'Transaction failed');
+      mkToast(e.message || 'Transaction failed', 'err');
     }
   };
 
   window.courtClose = async function () {
     const m = window._prophecyMarket;
     const btn = document.getElementById('court-close');
-    if (!m || !mkWallet()) { alert('Connect a wallet first.'); return; }
+    if (!m || !mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
     if (btn) { btn.disabled = true; btn.textContent = 'Confirm in your wallet…'; }
     try {
       // Закрытие запускает весь расчёт рынка с выплатами: замер на rebel-2
@@ -248,9 +250,10 @@
         'oracle-court: close ' + m.id, PROPHECY_CHAIN, 1800000
       );
       console.log('[court] close tx', hash);
+      mkToast('Case closed. The decision goes to the market.', 'ok');
       setTimeout(() => openProphecyMarket(m.id), 7000);
     } catch (e) {
-      alert(e.message || 'Transaction failed');
+      mkToast(e.message || 'Transaction failed', 'err');
       if (btn) { btn.disabled = false; btn.textContent = 'Close the case →'; }
     }
   };

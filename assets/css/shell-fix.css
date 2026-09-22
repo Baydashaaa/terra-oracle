@@ -1829,3 +1829,32 @@
   background:rgba(244,208,63,.12);border:1px solid rgba(244,208,63,.5);
   color:#f4d03f;font-size:11px;font-weight:700;letter-spacing:.12em;
 }
+
+
+/* ---- Markets: читаемость пояснений ----
+   Здесь самое важное про деньги: правила оспаривания, кворум, почему
+   нельзя голосовать. 11 пикселей серым их просто пропускали. */
+#page-markets .mk-plain,
+#page-markets .mkf-note{font-size:12.5px;line-height:1.65;color:#b8c2e6}
+#page-markets .mk-court-rules{font-size:12.5px;color:#b8c2e6}
+#page-markets .mk-court-rules span{color:var(--ink)}
+#page-markets .mk-claims p{font-size:12.5px;color:#b8c2e6}
+#page-markets .mk-court .mk-lead-sm{font-size:13.5px}
+#page-markets .mk-shut{font-size:12.5px;color:#b8c2e6}
+
+/* ---- уведомления ---- */
+#mk-toasts{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;
+  display:flex;flex-direction:column;gap:8px;align-items:center;
+  width:min(520px, calc(100vw - 32px));pointer-events:none;
+}
+.mk-toast{
+  width:100%;padding:12px 16px;border-radius:12px;
+  background:var(--panel,#12142b);border:1px solid var(--line-2,#2a2f55);
+  color:var(--ink,#e8ecff);font-size:13px;line-height:1.5;
+  box-shadow:0 14px 34px -12px rgba(0,0,0,.8);
+  opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;
+}
+.mk-toast.show{opacity:1;transform:none}
+.mk-toast.ok{border-color:rgba(34,197,94,.55)}
+.mk-toast.err{border-color:rgba(209,96,143,.65)}
