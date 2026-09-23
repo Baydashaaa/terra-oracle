@@ -1983,3 +1983,32 @@
   display:flex;justify-content:space-between;gap:10px;margin-top:6px;
   font-size:11px;color:var(--ink-3);
 }
+
+
+/* ---- Markets: график, вторая версия ----
+   Полосы красятся градиентами прямо в SVG, здесь линия, точки и подписи. */
+#page-markets .mk-chart svg{height:150px}
+#page-markets .mk-chart .line{stroke:#e8ecff}
+#page-markets .mk-chart .step{stroke:rgba(184,194,230,.10);vector-effect:non-scaling-stroke}
+#page-markets .mk-chart .mid{stroke:rgba(184,194,230,.35)}
+#page-markets .mk-chart circle.yes{fill:var(--lime)}
+#page-markets .mk-chart circle.no{fill:var(--pink)}
+#page-markets .mk-chart-axis{padding:7px 0}
+#page-markets .mk-chart-head .k{
+  display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px;
+}
+#page-markets .mk-chart-head .k.y{background:rgba(34,197,94,.75)}
+#page-markets .mk-chart-head .k.n{background:rgba(244,114,182,.75)}
+#page-markets .mk-plot{position:relative}
+#page-markets .mk-dots{position:absolute;inset:0;pointer-events:none}
+#page-markets .mk-dots i{
+  position:absolute;width:10px;height:10px;border-radius:50%;
+  transform:translate(-50%,-50%);border:2px solid var(--bg);
+  pointer-events:auto;cursor:help;
+}
+#page-markets .mk-dots i.y{background:var(--lime)}
+#page-markets .mk-dots i.n{background:var(--pink)}
+#page-markets .mk-chart-x{
+  display:flex;justify-content:space-between;gap:10px;margin-top:6px;
+  font-size:11px;color:var(--ink-3);
+}

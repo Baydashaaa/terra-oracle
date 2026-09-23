@@ -115,8 +115,11 @@
     // прогноз, и каждая ставка видимо её сдвигает.
     const yesArea = `${d} V${Y(0)} H${X(0)} Z`;
     const noArea = `${d} V${Y(100)} H${X(0)} Z`;
-    const dots = pts.map((q, i) => `<circle class="${q.b.yes ? 'yes' : 'no'}" cx="${X(i)}" cy="${Y(q.p)}" r="4">
-        <title>${fmtLunc(q.b.amount)} LUNC on ${q.b.yes ? 'YES' : 'NO'} · YES ${Math.round(q.p)}% after</title></circle>`).join('');
+    // Точки - отдельным слоем поверх SVG: сам SVG растягивается по ширине
+    // экрана, и круги внутри него сплющивались в овалы.
+    const dots = pts.map((q, i) => `<i class="${q.b.yes ? 'y' : 'n'}"
+        style="left:${(X(i) / W * 100).toFixed(2)}%;top:${(Y(q.p) / H * 100).toFixed(2)}%"
+        title="${fmtLunc(q.b.amount)} LUNC on ${q.b.yes ? 'YES' : 'NO'} · YES ${Math.round(q.p)}% after"></i>`).join('');
     const last = Math.round(pts[pts.length - 1].p);
 
     return `
@@ -124,7 +127,7 @@
         <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · bet by bet</span>
         <b class="${last >= 50 ? 'y' : 'n'}">YES ${last}% · NO ${100 - last}%</b>
       </div>
-      <div class="mk-chart">
+      <div class="mk-chart"><div class="mk-plot">
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="YES and NO share of the pot, bet by bet">
           <defs>
             <linearGradient id="mkgY" x1="0" y1="0" x2="0" y2="1">
@@ -141,8 +144,8 @@
           ${pts.slice(1).map((q, i) => `<line class="step" x1="${X(i + 1)}" x2="${X(i + 1)}" y1="${PY}" y2="${H - PY}"/>`).join('')}
           <line x1="${PX}" x2="${W - PX}" y1="${Y(50)}" y2="${Y(50)}" class="mid"/>
           <path d="${d}" class="line"/>
-          ${dots}
         </svg>
+        <div class="mk-dots">${dots}</div></div>
         <div class="mk-chart-axis"><span>100%</span><span>50%</span><span>0%</span></div>
       </div>
       <div class="mk-chart-x">
