@@ -1866,3 +1866,61 @@
   background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);
   color:var(--lime);font-size:12.5px;font-weight:600;
 }
+
+
+/* ---- Markets: раскладка экрана рынка ---- */
+#page-markets .mk-betbox{margin-top:2px;padding-top:14px;border-top:1px solid var(--line)}
+#page-markets .mk-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#page-markets .mk-chips button{
+  padding:7px 15px;border-radius:999px;cursor:pointer;
+  background:var(--bg);border:1px solid var(--line-2);
+  color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;
+}
+#page-markets .mk-chips button:hover{color:var(--ink);border-color:rgba(139,92,246,.6)}
+#page-markets .mk-betbox .mk-plain{margin-top:10px}
+#page-markets .odds .m.hot{color:var(--amber);opacity:1;font-weight:600}
+
+/* Тонкая полоса прогноза у закрытых рынков */
+#page-markets .mk-split{
+  display:flex;height:10px;border-radius:999px;overflow:hidden;
+  background:var(--bg);border:1px solid var(--line);
+}
+#page-markets .mk-split > div{min-width:0;transition:flex-basis .3s}
+#page-markets .mk-split .y{background:rgba(34,197,94,.8)}
+#page-markets .mk-split .n{background:rgba(209,96,143,.85)}
+#page-markets .mk-split .lost,
+#page-markets .mk-split .void{opacity:.28}
+#page-markets .mk-split-legend{
+  display:flex;justify-content:space-between;gap:14px;margin-top:9px;
+  font-family:var(--dis);font-size:15px;font-weight:700;
+}
+#page-markets .mk-split-legend .y{color:var(--lime)}
+#page-markets .mk-split-legend .n{color:var(--pink);text-align:right}
+#page-markets .mk-split-legend .lost,
+#page-markets .mk-split-legend .void{color:var(--ink-3)}
+#page-markets .mk-split-legend em{
+  display:block;margin-top:3px;font-style:normal;
+  font-family:inherit;font-size:11.5px;font-weight:400;color:#b8c2e6;
+}
+#page-markets .mk-split-legend b.won{
+  margin-left:7px;padding:1px 8px;border-radius:999px;
+  font-size:10px;letter-spacing:.14em;vertical-align:2px;
+}
+#page-markets .mk-split-legend .y b.won{background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.5)}
+#page-markets .mk-split-legend .n b.won{background:rgba(209,96,143,.2);border:1px solid rgba(209,96,143,.55)}
+
+@media (max-width:640px){
+  #page-markets .mk-detail .inner{padding:18px 16px}
+  #page-markets .mk-detail h4{font-size:20px}
+  #page-markets .mk-detail .odds .p{font-size:24px}
+  #page-markets .mk-detail .odds .m{font-size:10.5px}
+  #page-markets .mk-chips button{flex:1 1 20%}
+}
+
+
+/* ---- Markets: одиночная крупная карточка в списке ----
+   В сетке карточка тянется на высоту колонки, а подвал прижат к низу - так
+   подвалы плиток стоят на одной линии. Один рынок в списке рисуется без
+   сетки, и растягиваться ему незачем: оставалась пустая полоса. */
+#page-markets #markets-list > .mkc.big{min-height:0}
+#page-markets #markets-list > .mkc.big .foot{margin-top:6px}

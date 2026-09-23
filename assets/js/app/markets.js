@@ -355,14 +355,22 @@ function oddsBlock(m) {
   const side = (isYes, label, p, mult) => {
     const st = sideState(m, isYes);
     // Коэффициент имеет смысл, только пока можно поставить.
+    // Тот же язык, что на экране рынка: пустая сторона - возможность,
+    // сторона без соперника - "нечего выигрывать", а не "×1.00".
+    const mine = Number(isYes ? m.pot_yes : m.pot_no);
+    const other = Number(isYes ? m.pot_no : m.pot_yes) + Number(m.boost || 0);
+    const otherName = isYes ? 'NO' : 'YES';
     const sub = st === 'won' ? '<span class="m">won</span>'
       : st === 'lost' ? '<span class="m">lost</span>'
-        : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
-          : st === 'closed' ? '<span class="m">closed</span>' : '';
+        : st === 'open' && !mine && other ? `<span class="m hot">first in takes the ${otherName} pot</span>`
+          : st === 'open' && !mine ? '<span class="m hot">be the first</span>'
+            : st === 'open' && !other ? `<span class="m">waiting for ${otherName}</span>`
+              : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
+                : st === 'closed' ? '<span class="m">closed</span>' : '';
     return `
     <button class="${isYes ? 'yes' : 'no'}" type="button" data-state="${st}">
       <span class="k">${label}</span>
-      <span class="p">${p}%</span>
+      <span class="p">${st === 'open' && !mine ? '—' : p + '%'}</span>
       ${sub}
     </button>`;
   };
@@ -378,7 +386,7 @@ function footBlock(m) {
   return `
     <div class="foot">
       <span><img src="assets/img/icons/c-volume.webp" alt="" loading="lazy"><b>${fmtLunc(total)}</b> LUNC</span>
-      <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> players</span>
+      <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> ${m.bettors_yes + m.bettors_no === 1 ? 'player' : 'players'}</span>
       ${Number(m.boost)
         ? `<span><img src="assets/img/lunc.webp" alt="" loading="lazy"><b>+${fmtLunc(m.boost)}</b> boost</span>`
         : ''}
@@ -451,6 +459,7 @@ async function renderMarkets(resolved) {
   mkLastResolved = !!resolved;
   // Вкладки нужны списку. Возвращаясь из рынка, подсвечиваем ту, что открыта.
   const mkTabsEl = document.getElementById('mkTabs');
+  mkListChrome(true);
   if (mkTabsEl) {
     mkTabsEl.style.display = '';
     mkTabsEl.querySelectorAll('button').forEach((b, i) => {
@@ -669,15 +678,12 @@ function evidenceBlock(m) {
 
 async function openProphecyMarket(id) {
   openMarketId = id;
-  // На экране рынка вкладки списка только путали: у рассчитанного рынка
-  // горела Open.
-  const mkTabsHide = document.getElementById('mkTabs');
-  if (mkTabsHide) mkTabsHide.style.display = 'none';
+  // Экран рынка - про один рынок. Баннер раздела, статистика и вкладки
+  // списка здесь только отодвигали ставку за край экрана.
+  mkListChrome(false);
   const host = document.getElementById('markets-list');
   if (!host) return;
   host.innerHTML = '<div class="mk-loading">Loading…</div>';
-  // Открытие рынка из середины списка оставляло страницу прокрученной,
-  // и экран начинался с середины карточки.
   const main = document.querySelector('.main');
   if (main) main.scrollTop = 0;
 
@@ -694,64 +700,15 @@ async function openProphecyMarket(id) {
   }
   try { tip = await chainTip(); } catch (e) { /* дата необязательна */ }
   window._prophecyMarket = m;
-  // Полоса статистики видна и над экраном рынка - обновляем и её, иначе
-  // после закрытия спора она показывала старые числа.
   loadProphecyMarkets().then(renderMarketStats).catch(() => {});
 
   const open = m.status === 'open' && timeLeft(m.bets_close_at);
-
-  let banner = '';
-  if (m.status === 'proposed') {
-    const left = challengeLeft(m);
-    banner = `<div class="mk-banner warn">
-      <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
-      <p>A reading has been posted and payouts stay shut while it can still be disputed${
-        left ? `. <b>${cd(Number(m.proposed_at) + Number(prophecyCfg.challenge_secs))}</b> left` : ''}.</p>
-      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
-  } else if (m.status === 'settled') {
-    banner = evidenceBlock(m);
-  } else if (m.status === 'disputed') {
-    // Блок суда ниже говорит то же самое и показывает время - плашка
-    // была третьим повтором одного статуса.
-    banner = '';
-  } else if (m.status === 'void') {
-    // Причина аннулирования хранится только в атрибутах транзакции, в самом
-    // рынке её нет - не выдумываем её здесь.
-    banner = `<div class="mk-banner">
-      <h3>Void · nobody won or lost</h3>
-      <p>Every stake goes back untouched.</p>
-      ${m.void_reason ? `<p class="read">Reason: ${mktEsc(m.void_reason)}</p>` : ''}
-      ${m.bad_spec
-        ? '<p>The question could not be verified, so the creator\'s bond went to the boost fund.</p>'
-        : '<p>The creator\'s bond is returned.</p>'}</div>`;
-  }
-
-  // Стороны рынка и есть выбор ставки: одни и те же кнопки, чтобы не было
-  // двух мест, где можно "выбрать" yes.
   const yes = Number(m.pot_yes), no = Number(m.pot_no);
   const total = yes + no;
   const pct = total ? Math.round((yes / total) * 100) : 50;
-  const my = payoutMultiplier(m, true), mn = payoutMultiplier(m, false);
-  const sideBtn = (isYes, label, p, mult, pot, players) => {
-    const st = sideState(m, isYes);
-    const sub = st === 'won' ? '<span class="m badge">WON</span>'
-      : st === 'lost' ? '<span class="m">did not happen</span>'
-        : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
-          : st === 'closed' ? '<span class="m">betting closed</span>' : '';
-    return `
-    <button class="${isYes ? 'yes' : 'no'}" type="button" data-state="${st}"
-            data-side="${isYes ? 1 : 0}" aria-pressed="${open && betSide === isYes}"
-            ${open ? `onclick="setBetSide(${isYes})"` : 'disabled'}>
-      <span class="k">${label}</span>
-      <span class="p">${p}%</span>
-      ${sub}
-      <span class="s">${fmtLunc(pot)} LUNC · ${players} ${players === 1 ? 'player' : 'players'}</span>
-    </button>`;
-  };
 
   host.innerHTML = `
     <div class="mk-back" onclick="renderMarkets(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
-    ${banner}
     <article class="mkc big mk-detail" style="--c:${catRgb(m.category)}">
       <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
       <div class="inner">
@@ -762,19 +719,15 @@ async function openProphecyMarket(id) {
         </div>
         <h4>${mktEsc(m.question)}</h4>
         <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
-        ${oddsCaption(m) ? `<div class="odds-cap">${oddsCaption(m)}</div>` : ''}
-        <div class="odds" id="bet-side-row">
-          ${sideBtn(true, 'YES', pct, my, yes, m.bettors_yes)}
-          ${sideBtn(false, 'NO', 100 - pct, mn, no, m.bettors_no)}
-        </div>
+        ${open ? openSides(m, pct) + betPanel(m) : closedSplit(m, pct)}
         ${!open && m.status === 'open'
           ? '<div class="mk-shut">Betting is closed, waiting for the outcome.</div>' : ''}
         ${footBlock(m)}
       </div>
     </article>
+    ${resultBlock(m)}
     <div id="mk-dispute"></div>
     ${positionBlock(m, pos)}
-    ${open ? betForm(m) : ''}
     <section class="card mk-how">
       <h3>How this settles</h3>
       <p class="mk-lead">${plainSpec(m, tip)}</p>
@@ -783,7 +736,119 @@ async function openProphecyMarket(id) {
         ${verifyBlock(m)}
       </details>
     </section>`;
+  if (open) updateBetCalc();
   if (window.renderDispute) window.renderDispute(m);
+}
+
+/** Баннер, статистика и вкладки нужны списку, а не экрану одного рынка. */
+function mkListChrome(show) {
+  ['#page-markets .mk-hero', '#mkStats', '#mkTabs'].forEach((sel) => {
+    const el = document.querySelector(sel);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+
+function playersText(n) {
+  return `${n} ${n === 1 ? 'player' : 'players'}`;
+}
+
+/**
+ * Стороны открытого рынка - и прогноз, и выбор ставки. Пустая сторона
+ * подаётся как возможность: первый на ней при победе забирает почти весь
+ * банк другой стороны. "0%" читалось как "здесь проигрывают".
+ */
+function openSides(m, pct) {
+  const yes = Number(m.pot_yes), no = Number(m.pot_no), boost = Number(m.boost || 0);
+  const side = (isYes) => {
+    const mine = isYes ? yes : no;
+    const other = (isYes ? no : yes) + boost;
+    const otherName = isYes ? 'NO' : 'YES';
+    const mult = payoutMultiplier(m, isYes);
+    let sub;
+    if (!mine && other) sub = `<span class="m hot">No bets yet · first in takes the ${otherName} pot</span>`;
+    else if (!mine) sub = '<span class="m hot">No bets yet · be the first</span>';
+    else if (!other) sub = `<span class="m">Nothing to win until someone takes ${otherName}</span>`;
+    else sub = `<span class="m">pays ×${mult.toFixed(2)}</span>`;
+    const players = isYes ? m.bettors_yes : m.bettors_no;
+    return `
+      <button class="${isYes ? 'yes' : 'no'}" type="button" data-state="open"
+              data-side="${isYes ? 1 : 0}" aria-pressed="${betSide === isYes}"
+              onclick="setBetSide(${isYes})">
+        <span class="k">${isYes ? 'YES' : 'NO'}</span>
+        <span class="p">${mine ? (isYes ? pct : 100 - pct) + '%' : '—'}</span>
+        ${sub}
+        <span class="s">${fmtLunc(mine)} LUNC · ${playersText(players)}</span>
+      </button>`;
+  };
+  return `<div class="odds" id="bet-side-row">${side(true)}${side(false)}</div>`;
+}
+
+/** Ставка прямо под выбором стороны: одно место, одно действие. */
+function betPanel(m) {
+  const max = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
+  const chips = [10, 50, 100, 500].filter((n) => !max || n <= max);
+  return `
+    <div class="mk-betbox">
+      <label class="mk-amount">
+        <span>Amount</span>
+        <input id="bet-amount" type="text" inputmode="numeric" placeholder="0"
+               oninput="updateBetCalc()" autocomplete="off">
+        <em>LUNC</em>
+      </label>
+      <div class="mk-chips">${chips.map((n) =>
+        `<button type="button" onclick="setBetAmount(${n})">${n}</button>`).join('')}</div>
+      <div id="bet-calc" class="mk-calc"></div>
+      <button onclick="submitBet()" id="bet-go" class="ask-go mk-place" type="button">Bet</button>
+      <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about 0.5%
+        smaller than the figure shown.</div>
+    </div>`;
+}
+
+function setBetAmount(n) {
+  const el = document.getElementById('bet-amount');
+  if (!el) return;
+  el.value = String(n);
+  updateBetCalc();
+}
+
+/** Закрытый рынок: прогноз уже история, а не действие - тонкая полоса. */
+function closedSplit(m, pct) {
+  const yes = Number(m.pot_yes), no = Number(m.pot_no);
+  const sy = sideState(m, true), sn = sideState(m, false);
+  const won = (st) => (st === 'won' ? ' <b class="won">WON</b>' : '');
+  return `
+    <div class="odds-cap">${oddsCaption(m) || 'Forecast at close'}</div>
+    <div class="mk-split">
+      <div class="y ${sy}" style="flex-basis:${pct}%"></div>
+      <div class="n ${sn}" style="flex-basis:${100 - pct}%"></div>
+    </div>
+    <div class="mk-split-legend">
+      <span class="y ${sy}">YES ${pct}%${won(sy)}<em>${fmtLunc(yes)} LUNC · ${playersText(m.bettors_yes)}</em></span>
+      <span class="n ${sn}">NO ${100 - pct}%${won(sn)}<em>${fmtLunc(no)} LUNC · ${playersText(m.bettors_no)}</em></span>
+    </div>`;
+}
+
+/** Итог рынка сразу под карточкой: объявление, доказательство или void. */
+function resultBlock(m) {
+  if (m.status === 'proposed') {
+    const left = challengeLeft(m);
+    return `<div class="mk-banner warn">
+      <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
+      <p>A reading has been posted and payouts stay shut while it can still be disputed${
+        left ? `. <b>${cd(Number(m.proposed_at) + Number(prophecyCfg.challenge_secs))}</b> left` : ''}.</p>
+      ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
+  }
+  if (m.status === 'settled') return evidenceBlock(m);
+  if (m.status === 'void') {
+    return `<div class="mk-banner">
+      <h3>Void · nobody won or lost</h3>
+      <p>Every stake goes back untouched.</p>
+      ${m.void_reason ? `<p class="read">Reason: ${mktEsc(m.void_reason)}</p>` : ''}
+      ${m.bad_spec
+        ? '<p>The question could not be verified, so the creator\'s bond went to the boost fund.</p>'
+        : '<p>The creator\'s bond is returned.</p>'}</div>`;
+  }
+  return '';
 }
 
 
@@ -812,11 +877,29 @@ function setBetSide(side) {
 function updateBetCalc() {
   const m = window._prophecyMarket;
   const box = document.getElementById('bet-calc');
+  const btn = document.getElementById('bet-go');
   const raw = (document.getElementById('bet-amount') || {}).value || '';
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
+  const side = betSide ? 'YES' : 'NO';
   if (!m || !box) return;
+  // В кнопке видно, на что уходят деньги: сумма и сторона.
+  if (btn && !btn.disabled) {
+    btn.textContent = lunc
+      ? `Bet ${lunc.toLocaleString('en-US')} LUNC on ${side} →`
+      : `Choose an amount to bet on ${side}`;
+  }
   if (!lunc) {
-    box.textContent = 'Enter an amount to see what a correct call pays.';
+    box.textContent = 'Pick an amount to see what a correct call pays.';
+    return;
+  }
+  const min = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
+  const max = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
+  if (min && lunc < min) {
+    box.innerHTML = `<div class="row muted"><span>Minimum bet</span><b>${min.toLocaleString('en-US')} LUNC</b></div>`;
+    return;
+  }
+  if (max && lunc > max) {
+    box.innerHTML = `<div class="row muted"><span>Maximum per wallet on this market</span><b>${max.toLocaleString('en-US')} LUNC</b></div>`;
     return;
   }
   // Собственная ставка входит в расчёт: без неё цифра завышена, и человек
@@ -824,7 +907,7 @@ function updateBetCalc() {
   const mult = payoutMultiplier(m, betSide, lunc * 1e6);
   const payout = Math.floor(lunc * mult);
   box.innerHTML = `<div class="row"><span>You stake</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
-    <div class="row"><span>If ${betSide ? 'YES' : 'NO'} wins</span><b class="y">${payout.toLocaleString('en-US')} LUNC</b></div>
+    <div class="row"><span>If ${side} wins</span><b class="y">${payout.toLocaleString('en-US')} LUNC</b></div>
     <div class="row"><span>Profit</span><b class="y">+${(payout - lunc).toLocaleString('en-US')} LUNC</b></div>
     <div class="row muted"><span>If it does not</span><b>the stake is gone</b></div>`;
 }
@@ -836,6 +919,12 @@ async function submitBet() {
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
   if (!m || !lunc || !btn) return;
   if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
+  const minB = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
+  const maxB = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
+  if ((minB && lunc < minB) || (maxB && lunc > maxB)) {
+    mkToast(`Bets on this market are ${minB.toLocaleString('en-US')} to ${maxB.toLocaleString('en-US')} LUNC per wallet.`, 'info');
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Confirm in your wallet…';
@@ -855,7 +944,7 @@ async function submitBet() {
   } catch (e) {
     mkToast(e.message || 'Transaction failed', 'err');
     btn.disabled = false;
-    btn.textContent = 'Place bet';
+    updateBetCalc();
   }
 }
 
