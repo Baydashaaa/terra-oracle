@@ -417,14 +417,21 @@ function featuredCard(m) {
     <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
     <div class="inner">
       <div class="head">
-        <span class="cat feat">${m.promoted ? 'Featured' : 'Closing next'}</span>
+        <span class="cat feat">${m.promoted ? 'Featured'
+          : (m.status === 'settled' || m.status === 'void') ? 'Latest result' : 'Closing next'}</span>
         <span class="cat">${mktEsc(m.category)}</span>
         ${sourceTag(m)}
         <span class="left">${statusLine(m)}</span>
       </div>
       <h4>${mktEsc(m.question)}</h4>
       <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
-      ${m.reading ? `<p class="desc">${mktEsc(m.reading)}</p>` : ''}
+      ${m.ruling
+        ? `<p class="desc">Court decision: ${mktEsc(m.ruling)}</p>`
+        : m.reading && m.status === 'disputed'
+          ? `<p class="desc">Disputed reading: ${mktEsc(m.reading)}</p>`
+          : m.reading && m.status === 'proposed'
+            ? `<p class="desc">Posted reading, still open to dispute: ${mktEsc(m.reading)}</p>`
+            : m.reading ? `<p class="desc">${mktEsc(m.reading)}</p>` : ''}
       ${oddsBlock(m)}
       ${footBlock(m)}
     </div>
@@ -442,6 +449,14 @@ function emptyPanel(text, sub) {
 
 async function renderMarkets(resolved) {
   mkLastResolved = !!resolved;
+  // Вкладки нужны списку. Возвращаясь из рынка, подсвечиваем ту, что открыта.
+  const mkTabsEl = document.getElementById('mkTabs');
+  if (mkTabsEl) {
+    mkTabsEl.style.display = '';
+    mkTabsEl.querySelectorAll('button').forEach((b, i) => {
+      b.setAttribute('aria-pressed', String(i === (resolved ? 1 : 0)));
+    });
+  }
   const host = document.getElementById('markets-list');
   if (!host) return;
   openMarketId = null;
@@ -460,9 +475,13 @@ async function renderMarkets(resolved) {
     <div style="border:1px solid rgba(255,170,60,0.35);background:rgba(255,170,60,0.07);
       border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;
       color:#ffb14e;line-height:1.6;">
-      <strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
-      contract, and the same key can post and challenge them. Bets are capped. Treat this as a
-      preview, not a settled market.
+      ${COURT_CONTRACT
+        ? `<strong>TEST deployment${PROPHECY_TESTNET ? ' · rebel-2' : ''}.</strong> The operator posts
+           outcomes. Anyone can dispute one, and a court decides - the operator cannot vote in it.
+           Bets are capped. Treat this as a preview, not a settled market.`
+        : `<strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
+           contract, and the same key can post and challenge them. Bets are capped. Treat this as a
+           preview, not a settled market.`}
     </div>`;
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
@@ -599,12 +618,13 @@ function positionBlock(m, pos) {
   <section class="card mk-pos">
     <h3>Your position</h3>
     <div class="mk-pos-line">${[side, side2].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
-    ${Number(pos.payout)
-      ? `<div class="mk-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b>${
-          m.status === 'proposed' ? ' once the challenge window closes' : ''}</div>`
+    ${Number(pos.payout) && !pos.claimed
+      ? `<div class="mk-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b> · about
+          <b>${netLunc(pos.payout)} LUNC</b> after the 0.5% network tax${
+          m.status === 'proposed' ? ', once the challenge window closes' : ''}</div>`
       : ''}
     ${pos.claimed
-      ? '<div class="mk-plain">Already claimed.</div>'
+      ? `<div class="mk-pos-done">${m.status === 'void' ? 'Refunded' : 'Collected'} ✓</div>`
       : canClaim
         ? `<button onclick="submitClaim()" class="ask-go mk-place">${
             m.status === 'void' ? 'Take the refund' : 'Collect'} &rarr;</button>`
@@ -649,6 +669,10 @@ function evidenceBlock(m) {
 
 async function openProphecyMarket(id) {
   openMarketId = id;
+  // На экране рынка вкладки списка только путали: у рассчитанного рынка
+  // горела Open.
+  const mkTabsHide = document.getElementById('mkTabs');
+  if (mkTabsHide) mkTabsHide.style.display = 'none';
   const host = document.getElementById('markets-list');
   if (!host) return;
   host.innerHTML = '<div class="mk-loading">Loading…</div>';
@@ -670,6 +694,9 @@ async function openProphecyMarket(id) {
   }
   try { tip = await chainTip(); } catch (e) { /* дата необязательна */ }
   window._prophecyMarket = m;
+  // Полоса статистики видна и над экраном рынка - обновляем и её, иначе
+  // после закрытия спора она показывала старые числа.
+  loadProphecyMarkets().then(renderMarketStats).catch(() => {});
 
   const open = m.status === 'open' && timeLeft(m.bets_close_at);
 
@@ -995,4 +1022,11 @@ function mkToast(msg, kind) {
     el.classList.remove('show');
     setTimeout(() => el.remove(), 300);
   }, kind === 'err' ? 8000 : 5000);
+}
+
+
+/** Сколько придёт на кошелёк: выплаты из контракта теряют 0.5% налога,
+ *  замер на rebel-2 сошёлся до uluna. */
+function netLunc(uluna) {
+  return (Number(uluna || 0) * 0.995 / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }

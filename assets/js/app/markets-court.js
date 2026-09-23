@@ -187,12 +187,22 @@
     } else if (!closed && left && !me) {
       action = '<div class="mk-plain">Connect a wallet to see whether you can vote.</div>';
     } else if (!closed && !left) {
-      // Закрыть может кто угодно: дело не должно зависнуть из-за того,
-      // что все ушли.
-      action = `
-        <button class="ask-go mk-place" id="court-close" onclick="courtClose()">
-          Close the case and send the decision &rarr;</button>
-        <div class="mk-plain">Voting has ended. Anyone can close the case; it costs gas only.</div>`;
+      // После конца голосования есть окно, чтобы закрыть дело. Прошло и оно -
+      // решение рынок уже не примет, остаётся аннулировать.
+      const pc = typeof prophecyCfg !== 'undefined' ? prophecyCfg : null;
+      const arbEnd = pc ? Number(m.disputed_at) + Number(pc.arbiter_secs) : 0;
+      if (arbEnd && nowSecs() >= arbEnd) {
+        action = voidButton('The court did not rule in time. Anyone can void the market: every '
+          + 'stake and the dispute bond go back.');
+      } else {
+        // Закрыть может кто угодно: дело не должно зависнуть из-за того,
+        // что все ушли.
+        action = `
+          <button class="ask-go mk-place" id="court-close" onclick="courtClose()">
+            Close the case and send the decision &rarr;</button>
+          <div class="mk-plain">Voting has ended. Anyone can close the case; it costs gas only.${
+            arbEnd ? ` It has to be closed within <b>${cd(arbEnd)}</b>, or the market is voided.` : ''}</div>`;
+      }
     }
 
     return `
@@ -258,6 +268,61 @@
     }
   };
 
+  // ── аннулирование ─────────────────────────────────────────────────────────
+
+  function voidButton(text) {
+    return `
+      <button class="ask-go mk-place" id="mk-expire" onclick="marketExpire()">
+        Void the market &rarr;</button>
+      <div class="mk-plain">${text}</div>`;
+  }
+
+  /** Приём закрыт, срок наступил, а исхода нет. Открыто показываем, сколько
+   *  резолверу осталось; когда время вышло - кнопку, которую может нажать любой.
+   *  Худший исход при пропавшем резолвере - возврат, и человек должен это видеть. */
+  function graceBlock(m) {
+    const pc = typeof prophecyCfg !== 'undefined' ? prophecyCfg : null;
+    if (!pc || !pc.resolve_grace_secs) return '';
+    const due = Number(m.resolve_after);
+    const graceEnd = due + Number(pc.resolve_grace_secs);
+    const now = nowSecs();
+    if (now < due) return '';
+    if (now < graceEnd) {
+      return `
+      <section class="card mk-court">
+        <h3>Waiting for the outcome</h3>
+        <p class="mk-lead-sm">If no outcome is posted within <b>${cd(graceEnd)}</b>, anyone can void
+          this market and every stake goes back.</p>
+      </section>`;
+    }
+    return `
+    <section class="card mk-court">
+      <h3>No outcome was posted in time</h3>
+      ${voidButton('Anyone can void this market. Every stake goes back, and so does the creator\'s bond.')}
+    </section>`;
+  }
+
+  window.marketExpire = async function () {
+    const m = window._prophecyMarket;
+    const btn = document.getElementById('mk-expire');
+    if (!m) return;
+    if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Confirm in your wallet…'; }
+    try {
+      const hash = await window.sendExecuteContract(
+        mkWallet(), PROPHECY_CONTRACT,
+        { expire: { market_id: m.id } }, [],
+        'oracle-prophecy: expire ' + m.id, PROPHECY_CHAIN, 1200000
+      );
+      console.log('[prophecy] expire tx', hash);
+      mkToast('Market voided. Stakes can be taken back after the next block.', 'ok');
+      setTimeout(() => openProphecyMarket(m.id), 7000);
+    } catch (e) {
+      mkToast(e.message || 'Transaction failed', 'err');
+      if (btn) { btn.disabled = false; btn.textContent = 'Void the market →'; }
+    }
+  };
+
   // ── точка входа ───────────────────────────────────────────────────────────
 
   /** markets.js вызывает это после отрисовки экрана рынка. */
@@ -271,7 +336,8 @@
         // блок не должен мигать.
         if (!host.innerHTML.trim()) host.innerHTML = '<div class="mk-loading">Loading the case…</div>';
         host.innerHTML = await caseBlock(m);
-      } else host.innerHTML = '';
+      } else if (m.status === 'open' || m.status === 'locked') host.innerHTML = graceBlock(m);
+      else host.innerHTML = '';
     } catch (e) {
       host.innerHTML = '<div class="mk-plain">Could not load the dispute.</div>';
     }
