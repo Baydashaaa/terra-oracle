@@ -95,41 +95,60 @@
    */
   function chartHtml(bets, m) {
     if (bets.length < 2) return '';
-    const W = 600, H = 130, P = 6;
+    const W = 600, H = 150, PX = 8, PY = 14;
     let y = 0, n = 0;
     const pts = bets.map((b) => {
       if (b.yes) y += b.amount; else n += b.amount;
-      return { t: b.t, p: (y / (y + n)) * 100, b };
+      return { p: (y / (y + n)) * 100, b };
     });
-    const open = m.status === 'open' && Number(m.bets_close_at) > nowSecs();
-    const t0 = pts[0].t;
-    const t1 = Math.max(pts[pts.length - 1].t, open ? nowSecs() : Number(m.bets_close_at)) || t0 + 1;
-    const X = (t) => P + ((t - t0) / Math.max(t1 - t0, 1)) * (W - 2 * P);
-    const Y = (p) => P + ((100 - p) / 100) * (H - 2 * P);
+    // Шаг на каждую ставку, а не на время: ставки приходят пачками, и по
+    // оси времени первая растягивалась на весь график, а остальные
+    // сжимались в угол.
+    const steps = pts.length;
+    const X = (i) => (PX + (i / steps) * (W - 2 * PX)).toFixed(1);
+    const Y = (p) => (PY + ((100 - p) / 100) * (H - 2 * PY)).toFixed(1);
 
-    let d = `M${X(pts[0].t).toFixed(1)},${Y(pts[0].p).toFixed(1)}`;
-    for (let i = 1; i < pts.length; i++) {
-      d += ` H${X(pts[i].t).toFixed(1)} V${Y(pts[i].p).toFixed(1)}`;
-    }
-    d += ` H${X(t1).toFixed(1)}`;
-    const area = `${d} V${H - P} H${X(pts[0].t).toFixed(1)} Z`;
-    const dots = pts.map((q) => `<circle cx="${X(q.t).toFixed(1)}" cy="${Y(q.p).toFixed(1)}" r="3.2">
+    let d = `M${X(0)},${Y(pts[0].p)}`;
+    for (let i = 1; i < steps; i++) d += ` H${X(i)} V${Y(pts[i].p)}`;
+    d += ` H${X(steps)}`;
+    // Две полосы: снизу доля YES, сверху доля NO. Граница между ними и есть
+    // прогноз, и каждая ставка видимо её сдвигает.
+    const yesArea = `${d} V${Y(0)} H${X(0)} Z`;
+    const noArea = `${d} V${Y(100)} H${X(0)} Z`;
+    const dots = pts.map((q, i) => `<circle class="${q.b.yes ? 'yes' : 'no'}" cx="${X(i)}" cy="${Y(q.p)}" r="4">
         <title>${fmtLunc(q.b.amount)} LUNC on ${q.b.yes ? 'YES' : 'NO'} · YES ${Math.round(q.p)}% after</title></circle>`).join('');
     const last = Math.round(pts[pts.length - 1].p);
 
     return `
       <div class="mk-chart-head">
-        <span>Share of the pot on YES, bet by bet</span>
-        <b class="${last >= 50 ? 'y' : 'n'}">YES ${last}%</b>
+        <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · bet by bet</span>
+        <b class="${last >= 50 ? 'y' : 'n'}">YES ${last}% · NO ${100 - last}%</b>
       </div>
       <div class="mk-chart">
-        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="YES share over time">
-          <line x1="${P}" x2="${W - P}" y1="${Y(50)}" y2="${Y(50)}" class="mid"/>
-          <path d="${area}" class="area"/>
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="YES and NO share of the pot, bet by bet">
+          <defs>
+            <linearGradient id="mkgY" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#22c55e" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#22c55e" stop-opacity=".06"/>
+            </linearGradient>
+            <linearGradient id="mkgN" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#f472b6" stop-opacity=".5"/>
+              <stop offset="1" stop-color="#f472b6" stop-opacity=".05"/>
+            </linearGradient>
+          </defs>
+          <path d="${noArea}" class="area-no" fill="url(#mkgN)"/>
+          <path d="${yesArea}" class="area-yes" fill="url(#mkgY)"/>
+          ${pts.slice(1).map((q, i) => `<line class="step" x1="${X(i + 1)}" x2="${X(i + 1)}" y1="${PY}" y2="${H - PY}"/>`).join('')}
+          <line x1="${PX}" x2="${W - PX}" y1="${Y(50)}" y2="${Y(50)}" class="mid"/>
           <path d="${d}" class="line"/>
           ${dots}
         </svg>
         <div class="mk-chart-axis"><span>100%</span><span>50%</span><span>0%</span></div>
+      </div>
+      <div class="mk-chart-x">
+        <span>first bet · ${agoText(pts[0].b.t)}</span>
+        <span>${steps} bets</span>
+        <span>latest · ${agoText(pts[steps - 1].b.t)}</span>
       </div>`;
   }
 

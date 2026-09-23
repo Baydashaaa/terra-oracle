@@ -1963,3 +1963,23 @@
   #page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
   #page-markets .mk-feed .ago{grid-column:1 / -1;text-align:left}
 }
+
+
+/* ---- Markets: график, вторая версия ----
+   Полосы красятся градиентами прямо в SVG, здесь линия, точки и подписи. */
+#page-markets .mk-chart svg{height:150px}
+#page-markets .mk-chart .line{stroke:#e8ecff}
+#page-markets .mk-chart .step{stroke:rgba(184,194,230,.10);vector-effect:non-scaling-stroke}
+#page-markets .mk-chart .mid{stroke:rgba(184,194,230,.35)}
+#page-markets .mk-chart circle.yes{fill:var(--lime)}
+#page-markets .mk-chart circle.no{fill:var(--pink)}
+#page-markets .mk-chart-axis{padding:7px 0}
+#page-markets .mk-chart-head .k{
+  display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px;
+}
+#page-markets .mk-chart-head .k.y{background:rgba(34,197,94,.75)}
+#page-markets .mk-chart-head .k.n{background:rgba(244,114,182,.75)}
+#page-markets .mk-chart-x{
+  display:flex;justify-content:space-between;gap:10px;margin-top:6px;
+  font-size:11px;color:var(--ink-3);
+}
