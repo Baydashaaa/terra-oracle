@@ -351,6 +351,9 @@ function oddsBlock(m) {
   // Пустой рынок рисуем ровно посередине: 50 на 50 честнее, чем ноль,
   // который выглядит как проигрыш одной стороны.
   const pct = total ? Math.round((yes / total) * 100) : 50;
+  // Закрытый рынок - та же тонкая полоса, что на экране рынка: две большие
+  // кнопки, на которые нельзя нажать, на телефоне занимали полэкрана.
+  if (!(m.status === 'open' && timeLeft(m.bets_close_at))) return closedSplit(m, pct);
   const my = payoutMultiplier(m, true), mn = payoutMultiplier(m, false);
   const side = (isYes, label, p, mult) => {
     const st = sideState(m, isYes);
@@ -434,7 +437,7 @@ function featuredCard(m) {
       <h4>${mktEsc(m.question)}</h4>
       <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
       ${m.ruling
-        ? `<p class="desc">Court decision: ${mktEsc(m.ruling)}</p>`
+        ? `<p class="desc">Court decision: ${mktEsc(rulingText(m.ruling))}</p>`
         : m.reading && m.status === 'disputed'
           ? `<p class="desc">Disputed reading: ${mktEsc(m.reading)}</p>`
           : m.reading && m.status === 'proposed'
@@ -670,7 +673,7 @@ function evidenceBlock(m) {
       <div class="ev-row"><span>Condition</span><b>${cond}</b></div>
       ${m.spec.height ? `<div class="ev-row"><span>Block</span><b>${Number(m.spec.height).toLocaleString('en-US')}</b></div>` : ''}
       ${m.challenge_reading ? `<div class="ev-row"><span>Challenger's reading</span><b>${mktEsc(m.challenge_reading)}</b></div>` : ''}
-      ${m.ruling ? `<div class="ev-row"><span>Court decision</span><b>${mktEsc(m.ruling)}</b></div>` : ''}
+      ${m.ruling ? `<div class="ev-row"><span>Court decision</span><b>${mktEsc(rulingText(m.ruling))}</b></div>` : ''}
       <div class="ev-row"><span>Therefore</span><b class="${m.outcome ? 'y' : 'n'}">${
         m.outcome ? 'YES' : 'NO'}</b></div>
     </div>`;
@@ -1183,4 +1186,11 @@ function mkConfirm({ title, body, ok = 'Confirm', tone = '' }) {
     requestAnimationFrame(() => wrap.classList.add('show'));
     wrap.querySelector('.mk-modal-ok').focus();
   });
+}
+
+
+/** Суд пишет решение как "court: 0 yes, 2 no, ...". Подпись "Court decision"
+ *  рядом уже говорит, чьё это решение. */
+function rulingText(r) {
+  return String(r || '').replace(/^court:\s*/i, '');
 }
