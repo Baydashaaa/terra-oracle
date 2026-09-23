@@ -1,0 +1,62 @@
+name: Markets keeper
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # раз в 10 минут: читать метрику надо вскоре после
+                             # высоты из спеки, пока узел хранит это состояние
+  workflow_dispatch:         # ручной запуск для проверки
+
+# Два прохода одновременно попытались бы объявить и рассчитать одно и то же.
+concurrency:
+  group: markets-keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    # Пока адрес контракта не задан в переменных репозитория, керпер молчит:
+    # боевой oracle-prophecy 0.2.0 ещё не развёрнут.
+    if: ${{ vars.PROPHECY_CONTRACT != '' }}
+    runs-on: ubuntu-latest
+    # Задача держит мнемонику резолвера. Зависший прогон держал бы её шесть часов.
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # --ignore-scripts: у задачи в окружении KEEPER_MNEMONIC, и postinstall
+      # где угодно в зависимостях выполнился бы с ней.
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts
+          else
+            echo "::warning::no package-lock.json - installing unpinned versions"
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Run keeper
+        env:
+          KEEPER_MNEMONIC: ${{ secrets.KEEPER_MNEMONIC }}
+          EXPECTED_KEEPER: ${{ vars.EXPECTED_KEEPER }}
+          PROPHECY_CONTRACT: ${{ vars.PROPHECY_CONTRACT }}
+          COURT_CONTRACT: ${{ vars.COURT_CONTRACT }}
+          CHAIN_ID: ${{ vars.KEEPER_CHAIN_ID || 'columbus-5' }}
+          LCD_URLS: ${{ vars.KEEPER_LCD_URLS }}
+          # '1' - только печатать план. Снять, когда проверено.
+          DRY_RUN: ${{ vars.KEEPER_DRY_RUN }}
+        run: node scripts/markets-keeper.js
+
+      - name: Notify on failure
+        if: failure() && env.TG_TOKEN != ''
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT}" \
+            -d text="Markets keeper failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
