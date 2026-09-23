@@ -758,10 +758,14 @@ async function submitAnswer(qi) {
   if (todayAnswers.length >= 3) { alert('You can only post 3 answers per question per day.'); return; }
   const replyTo = window._boardReplyTo[qi] || null;
   try {
+    // Подпись покрывает и хеш текста с цитатой (SEC-07): перехваченная
+    // подпись не годится для другого содержимого.
+    const replyObj = replyTo ? { answerId: replyTo.answerId, author: replyTo.author, text: replyTo.text.slice(0,80) } : null;
+    const signed = await signAction('answer', q.id, await contentHash(answerContent({ text, replyTo: replyObj })));
     const res = await fetch(`${WORKER_URL}/answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: q.id, text, replyTo: replyTo ? { answerId: replyTo.answerId, author: replyTo.author, text: replyTo.text.slice(0,80) } : null, ...(await signAction('answer', q.id)) }),
+      body: JSON.stringify({ questionId: q.id, text, replyTo: replyObj, ...signed }),
     });
     if (!res.ok) throw new Error('Failed to post answer');
     const data = await res.json();

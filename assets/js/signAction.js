@@ -9,7 +9,7 @@
  * View-only mode (luncdash) cannot sign, and that is correct rather than a
  * limitation: an address typed into a box proves nothing about who owns it.
  */
-async function signAction(action, refId) {
+async function signAction(action, refId, content) {
   const provider = (typeof getActiveProvider === 'function') ? getActiveProvider() : 'keplr';
   const k = (typeof getActiveKeplr === 'function') ? getActiveKeplr() : window.keplr;
 
@@ -24,19 +24,45 @@ async function signAction(action, refId) {
   const ts = Date.now();
 
   // Must match actionMessage() in the Worker byte for byte.
-  const message = [
+  const lines = [
     'Terra Oracle',
     `action: ${action}`,
     `wallet: ${wallet}`,
     `ref: ${refId}`,
     `ts: ${ts}`,
-  ].join('\n');
+  ];
+  // Версия 2: в подпись входит хеш содержимого (SEC-07). Без него подпись
+  // покрывала только действие и номер, и перехваченную можно было отправить
+  // с другим текстом.
+  if (content) lines.push(`content: ${content}`);
+  const message = lines.join('\n');
 
   const sig = await k.signArbitrary('columbus-5', wallet, message);
-  return { wallet, ts, sig };
+  return content ? { wallet, ts, sig, v: 2 } : { wallet, ts, sig };
 }
 
 window.signAction = signAction;
+
+// sha256 строки в hex. Та же операция в воркере (contentHash в auth.js):
+// обе стороны хешируют одни и те же байты.
+async function contentHash(str) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(str)));
+  return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Каноническое содержимое - обязано совпадать байт в байт с
+// questionContent/answerContent в воркере. Порядок полей и null вместо
+// отсутствующих - часть формата.
+function questionContent(b) {
+  return JSON.stringify([b.category ?? null, b.text ?? null, b.tags ?? null,
+    b.poll ?? null, b.evidence ?? null, b.title ?? null]);
+}
+function answerContent(b) {
+  return JSON.stringify([b.text ?? null, b.replyTo ?? null]);
+}
+window.contentHash = contentHash;
+window.questionContent = questionContent;
+window.answerContent = answerContent;
 
 // ── Vote session ────────────────────────────────────────────────────────────
 // Votes are frequent, capped and low-value, so asking the wallet to sign each
@@ -81,11 +107,25 @@ window.voteSession = voteSession;
 // Убрать разрешение с диска. Живёт рядом с самой сессией намеренно: имя
 // ключа знает только этот файл, и чистка не отстанет от переименования.
 //
-// ВНИМАНИЕ: это удаление, а не отзыв. Уже снятая копия останется валидной
-// до истечения срока - проверяет её сервер, а не браузер. Настоящий отзыв
-// потребует серверного списка или одноразового nonce.
+// И отзыв на сервере (SEC-08): одного удаления мало, снятая раньше копия
+// осталась бы действительной до конца срока. Сессия сама доказывает право
+// себя отозвать, поэтому окно кошелька не нужно. keepalive - чтобы запрос
+// ушёл, даже если страницу тут же закрывают.
 function clearVoteSession() {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(VOTE_SESSION_KEY) || 'null'); } catch (e) {}
   try { localStorage.removeItem(VOTE_SESSION_KEY); } catch (e) {}
+  if (!cached || !cached.sig || !(cached.exp > Date.now())) return;
+  const base = (typeof WORKER_URL !== 'undefined' && WORKER_URL)
+    || 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
+  try {
+    fetch(base + '/session/revoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cached),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) {}
 }
 window.clearVoteSession = clearVoteSession;
 

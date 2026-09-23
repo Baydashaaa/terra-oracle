@@ -160,10 +160,16 @@ document.getElementById('ask-form').addEventListener('submit', async function(e)
     : null;
 
   try {
+    // Автор подписывает номер вопроса и хеш содержимого (SEC-07). Без этого
+    // под чужой оплатой можно было опубликовать свой текст от имени
+    // плательщика. Окно кошелька без газа, как при ответе. Если человек
+    // откажется подписать - оплата останется, повторить можно.
+    const qBody = { id: ref, category, text, wallet, txHash, tags, poll, evidence };
+    const signed = await signAction('question', ref, await contentHash(questionContent(qBody)));
     const res = await fetch(`${WORKER_URL}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref, category, text, wallet, txHash, tags, poll, evidence }),
+      body: JSON.stringify({ ...qBody, ...signed }),
     });
     if (!res.ok) {
       const err = await res.json();

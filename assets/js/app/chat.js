@@ -54,12 +54,9 @@ window.sendChatMessage = async function() {
     const result = { transactionHash: txHash };
     const short = sender.slice(0,8)+'...'+sender.slice(-4);
 
-    // ✅ Streak: Chat - платное действие (5,000 LUNC)
-    fetch(`${WORKER_URL}/streak/activity`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet: sender, action: 'chat' }),
-    }).catch(() => {});
+    // Стрик за чат засчитывает /chat/message ниже - после проверки оплаты в
+    // блокчейне. Прямой вызов /streak/activity отсюда убран: маршрут закрыт
+    // для браузера, через него накручивались стрики без оплаты.
     const stored = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]');
     stored.push({ text, author: short, fullAddr: sender, txHash: result.transactionHash, isVerified: true, timestamp: Date.now() });
     localStorage.setItem('dao_chat_pending', JSON.stringify(stored));
@@ -162,10 +159,13 @@ async function toggleReaction(txHash, emoji) {
 
   // Persist to Worker; roll back on failure
   try {
+    // Реакция - от имени кошелька, поэтому по сессии, как голоса. Первая
+    // реакция попросит подпись, дальше сессия переиспользуется 12 часов.
+    const session = await voteSession();
     const res = await fetch(`${WORKER_URL}/chat/react`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ txHash, emoji, wallet }),
+      body: JSON.stringify({ txHash, emoji, ...session }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error('react failed: ' + res.status);
