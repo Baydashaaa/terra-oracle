@@ -728,6 +728,7 @@ async function openProphecyMarket(id) {
     ${resultBlock(m)}
     <div id="mk-dispute"></div>
     ${positionBlock(m, pos)}
+    <div id="mk-activity"></div>
     <section class="card mk-how">
       <h3>How this settles</h3>
       <p class="mk-lead">${plainSpec(m, tip)}</p>
@@ -738,6 +739,7 @@ async function openProphecyMarket(id) {
     </section>`;
   if (open) updateBetCalc();
   if (window.renderDispute) window.renderDispute(m);
+  if (window.renderActivity) window.renderActivity(m);
 }
 
 /** Баннер, статистика и вкладки нужны списку, а не экрану одного рынка. */
@@ -1063,7 +1065,11 @@ setInterval(() => {
 // весь экран.
 setInterval(async () => {
   const cur = window._prophecyMarket;
-  if (openMarketId === null || !cur || !mkPageVisible() || mkUserTyping()) return;
+  if (openMarketId === null || !cur || !mkPageVisible()) return;
+  // Открытый рынок обновляем точечно: проценты, коэффициенты и ленту.
+  // Поле суммы при этом не трогается, поэтому печатать можно спокойно.
+  if (cur.status === 'open') { liveOpenRefresh(); return; }
+  if (mkUserTyping()) return;
   if (cur.status !== 'disputed' && cur.status !== 'proposed') return;
   try {
     const m = await prophecyQuery({ market: { market_id: openMarketId } });
@@ -1118,4 +1124,25 @@ function mkToast(msg, kind) {
  *  замер на rebel-2 сошёлся до uluna. */
 function netLunc(uluna) {
   return (Number(uluna || 0) * 0.995 / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+
+/** Точечное обновление открытого рынка: стороны, расчёт и лента. Полная
+ *  перерисовка стёрла бы набранную сумму и прокрутила экран наверх. */
+async function liveOpenRefresh() {
+  try {
+    const m = await prophecyQuery({ market: { market_id: openMarketId } });
+    // Приём закрылся или рынок сменил статус - нужен другой экран целиком.
+    if (m.status !== 'open' || !timeLeft(m.bets_close_at)) {
+      openProphecyMarket(openMarketId);
+      return;
+    }
+    window._prophecyMarket = m;
+    const row = document.getElementById('bet-side-row');
+    const yes = Number(m.pot_yes), no = Number(m.pot_no);
+    const total = yes + no;
+    if (row) row.outerHTML = openSides(m, total ? Math.round((yes / total) * 100) : 50);
+    updateBetCalc();
+    if (window.renderActivity) window.renderActivity(m);
+  } catch (e) { /* узел не ответил - в следующий раз */ }
 }
