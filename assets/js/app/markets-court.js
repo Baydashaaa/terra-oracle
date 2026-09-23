@@ -67,7 +67,7 @@
     const s = String(r || '');
     if (s.includes('challenger')) return 'You opened this dispute, so you cannot judge it.';
     if (s.includes('resolver')) return 'You posted the reading under dispute, so you cannot judge it.';
-    if (s.includes('stake in this market')) return 'You have a stake in this market, so you cannot judge it.';
+    if (s.includes('stake in this market')) return 'You have a prediction in this market, so you cannot judge it.';
     if (s.includes('Not eligible')) return 'Only the council votes for now. Oracle Vault holders will join later.';
     if (s.includes('Already voted')) return 'You have already voted in this case.';
     if (s.includes('Voting has ended')) return 'Voting has ended.';
@@ -206,7 +206,7 @@
       const arbEnd = pc ? Number(m.disputed_at) + Number(pc.arbiter_secs) : 0;
       if (arbEnd && nowSecs() >= arbEnd) {
         action = voidButton('The court did not rule in time. Anyone can void the market: every '
-          + 'stake and the dispute bond go back.');
+          + 'prediction and the dispute bond are refunded.');
       } else {
         // Закрыть может кто угодно: дело не должно зависнуть из-за того,
         // что все ушли.
@@ -245,7 +245,7 @@
     if (!m || !mkWallet()) return;
     const label = choice.toUpperCase();
     const meaning = choice === 'void'
-      ? 'that the reading cannot be settled either way. If VOID wins, the market is voided and every stake goes back.'
+      ? 'that the reading cannot be settled either way. If VOID wins, the market is voided and every prediction is refunded.'
       : `that the market resolves <b>${label}</b>. If your side wins, the market settles ${label} and payouts follow it.`;
     const sure = await mkConfirm({
       title: `Vote ${label}?`,
@@ -315,13 +315,13 @@
       <section class="card mk-court">
         <h3>Waiting for the outcome</h3>
         <p class="mk-lead-sm">If no outcome is posted within <b>${cd(graceEnd)}</b>, anyone can void
-          this market and every stake goes back.</p>
+          this market and every prediction is refunded.</p>
       </section>`;
     }
     return `
     <section class="card mk-court">
       <h3>No outcome was posted in time</h3>
-      ${voidButton('Anyone can void this market. Every stake goes back, and so does the creator\'s bond.')}
+      ${voidButton('Anyone can void this market. Every prediction is refunded, and so is the creator\'s bond.')}
     </section>`;
   }
 
@@ -338,7 +338,7 @@
         'oracle-prophecy: expire ' + m.id, PROPHECY_CHAIN, 1200000
       );
       console.log('[prophecy] expire tx', hash);
-      mkToast('Market voided. Stakes can be taken back after the next block.', 'ok');
+      mkToast('Market voided. Refunds can be taken after the next block.', 'ok');
       setTimeout(() => openProphecyMarket(m.id), 7000);
     } catch (e) {
       mkToast(e.message || 'Transaction failed', 'err');

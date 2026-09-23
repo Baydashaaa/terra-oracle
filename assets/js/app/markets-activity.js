@@ -124,11 +124,11 @@
 
     return `
       <div class="mk-chart-head">
-        <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · bet by bet</span>
+        <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · one step per prediction</span>
         <b class="${last >= 50 ? 'y' : 'n'}">YES ${last}% · NO ${100 - last}%</b>
       </div>
       <div class="mk-chart"><div class="mk-plot">
-        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="YES and NO share of the pot, bet by bet">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="YES and NO share of the pool, prediction by prediction">
           <defs>
             <linearGradient id="mkgY" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stop-color="#22c55e" stop-opacity=".55"/>
@@ -149,8 +149,8 @@
         <div class="mk-chart-axis"><span>100%</span><span>50%</span><span>0%</span></div>
       </div>
       <div class="mk-chart-x">
-        <span>first bet · ${agoText(pts[0].b.t)}</span>
-        <span>${steps} bets</span>
+        <span>first prediction · ${agoText(pts[0].b.t)}</span>
+        <span>${steps} predictions</span>
         <span>latest · ${agoText(pts[steps - 1].b.t)}</span>
       </div>`;
   }
@@ -191,7 +191,7 @@
         <h3>Activity</h3>
         ${bets.length
           ? chartHtml(bets, m) + feedHtml(bets)
-          : '<p class="mk-lead-sm">No bets yet. The first one shows up here.</p>'}
+          : '<p class="mk-lead-sm">No predictions yet. The first one shows up here.</p>'}
       </section>`;
   };
 

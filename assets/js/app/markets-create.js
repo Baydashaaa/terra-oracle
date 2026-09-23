@@ -461,7 +461,7 @@
     if (closeTs() <= now + 600) out.push('Predictions have to stay open at least ten more minutes.');
     if (S.lead < cut) {
       out.push('Predictions must close at least ' + Math.round(cut / 60)
-        + ' minutes before resolution, or the outcome is visible while bets are open.');
+        + ' minutes before resolution, or the outcome is visible while predictions are open.');
     }
     if (!S.height) out.push('Block height could not be estimated. Reload and try again.');
     return out;
@@ -573,8 +573,8 @@
         return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (S.lead === l.secs) + '">' + l.label + '</button>';
       }).join('')
       + '    </div>'
-      + '    <div class="mkf-note">Betting stops <b>' + esc(utcText(closeTs(), true))
-      + '</b>. The gap exists so nobody can bet once the outcome is visible.</div>'
+      + '    <div class="mkf-note">Predictions close <b>' + esc(utcText(closeTs(), true))
+      + '</b>. The gap exists so nobody can predict once the outcome is visible.</div>'
       + '  </div>'
       + '  <div class="mkf-note">'
       + (S.height

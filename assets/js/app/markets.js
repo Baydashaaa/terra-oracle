@@ -301,7 +301,7 @@ function statusLine(m) {
   if (m.status === 'settled') {
     return `<b class="${m.outcome ? 'y' : 'n'}">${m.outcome ? 'YES' : 'NO'}</b> · settled`;
   }
-  if (m.status === 'void') return 'void · stakes returned';
+  if (m.status === 'void') return 'void · everyone refunded';
   if (m.status === 'disputed') return '<b class="p">in court</b>';
   if (m.status === 'proposed') {
     // "Proposed" человеку ничего не говорит. Важно другое: идёт окно, внутри
@@ -330,7 +330,7 @@ function challengeLeft(m) {
 function oddsCaption(m) {
   if (m.status === 'open' && timeLeft(m.bets_close_at)) return '';
   if (m.status === 'settled' || m.status === 'void') return 'Forecast at close';
-  return 'Forecast at close · no more bets';
+  return 'Forecast at close · predictions closed';
 }
 
 
@@ -365,7 +365,7 @@ function oddsBlock(m) {
     const otherName = isYes ? 'NO' : 'YES';
     const sub = st === 'won' ? '<span class="m">won</span>'
       : st === 'lost' ? '<span class="m">lost</span>'
-        : st === 'open' && !mine && other ? `<span class="m hot">first in takes the ${otherName} pot</span>`
+        : st === 'open' && !mine && other ? `<span class="m hot">first in takes the ${otherName} pool</span>`
           : st === 'open' && !mine ? '<span class="m hot">be the first</span>'
             : st === 'open' && !other ? `<span class="m">waiting for ${otherName}</span>`
               : st === 'open' && mult ? `<span class="m">pays ×${mult.toFixed(2)}</span>`
@@ -389,7 +389,7 @@ function footBlock(m) {
   return `
     <div class="foot">
       <span><img src="assets/img/icons/c-volume.webp" alt="" loading="lazy"><b>${fmtLunc(total)}</b> LUNC</span>
-      <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> ${m.bettors_yes + m.bettors_no === 1 ? 'player' : 'players'}</span>
+      <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> ${m.bettors_yes + m.bettors_no === 1 ? 'participant' : 'participants'}</span>
       ${Number(m.boost)
         ? `<span><img src="assets/img/lunc.webp" alt="" loading="lazy"><b>+${fmtLunc(m.boost)}</b> boost</span>`
         : ''}
@@ -475,7 +475,7 @@ async function renderMarkets(resolved) {
 
   if (!PROPHECY_CONTRACT) {
     host.innerHTML = emptyPanel('Opening soon',
-      'Prediction markets fix a metric, a threshold and a block height before the first bet, ' +
+      'Prediction markets fix a metric, a threshold and a block height before the first prediction, ' +
       'so anyone can recompute the answer. The operator posts the outcome; the contract does not ' +
       'read the chain itself.');
     return;
@@ -490,9 +490,9 @@ async function renderMarkets(resolved) {
       ${COURT_CONTRACT
         ? `<strong>TEST deployment${PROPHECY_TESTNET ? ' · rebel-2' : ''}.</strong> The operator posts
            outcomes. Anyone can dispute one, and a court decides - the operator cannot vote in it.
-           Bets are capped. Treat this as a preview, not a settled market.`
+           Amounts are capped. Treat this as a preview, not a settled market.`
         : `<strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
-           contract, and the same key can post and challenge them. Bets are capped. Treat this as a
+           contract, and the same key can post and challenge them. Amounts are capped. Treat this as a
            preview, not a settled market.`}
     </div>`;
 
@@ -601,7 +601,7 @@ function verifyBlock(m) {
 function betForm(m) {
   return `
   <section class="card mk-bet">
-    <h3>Place a bet</h3>
+    <h3>Make a prediction</h3>
     <label class="mk-amount">
       <span>Amount</span>
       <input id="bet-amount" type="text" inputmode="numeric" placeholder="0"
@@ -628,7 +628,7 @@ function positionBlock(m, pos) {
     : '';
   return `
   <section class="card mk-pos">
-    <h3>Your position</h3>
+    <h3>Your prediction</h3>
     <div class="mk-pos-line">${[side, side2].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
     ${Number(pos.payout) && !pos.claimed
       ? `<div class="mk-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b> · about
@@ -724,7 +724,7 @@ async function openProphecyMarket(id) {
         <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
         ${open ? openSides(m, pct) + betPanel(m) : closedSplit(m, pct)}
         ${!open && m.status === 'open'
-          ? '<div class="mk-shut">Betting is closed, waiting for the outcome.</div>' : ''}
+          ? '<div class="mk-shut">Predictions are closed, waiting for the outcome.</div>' : ''}
         ${footBlock(m)}
       </div>
     </article>
@@ -754,7 +754,7 @@ function mkListChrome(show) {
 }
 
 function playersText(n) {
-  return `${n} ${n === 1 ? 'player' : 'players'}`;
+  return `${n} ${n === 1 ? 'participant' : 'participants'}`;
 }
 
 /**
@@ -770,8 +770,8 @@ function openSides(m, pct) {
     const otherName = isYes ? 'NO' : 'YES';
     const mult = payoutMultiplier(m, isYes);
     let sub;
-    if (!mine && other) sub = `<span class="m hot">No bets yet · first in takes the ${otherName} pot</span>`;
-    else if (!mine) sub = '<span class="m hot">No bets yet · be the first</span>';
+    if (!mine && other) sub = `<span class="m hot">No predictions yet · first in takes the ${otherName} pool</span>`;
+    else if (!mine) sub = '<span class="m hot">No predictions yet · be the first</span>';
     else if (!other) sub = `<span class="m">Nothing to win until someone takes ${otherName}</span>`;
     else sub = `<span class="m">pays ×${mult.toFixed(2)}</span>`;
     const players = isYes ? m.bettors_yes : m.bettors_no;
@@ -847,7 +847,7 @@ function resultBlock(m) {
   if (m.status === 'void') {
     return `<div class="mk-banner">
       <h3>Void · nobody won or lost</h3>
-      <p>Every stake goes back untouched.</p>
+      <p>Every prediction is refunded in full.</p>
       ${m.void_reason ? `<p class="read">Reason: ${mktEsc(m.void_reason)}</p>` : ''}
       ${m.bad_spec
         ? '<p>The question could not be verified, so the creator\'s bond went to the boost fund.</p>'
@@ -890,8 +890,8 @@ function updateBetCalc() {
   // В кнопке видно, на что уходят деньги: сумма и сторона.
   if (btn && !btn.disabled) {
     btn.textContent = lunc
-      ? `Bet ${lunc.toLocaleString('en-US')} LUNC on ${side} →`
-      : `Choose an amount to bet on ${side}`;
+      ? `Predict ${side} · ${lunc.toLocaleString('en-US')} LUNC →`
+      : `Choose an amount to predict ${side}`;
   }
   if (!lunc) {
     box.textContent = 'Pick an amount to see what a correct call pays.';
@@ -900,7 +900,7 @@ function updateBetCalc() {
   const min = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
   const max = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
   if (min && lunc < min) {
-    box.innerHTML = `<div class="row muted"><span>Minimum bet</span><b>${min.toLocaleString('en-US')} LUNC</b></div>`;
+    box.innerHTML = `<div class="row muted"><span>Minimum amount</span><b>${min.toLocaleString('en-US')} LUNC</b></div>`;
     return;
   }
   if (max && lunc > max) {
@@ -911,10 +911,10 @@ function updateBetCalc() {
   // считает по коэффициенту, которого уже не будет.
   const mult = payoutMultiplier(m, betSide, lunc * 1e6);
   const payout = Math.floor(lunc * mult);
-  box.innerHTML = `<div class="row"><span>You stake</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
+  box.innerHTML = `<div class="row"><span>You put in</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
     <div class="row"><span>If ${side} wins</span><b class="y">${payout.toLocaleString('en-US')} LUNC</b></div>
     <div class="row"><span>Profit</span><b class="y">+${(payout - lunc).toLocaleString('en-US')} LUNC</b></div>
-    <div class="row muted"><span>If it does not</span><b>the stake is gone</b></div>`;
+    <div class="row muted"><span>If it does not</span><b>you lose it</b></div>`;
 }
 
 async function submitBet() {
@@ -927,7 +927,7 @@ async function submitBet() {
   const minB = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
   const maxB = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
   if ((minB && lunc < minB) || (maxB && lunc > maxB)) {
-    mkToast(`Bets on this market are ${minB.toLocaleString('en-US')} to ${maxB.toLocaleString('en-US')} LUNC per wallet.`, 'info');
+    mkToast(`Predictions on this market are ${minB.toLocaleString('en-US')} to ${maxB.toLocaleString('en-US')} LUNC per wallet.`, 'info');
     return;
   }
 
@@ -938,10 +938,10 @@ async function submitBet() {
       mkWallet(), PROPHECY_CONTRACT,
       { bet: { market_id: m.id, side: betSide } },
       [{ denom: 'uluna', amount: String(lunc * 1e6) }],
-      'oracle-prophecy: bet ' + m.id, PROPHECY_CHAIN, 600000
+      'oracle-prophecy: prediction ' + m.id, PROPHECY_CHAIN, 600000
     );
     console.log('[prophecy] bet tx', hash);
-    mkToast('Bet sent. It shows up after the next block.', 'ok');
+    mkToast('Prediction sent. It shows up after the next block.', 'ok');
     btn.textContent = 'Sent, waiting for the block…';
     // Перерисовка с задержкой: сразу после отправки контракт ещё покажет
     // старые суммы, и человек решит, что ставка не прошла.
