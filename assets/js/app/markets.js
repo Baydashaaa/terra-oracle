@@ -1146,3 +1146,41 @@ async function liveOpenRefresh() {
     if (window.renderActivity) window.renderActivity(m);
   } catch (e) { /* узел не ответил - в следующий раз */ }
 }
+
+
+// ── окно подтверждения ─────────────────────────────────────────────────────
+//
+// Вместо системного confirm: в стиле раздела, с объяснением последствий.
+// Esc и клик мимо окна - отмена, Enter - подтверждение.
+function mkConfirm({ title, body, ok = 'Confirm', tone = '' }) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'mk-modal';
+    wrap.innerHTML = `
+      <div class="mk-modal-box ${tone}" role="dialog" aria-modal="true">
+        <h3>${title}</h3>
+        <div class="mk-modal-body">${body}</div>
+        <div class="mk-modal-btns">
+          <button type="button" class="mk-modal-cancel">Cancel</button>
+          <button type="button" class="mk-modal-ok">${ok}</button>
+        </div>
+      </div>`;
+    const done = (v) => {
+      document.removeEventListener('keydown', onKey);
+      wrap.classList.remove('show');
+      setTimeout(() => wrap.remove(), 200);
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') done(false);
+      if (e.key === 'Enter') done(true);
+    };
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+    wrap.querySelector('.mk-modal-cancel').onclick = () => done(false);
+    wrap.querySelector('.mk-modal-ok').onclick = () => done(true);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+    requestAnimationFrame(() => wrap.classList.add('show'));
+    wrap.querySelector('.mk-modal-ok').focus();
+  });
+}

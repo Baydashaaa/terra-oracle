@@ -2012,3 +2012,39 @@
   display:flex;justify-content:space-between;gap:10px;margin-top:6px;
   font-size:11px;color:var(--ink-3);
 }
+
+
+/* ---- Markets: окно подтверждения ---- */
+.mk-modal{
+  position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;
+  background:rgba(5,7,20,.72);backdrop-filter:blur(3px);
+  opacity:0;transition:opacity .2s;
+}
+.mk-modal.show{opacity:1}
+.mk-modal-box{
+  width:min(440px,100%);padding:22px 22px 18px;border-radius:16px;
+  background:var(--panel,#12142b);border:1px solid var(--line-2,#2a2f55);
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.9);
+  transform:translateY(8px);transition:transform .2s;
+}
+.mk-modal.show .mk-modal-box{transform:none}
+.mk-modal-box.y{border-color:rgba(34,197,94,.55)}
+.mk-modal-box.n{border-color:rgba(209,96,143,.6)}
+.mk-modal-box.warn{border-color:rgba(244,208,63,.55)}
+.mk-modal-box h3{margin:0 0 10px;font-family:var(--dis);font-size:19px;font-weight:700;color:var(--ink,#e8ecff)}
+.mk-modal-body{font-size:13px;line-height:1.65;color:#b8c2e6}
+.mk-modal-body p{margin:0 0 8px}
+.mk-modal-body ul{margin:4px 0 8px;padding-left:18px}
+.mk-modal-body li{margin:4px 0}
+.mk-modal-body b{color:var(--ink,#e8ecff)}
+.mk-modal-body b.y{color:var(--lime)}
+.mk-modal-body b.n{color:var(--pink)}
+.mk-modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.mk-modal-btns button{
+  padding:10px 18px;border-radius:10px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;
+}
+.mk-modal-cancel{background:transparent;border:1px solid var(--line-2,#2a2f55);color:#b8c2e6}
+.mk-modal-cancel:hover{color:var(--ink,#e8ecff)}
+.mk-modal-ok{border:0;color:#fff;background:linear-gradient(90deg,#7c3aed,#a855f7)}
+.mk-modal-box.y .mk-modal-ok{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.mk-modal-box.n .mk-modal-ok{background:linear-gradient(90deg,#be185d,#ec4899)}

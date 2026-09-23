@@ -121,6 +121,19 @@
     if (!m || !btn) return;
     if (!mkWallet()) { mkToast('Connect a wallet first.', 'info'); return; }
     if (!reading) { mkToast('Say what the chain actually shows - the court reads it.'); return; }
+    const bondText = fmtLunc(cfg.challenge_bond) + ' LUNC';
+    const sure = await mkConfirm({
+      title: `Dispute this outcome for ${bondText}?`,
+      body: `<p>Your bond of <b>${bondText}</b> is held until the court decides:</p>
+        <ul>
+          <li><b class="y">You were right</b> - the bond comes back, plus the market's protocol fee.</li>
+          <li><b class="n">You were wrong</b> - the bond goes to the boost fund.</li>
+          <li><b>No decision</b> - the market is voided and the bond comes back.</li>
+        </ul>`,
+      ok: `Dispute · ${bondText}`,
+      tone: 'warn',
+    });
+    if (!sure) return;
 
     btn.disabled = true;
     btn.textContent = 'Confirm in your wallet…';
@@ -231,7 +244,17 @@
     const m = window._prophecyMarket;
     if (!m || !mkWallet()) return;
     const label = choice.toUpperCase();
-    if (!confirm(`Vote ${label} on this dispute? A vote cannot be changed.`)) return;
+    const meaning = choice === 'void'
+      ? 'that the reading cannot be settled either way. If VOID wins, the market is voided and every stake goes back.'
+      : `that the market resolves <b>${label}</b>. If your side wins, the market settles ${label} and payouts follow it.`;
+    const sure = await mkConfirm({
+      title: `Vote ${label}?`,
+      body: `<p>You are voting ${meaning}</p>
+        <p>A vote cannot be changed. Judge by what the chain shows, not by who is asking.</p>`,
+      ok: `Vote ${label}`,
+      tone: choice === 'yes' ? 'y' : choice === 'no' ? 'n' : '',
+    });
+    if (!sure) return;
     try {
       const hash = await window.sendExecuteContract(
         mkWallet(), COURT_CONTRACT,
