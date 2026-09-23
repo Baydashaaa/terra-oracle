@@ -395,6 +395,12 @@
       resetBtn(priceLunc);
 
       if (typeof loadMyBagNFTs === 'function') { try { loadMyBagNFTs(wallet); } catch (e) {} }
+      if (window.OracleDrawUI && typeof window.OracleDrawUI.addPendingEntry === 'function') {
+        window.OracleDrawUI.addPendingEntry({
+          pool: result.pool || pool, wallet: wallet, tokenId: result.tokenId,
+          tier: result.tier || tier, entries: result.entries, txHash: txHash
+        });
+      }
       if (typeof window.refreshWheelSoon === 'function') window.refreshWheelSoon();
 
       return txHash;

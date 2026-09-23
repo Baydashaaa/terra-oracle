@@ -19,6 +19,29 @@ let adminUnlocked = false;
 // данные и бейджи - колесо V2 забирает их через OracleDrawUI.participants().
 let roundParticipants = [];   // [[адрес, билетов, tokenId|null, тир], ...]
 
+// ── ОЖИДАЮЩИЕ ЗАПИСИ ─────────────────────────────────────────────────────────
+// Билеты раунда страница перезагружает своим таймером, примерно раз в минуту,
+// поэтому свежий минт появлялся на колесе с такой же задержкой. После минта
+// сектор добавляется сразу, а когда в загруженных билетах появится тот же
+// токен (txhash mint:<tokenId>:i) или та же транзакция, запись удаляется
+// сама - двойного сектора нет. Без подтверждения запись живёт 3 минуты.
+const PENDING_TTL_MS = 3 * 60 * 1000;
+let pendingEntries = [];      // { pool, wallet, tokenId, tier, entries, txHash, at }
+
+function pendingConfirmed(p, tickets) {
+  return tickets.some(t => {
+    const h = t.txhash || '';
+    return (p.tokenId && h.indexOf('mint:' + p.tokenId + ':') === 0) || (p.txHash && h === p.txHash);
+  });
+}
+
+// Живые ожидающие записи текущего пула; подтверждённые и старые выбрасываем.
+function activePending(pool, tickets) {
+  const now = Date.now();
+  pendingEntries = pendingEntries.filter(p => now - p.at < PENDING_TTL_MS && !(p.pool === pool && pendingConfirmed(p, tickets)));
+  return pendingEntries.filter(p => p.pool === pool);
+}
+
 function buildRoundParticipants() {
   const tickets = currentLottery === 'daily' ? dailyTickets : weeklyTickets;
   const isDaily = currentLottery === 'daily';
@@ -43,6 +66,10 @@ function buildRoundParticipants() {
       pairs.push([t.address, 1, tokenId, (t.tier || 'common').toLowerCase()]);
       lastKey = key;
     }
+  }
+
+  for (const p of activePending(currentLottery, tickets)) {
+    pairs.push([p.wallet, p.entries, p.tokenId, p.tier]);
   }
 
   // Free entries (только weekly и только при наличии платных участников) -
@@ -78,6 +105,13 @@ function roundNftsFor(address) {
       });
     }
     byToken.get(id).entries++;
+  }
+
+  for (const p of activePending(currentLottery, tickets)) {
+    if (p.wallet !== address) continue;
+    byToken.set('pending:' + (p.tokenId || p.txHash), {
+      tokenId: p.tokenId, tier: p.tier, entries: p.entries, time: Math.floor(p.at / 1000)
+    });
   }
 
   return Array.from(byToken.values())
@@ -269,6 +303,19 @@ window.OracleDrawUI = {
   participants:   function() { return roundParticipants; },
   walletNfts:     function(addr) { return roundNftsFor(addr); },
   pool:           function() { return currentLottery; },
+
+  // Сектор сразу после минта или ввода NFT в раунд, до загрузки билетов.
+  addPendingEntry: function(e) {
+    if (!e || !e.wallet || (e.pool !== 'daily' && e.pool !== 'weekly')) return;
+    pendingEntries.push({
+      pool: e.pool, wallet: e.wallet,
+      tokenId: e.tokenId != null ? String(e.tokenId) : null,
+      tier: String(e.tier || 'common').toLowerCase(),
+      entries: Math.max(1, Number(e.entries) || 1),
+      txHash: e.txHash || null, at: Date.now()
+    });
+    try { updateWheelTickets(); } catch (err) { console.warn('[wheel] pending entry:', err.message); }
+  },
 
   wakeOracleEye:  function(on) {
     document.body.classList.toggle('oracle-predraw', !!on);

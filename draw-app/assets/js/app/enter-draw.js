@@ -110,6 +110,13 @@ async function enterDraw(nftId, pool, entries) {
       </a>`;
 
     // Сектор на колесе - сразу, без обновления страницы.
+    if (window.OracleDrawUI && typeof window.OracleDrawUI.addPendingEntry === 'function') {
+      const bagNft = (window._bagNFTs || []).find(n => String(n.id) === String(nftId));
+      window.OracleDrawUI.addPendingEntry({
+        pool: pool, wallet: wallet, tokenId: String(nftId),
+        tier: bagNft && (bagNft.tier || bagNft.type), entries: entries, txHash: txHash
+      });
+    }
     if (typeof window.refreshWheelSoon === 'function') window.refreshWheelSoon();
 
     // Mark NFT as used locally
