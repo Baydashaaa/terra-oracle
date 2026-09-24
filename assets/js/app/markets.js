@@ -63,6 +63,7 @@ function mkWallet() {
 let prophecyCfg = null;
 
 async function loadProphecyConfig() {
+  loadTaxRate();
   if (prophecyCfg) return prophecyCfg;
   try { prophecyCfg = await prophecyQuery({ config: {} }); } catch (e) { /* не критично */ }
   return prophecyCfg;
@@ -611,7 +612,7 @@ function betForm(m) {
     <div id="bet-calc" class="mk-calc">Pick a side above and enter an amount.</div>
     <button onclick="submitBet()" id="bet-go" class="ask-go mk-place">Place bet &rarr;</button>
     <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about
-      0.5% smaller than the figure shown.</div>
+      ${taxPct()}% smaller than the figure shown.</div>
   </section>`;
 }
 
@@ -632,7 +633,7 @@ function positionBlock(m, pos) {
     <div class="mk-pos-line">${[side, side2].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
     ${Number(pos.payout) && !pos.claimed
       ? `<div class="mk-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b> · about
-          <b>${netLunc(pos.payout)} LUNC</b> after the 0.5% network tax${
+          <b>${netLunc(pos.payout)} LUNC</b> after the ${taxPct()}% network tax${
           m.status === 'proposed' ? ', once the challenge window closes' : ''}</div>`
       : ''}
     ${pos.claimed
@@ -804,7 +805,7 @@ function betPanel(m) {
         `<button type="button" onclick="setBetAmount(${n})">${n}</button>`).join('')}</div>
       <div id="bet-calc" class="mk-calc"></div>
       <button onclick="submitBet()" id="bet-go" class="ask-go mk-place" type="button">Bet</button>
-      <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about 0.5%
+      <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about ${taxPct()}%
         smaller than the figure shown.</div>
     </div>`;
 }
@@ -1123,10 +1124,11 @@ function mkToast(msg, kind) {
 }
 
 
-/** Сколько придёт на кошелёк: выплаты из контракта теряют 0.5% налога,
+/** Сколько придёт на кошелёк: выплаты из контракта теряют налог по ставке
+ *  цепочки (mkTaxRate). Раньше здесь было зашито 0.5% - ставка rebel-2,
  *  замер на rebel-2 сошёлся до uluna. */
 function netLunc(uluna) {
-  return (Number(uluna || 0) * 0.995 / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return (Number(uluna || 0) * (1 - mkTaxRate()) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
 
@@ -1193,4 +1195,40 @@ function mkConfirm({ title, body, ok = 'Confirm', tone = '' }) {
  *  рядом уже говорит, чьё это решение. */
 function rulingText(r) {
   return String(r || '').replace(/^court:\s*/i, '');
+}
+
+
+// ── налог на выплаты ───────────────────────────────────────────────────────
+//
+// Выплаты из контракта облагаются налогом на сжигание, и его ставку меняет
+// голосование: на rebel-2 0.5%, на mainnet сейчас 1.5%. Берём из цепочки.
+// Пока ответа нет - 1.5%: лучше пообещать чуть меньше, чем придёт, чем больше.
+let mkTax = null;
+let mkTaxLoading = null;
+
+function loadTaxRate() {
+  if (mkTax !== null || mkTaxLoading) return mkTaxLoading;
+  mkTaxLoading = (async () => {
+    for (const base of PROPHECY_LCD) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 8000);
+      try {
+        const r = await fetch(`${base}/terra/tax/v1beta1/burn_tax_rate`, { signal: ctl.signal });
+        if (!r.ok) continue;
+        const v = Number((await r.json()).tax_rate);
+        if (v >= 0 && v < 0.5) { mkTax = v; return v; }
+      } catch (e) { /* следующий узел */ } finally { clearTimeout(timer); }
+    }
+    return null;
+  })();
+  return mkTaxLoading;
+}
+
+function mkTaxRate() {
+  return mkTax !== null ? mkTax : 0.015;
+}
+
+/** "1.5" или "0.5": без лишних нулей. */
+function taxPct() {
+  return String(+(mkTaxRate() * 100).toFixed(2));
 }
