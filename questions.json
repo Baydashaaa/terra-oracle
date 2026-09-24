@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T00:58:59.674Z",
+  "_updated": "2026-09-24T00:59:31.002Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -345,7 +345,18 @@
       "createdAt": 1785438501,
       "expiresAt": 1786043301,
       "votes": 1,
-      "answers": [],
+      "answers": [
+        {
+          "id": "ANS-MUETQWQI",
+          "wallet": "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2",
+          "walletHash": "sha256:s78kz8p2",
+          "alias": "Anonymous#Z8P2",
+          "text": "not in winter",
+          "createdAt": 1790211571,
+          "votes": 0,
+          "voters": []
+        }
+      ],
       "status": "open",
       "chosenAnswerId": null,
       "voters": [
