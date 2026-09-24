@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T00:57:41.251Z",
+  "_updated": "2026-09-24T00:58:59.674Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -20,7 +20,18 @@
       "createdAt": 1788765888,
       "expiresAt": 1789370688,
       "votes": 0,
-      "answers": [],
+      "answers": [
+        {
+          "id": "ANS-MUETQ8KA",
+          "wallet": "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2",
+          "walletHash": "sha256:s78kz8p2",
+          "alias": "Anonymous#Z8P2",
+          "text": "I don´t think he can. He seems to be commanded by a dark force.",
+          "createdAt": 1790211539,
+          "votes": 0,
+          "voters": []
+        }
+      ],
       "status": "open",
       "chosenAnswerId": null
     },
