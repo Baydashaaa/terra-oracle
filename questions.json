@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-19T21:50:24.166Z",
+  "_updated": "2026-09-24T00:57:41.251Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -262,7 +262,18 @@
       "createdAt": 1785593195,
       "expiresAt": 1786197995,
       "votes": 0,
-      "answers": [],
+      "answers": [
+        {
+          "id": "ANS-MUETOK1V",
+          "wallet": "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2",
+          "walletHash": "sha256:s78kz8p2",
+          "alias": "Anonymous#Z8P2",
+          "text": "Some validators do almost nothing for the chain, and some validators work against the chain.",
+          "createdAt": 1790211461,
+          "votes": 0,
+          "voters": []
+        }
+      ],
       "status": "open",
       "chosenAnswerId": null,
       "pollVoters": [
