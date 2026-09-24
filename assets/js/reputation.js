@@ -588,7 +588,15 @@ async function loadStatsData() {
     // this come from", which the contract cannot, since it stores a balance and
     // not its provenance. They are not the source of the total.
     const repQuestions = myQuestions.length * 40;
-    const repAnswers   = myAnswers.length   * 40;
+    // Answers are capped on the contract: `answer` has daily_limit 3 and the
+    // tier "first 3 of the day = 40". A flat count x 40 promised REP the chain
+    // never grants (4 answers in a day showed +160, the contract gives 120).
+    const _ansPerDay = {};
+    for (const a of myAnswers) {
+      const day = a.createdAt ? new Date(a.createdAt * 1000).toISOString().slice(0, 10) : 'unknown';
+      _ansPerDay[day] = (_ansPerDay[day] || 0) + 1;
+    }
+    const repAnswers   = Object.values(_ansPerDay).reduce((s, n) => s + Math.min(n, 3) * 40, 0);
     const repUpvotes   = scoredUpvotes      * 20;
     const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
@@ -617,6 +625,27 @@ async function loadStatsData() {
     set('stats-rep-chat',        '+' + Math.round(repChat) + ' REP');
     set('stats-rep-draw',        drawRepTotal > 0 ? '+' + drawRepTotal.toLocaleString() + ' REP' : '+0 REP');
     set('stats-total-rep',       totalRep.toLocaleString() + ' REP' + (streakMult > 1 ? ` · ×${streakMult} on weekly rewards` : ''));
+
+    // Gap between activity and the contract. REP is written on-chain by the
+    // hourly attestor, so fresh activity shows in the breakdown first and in
+    // the total up to an hour later. Say so, instead of two numbers that
+    // silently disagree.
+    const pending = chain ? Math.max(0, estimate - totalRep) : 0;
+    const totalBox = document.getElementById('stats-total-rep')?.parentElement;
+    if (totalBox) {
+      let note = document.getElementById('stats-rep-pending');
+      if (!note) {
+        note = document.createElement('div');
+        note.id = 'stats-rep-pending';
+        note.style.cssText = 'flex-basis:100%;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6;';
+        totalBox.style.flexWrap = 'wrap';
+        totalBox.appendChild(note);
+      }
+      note.textContent = pending > 0
+        ? 'Awaiting on-chain: +' + pending.toLocaleString() + ' REP. New activity is recorded to the contract every hour; the total shows what is already recorded.'
+        : '';
+      note.style.display = pending > 0 ? '' : 'none';
+    }
 
     // Draw REP section
     const drawEl = document.getElementById('stats-draw-block');

@@ -172,21 +172,58 @@ function setBoardSort(s) {
 }
 
 // ─── RENDER BOARD ────────────────────────────────────────────
+// Poll status. A question lives 7 days (expiresAt, set by the worker), and
+// the poll closes with it. Before this the card showed only the creation
+// date, so a click on a closed poll looked like a broken button.
+function pollState(q) {
+  const now = Math.floor(Date.now() / 1000);
+  const end = Number(q.expiresAt) || 0;
+  const closed = end > 0 && now >= end;
+  const voted = q.myPollVote !== undefined && q.myPollVote !== null;
+  return { closed, voted, end, left: end - now };
+}
+
+function pollLeftText(sec) {
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return d + 'd ' + h + 'h';
+  if (h > 0) return h + 'h ' + m + 'm';
+  return Math.max(1, m) + 'm';
+}
+
+function pollDateText(ts) {
+  const d = new Date(ts * 1000);
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+}
+
 function renderPoll(q, qi) {
   const poll = q.poll;
   const totalVotes = poll.reduce((s, o) => s + (o.votes || 0), 0);
-  const myVote = q.myPollVote !== undefined ? q.myPollVote : null;
+  const st = pollState(q);
+  const myVote = st.voted ? q.myPollVote : null;   // -1 = voted, option unknown on this device
+  const locked = st.closed || st.voted;
+
+  let status;
+  if (st.closed) {
+    status = '<span style="color:#ff8a8a;border:1px solid rgba(255,96,96,0.35);background:rgba(255,96,96,0.08);padding:1px 7px;border-radius:4px;">Closed</span>' +
+      '<span style="color:var(--muted);">Ended ' + pollDateText(st.end) + '</span>';
+  } else {
+    status = '<span style="color:#66ffaa;border:1px solid rgba(102,255,170,0.35);background:rgba(102,255,170,0.08);padding:1px 7px;border-radius:4px;">Open</span>' +
+      (st.end ? '<span style="color:var(--muted);">Ends in ' + pollLeftText(st.left) + '</span>' : '');
+  }
+  if (st.voted) status += '<span style="color:var(--accent);">&#10003; You voted</span>';
 
   let optionsHtml = '';
   for (let oi = 0; oi < poll.length; oi++) {
     const opt = poll[oi];
     const pct = totalVotes > 0 ? Math.round((opt.votes || 0) / totalVotes * 100) : 0;
-    const voted = myVote === oi;
-    const border = voted ? 'rgba(84,147,247,0.6)' : 'rgba(255,255,255,0.08)';
-    const bg = voted ? 'rgba(84,147,247,0.12)' : 'rgba(255,255,255,0.03)';
-    const textColor = voted ? 'var(--accent)' : 'var(--text)';
+    const mine = myVote === oi;
+    const border = mine ? 'rgba(84,147,247,0.6)' : 'rgba(255,255,255,0.08)';
+    const bg = mine ? 'rgba(84,147,247,0.12)' : 'rgba(255,255,255,0.03)';
+    const textColor = mine ? 'var(--accent)' : 'var(--text)';
     optionsHtml += '<div style="margin-bottom:6px;">' +
-      '<button onclick="votePoll(' + qi + ',' + oi + ')" style="width:100%;text-align:left;padding:8px 12px;border-radius:8px;border:1px solid ' + border + ';background:' + bg + ';cursor:pointer;position:relative;overflow:hidden;">' +
+      '<button type="button" onclick="votePoll(' + qi + ',' + oi + ')"' + (locked ? ' disabled aria-disabled="true"' : '') +
+      ' title="' + (st.closed ? 'This poll is closed' : st.voted ? 'You already voted' : 'Vote for this option') + '"' +
+      ' style="width:100%;text-align:left;padding:8px 12px;border-radius:8px;border:1px solid ' + border + ';background:' + bg + ';cursor:' + (locked ? 'default' : 'pointer') + ';position:relative;overflow:hidden;">' +
       '<div style="position:absolute;left:0;top:0;height:100%;width:' + pct + '%;background:rgba(84,147,247,0.08);border-radius:8px;transition:width 0.4s;"></div>' +
       '<div style="position:relative;display:flex;justify-content:space-between;align-items:center;">' +
       '<span style="font-size:12px;color:' + textColor + ';">' + escHtml(opt.text) + '</span>' +
@@ -194,19 +231,22 @@ function renderPoll(q, qi) {
       '</div></button></div>';
   }
 
-  return '<div class="poll-section" style="margin:10px 0;border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:12px;background:rgba(84,147,247,0.04);">' +
-    '<div style="font-size:10px;color:var(--accent);letter-spacing:0.08em;margin-bottom:8px;">COMMUNITY POLL</div>' +
+  return '<div class="poll-section" style="margin:10px 0;border:1px solid rgba(84,147,247,0.2);border-radius:10px;padding:12px;background:rgba(84,147,247,0.04);' + (st.closed ? 'opacity:0.85;' : '') + '">' +
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:10px;letter-spacing:0.08em;margin-bottom:8px;">' +
+    '<span style="color:var(--accent);">COMMUNITY POLL</span>' + status + '</div>' +
     optionsHtml +
-    '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + ' total</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + ' total' +
+    (st.closed ? ' · final result' : '') + '</div>' +
     '</div>';
 }
-
 
 async function votePoll(qi, optionIdx) {
   if (!(globalWalletAddress || connectedAddress)) { alert('Connect wallet to vote'); return; }
   const q = questions[qi];
-  if (!q.poll) return;
-  if (q.myPollVote !== undefined && q.myPollVote !== null) return; // already voted
+  if (!q || !q.poll) return;
+  const st = pollState(q);
+  if (st.closed) { renderBoard(); return; }   // button is disabled; guard for a stale card
+  if (st.voted) return; // already voted
   if (q._pollVoting) return; // guard against double-click
   q._pollVoting = true;
 
@@ -232,7 +272,8 @@ async function votePoll(qi, optionIdx) {
     q.poll[optionIdx].votes = Math.max(0, (q.poll[optionIdx].votes || 1) - 1);
     localStorage.removeItem('poll_vote_' + q.id);
     renderBoard();
-    alert('Your poll vote could not be submitted. Please try again.');
+    // Show the worker's own reason (closed, expired, ...) instead of a guess.
+    alert(err.error ? 'Vote not accepted: ' + err.error : 'Your poll vote could not be submitted. Please try again.');
   } catch(e) {
     q._pollVoting = false;
     q.myPollVote = null;
@@ -653,7 +694,7 @@ function toggleAnswerForm(qi) {
 document.addEventListener('click', function (e) {
   const card = e.target.closest('#questions-list .qc2');
   if (!card) return;
-  if (e.target.closest('button, a, input, textarea, select, label, .q-tag, [data-profile], .answers-section, .qc2-poll, .poll, [onclick]')) return;
+  if (e.target.closest('button, a, input, textarea, select, label, .q-tag, [data-profile], .answers-section, .qc2-poll, .poll, .poll-section, [onclick]')) return;
   if (window.getSelection && String(window.getSelection()).length) return;   // выделяли текст
   const qi = Number(card.dataset.qi);
   if (isFinite(qi)) toggleAnswers(qi);
@@ -746,17 +787,28 @@ document.addEventListener('click', function(e) {
   window.setBoardReply(qi, btn.getAttribute('data-board-reply-id'), btn.getAttribute('data-board-reply-author'), btn.getAttribute('data-board-reply-text'));
 });
 
+// Posting guard by question id: the wallet signature takes seconds, and a
+// second click during it used to send the same answer twice.
+const _answerPosting = new Set();
+
 async function submitAnswer(qi) {
-  const text = document.getElementById('atext-' + qi).value.trim();
+  const field = document.getElementById('atext-' + qi);
+  const text = field ? field.value.trim() : '';
   if (!text) { alert('Please write your answer first.'); return; }
   if (!globalWalletAddress) { alert('Connect wallet to answer'); return; }
   const wallet = globalWalletAddress;
   const q = questions[qi];
+  if (!q) return;
+  const qid = String(q.id);
+  if (_answerPosting.has(qid)) return;
   // Anti-spam: max 3 answers per question per day per wallet
   const today = new Date().toISOString().slice(0, 10);
   const todayAnswers = q.answers.filter(a => a.wallet === wallet && a.createdAt && new Date(a.createdAt * 1000).toISOString().slice(0, 10) === today);
   if (todayAnswers.length >= 3) { alert('You can only post 3 answers per question per day.'); return; }
   const replyTo = window._boardReplyTo[qi] || null;
+  const btn = document.querySelector('#aform-' + qi + ' .btn-primary');
+  _answerPosting.add(qid);
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
   try {
     // Подпись покрывает и хеш текста с цитатой (SEC-07): перехваченная
     // подпись не годится для другого содержимого.
@@ -773,15 +825,24 @@ async function submitAnswer(qi) {
       id: data.answerId,
       alias: 'Anonymous#' + wallet.slice(-4).toUpperCase(),
       isAdmin: false, wallet, text, votes: 0, voted: false,
-      replyTo: replyTo ? { answerId: replyTo.answerId, author: replyTo.author, text: replyTo.text.slice(0,80) } : null,
+      createdAt: Math.floor(Date.now() / 1000),
+      replyTo: replyObj,
     });
     questions[qi].formOpen = false;
     questions[qi].open = true;
-    delete _boardDrafts[String(questions[qi].id)];
+    // renderBoard() saves every textarea into _boardDrafts before it redraws.
+    // The field still held the posted text, so deleting the draft alone was
+    // not enough: it was saved back and reappeared under the new answer.
+    document.querySelectorAll('textarea[id="atext-' + qi + '"]').forEach(t => { t.value = ''; });
+    delete _boardDrafts[qid];
     window.clearBoardReply(qi);
     renderBoard();
   } catch(e) {
     alert('Failed to post answer: ' + e.message);
+  } finally {
+    _answerPosting.delete(qid);
+    const b = document.querySelector('#aform-' + qi + ' .btn-primary');
+    if (b) { b.disabled = false; b.textContent = 'Post Answer'; }
   }
 }
 

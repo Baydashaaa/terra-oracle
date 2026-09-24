@@ -175,7 +175,10 @@ async function loadQuestionsFromWorker() {
       if (q.poll && q.pollVoters && _wallet && q.pollVoters.includes(_wallet)) {
         const votedPollKey = 'poll_vote_' + q.id;
         const savedOpt = localStorage.getItem(votedPollKey);
-        q.myPollVote = savedOpt !== null ? parseInt(savedOpt) : null;
+        // The worker knows this wallet voted even when this device does not
+        // remember which option: -1 keeps the poll locked instead of letting
+        // a second click add a phantom vote that the server then refuses.
+        q.myPollVote = savedOpt !== null ? parseInt(savedOpt, 10) : -1;
       }
     }
     _questionsLoaded = true;

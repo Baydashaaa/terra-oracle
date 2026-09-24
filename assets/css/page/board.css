@@ -121,3 +121,13 @@ html.qm-lock{overflow:hidden}
 
 /* Category chips are built from the Ask form; "All" keeps its neutral colour */
 #page-board .bd-chips .vote-tab[data-filter="all"]{--c:199,210,254}
+
+/* Post Answer and other primary buttons inside Board.
+   style.css paints .btn-primary text violet and slides a gradient in on hover;
+   shell.css gives it a violet gradient background from the start. Board is not
+   a .shell-page, so shell-fix.css did not reach it: violet text sat on violet
+   and was readable only on hover. */
+#page-board .btn-primary{color:#fff;border-color:transparent}
+#page-board .btn-primary::before{content:none}
+#page-board .btn-primary:hover{filter:brightness(1.12)}
+#page-board .btn-primary:disabled,#page-board .btn-primary:disabled:hover{opacity:.55;cursor:not-allowed;filter:none;animation:none}
