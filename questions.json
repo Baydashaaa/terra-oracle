@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T01:02:52.814Z",
+  "_updated": "2026-09-24T01:03:10.269Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -147,7 +147,7 @@
       "poll": [
         {
           "text": "In the kitchen?",
-          "votes": 1,
+          "votes": 2,
           "voters": []
         },
         {
@@ -197,7 +197,8 @@
         "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l",
         "terra1zdnanxgsyy8zqpmy3dfgges4xlzdskqsrx6nm3",
         "terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55",
-        "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7"
+        "terra180wgtfvhmxcarmddhwzpapt8pasmvgv5skegx7",
+        "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2"
       ],
       "voters": [
         "terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55"
