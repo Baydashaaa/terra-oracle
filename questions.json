@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T21:22:18.577Z",
+  "_updated": "2026-09-24T21:22:28.474Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -34,11 +34,12 @@
           ]
         }
       ],
-      "status": "open",
-      "chosenAnswerId": null,
+      "status": "answered",
+      "chosenAnswerId": "ANS-MUETQ8KA",
       "voters": [
         "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2"
-      ]
+      ],
+      "acceptedAt": 1790284948
     },
     {
       "id": "LUNC-SLQCQ86",
