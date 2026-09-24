@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T01:05:15.218Z",
+  "_updated": "2026-09-24T01:05:45.815Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -69,7 +69,7 @@
       ],
       "createdAt": 1786275570,
       "expiresAt": 1786880370,
-      "votes": 0,
+      "votes": 1,
       "answers": [
         {
           "id": "ANS-MSLQIVLM",
@@ -132,7 +132,10 @@
         "terra17axgvcwzkays0veh7hc0ewt75jm7qzrumwzlem",
         "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2"
       ],
-      "acceptedAt": 1786275917
+      "acceptedAt": 1786275917,
+      "voters": [
+        "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2"
+      ]
     },
     {
       "id": "LUNC-SDE494U",
