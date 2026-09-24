@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T01:03:10.269Z",
+  "_updated": "2026-09-24T01:05:15.218Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -19,7 +19,7 @@
       "poll": null,
       "createdAt": 1788765888,
       "expiresAt": 1789370688,
-      "votes": 0,
+      "votes": 1,
       "answers": [
         {
           "id": "ANS-MUETQ8KA",
@@ -33,7 +33,10 @@
         }
       ],
       "status": "open",
-      "chosenAnswerId": null
+      "chosenAnswerId": null,
+      "voters": [
+        "terra1v665stz7mvvjpkdfr8cf8gf267f2qks78kz8p2"
+      ]
     },
     {
       "id": "LUNC-SLQCQ86",
