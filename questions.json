@@ -1,6 +1,6 @@
 {
   "_schema": "1.0",
-  "_updated": "2026-09-24T01:05:45.815Z",
+  "_updated": "2026-09-24T21:22:18.577Z",
   "questions": [
     {
       "id": "LUNC-TQWY9DM",
@@ -28,8 +28,10 @@
           "alias": "Anonymous#Z8P2",
           "text": "I don´t think he can. He seems to be commanded by a dark force.",
           "createdAt": 1790211539,
-          "votes": 0,
-          "voters": []
+          "votes": 1,
+          "voters": [
+            "terra1jhtmkmakjvvtwur05klc7fd72e5n39m4x75c2l"
+          ]
         }
       ],
       "status": "open",
