@@ -1171,6 +1171,26 @@
 }
 #page-markets .odds button[disabled]{cursor:default;opacity:.75}
 
+/* Выбор стороны перед предсказанием: выбранная - яркая, с обводкой и
+   меткой, вторая приглушена. Одной заливки было мало, стороны путались. */
+#page-markets #bet-side-row button:not([disabled]){
+  position:relative;transition:opacity .15s,filter .15s,box-shadow .15s;
+}
+#page-markets #bet-side-row button[aria-pressed="false"]:not([disabled]){
+  opacity:.42;filter:saturate(.35);
+}
+#page-markets #bet-side-row button[aria-pressed="false"]:not([disabled]):hover{opacity:.7}
+#page-markets #bet-side-row button[aria-pressed="true"]:not([disabled]){
+  background:rgba(var(--o),.30);
+  box-shadow:inset 0 0 0 2px rgb(var(--o)), 0 0 32px -10px rgb(var(--o));
+}
+#page-markets #bet-side-row button[aria-pressed="true"]:not([disabled])::after{
+  content:'YOUR PICK';position:absolute;top:10px;right:12px;
+  padding:3px 8px;border-radius:999px;
+  background:rgb(var(--o));color:#0b0e20;
+  font-size:9.5px;font-weight:700;letter-spacing:.14em;
+}
+
 #page-markets .mk-banner{
   background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
   padding:16px 18px;
@@ -1399,7 +1419,9 @@
 }
 #page-markets .mkf-dd-find:focus{border-color:rgba(139,92,246,.6)}
 #page-markets .mkf-dd-opts{max-height:230px;overflow-y:auto}
-#page-markets .mkf-dd-list{max-height:320px;overflow:visible}
+#page-markets .mkf-dd-list{max-height:320px;overflow-y:auto;overscroll-behavior:contain}
+#page-markets .mkf-date .mkf-dd-list{max-height:232px}
+#page-markets .mkf-dd-list button:disabled{opacity:.28;cursor:not-allowed;background:none}
 #page-markets .mkf-dd-opts button{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
 }

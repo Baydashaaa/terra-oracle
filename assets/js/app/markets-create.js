@@ -483,7 +483,8 @@
       + '<div class="mkf-dd-list">'
       + options.map(function (o) {
         return '<button type="button" data-v="' + esc(o.v) + '"'
-          + (String(o.v) === String(value) ? ' aria-selected="true"' : '') + '>' + esc(o.label) + '</button>';
+          + (String(o.v) === String(value) ? ' aria-selected="true"' : '')
+          + (o.off ? ' disabled' : '') + '>' + esc(o.label) + '</button>';
       }).join('')
       + '</div></div>';
   }
@@ -496,8 +497,20 @@
     document.querySelectorAll('.mkf-dd.open').forEach(function (d) {
       if (!btn || d !== btn.parentNode) d.classList.remove('open');
     });
-    if (btn) { btn.parentNode.classList.toggle('open'); return; }
-    if (item) {
+    if (btn) {
+      var host0 = btn.parentNode;
+      host0.classList.toggle('open');
+      // Длинный список (дни, часы, валюты) открывается на выбранном,
+      // а не на первом пункте.
+      var sel = host0.classList.contains('open') && host0.querySelector('.mkf-dd-list [aria-selected="true"]');
+      var box = sel && (sel.closest('.mkf-dd-opts') || sel.closest('.mkf-dd-list'));
+      if (box) {
+        box.scrollTop += sel.getBoundingClientRect().top - box.getBoundingClientRect().top
+          - box.clientHeight / 2 + sel.offsetHeight / 2;
+      }
+      return;
+    }
+    if (item && !item.disabled) {
       var host = item.closest('.mkf-dd');
       host.classList.remove('open');
       var fn = ddHandlers[host.dataset.dd];
@@ -510,11 +523,20 @@
   function dateFields() {
     var days = [], months = [], years = [], hours = [];
     var dim = daysInMonth(S.resY, S.resM);
-    for (var d = 1; d <= dim; d++) days.push({ v: d, label: String(d) });
-    for (var i = 0; i < 12; i++) months.push({ v: i, label: MONTHS[i] });
+    // Задним числом рынок не создать: контракт отклонит resolve_after в
+    // прошлом. Прошедшее видно, но выбрать его нельзя.
+    var nowMs = Date.now();
+    for (var d = 1; d <= dim; d++) {
+      days.push({ v: d, label: String(d), off: Date.UTC(S.resY, S.resM, d, 23) < nowMs });
+    }
+    for (var i = 0; i < 12; i++) {
+      months.push({ v: i, label: MONTHS[i], off: Date.UTC(S.resY, i + 1, 0, 23) < nowMs });
+    }
     var y0 = new Date().getUTCFullYear();
     for (var y = y0; y <= y0 + 3; y++) years.push({ v: y, label: String(y) });
-    for (var h = 0; h < 24; h++) hours.push({ v: h, label: pad2(h) + ':00' });
+    for (var h = 0; h < 24; h++) {
+      hours.push({ v: h, label: pad2(h) + ':00', off: Date.UTC(S.resY, S.resM, S.resD, h) <= nowMs });
+    }
     return '<div class="mkf-date">'
       + dd('resD', days, S.resD, '84px')
       + dd('resM', months, S.resM, '100px')
