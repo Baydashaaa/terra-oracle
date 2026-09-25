@@ -24,9 +24,11 @@ const PROPHECY_NET = PROPHECY_TESTNET
   ? {
       chainId: 'rebel-2',
       lcd: ['https://lcd.luncblaze.com'],
-      // oracle-prophecy 0.2.0 (code 2452) и oracle-court 0.1.0 (code 2454)
+      // oracle-prophecy 0.2.1 (мигрирован с 0.2.0) и oracle-court 0.1.0 (code 2454)
       prophecy: 'terra1m7vkkgvu4zz8vnh7c2lyspterzfkaeshnqvrqg4pqf2lkauvw69sgt6ktt',
       court: 'terra1st3mk29dwgd7wqg4w6zsw4cc78vpulhzed5anhnpshyv49ze446saar2za',
+      // 0.2.1 принимает predict; bet - синоним для старых клиентов
+      predictMsg: 'predict',
     }
   : {
       chainId: 'columbus-5',
@@ -39,6 +41,8 @@ const PROPHECY_NET = PROPHECY_TESTNET
       // нет, блоки спора на mainnet не показываются.
       prophecy: 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58',
       court: '',
+      // старый 0.1.0 знает только bet; после развёртывания 0.2.1 - predict
+      predictMsg: 'bet',
     };
 
 const PROPHECY_CONTRACT = PROPHECY_NET.prophecy;
@@ -937,7 +941,7 @@ async function submitBet() {
   try {
     const hash = await window.sendExecuteContract(
       mkWallet(), PROPHECY_CONTRACT,
-      { bet: { market_id: m.id, side: betSide } },
+      { [PROPHECY_NET.predictMsg]: { market_id: m.id, side: betSide } },
       [{ denom: 'uluna', amount: String(lunc * 1e6) }],
       'oracle-prophecy: prediction ' + m.id, PROPHECY_CHAIN, 600000
     );
