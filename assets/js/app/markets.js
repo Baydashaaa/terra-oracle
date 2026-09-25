@@ -1195,6 +1195,115 @@ function mkConfirm({ title, body, ok = 'Confirm', tone = '' }) {
 }
 
 
+// ── как это работает ───────────────────────────────────────────────────────
+//
+// Механика простым языком. Все суммы и сроки - из конфига контракта, а не из
+// текста: поменяли параметр - окно показывает новое без правки сайта.
+function mkDuration(secs) {
+  const s = Number(secs || 0);
+  if (s >= 86400 && s % 86400 === 0) {
+    const d = s / 86400;
+    return d + (d === 1 ? ' day' : ' days');
+  }
+  if (s >= 3600) {
+    const h = Math.round(s / 3600);
+    return h + (h === 1 ? ' hour' : ' hours');
+  }
+  const m = Math.max(1, Math.round(s / 60));
+  return m + (m === 1 ? ' minute' : ' minutes');
+}
+
+async function mkAbout() {
+  const c = await loadProphecyConfig();
+  if (!c) {
+    mkToast('Could not load market settings. Try again in a moment.', 'info');
+    return;
+  }
+  const L = (v) => '<b>' + fmtLunc(v) + ' LUNC</b>';
+  const pct = (bps) => (Number(bps) / 100).toLocaleString('en-US') + '%';
+  const winners = 10000 - Number(c.protocol_bps) - Number(c.creator_bps) - Number(c.boost_bps);
+  const bonus = Number(c.boost_amount) > 0 && Number(c.boost_per_week) > 0
+    ? `<p>New markets can get a bonus of ${L(c.boost_amount)} from the new-market fund, added to
+       what the winners share. Up to ${c.boost_per_week} markets a week get it, while the fund has money.
+       If the market is voided, the bonus goes back to the fund.</p>`
+    : '';
+  const promo = Number(c.promo_fee) > 0
+    ? `<p>You can also promote your market for ${L(c.promo_fee)} so it shows higher in the list.
+       The promotion fee is not returned.</p>`
+    : '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'mk-modal';
+  wrap.innerHTML = `
+    <div class="mk-modal-box mk-about" role="dialog" aria-modal="true" aria-label="How markets work">
+      <h3>How markets work</h3>
+      <div class="mk-modal-body">
+        <h4>What a market is</h4>
+        <p>A yes-or-no question about Terra Classic that the chain itself answers. When the market
+          is created, it fixes a metric, a threshold and a block height. Nobody decides the answer
+          by opinion: it is read from the chain at that block.</p>
+
+        <h4>Making a prediction</h4>
+        <ul>
+          <li>Pick <b class="y">YES</b> or <b class="n">NO</b> and put in LUNC: from ${L(c.min_bet)}
+            up to ${L(c.max_bet)} per wallet on one market.</li>
+          <li>Predictions close before the outcome can be seen. The market page shows when.</li>
+          <li>If your side is right, you get your LUNC back plus a share of the other side's pool,
+            in proportion to what you put in. If it is wrong, you lose what you put in.</li>
+          <li>When the market settles, collect your payout on the market page. Terra Classic
+            takes its usual transfer tax from it.</li>
+        </ul>
+
+        <h4>How the outcome is decided</h4>
+        <ul>
+          <li>After the resolution time, the keeper reads the metric at the block and posts the result.</li>
+          <li>For the next ${mkDuration(c.challenge_secs)}, anyone who thinks it is wrong can challenge
+            it with a bond of ${L(c.challenge_bond)}.</li>
+          <li>No challenge: payouts open. Challenged: the court votes and has
+            ${mkDuration(c.arbiter_secs)} to decide. If the challenger was right, they get the bond back
+            plus the protocol share of that market.</li>
+          <li>If there is no result within ${mkDuration(c.resolve_grace_secs)}, or the court does not
+            decide in time, the market is voided and everyone gets their LUNC back.</li>
+        </ul>
+
+        <h4>Creating a market</h4>
+        <p>Anyone can. You put up a bond of ${L(c.creation_bond)}. It comes back in full when the
+          market settles or is voided. It is kept only if the question cannot be checked on chain,
+          and then it goes to the new-market fund.</p>
+        <p>As the creator you earn ${pct(c.creator_bps)} of the losing side of your market.</p>
+        ${promo}
+        ${bonus}
+
+        <h4>Where the fees go</h4>
+        <p>Fees come only from the losing side's pool. Nobody pays a fee just for taking part.</p>
+        <ul>
+          <li>${pct(winners)} to the winners</li>
+          <li>${pct(c.creator_bps)} to the market creator</li>
+          <li>${pct(c.boost_bps)} to the new-market fund</li>
+          <li>${pct(c.protocol_bps)} to the protocol: half to the weekly draw prize pool,
+            half to the Terra Oracle treasury</li>
+        </ul>
+      </div>
+      <div class="mk-modal-btns">
+        <button type="button" class="mk-modal-ok">Got it</button>
+      </div>
+    </div>`;
+
+  const done = () => {
+    document.removeEventListener('keydown', onKey);
+    wrap.classList.remove('show');
+    setTimeout(() => wrap.remove(), 200);
+  };
+  const onKey = (e) => { if (e.key === 'Escape' || e.key === 'Enter') done(); };
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) done(); });
+  wrap.querySelector('.mk-modal-ok').onclick = done;
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(wrap);
+  requestAnimationFrame(() => wrap.classList.add('show'));
+  wrap.querySelector('.mk-modal-ok').focus();
+}
+
+
 /** Суд пишет решение как "court: 0 yes, 2 no, ...". Подпись "Court decision"
  *  рядом уже говорит, чьё это решение. */
 function rulingText(r) {
