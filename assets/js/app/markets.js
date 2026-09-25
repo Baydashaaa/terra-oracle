@@ -1197,11 +1197,13 @@ function mkConfirm({ title, body, ok = 'Confirm', tone = '' }) {
 
 // ── как это работает ───────────────────────────────────────────────────────
 //
-// Механика простым языком. Все суммы и сроки - из конфига контракта, а не из
-// текста: поменяли параметр - окно показывает новое без правки сайта.
+// Механика простым языком, в три вкладки. Суммы, сроки и доли - из конфига
+// контракта: поменяли параметр - окно показывает новое без правки сайта.
+// Пример пула в первой вкладке условный и одинаков для обеих сетей.
 function mkDuration(secs) {
   const s = Number(secs || 0);
-  if (s >= 86400 && s % 86400 === 0) {
+  // Сутки пишем часами: "24 hours" понятнее, чем "1 day".
+  if (s >= 172800 && s % 86400 === 0) {
     const d = s / 86400;
     return d + (d === 1 ? ' day' : ' days');
   }
@@ -1213,94 +1215,157 @@ function mkDuration(secs) {
   return m + (m === 1 ? ' minute' : ' minutes');
 }
 
+const MKA_ICON = {
+  predict: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+  outcome: '<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>',
+  create: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  earn: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.8a1.8 1.8 0 010 3.5h-2.6a1.8 1.8 0 000 3.5h3.8"/>',
+  promo: '<path d="M7 17L17 7M9 7h8v8"/>',
+  gift: '<path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7C10 3 6.5 3.5 7 6s5 1 5 1zm0 0c2-4 5.5-3.5 5-1s-5 1-5 1z"/>',
+};
+function mkaIcon(name, size) {
+  return '<svg viewBox="0 0 24 24" width="' + (size || 16) + '" height="' + (size || 16)
+    + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"'
+    + ' stroke-linejoin="round" aria-hidden="true">' + MKA_ICON[name] + '</svg>';
+}
+
 async function mkAbout() {
   const c = await loadProphecyConfig();
   if (!c) {
     mkToast('Could not load market settings. Try again in a moment.', 'info');
     return;
   }
-  const L = (v) => '<b>' + fmtLunc(v) + ' LUNC</b>';
+  const L = (v) => fmtLunc(v) + ' LUNC';
+  const n = (v) => Number(v).toLocaleString('en-US');
   const pct = (bps) => (Number(bps) / 100).toLocaleString('en-US') + '%';
-  const winners = 10000 - Number(c.protocol_bps) - Number(c.creator_bps) - Number(c.boost_bps);
-  const bonus = Number(c.boost_amount) > 0 && Number(c.boost_per_week) > 0
-    ? `<p>New markets can get a bonus of ${L(c.boost_amount)} from the new-market fund, added to
-       what the winners share. Up to ${c.boost_per_week} markets a week get it, while the fund has money.
-       If the market is voided, the bonus goes back to the fund.</p>`
-    : '';
-  const promo = Number(c.promo_fee) > 0
-    ? `<p>You can also promote your market for ${L(c.promo_fee)} so it shows higher in the list.
-       The promotion fee is not returned.</p>`
-    : '';
+  const winBps = 10000 - Number(c.protocol_bps) - Number(c.creator_bps) - Number(c.boost_bps);
+
+  // Условный пример: YES 6,000 (вместе с вашими 1,000), NO 4,000.
+  const ex = { yes: 6000, no: 4000, you: 1000 };
+  const toWinners = Math.floor(ex.no * winBps / 10000);
+  const yourCut = Math.floor(toWinners * ex.you / ex.yes);
+
+  const split = [
+    { bps: winBps, label: 'Winners', color: 'var(--lime,#22c55e)' },
+    { bps: c.creator_bps, label: 'Market creator', color: 'var(--amber,#f4d03f)' },
+    { bps: c.boost_bps, label: 'New-market fund', color: 'var(--cyan,#22d3ee)' },
+    { bps: c.protocol_bps, label: 'Weekly draw and treasury', color: '#a78bfa' },
+  ];
+  const bar = split.map((s) =>
+    `<i style="flex:${Number(s.bps)} 0 0;background:${s.color}"></i>`).join('');
+  const legend = split.map((s) =>
+    `<div><em style="background:${s.color}"></em>${s.label}<b>${pct(s.bps)}</b></div>`).join('');
+
+  const perks = [
+    `<div class="mka-perk">${mkaIcon('earn', 18)}<div><b>You earn ${pct(c.creator_bps)}</b>
+      <p>of the losing side's pool on every market you open.</p></div></div>`,
+  ];
+  if (Number(c.boost_amount) > 0 && Number(c.boost_per_week) > 0) {
+    perks.push(`<div class="mka-perk">${mkaIcon('gift', 18)}<div><b>New markets get a bonus</b>
+      <p>${L(c.boost_amount)} from the new-market fund goes to the winners. Up to
+      ${c.boost_per_week} markets a week, while the fund has money.</p></div></div>`);
+  }
+  if (Number(c.promo_fee) > 0) {
+    perks.push(`<div class="mka-perk">${mkaIcon('promo', 18)}<div><b>Promote it</b>
+      <p>Pay ${L(c.promo_fee)} to show your market higher in the list. This fee is not returned.</p></div></div>`);
+  }
 
   const wrap = document.createElement('div');
   wrap.className = 'mk-modal';
   wrap.innerHTML = `
-    <div class="mk-modal-box mk-about" role="dialog" aria-modal="true" aria-label="How markets work">
-      <h3>How markets work</h3>
-      <div class="mk-modal-body">
-        <h4>What a market is</h4>
-        <p>A yes-or-no question about Terra Classic that the chain itself answers. When the market
-          is created, it fixes a metric, a threshold and a block height. Nobody decides the answer
-          by opinion: it is read from the chain at that block.</p>
+    <div class="mk-modal-box mk-about" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="mka-title">
+      <h3 id="mka-title">How markets work</h3>
+      <p class="mka-sub">Yes-or-no questions about Terra Classic, answered by the chain itself.</p>
 
-        <h4>Making a prediction</h4>
-        <ul>
-          <li>Pick <b class="y">YES</b> or <b class="n">NO</b> and put in LUNC: from ${L(c.min_bet)}
-            up to ${L(c.max_bet)} per wallet on one market.</li>
-          <li>Predictions close before the outcome can be seen. The market page shows when.</li>
-          <li>If your side is right, you get your LUNC back plus a share of the other side's pool,
-            in proportion to what you put in. If it is wrong, you lose what you put in.</li>
-          <li>When the market settles, collect your payout on the market page. Terra Classic
-            takes its usual transfer tax from it.</li>
-        </ul>
-
-        <h4>How the outcome is decided</h4>
-        <ul>
-          <li>After the resolution time, the keeper reads the metric at the block and posts the result.</li>
-          <li>For the next ${mkDuration(c.challenge_secs)}, anyone who thinks it is wrong can challenge
-            it with a bond of ${L(c.challenge_bond)}.</li>
-          <li>No challenge: payouts open. Challenged: the court votes and has
-            ${mkDuration(c.arbiter_secs)} to decide. If the challenger was right, they get the bond back
-            plus the protocol share of that market.</li>
-          <li>If there is no result within ${mkDuration(c.resolve_grace_secs)}, or the court does not
-            decide in time, the market is voided and everyone gets their LUNC back.</li>
-        </ul>
-
-        <h4>Creating a market</h4>
-        <p>Anyone can. You put up a bond of ${L(c.creation_bond)}. It comes back in full when the
-          market settles or is voided. It is kept only if the question cannot be checked on chain,
-          and then it goes to the new-market fund.</p>
-        <p>As the creator you earn ${pct(c.creator_bps)} of the losing side of your market.</p>
-        ${promo}
-        ${bonus}
-
-        <h4>Where the fees go</h4>
-        <p>Fees come only from the losing side's pool. Nobody pays a fee just for taking part.</p>
-        <ul>
-          <li>${pct(winners)} to the winners</li>
-          <li>${pct(c.creator_bps)} to the market creator</li>
-          <li>${pct(c.boost_bps)} to the new-market fund</li>
-          <li>${pct(c.protocol_bps)} to the protocol: half to the weekly draw prize pool,
-            half to the Terra Oracle treasury</li>
-        </ul>
+      <div class="mka-tabs" role="tablist">
+        <button type="button" role="tab" data-t="predict" aria-selected="true">${mkaIcon('predict')}Predict</button>
+        <button type="button" role="tab" data-t="outcome" aria-selected="false">${mkaIcon('outcome')}Outcome</button>
+        <button type="button" role="tab" data-t="create" aria-selected="false">${mkaIcon('create')}Create</button>
       </div>
+
+      <div class="mk-modal-body">
+        <section class="mka-pane on" data-p="predict" role="tabpanel">
+          <p class="mka-lead">Pick a side and put in LUNC. If you are right, you get it back plus a share
+            of the other side's pool.</p>
+          <div class="mka-pools" aria-label="Example pools">
+            <div class="mka-pool y" style="flex:${ex.yes}"><span>YES pool</span><b>${n(ex.yes)}</b><i>your ${n(ex.you)} is in here</i></div>
+            <div class="mka-pool n" style="flex:${ex.no}"><span>NO pool</span><b>${n(ex.no)}</b></div>
+          </div>
+          <div class="mka-outcomes">
+            <div class="mka-out win"><span>If YES is right</span><b>+${n(yourCut)}</b>
+              <p>You get your ${n(ex.you)} back and ${n(yourCut)} on top: your share of the
+              ${n(toWinners)} the NO side leaves after fees.</p></div>
+            <div class="mka-out lose"><span>If NO is right</span><b>&minus;${n(ex.you)}</b>
+              <p>Your ${n(ex.you)} goes to the people who picked NO.</p></div>
+          </div>
+          <h5 class="mka-h">Where the losing pool goes</h5>
+          <div class="mka-bar">${bar}</div>
+          <div class="mka-legend">${legend}</div>
+          <p class="mka-note">From ${L(c.min_bet)} to ${L(c.max_bet)} per wallet on one market.
+            Predictions close before the answer can be seen. Collect a payout on the market page;
+            Terra Classic takes its usual transfer tax from it.</p>
+        </section>
+
+        <section class="mka-pane" data-p="outcome" role="tabpanel">
+          <ol class="mka-steps">
+            <li><b>Predictions close</b><p>Before the answer can be read on chain.</p></li>
+            <li><b>The chain answers</b><p>At the resolution time, the keeper reads the metric at the
+              block fixed in the market and posts the result.</p></li>
+            <li><b>Anyone can object <span class="mka-chip">${mkDuration(c.challenge_secs)}</span></b>
+              <p>Think the result is wrong? Challenge it with a bond of ${L(c.challenge_bond)}.</p>
+              <div class="mka-branch">
+                <div><b>No challenge</b>Payouts open.</div>
+                <div><b>Challenged <span class="mka-chip">${mkDuration(c.arbiter_secs)}</span></b>The court
+                  votes. If the challenger was right, they get the bond back plus the protocol share
+                  of that market.</div>
+              </div>
+            </li>
+          </ol>
+          <div class="mka-safety">${mkaIcon('shield', 18)}<p>No result within ${mkDuration(c.resolve_grace_secs)},
+            or no court decision in time: the market is voided and everyone gets their LUNC back.</p></div>
+        </section>
+
+        <section class="mka-pane" data-p="create" role="tabpanel">
+          <p class="mka-lead">Anyone can open a market on Terra Classic data.</p>
+          <div class="mka-bond">
+            <div><span>You put up a bond</span><b>${L(c.creation_bond)}</b></div>
+            ${mkaIcon('arrow', 20)}
+            <div class="back"><span>It comes back in full</span><b>${L(c.creation_bond)}</b></div>
+          </div>
+          <p class="mka-note">The bond returns when the market settles or is voided. It is kept only if
+            the question cannot be checked on chain, and then it funds bonuses for new markets.</p>
+          <div class="mka-perks">${perks.join('')}</div>
+        </section>
+      </div>
+
       <div class="mk-modal-btns">
         <button type="button" class="mk-modal-ok">Got it</button>
       </div>
     </div>`;
+
+  const tabs = wrap.querySelectorAll('.mka-tabs button');
+  tabs.forEach((t) => {
+    t.onclick = () => {
+      tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+      wrap.querySelectorAll('.mka-pane').forEach((p) => p.classList.toggle('on', p.dataset.p === t.dataset.t));
+    };
+  });
 
   const done = () => {
     document.removeEventListener('keydown', onKey);
     wrap.classList.remove('show');
     setTimeout(() => wrap.remove(), 200);
   };
-  const onKey = (e) => { if (e.key === 'Escape' || e.key === 'Enter') done(); };
+  // Только Esc: Enter на вкладке должен переключать её, а не закрывать окно.
+  const onKey = (e) => { if (e.key === 'Escape') done(); };
   wrap.addEventListener('click', (e) => { if (e.target === wrap) done(); });
   wrap.querySelector('.mk-modal-ok').onclick = done;
   document.addEventListener('keydown', onKey);
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('show'));
-  wrap.querySelector('.mk-modal-ok').focus();
+  wrap.querySelector('.mk-about').focus();
 }
 
 

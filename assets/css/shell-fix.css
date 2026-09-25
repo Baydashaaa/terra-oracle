@@ -2051,20 +2051,132 @@
 }
 .mk-modal.show .mk-modal-box{transform:none}
 
-/* Окно "How markets work": шире окна подтверждения и прокручивается само,
-   текст длинный и не должен уходить за экран телефона. */
+/* Окно "How markets work": три вкладки, пример пула, полоса комиссий, шаги.
+   Шире окна подтверждения и не выше 88% экрана - на телефоне не уходит
+   за экран. Единственное движение без действия человека - полоса комиссий
+   вырастает при открытии окна. */
 .mk-modal-box.mk-about{
-  width:min(620px,100%);max-height:86vh;overflow-y:auto;overscroll-behavior:contain;
+  width:min(640px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;
 }
-.mk-modal-box.mk-about h4{
-  margin:16px 0 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-3,#8b96b8);font-weight:700;
+/* Прокручивается только содержимое вкладки; заголовок, вкладки и кнопка
+   остаются на месте. */
+.mk-about .mk-modal-body{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;margin-right:-8px;padding-right:8px}
+.mk-about .mka-sub{margin:-4px 0 16px;font-size:13px;color:#b8c2e6}
+.mk-about .mka-tabs{
+  display:flex;gap:4px;padding:4px;margin-bottom:18px;
+  background:var(--bg,#0b0e20);border:1px solid var(--line,#1f2346);border-radius:12px;
 }
-.mk-modal-box.mk-about h4:first-child{margin-top:4px}
-.mk-modal-box.mk-about .mk-modal-btns{
-  position:sticky;bottom:-18px;margin:14px -22px -18px;padding:12px 22px 18px;
-  background:var(--panel,#12142b);
+.mk-about .mka-tabs button{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  border:0;border-radius:9px;background:none;padding:9px 8px;cursor:pointer;
+  color:var(--ink-3,#8b96b8);font:inherit;font-size:13px;font-weight:600;
 }
+.mk-about .mka-tabs button:hover{color:var(--ink,#e8ecff)}
+.mk-about .mka-tabs button[aria-selected="true"]{
+  background:rgba(139,92,246,.18);color:var(--ink,#e8ecff);
+  box-shadow:inset 0 0 0 1px rgba(139,92,246,.55);
+}
+.mk-about button:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+.mk-about:focus{outline:none}
+/* Высота по самой длинной вкладке: окно не прыгает при переключении. */
+.mk-about .mk-modal-body{min-height:min(470px,calc(88vh - 230px))}
+.mk-about .mka-pane{display:none}
+.mk-about .mka-pane.on{display:block;animation:mkaIn .2s ease}
+@keyframes mkaIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.mk-about .mka-lead{margin:0 0 14px;font-size:14px;line-height:1.55;color:var(--ink,#e8ecff)}
+.mk-about .mka-h{margin:0 0 9px;font-size:13px;font-weight:600;color:var(--ink,#e8ecff)}
+.mk-about .mka-note{margin:12px 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-3,#8b96b8)}
+
+.mk-about .mka-pools{display:flex;gap:6px;margin-bottom:8px}
+.mk-about .mka-pool{
+  min-width:0;display:flex;flex-direction:column;gap:1px;padding:11px 13px;border-radius:12px;
+}
+.mk-about .mka-pool.y{background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.45)}
+.mk-about .mka-pool.n{background:rgba(209,96,143,.11);border:1px solid rgba(209,96,143,.45)}
+.mk-about .mka-pool span{font-size:11.5px;color:var(--ink-3,#8b96b8)}
+.mk-about .mka-pool b{font-family:var(--dis,inherit);font-size:21px;line-height:1.2}
+.mk-about .mka-pool.y b{color:var(--lime,#22c55e)}
+.mk-about .mka-pool.n b{color:var(--pink,#d1608f)}
+.mk-about .mka-pool i{font-style:normal;font-size:11.5px;color:#b8c2e6}
+
+.mk-about .mka-outcomes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.mk-about .mka-out{padding:11px 13px;border-radius:12px;background:var(--bg,#0b0e20)}
+.mk-about .mka-out span{font-size:12px;color:var(--ink-3,#8b96b8)}
+.mk-about .mka-out b{display:block;margin:1px 0 4px;font-family:var(--dis,inherit);font-size:23px}
+.mk-about .mka-out.win b{color:var(--lime,#22c55e)}
+.mk-about .mka-out.lose b{color:var(--pink,#d1608f)}
+.mk-about .mka-out p{margin:0;font-size:12px;line-height:1.5}
+
+.mk-about .mka-bar{display:flex;gap:3px;height:12px}
+.mk-about .mka-bar i{
+  display:block;min-width:7px;border-radius:4px;
+  transform:scaleX(0);transform-origin:left;transition:transform .7s cubic-bezier(.2,.8,.2,1) .15s;
+}
+.mk-modal.show .mk-about .mka-bar i{transform:none}
+.mk-about .mka-legend{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;margin-top:11px;font-size:12.5px;
+}
+.mk-about .mka-legend div{display:flex;align-items:center;gap:8px}
+.mk-about .mka-legend em{flex:none;width:9px;height:9px;border-radius:3px}
+.mk-about .mka-legend b{margin-left:auto;color:var(--ink,#e8ecff)}
+
+.mk-about .mka-steps{list-style:none;margin:0 0 14px;padding:0;counter-reset:mka}
+.mk-about .mka-steps li{position:relative;padding:0 0 18px 40px;counter-increment:mka}
+.mk-about .mka-steps li::before{
+  content:counter(mka);position:absolute;left:0;top:-2px;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;font-size:12px;font-weight:700;color:#c4b5fd;
+  background:rgba(139,92,246,.16);box-shadow:inset 0 0 0 1px rgba(139,92,246,.55);
+}
+.mk-about .mka-steps li::after{
+  content:'';position:absolute;left:13px;top:28px;bottom:2px;width:1px;background:var(--line-2,#2a2f55);
+}
+.mk-about .mka-steps li:last-child{padding-bottom:0}
+.mk-about .mka-steps li:last-child::after{display:none}
+.mk-about .mka-steps b{display:block;font-size:13.5px;color:var(--ink,#e8ecff)}
+.mk-about .mka-steps p{margin:3px 0 0;font-size:12.5px;line-height:1.55}
+.mk-about .mka-chip{
+  display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;vertical-align:1px;
+  font-size:11px;font-weight:600;color:var(--cyan,#22d3ee);background:rgba(34,211,238,.12);
+}
+.mk-about .mka-branch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mk-about .mka-branch div{
+  padding:10px 12px;border-radius:10px;background:var(--bg,#0b0e20);font-size:12px;line-height:1.5;
+}
+.mk-about .mka-branch div b{margin-bottom:2px;font-size:12.5px}
+.mk-about .mka-safety{
+  display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border-radius:12px;
+  background:rgba(244,208,63,.07);border:1px solid rgba(244,208,63,.3);
+}
+.mk-about .mka-safety svg{flex:none;margin-top:1px;color:var(--amber,#f4d03f)}
+.mk-about .mka-safety p{margin:0;font-size:12.5px;line-height:1.55}
+
+.mk-about .mka-bond{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.mk-about .mka-bond div{padding:12px;border-radius:12px;text-align:center;border:1px solid var(--line-2,#2a2f55)}
+.mk-about .mka-bond div.back{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
+.mk-about .mka-bond span{display:block;font-size:11.5px;color:var(--ink-3,#8b96b8)}
+.mk-about .mka-bond b{font-family:var(--dis,inherit);font-size:18px;color:var(--ink,#e8ecff)}
+.mk-about .mka-bond > svg{color:var(--ink-3,#8b96b8)}
+.mk-about .mka-perks{display:grid;gap:8px;margin-top:16px}
+.mk-about .mka-perk{
+  display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:12px;background:var(--bg,#0b0e20);
+}
+.mk-about .mka-perk > svg{flex:none;margin-top:1px;color:#c4b5fd}
+.mk-about .mka-perk b{display:block;font-size:13px;color:var(--ink,#e8ecff)}
+.mk-about .mka-perk p{margin:2px 0 0;font-size:12.5px;line-height:1.5}
+
+.mk-modal-box.mk-about .mk-modal-btns{flex:none;margin-top:14px}
+@media (max-width:540px){
+  .mk-about .mk-modal-body{min-height:0}
+  .mk-about .mka-outcomes,.mk-about .mka-branch,.mk-about .mka-legend{grid-template-columns:1fr}
+  .mk-about .mka-tabs button svg{display:none}
+  .mk-about .mka-bond{grid-template-columns:1fr}
+  .mk-about .mka-bond > svg{justify-self:center;transform:rotate(90deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  .mk-about .mka-pane.on{animation:none}
+  .mk-about .mka-bar i{transition:none;transform:none}
+}
+
 .mk-modal-box.y{border-color:rgba(34,197,94,.55)}
 .mk-modal-box.n{border-color:rgba(209,96,143,.6)}
 .mk-modal-box.warn{border-color:rgba(244,208,63,.55)}
