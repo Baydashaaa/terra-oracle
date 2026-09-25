@@ -154,7 +154,24 @@
     { secs: 21600, label: '6 hours before' },
     { secs: 86400, label: '24 hours before' },
     { secs: 259200, label: '3 days before' },
+    { secs: 604800, label: '7 days before' },
   ];
+
+  // Блоки плывут: высота в спеке может наступить раньше расчётной даты.
+  // Чем дальше разрешение, тем больше возможный сдвиг, поэтому приём
+  // закрывается не позже чем за 3% оставшегося срока (и не меньше
+  // bet_cutoff контракта). Керпер дополнительно проверяет это по факту.
+  var DRIFT_SHARE = 0.03;
+  function minLead() {
+    var cut = S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600;
+    var left = resolveTs() - Math.floor(Date.now() / 1000);
+    return Math.max(cut, Math.ceil(Math.max(0, left) * DRIFT_SHARE));
+  }
+  function leadText(secs) {
+    return secs >= 86400 ? Math.ceil(secs / 3600) + ' hours'
+      : secs >= 3600 ? Math.ceil(secs / 3600) + (secs > 3600 ? ' hours' : ' hour')
+      : Math.ceil(secs / 60) + ' minutes';
+  }
 
   function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
@@ -462,6 +479,9 @@
     if (S.lead < cut) {
       out.push('Predictions must close at least ' + Math.round(cut / 60)
         + ' minutes before resolution, or the outcome is visible while predictions are open.');
+    } else if (S.lead < minLead()) {
+      out.push('For a resolution this far out, predictions must close at least '
+        + leadText(minLead()) + ' before it. Pick an earlier resolution or a longer gap.');
     }
     if (!S.height) out.push('Block height could not be estimated. Reload and try again.');
     return out;
@@ -548,6 +568,12 @@
   function render() {
     var host = document.getElementById('mk-create-host');
     if (!host) return;
+    var ml = minLead();
+    if (S.lead < ml) {
+      for (var li = 0; li < LEADS.length; li++) {
+        if (LEADS[li].secs >= ml) { S.lead = LEADS[li].secs; break; }
+      }
+    }
     var m = METRICS[S.metric];
     var bond = S.cfg ? Number(S.cfg.creation_bond) : 200000000000;
     var promo = S.cfg ? Number(S.cfg.promo_fee) : 0;
@@ -592,11 +618,18 @@
       + '  <div class="field"><label>Predictions close</label>'
       + '    <div class="chips" id="mkf-lead">'
       + LEADS.map(function (l) {
-        return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (S.lead === l.secs) + '">' + l.label + '</button>';
+        return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (S.lead === l.secs) + '"'
+          + (l.secs < minLead() ? ' disabled title="Too short for this resolution date"' : '')
+          + '>' + l.label + '</button>';
       }).join('')
       + '    </div>'
       + '    <div class="mkf-note">Predictions close <b>' + esc(utcText(closeTs(), true))
-      + '</b>. The gap exists so nobody can predict once the outcome is visible.</div>'
+      + '</b>. The gap exists so nobody can predict once the outcome is visible.'
+      + (minLead() > (S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600)
+        ? ' The further out the resolution, the longer the gap: at least 3% of the time left, '
+          + 'because block times drift. Here that is ' + leadText(minLead()) + '.'
+        : '')
+      + '</div>'
       + '  </div>'
       + '  <div class="mkf-note">'
       + (S.height

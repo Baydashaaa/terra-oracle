@@ -365,6 +365,68 @@ async function listMarkets(status) {
   return out;
 }
 
+// ── дрейф блоков ────────────────────────────────────────────────────────────
+//
+// Высота в спеке посчитана по среднему времени блока, а блоки плывут. Если
+// блок с этой высотой наступил раньше закрытия приёма, исход можно было
+// увидеть, пока приём ещё шёл. Предсказание, сделанное на этой высоте или
+// позже, могло опираться на известный ответ - такой рынок честно не
+// рассчитать, его аннулируют и возвращают всем деньги.
+async function blockTime(height) {
+  const b = await lcdGet(`/cosmos/base/tendermint/v1beta1/blocks/${height}`);
+  const t = Date.parse(b?.block?.header?.time);
+  if (!Number.isFinite(t)) throw new Error(`no time in block ${height}`);
+  return Math.floor(t / 1000);
+}
+
+/** Были ли предсказания на рынке в блоках от height и позже. */
+async function predictionsFrom(marketId, height) {
+  const q = `wasm._contract_address='${PROPHECY}' AND wasm.action='bet'`
+    + ` AND wasm.market_id=${Number(marketId)} AND tx.height>=${Number(height)}`;
+  const body = await lcdGet('/cosmos/tx/v1beta1/txs?query=' + encodeURIComponent(q)
+    + '&order_by=ORDER_BY_ASC&pagination.limit=50');
+  // Узел мог проигнорировать условие по высоте - проверяем сами.
+  for (const r of body?.tx_responses || []) {
+    if (Number(r.height) < Number(height)) continue;
+    for (const ev of r.events || []) {
+      if (ev.type !== 'wasm') continue;
+      const a = {};
+      for (const x of ev.attributes || []) a[x.key] = x.value;
+      if (a._contract_address === PROPHECY && a.action === 'bet' && Number(a.market_id) === Number(marketId)) {
+        return { found: true, height: Number(r.height), hash: r.txhash };
+      }
+    }
+  }
+  return { found: false };
+}
+
+/** null - дрейфа нет или он безвреден; { void } - аннулировать; { note } - ждать. */
+async function driftCheck(m) {
+  const h = Number(m.spec.height);
+  const close = Number(m.bets_close_at);
+  let t;
+  try { t = await blockTime(h); } catch (e) {
+    return { note: `#${m.id}: could not read block ${h} to check drift: ${e.message}` };
+  }
+  if (t >= close) return null;
+  let p;
+  try { p = await predictionsFrom(m.id, h); } catch (e) {
+    return { note: `#${m.id}: block ${h} came ${close - t}s before predictions closed; tx search failed, retry next run: ${e.message}` };
+  }
+  if (!p.found) {
+    log('·', `#${m.id}: block ${h} came ${close - t}s before predictions closed, but no prediction at or after it`);
+    return null;
+  }
+  const reason = `height ${h} reached ${close - t}s before predictions closed; prediction at height ${p.height}`;
+  return {
+    void: {
+      what: `void #${m.id}: ${reason}`,
+      contract: PROPHECY,
+      msg: { void: { market_id: m.id, bad_spec: false, reason: reason.slice(0, 480) } },
+    },
+  };
+}
+
 /** Что сделать с рынком сейчас. Возвращает план, ничего не отправляя. */
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
@@ -381,6 +443,9 @@ async function planFor(m, ctx) {
     if (tip.height < Number(m.spec.height)) {
       return { note: `#${id}: due by time, chain at ${tip.height}, spec height ${m.spec.height} not reached yet` };
     }
+    const drift = await driftCheck(m);
+    if (drift?.note) return { note: drift.note };
+    if (drift?.void) return drift.void;
     try {
       const r = await resolveSpec(m);
       return {

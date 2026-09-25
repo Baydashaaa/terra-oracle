@@ -1422,6 +1422,7 @@
 #page-markets .mkf-dd-list{max-height:320px;overflow-y:auto;overscroll-behavior:contain}
 #page-markets .mkf-date .mkf-dd-list{max-height:232px}
 #page-markets .mkf-dd-list button:disabled{opacity:.28;cursor:not-allowed;background:none}
+#page-markets #mkf-lead button:disabled{opacity:.32;cursor:not-allowed}
 #page-markets .mkf-dd-opts button{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
 }
