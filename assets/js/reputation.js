@@ -934,7 +934,7 @@ function renderHowItWorksHTML() {
     // MARKET_REP_MIN_LOSING керпера (300,000 LUNC по умолчанию).
     ['Market that played out', '+40 REP per market', 'assets/img/icons/markets.webp', '139,92,246',
      'Create a market that settles with predictions on both sides and at least 300,000 LUNC on the losing side.'],
-    ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208', ''],
+    ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/t-circuit.webp',   '56,217,208', ''],
     ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66',
      'Only upvotes on answers are scored. Upvotes on questions are shown but earn nothing.'],
     ['Chat message',      '+5 REP per message',   'assets/img/icons/p-messages.webp',  '76,125,255',

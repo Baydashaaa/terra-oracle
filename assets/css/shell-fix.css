@@ -805,6 +805,19 @@
 /* ------------------------------------------------------------------
    13c. Иконки в плашках активности
    ------------------------------------------------------------------ */
+/* How REP is earned: все карточки строятся одинаково - иконка сверху слева
+   на уровне заголовка, строки идут сверху вниз и не растягиваются по высоте
+   карточки. Раньше иконка без пояснения центровалась на две строки, а строки
+   разъезжались, когда соседняя карточка в ряду была выше. */
+#page-reputation .earn{
+  grid-template-rows:auto auto 1fr;align-items:start;align-content:start;row-gap:4px;
+}
+#page-reputation .earn img,
+#page-reputation .earn.has-h img{grid-row:1 / span 3;align-self:start;width:40px;height:40px}
+#page-reputation .earn .k{line-height:1.35;padding-top:1px}
+#page-reputation .earn .v{line-height:1.3}
+#page-reputation .earn .h{margin-top:3px}
+
 #page-reputation .act-ic{
   width:30px;height:30px;
   object-fit:contain;
