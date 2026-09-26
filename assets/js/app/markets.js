@@ -1262,14 +1262,15 @@ async function mkAbout() {
     `<div class="mka-perk">${mkaIcon('earn', 18)}<div><b>You earn ${pct(c.creator_bps)}</b>
       <p>of the losing side's pool on every market you open.</p></div></div>`,
   ];
-  if (Number(c.boost_amount) > 0 && Number(c.boost_per_week) > 0) {
-    perks.push(`<div class="mka-perk">${mkaIcon('gift', 18)}<div><b>New markets get a bonus</b>
-      <p>${L(c.boost_amount)} from the new-market fund goes to the winners. Up to
-      ${c.boost_per_week} markets a week, while the fund has money.</p></div></div>`);
-  }
+  // С 0.2.2 доплату получают только продвигаемые рынки, поэтому бонус -
+  // часть продвижения, а не отдельная строка.
+  const boostOn = Number(c.boost_amount) > 0 && Number(c.boost_per_week) > 0;
   if (Number(c.promo_fee) > 0) {
-    perks.push(`<div class="mka-perk">${mkaIcon('promo', 18)}<div><b>Promote it</b>
-      <p>Pay ${L(c.promo_fee)} to show your market higher in the list. This fee is not returned.</p></div></div>`);
+    perks.push(`<div class="mka-perk">${mkaIcon(boostOn ? 'gift' : 'promo', 18)}<div><b>Promote it</b>
+      <p>Pay ${L(c.promo_fee)} to show your market higher in the list${boostOn
+        ? ` and add a bonus of ${L(c.boost_amount)} from the new-market fund for the winners.
+          The bonus goes to up to ${c.boost_per_week} promoted markets a week, while the fund has money`
+        : ''}. The promotion fee is not returned.</p></div></div>`);
   }
 
   const wrap = document.createElement('div');
