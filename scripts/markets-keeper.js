@@ -482,6 +482,61 @@ async function planFor(m, ctx) {
   return null;
 }
 
+// ── REP создателям рынков ───────────────────────────────────────────────────
+//
+// Рынок рассчитан, на обеих сторонах есть участники, и проигравшая сторона без
+// доплаты не меньше порога - создатель получает REP. Решение принимает керпер,
+// потому что оно целиком из цепочки. Worker начисляет один раз на рынок, так
+// что повторный вызов на следующем проходе ничего не добавит.
+//
+// Порог - защита от накрутки: создатель может поставить с двух своих кошельков
+// на разные стороны. Это стоит ему 7% проигравшей стороны (10% комиссии минус
+// его же 3%), а REP превращается в долю недельной выплаты.
+const WORKER_URL     = process.env.WORKER_URL || '';
+const ACTIONS_SECRET = process.env.ACTIONS_SECRET || '';
+const REP_MIN_LOSING = BigInt(process.env.MARKET_REP_MIN_LOSING || '300000000000'); // uluna
+const REP_WINDOW_SECS = 30 * 86400;
+
+function repEligible(m, now) {
+  if (m.status !== 'settled' || typeof m.outcome !== 'boolean') return false;
+  if (now - Number(m.resolve_after) > REP_WINDOW_SECS) return false;
+  if (!(Number(m.bettors_yes) > 0 && Number(m.bettors_no) > 0)) return false;
+  const losing = BigInt(m.outcome ? m.pot_no : m.pot_yes);
+  return losing >= REP_MIN_LOSING;
+}
+
+async function grantCreatorRep(now) {
+  // Сухой прогон показывает план на любой сети - так это проверяется на
+  // rebel-2 с низким порогом. Настоящее начисление - только с mainnet.
+  if (!DRY) {
+    if (CHAIN_ID !== 'columbus-5') return;
+    if (!WORKER_URL || !ACTIONS_SECRET) { log('· creator REP: WORKER_URL or ACTIONS_SECRET not set, skipped'); return; }
+  }
+  let settled;
+  try { settled = await listMarkets('settled'); } catch (e) {
+    log('· creator REP: could not list settled markets:', e.message);
+    return;
+  }
+  const due = settled.filter((m) => repEligible(m, now));
+  if (!due.length) return;
+  for (const m of due) {
+    if (DRY) { log('→', `creator REP #${m.id} to ${m.creator} [dry run]`); continue; }
+    try {
+      const res = await safeFetch(WORKER_URL + '/rep/market', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET },
+        body: JSON.stringify({ wallet: m.creator, contract: PROPHECY, marketId: m.id }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { log('   creator REP FAILED', `#${m.id}`, res.status, j.error || ''); continue; }
+      if (!j.already) log('   creator REP', `#${m.id}`, m.creator, `+${j.added}`);
+    } catch (e) {
+      // Worker недоступен - следующий проход повторит, двойного не будет.
+      log('   creator REP FAILED', `#${m.id}`, e.message);
+    }
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -529,6 +584,8 @@ async function main() {
     }
   }
   if (plans.length > MAX_ACTIONS_PER_RUN) log(`${plans.length - MAX_ACTIONS_PER_RUN} action(s) left for the next run`);
+  // Ошибки начисления REP не роняют прогон: деньги рынков важнее.
+  await grantCreatorRep(tip.time);
   log(`done: ${done}, failed: ${failed}`);
   if (failed) process.exitCode = 1;
 }

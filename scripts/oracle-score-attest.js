@@ -70,6 +70,9 @@ const ATTESTABLE_ACTIONS = new Set([
   // contract's rate limit is keyed (day, user, ref_id) with daily_limit 1, so
   // a round can only ever be credited once even if the queue replays it.
   'circuit',
+  // Создатель рассчитанного рынка: 40 REP, кладёт Worker по вызову керпера
+  // рынков. attestor_may_record: true, лимит 1 в день на рынок.
+  'market_created',
 ]);
 
 // How to read a rejection. Strings are taken verbatim from src/error.rs; keep

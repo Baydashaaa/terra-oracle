@@ -49,6 +49,10 @@ jobs:
           LCD_URLS: ${{ vars.KEEPER_LCD_URLS }}
           # '1' - только печатать план. Снять, когда проверено.
           DRY_RUN: ${{ vars.KEEPER_DRY_RUN }}
+          # REP создателям рынков: Worker и порог проигравшей стороны (uluna).
+          WORKER_URL: https://terra-oracle-questions.vladislav-baydan.workers.dev
+          ACTIONS_SECRET: ${{ secrets.ACTIONS_SECRET }}
+          MARKET_REP_MIN_LOSING: ${{ vars.MARKET_REP_MIN_LOSING }}
         run: node scripts/markets-keeper.js
 
       - name: Notify on failure
