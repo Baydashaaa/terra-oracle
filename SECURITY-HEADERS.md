@@ -22,7 +22,8 @@ curl -sI https://terraoracle.io/home      | grep -i content-security
 curl -sI https://draw.terraoracle.io/     | grep -i content-security
 ```
 
-Last verified: 23 September 2026.
+Last updated: 26 September 2026, when the strict policy moved from report-only
+to enforced after three days of observation.
 
 ---
 
@@ -31,12 +32,14 @@ Last verified: 23 September 2026.
 ### Content-Security-Policy (enforced)
 
 ```
-frame-ancestors 'self';
-object-src 'none';
-base-uri 'self';
-form-action 'self' https://formspree.io;
+default-src 'self';
 script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
            https://static.cloudflareinsights.com;
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+font-src 'self' https://fonts.gstatic.com;
+img-src 'self' data: blob: https://draw.terraoracle.io;
+frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;
+worker-src 'self' blob:;
 connect-src 'self'
             https://terra-oracle-questions.vladislav-baydan.workers.dev
             https://oracle-chat.vladislav-baydan.workers.dev
@@ -58,24 +61,7 @@ connect-src 'self'
             https://verify.walletconnect.com
             https://verify.walletconnect.org
             wss://relay.walletconnect.org
-            wss://relay.walletconnect.com
-```
-
-### Content-Security-Policy-Report-Only
-
-Logs, never blocks. Used to learn what a stricter policy would break before
-enforcing it.
-
-```
-default-src 'self';
-script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'
-           https://static.cloudflareinsights.com;
-style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-font-src 'self' https://fonts.gstatic.com;
-img-src 'self' data: blob: https://draw.terraoracle.io;
-frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;
-worker-src 'self' blob:;
-connect-src   (same list as the enforced policy);
+            wss://relay.walletconnect.com;
 object-src 'none';
 base-uri 'self';
 form-action 'self' https://formspree.io;
@@ -98,22 +84,8 @@ frame-ancestors 'self'
 ### Content-Security-Policy (enforced)
 
 ```
-frame-ancestors 'none';
-object-src 'none';
-base-uri 'self';
-form-action 'self';
-script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
-           https://static.cloudflareinsights.com
-```
-
-`connect-src` is not restricted here yet. The report-only policy below
-carries the candidate list.
-
-### Content-Security-Policy-Report-Only
-
-```
 default-src 'self';
-script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'
+script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
            https://static.cloudflareinsights.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
@@ -148,12 +120,21 @@ current value.
 
 ## Decisions
 
+**Everything is denied by default.** `default-src 'self'` covers every resource
+type not listed separately. Each external origin above is there because the site
+actually uses it, as observed over three days of report-only monitoring.
+
 **No third-party script CDNs.** The QR generator and the WalletConnect client
 (`@walletconnect/sign-client@2.17.4`) are served from `assets/vendor/` on both
 sites. They used to load from `unpkg.com` and `esm.sh`, which gave those CDNs
 the same privileges as our own code; an ESM import from a CDN cannot be pinned
 with Subresource Integrity. How the WalletConnect bundle is built is described
 in `assets/vendor/wc-init.js`.
+
+**WalletConnect domain verification is framed.** `frame-src` allows
+`verify.walletconnect.org` and `.com`: the WalletConnect client loads them in a
+hidden frame to prove to the wallet which domain it is connecting to. Blocking
+it would make wallets warn that the site is unverified.
 
 **Terra Classic nodes are verified, not remembered.** Every node in
 `connect-src` answered `/cosmos/base/tendermint/v1beta1/blocks/latest` with
@@ -168,12 +149,14 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 **`form-action` includes formspree.** The Ask Oracle form posts to
 `https://formspree.io`. A bare `form-action 'self'` would break it.
 
-**`unsafe-eval` is still enforced, on purpose.** The site's own code does not
-evaluate strings, and the report-only policy confirms it: every eval
-violation observed so far comes from scripts that browser wallet extensions
-inject into all pages. Before removing `unsafe-eval` from the enforced
-policy, connect and sign a transaction with each supported wallet extension
-(Keplr, Station, Galaxy Station) while watching for report-only violations.
+**`unsafe-eval` is kept, deliberately.** The site's own code never evaluates
+strings. Every eval violation seen during report-only monitoring came from
+`inpage.js`, the script the **Galaxy Station** browser extension injects into
+every page on load; the extension was identified by its ID, and the violations
+persisted with all other extensions disabled. Galaxy Station is one of the main
+Terra Classic wallets, so removing `unsafe-eval` risks stopping it from
+connecting. It should only be removed after confirming that Galaxy Station, and
+every other supported wallet, still connects and signs without it.
 
 **`unsafe-inline` remains.** Removing it requires moving roughly two hundred
 inline event handlers (`onclick="..."` and similar) out of the markup. That is
@@ -183,10 +166,12 @@ tracked as separate work.
 
 ## Changing a rule
 
-1. Add or change the directive in the **report-only** header first.
+1. Add a `Content-Security-Policy-Report-Only` header to the rule, holding the
+   policy you intend to enforce. It logs violations and blocks nothing.
 2. Use the site with the browser console open, filtered by `Report Only`,
    with **Preserve log** enabled, across every page and wallet flow.
-3. When the report stays clean, move the change into the enforced header.
+3. When the report stays clean, move the value into `Content-Security-Policy`
+   and remove the report-only header.
 4. Verify with `curl` and update this file in the same change.
 
 Rolling back is a matter of restoring the previous value in Cloudflare, which
