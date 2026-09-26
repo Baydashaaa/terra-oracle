@@ -689,8 +689,9 @@
   //
   // Бонус выдаётся в момент создания, если он ещё есть: фонд не пуст и
   // недельная квота не выбрана. Статус ниже - на момент открытия формы, и
-  // так и подписан. Запрос boost отдаёт счётчик недели без её начала, поэтому
-  // "квота выбрана" формулируется осторожно: неделя могла уже смениться.
+  // так и подписан. С 0.2.3 запрос boost сам обнуляет счётчик после конца
+  // недели и отдаёт week_ends_at - отсюда точная дата. Старый контракт поля
+  // не отдаёт, и тогда "квота выбрана" формулируется осторожно.
   function boostStatus() {
     var b = S.boost;
     if (!b || !Number(b.per_market) || !Number(b.per_week)) return null;
@@ -701,6 +702,11 @@
     }
     var left = Number(b.per_week) - Number(b.used_this_week);
     if (left <= 0) {
+      if (b.week_ends_at) {
+        return { ok: false, text: 'This week\'s ' + b.per_week + ' bonuses are taken, so promotion only raises '
+          + 'the market in the list. The next bonus frees up on <b>' + esc(utcText(Number(b.week_ends_at), true))
+          + '</b>.' };
+      }
       return { ok: false, text: 'This week\'s ' + b.per_week + ' bonuses look taken, so promotion would likely '
         + 'only raise the market in the list. The count resets a week after the first bonus of the week.' };
     }
