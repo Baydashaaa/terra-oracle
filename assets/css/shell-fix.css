@@ -1423,6 +1423,30 @@
 #page-markets .mkf-date .mkf-dd-list{max-height:232px}
 #page-markets .mkf-dd-list button:disabled{opacity:.28;cursor:not-allowed;background:none}
 #page-markets #mkf-lead button:disabled{opacity:.32;cursor:not-allowed}
+
+/* Продвижение: переключатель и статус бонуса. */
+#page-markets .mkf-toggle{position:relative;display:flex;gap:14px;align-items:flex-start;cursor:pointer}
+#page-markets .mkf-toggle input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+#page-markets .mkf-toggle .sw{
+  flex:none;position:relative;width:40px;height:22px;margin-top:1px;border-radius:999px;
+  background:var(--line-2,#2a2f55);transition:background .15s;
+}
+#page-markets .mkf-toggle .sw::after{
+  content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:#e8ecff;transition:transform .15s;
+}
+#page-markets .mkf-toggle input:checked + .sw{background:#8b5cf6}
+#page-markets .mkf-toggle input:checked + .sw::after{transform:translateX(18px)}
+#page-markets .mkf-toggle input:focus-visible + .sw{outline:2px solid #a78bfa;outline-offset:2px}
+#page-markets .mkf-toggle .tx b{display:block;color:var(--ink);font-size:14px}
+#page-markets .mkf-toggle .tx span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+#page-markets .mkf-boost{margin-top:12px;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.55}
+#page-markets .mkf-boost.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35);color:var(--ink)}
+#page-markets .mkf-boost.ok b{color:var(--lime)}
+#page-markets .mkf-boost.no{background:var(--bg);color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){
+  #page-markets .mkf-toggle .sw,#page-markets .mkf-toggle .sw::after{transition:none}
+}
 #page-markets .mkf-dd-opts button{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
 }

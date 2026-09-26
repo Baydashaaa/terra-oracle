@@ -198,6 +198,7 @@
     promoted: false,
     height: null,
     cfg: null,
+    boost: null,
     chain: null,
     blockSecs: 6,
   };
@@ -663,6 +664,8 @@
       + 'the resolution rule are fixed. Nobody can change them afterwards, including you.</div>'
       + '</section>'
 
+      + promoHtml(promo)
+
       + '<section class="card summary">'
       + '  <img src="assets/img/icons/markets.webp" alt="" width="56" height="56">'
       + '  <div>'
@@ -674,12 +677,51 @@
         + 'question turns out to be unverifiable.</div>')
       + '  </div>'
       + '  <div class="price"><b>' + fmtLuncLocal(total) + ' LUNC</b><span>refundable bond'
-      + (S.promoted && promo ? ' + promo' : '') + '</span></div>'
+      + (S.promoted && promo ? ' + promotion fee' : '') + '</span></div>'
       + '  <button class="ask-go" id="mkf-go"' + (errs.length ? ' disabled style="opacity:.45;"' : '') + '>'
       + 'Publish prediction &rarr;</button>'
       + '</section>';
 
     wire();
+  }
+
+  // ── продвижение ───────────────────────────────────────────────────────────
+  //
+  // Бонус выдаётся в момент создания, если он ещё есть: фонд не пуст и
+  // недельная квота не выбрана. Статус ниже - на момент открытия формы, и
+  // так и подписан. Запрос boost отдаёт счётчик недели без её начала, поэтому
+  // "квота выбрана" формулируется осторожно: неделя могла уже смениться.
+  function boostStatus() {
+    var b = S.boost;
+    if (!b || !Number(b.per_market) || !Number(b.per_week)) return null;
+    var amount = fmtLuncLocal(b.per_market) + ' LUNC';
+    if (Number(b.fund) < Number(b.per_market)) {
+      return { ok: false, text: 'The new-market fund is empty right now, so there is no bonus for the winners. '
+        + 'Promotion only raises the market in the list.' };
+    }
+    var left = Number(b.per_week) - Number(b.used_this_week);
+    if (left <= 0) {
+      return { ok: false, text: 'This week\'s ' + b.per_week + ' bonuses look taken, so promotion would likely '
+        + 'only raise the market in the list. The count resets a week after the first bonus of the week.' };
+    }
+    return { ok: true, text: 'Adds a bonus of <b>' + amount + '</b> from the new-market fund for the winners, '
+      + 'if one is still free when you publish. ' + left + ' of ' + b.per_week + ' left this week.' };
+  }
+
+  function promoHtml(promo) {
+    if (!promo) return '';
+    var st = boostStatus();
+    return ''
+      + '<h3 class="step-h"><span class="n">5</span>Promotion</h3>'
+      + '<section class="card qform mkf-promo">'
+      + '  <label class="mkf-toggle">'
+      + '    <input type="checkbox" id="mkf-promo"' + (S.promoted ? ' checked' : '') + '>'
+      + '    <span class="sw" aria-hidden="true"></span>'
+      + '    <span class="tx"><b>Promote this market</b>'
+      + '      <span>' + fmtLuncLocal(promo) + ' LUNC, not refunded. Your market shows higher in the list.</span></span>'
+      + '  </label>'
+      + (st ? '<div class="mkf-boost ' + (st.ok ? 'ok' : 'no') + '">' + st.text + '</div>' : '')
+      + '</section>';
   }
 
   function recalcHeight() { S.height = heightAt(resolveTs()); }
@@ -695,6 +737,14 @@
       var list = metricsFor(S.category);
       if (list.indexOf(S.metric) === -1) switchMetric(list[0], true);
       else render();
+    });
+
+    var promoBox = document.getElementById('mkf-promo');
+    if (promoBox) promoBox.addEventListener('change', function () {
+      S.promoted = promoBox.checked;
+      render();
+      var again = document.getElementById('mkf-promo');
+      if (again) again.focus();
     });
 
     var lead = document.getElementById('mkf-lead');
@@ -816,6 +866,8 @@
     if (list) list.style.display = 'none';
 
     if (!S.cfg) query({ config: {} }).then(function (c) { S.cfg = c; render(); }).catch(function () {});
+    // Фонд и квота меняются - читаем при каждом открытии формы.
+    query({ boost: {} }).then(function (b) { S.boost = b; render(); }).catch(function () {});
     if (!S.chain) loadChainTip().then(function () { recalcHeight(); render(); }).catch(function () {});
     render();
   }
