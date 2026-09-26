@@ -492,6 +492,16 @@ function renderStatsHTML(isConnected) {
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#66ffaa;"
             id="stats-rep-accepted">…</div>
         </div>
+        <!-- Markets card -->
+        <div style="background:var(--surface2);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:16px;
+          display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;"><img class="act-ic" src="assets/img/icons/markets.webp" alt="" width="128" height="128" loading="lazy"> Markets that played out</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:var(--text);" id="stats-count-markets">…</div>
+          </div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#a78bfa;"
+            id="stats-rep-markets">…</div>
+        </div>
         <!-- Oracle Draw card -->
         <div style="background:var(--surface2);border:1px solid rgba(255,136,68,0.25);border-radius:10px;padding:16px;
           display:flex;align-items:center;justify-content:space-between;">
@@ -570,12 +580,13 @@ async function loadStatsData() {
       ? window.WORKER_URL
       : 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
 
-    const [qStats, chatStats, drawRepData, streakData, chain] = await Promise.all([
+    const [qStats, chatStats, drawRepData, streakData, chain, marketRepData] = await Promise.all([
       typeof fetchQuestionStats === 'function' ? fetchQuestionStats(wallet) : Promise.resolve({ myQuestions: [], myAnswers: [], totalUpvotes: 0 }),
       typeof fetchChatStats     === 'function' ? fetchChatStats(wallet)     : Promise.resolve({ msgCount: 0 }),
       fetch(`${WORKER_URL_LOCAL}/rep/draw?wallet=${wallet}`).then(r => r.ok ? r.json() : { total: 0, history: [] }).catch(() => ({ total: 0, history: [] })),
       fetch(`${WORKER_URL_LOCAL}/streak?wallet=${wallet}`).then(r => r.ok ? r.json() : { multiplier: 1.0 }).catch(() => ({ multiplier: 1.0 })),
       typeof fetchOnChainScore === 'function' ? fetchOnChainScore(wallet).catch(() => null) : Promise.resolve(null),
+      fetch(`${WORKER_URL_LOCAL}/rep/market?wallet=${wallet}`).then(r => r.ok ? r.json() : { total: 0, history: [] }).catch(() => ({ total: 0, history: [] })),
     ]);
 
     const { myQuestions = [], myAnswers = [], totalUpvotes = 0, answerUpvotes } = qStats;
@@ -600,11 +611,13 @@ async function loadStatsData() {
     const repUpvotes   = scoredUpvotes      * 20;
     const repChat      = msgCount * 5;
     const repDraw      = drawRepTotal;
+    const repMarkets   = marketRepData?.total || 0;
+    const marketCount  = (marketRepData?.history || []).length;
 
     // The total comes from the contract. Recomputing it here is what made this
     // page disagree with the profile; the breakdown may briefly add up to more
     // while grants sit in the queue, and that is the honest state of things.
-    const estimate     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw);
+    const estimate     = Math.round(repQuestions + repAnswers + repUpvotes + repChat + repDraw + repMarkets);
     const baseRep      = chain ? chain.rank : estimate;
     const streakMult   = streakData?.multiplier || 1.0;
     // The contract's figure as it stands. The streak multiplier belongs to
@@ -619,6 +632,8 @@ async function loadStatsData() {
     set('stats-count-upvotes',   totalUpvotes);
     set('stats-count-chat',      msgCount);
     set('stats-count-draw',      totalDrawMints);
+    set('stats-count-markets',   marketCount);
+    set('stats-rep-markets',     '+' + repMarkets.toLocaleString() + ' REP');
     set('stats-rep-questions',   '+' + repQuestions.toLocaleString() + ' REP');
     set('stats-rep-answers',     '+' + repAnswers.toLocaleString()   + ' REP');
     set('stats-rep-upvotes',     '+' + repUpvotes.toLocaleString()   + ' REP');
@@ -915,6 +930,10 @@ function renderHowItWorksHTML() {
     ['Answer a question', '+40 REP, then +10',    'assets/img/icons/chat.webp',        '34,211,238',
      'First 3 answers each UTC day earn 40 REP. Answers 4 to 10 earn 10. Nothing beyond that until the day rolls over.'],
     ['Answer accepted',   '+60 REP when chosen',  'assets/img/icons/reputation.webp',  '34,197,94', ''],
+    // Рынки: REP начисляет керпер рынков через Worker. Порог совпадает с
+    // MARKET_REP_MIN_LOSING керпера (300,000 LUNC по умолчанию).
+    ['Market that played out', '+40 REP per market', 'assets/img/icons/markets.webp', '139,92,246',
+     'Create a market that settles with predictions on both sides and at least 300,000 LUNC on the losing side.'],
     ['Circuit round',     '+2 to 6.5 REP',        'assets/img/icons/circuit.webp',     '56,217,208', ''],
     ['Upvote received',   '+20 REP per upvote',   'assets/img/icons/p-upvotes.webp',   '245,197,66',
      'Only upvotes on answers are scored. Upvotes on questions are shown but earn nothing.'],

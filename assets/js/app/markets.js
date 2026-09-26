@@ -1261,6 +1261,11 @@ async function mkAbout() {
   const perks = [
     `<div class="mka-perk">${mkaIcon('earn', 18)}<div><b>You earn ${pct(c.creator_bps)}</b>
       <p>of the losing side's pool on every market you open.</p></div></div>`,
+    // Порог совпадает с MARKET_REP_MIN_LOSING керпера (300,000 LUNC).
+    `<div class="mka-perk"><img src="assets/img/icons/markets.webp" alt="" width="22" height="22"
+      style="flex:none;object-fit:contain;margin-top:-1px"><div><b>And 40 REP</b>
+      <p>when your market settles with predictions on both sides and at least 300,000 LUNC on
+      the losing side. REP counts toward your rank and the weekly rewards pool.</p></div></div>`,
   ];
   // С 0.2.2 доплату получают только продвигаемые рынки, поэтому бонус -
   // часть продвижения, а не отдельная строка.
