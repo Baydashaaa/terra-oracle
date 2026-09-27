@@ -537,6 +537,89 @@ async function grantCreatorRep(now) {
   }
 }
 
+// ── уведомления совета ──────────────────────────────────────────────────────
+//
+// Без кворума суд аннулирует рынок и всем возвращает деньги - включая того,
+// кто оспорил верный исход. Значит, живой совет - часть защиты, и о новом деле
+// он должен узнавать сразу. Текст уходит в группу Oracle Eye (там же баги),
+// поэтому у него свой заголовок. Формат - Markdown Telegram, как у Eye.
+const SITE_URL      = process.env.SITE_URL || 'https://terraoracle.io';
+const REMIND_BEFORE = 12 * 3600;
+
+function utc(ts) {
+  return new Date(Number(ts) * 1000).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+}
+function hours(secs) {
+  const h = Math.max(0, Math.round(Number(secs) / 3600));
+  return h + (h === 1 ? ' hour' : ' hours');
+}
+function lunc(uluna) {
+  return Number(BigInt(uluna || '0') / 1000000n).toLocaleString('en-US') + ' LUNC';
+}
+// Markdown Telegram (старый): спецсимволы в пользовательском тексте экранируются.
+function md(s) {
+  return String(s == null ? '' : s).replace(/([_*`\[])/g, '\\$1');
+}
+
+/** Отправить совету один раз на ключ. Worker помнит отправленное. */
+async function councilOnce(key, text) {
+  if (DRY) { log('→', `council message [dry run] ${key}\n${text}`); return; }
+  const res = await safeFetch(WORKER_URL + '/keeper/council', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Actions-Secret': ACTIONS_SECRET },
+    body: JSON.stringify({ key, text }),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`council ${res.status} ${j.error || ''}`);
+  if (j.sent) log('   council notified', key);
+}
+
+async function notifyCouncil(now) {
+  if (!COURT) return;
+  if (!DRY && (!WORKER_URL || !ACTIONS_SECRET)) return;
+  let disputed, ccfg;
+  try {
+    disputed = await listMarkets('disputed');
+    if (!disputed.length) return;
+    ccfg = await smart(COURT, { config: {} });
+  } catch (e) {
+    log('· council notify: could not read markets or court:', e.message);
+    return;
+  }
+  const net = CHAIN_ID === 'columbus-5' ? 'mainnet' : CHAIN_ID;
+  for (const m of disputed) {
+    try {
+      const kase = await smart(COURT, { case: { market_id: m.id } });
+      const quorum = Number(kase ? kase.quorum : ccfg.quorum);
+      const votes = kase ? Number(kase.yes) + Number(kase.no) + Number(kase.void) : 0;
+      const endsAt = kase ? Number(kase.ends_at) : Number(m.disputed_at) + Number(ccfg.voting_secs);
+      if (kase?.closed || now >= endsAt) continue;
+      const base = `court:${PROPHECY.slice(-8)}:${m.id}`;
+      const posted = m.outcome === true ? 'YES' : m.outcome === false ? 'NO' : 'none';
+
+      await councilOnce(`${base}:open`,
+        `⚖️ *MARKETS COURT - new case*\n`
+        + `Market #${m.id} · ${net}\n\n`
+        + `${md(m.question)}\n\n`
+        + `Posted outcome: *${posted}*${m.reading ? ` (${md(m.reading)})` : ''}\n`
+        + `Challenged by \`${m.challenger || '?'}\`\n`
+        + `Pots: YES ${lunc(m.pot_yes)} · NO ${lunc(m.pot_no)}\n\n`
+        + `🗳 Vote YES, NO or VOID before *${utc(endsAt)}* (${hours(endsAt - now)} left)\n`
+        + `Quorum ${quorum} · check the value on chain at block ${md(m.spec?.height)}`);
+
+      if (votes < quorum && endsAt - now <= REMIND_BEFORE) {
+        await councilOnce(`${base}:remind`,
+          `⏰ *MARKETS COURT - quorum not reached*\n`
+          + `Market #${m.id} · ${net}: ${votes} of ${quorum} votes, voting ends *${utc(endsAt)}* `
+          + `(${hours(endsAt - now)} left).\n`
+          + `Without quorum the market is voided and everyone, the challenger included, gets refunded.`);
+      }
+    } catch (e) {
+      log('   council notify FAILED', `#${m.id}`, e.message);
+    }
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -586,6 +669,8 @@ async function main() {
   if (plans.length > MAX_ACTIONS_PER_RUN) log(`${plans.length - MAX_ACTIONS_PER_RUN} action(s) left for the next run`);
   // Ошибки начисления REP не роняют прогон: деньги рынков важнее.
   await grantCreatorRep(tip.time);
+  // Уведомления тоже не роняют прогон.
+  await notifyCouncil(tip.time);
   log(`done: ${done}, failed: ${failed}`);
   if (failed) process.exitCode = 1;
 }
