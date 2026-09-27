@@ -19,7 +19,9 @@
 
 import { createHash } from 'crypto';
 
-const MNEMONIC  = process.env.KEEPER_MNEMONIC;
+// Вставка из Windows приносит \r и лишние пробелы, а bip39 выводит из такой
+// строки другой ключ без ошибки. Схлопываем пробелы до одного.
+const MNEMONIC  = (process.env.KEEPER_MNEMONIC || '').trim().split(/\s+/).filter(Boolean).join(' ') || undefined;
 const PROPHECY  = process.env.PROPHECY_CONTRACT;
 const COURT     = process.env.COURT_CONTRACT || '';
 const CHAIN_ID  = process.env.CHAIN_ID || 'columbus-5';
@@ -88,6 +90,10 @@ async function deriveKeypair(mnemonic) {
   const { BIP32Factory } = await import('bip32');
   const ecc = await import('tiny-secp256k1');
   const bip32 = BIP32Factory(ecc.default || ecc);
+  const { validateMnemonic } = await import('bip39');
+  if (!validateMnemonic(mnemonic)) {
+    throw new Error('KEEPER_MNEMONIC is not a valid BIP39 phrase (typo or wrong word count)');
+  }
   const seed = mnemonicToSeedSync(mnemonic);
   const child = bip32.fromSeed(seed).derivePath("m/44'/330'/0'/0/0");
   return { privateKey: child.privateKey, publicKey: child.publicKey };
