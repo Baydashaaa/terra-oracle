@@ -426,34 +426,38 @@ function mkFeatured(feats) {
   if (feats.length < 2) return featuredCard(feats[0]);
   return `<div class="mk-rot">`
     + feats.map((m, i) => `<div class="mk-rot-slide${i ? '' : ' on'}">${featuredCard(m)}</div>`).join('')
-    + `<div class="mk-rot-dots">`
-    + feats.map((_, i) => `<button type="button" class="${i ? '' : 'on'}" aria-label="Promoted market ${i + 1}"></button>`).join('')
+    + `<div class="mk-rot-bar" role="tablist" aria-label="Promoted markets">`
+    + feats.map((m, i) => `<button type="button" role="tab" aria-label="Promoted market ${i + 1} of ${feats.length}">`
+      + `<span class="track"><i></i></span></button>`).join('')
     + `</div></div>`;
 }
 
-let mkRotTimer = null;
+/** Карусель витрины. Шаг задаёт анимация заполнения сегмента (7 с): кончилась -
+ *  следующий слайд. Наведение ставит анимацию на паузу, а с ней и листание.
+ *  Кто просил меньше движения - анимации нет, листание только кликом. */
 function mkStartCarousel(root) {
-  clearInterval(mkRotTimer);
-  mkRotTimer = null;
   const rot = root && root.querySelector('.mk-rot');
   if (!rot) return;
   const slides = rot.querySelectorAll('.mk-rot-slide');
-  const dots = rot.querySelectorAll('.mk-rot-dots button');
-  let i = 0, hold = false;
+  const segs = rot.querySelectorAll('.mk-rot-bar button');
+  let i = 0;
   const go = (n) => {
     i = (n + slides.length) % slides.length;
     slides.forEach((s, k) => s.classList.toggle('on', k === i));
-    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    segs.forEach((b, k) => {
+      b.classList.remove('on');
+      b.classList.toggle('done', k < i);
+      b.setAttribute('aria-selected', String(k === i));
+    });
+    // Перезапуск заполнения: класс снят, кадр пересчитан, класс снова.
+    void segs[i].offsetWidth;
+    segs[i].classList.add('on');
   };
-  dots.forEach((d, k) => d.addEventListener('click', (e) => { e.stopPropagation(); go(k); }));
-  rot.addEventListener('mouseenter', () => { hold = true; });
-  rot.addEventListener('mouseleave', () => { hold = false; });
-  // Сама листается, только если человек не просил меньше движения.
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  mkRotTimer = setInterval(() => {
-    if (!document.body.contains(rot)) { clearInterval(mkRotTimer); mkRotTimer = null; return; }
-    if (!hold) go(i + 1);
-  }, 7000);
+  segs.forEach((b, k) => {
+    b.addEventListener('click', (e) => { e.stopPropagation(); go(k); });
+    b.querySelector('i').addEventListener('animationend', () => { if (k === i) go(i + 1); });
+  });
+  go(0);
 }
 
 // ── Home: прямой эфир рынков ────────────────────────────────────────────────
@@ -632,7 +636,11 @@ async function renderMarkets(resolved) {
     // Витрина - все продвинутые по очереди, а без них - ближайший к
     // закрытию. В сетке продвинутые не повторяются; среди открытых
     // продвинутые идут первыми (сортировка стабильная).
-    const promos = resolved ? [] : list.filter((m) => m.promoted);
+    // В карусели только рынки с открытым приёмом: так все слайды одного
+    // вида, а продвинутый рынок, который ждёт исхода, уходит в сетку.
+    const nowS = Date.now() / 1000;
+    const promos = resolved ? [] : list.filter((m) => m.promoted
+      && m.status === 'open' && Number(m.bets_close_at) > nowS);
     const feats = promos.length ? promos : list.slice(0, 1);
     const rest = list.filter((m) => !feats.includes(m));
     if (!resolved) rest.sort((a, b) => Number(!!b.promoted) - Number(!!a.promoted));

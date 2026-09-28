@@ -2262,46 +2262,52 @@
 }
 
 /* ── Markets: продвижение ──────────────────────────────────────────────────
-   Продвинутый рынок заплатил за место, и это видно везде: градиентная рамка
-   с золотом, мягкое свечение цвета категории, метка "★ Promoted". Бонусный
-   пул - золотая плашка, главный повод зайти именно в этот рынок. */
+   Спокойно, но заметно: рамка и мягкое свечение цвета категории, метка
+   "★ Promoted" в фиолетовом цвете сайта. Золотом - только сумма бонуса. */
 .mkc.promo,
 #page-markets .mkf-pcard.promo{
-  border-color:transparent;
-  background:
-    linear-gradient(var(--panel),var(--panel)) padding-box,
-    linear-gradient(135deg,rgba(var(--c),.95),rgba(244,201,93,.9) 50%,rgba(var(--c),.95)) border-box;
-  box-shadow:0 12px 36px -16px rgba(var(--c),.6),0 0 0 1px rgba(244,201,93,.10);
+  border-color:rgba(var(--c),.55);
+  box-shadow:0 0 0 1px rgba(var(--c),.14),0 16px 42px -24px rgba(var(--c),.75);
 }
-.mkc.promo:hover{box-shadow:0 16px 44px -14px rgba(var(--c),.75),0 0 0 1px rgba(244,201,93,.22)}
-.mkc.big.promo{background:
-    linear-gradient(transparent,transparent) padding-box,
-    linear-gradient(135deg,rgba(var(--c),.95),rgba(244,201,93,.9) 50%,rgba(var(--c),.95)) border-box}
+.mkc.promo:hover{border-color:rgba(var(--c),.85)}
 .mkc .cat.promo-tag,
 #page-markets .mkf-pcard .cat.promo-tag{
-  --c:244,201,93;font-weight:600;letter-spacing:.02em;
-  border-color:rgba(244,201,93,.6);color:#f4c95d;background:rgba(244,201,93,.12);
+  --c:167,139,250;font-weight:600;
+  color:#c4b5fd;border-color:rgba(167,139,250,.45);background:rgba(139,92,246,.14);
 }
 .mk-bonus{
   display:inline-flex;align-items:center;gap:7px;align-self:flex-start;
-  padding:5px 12px 5px 6px;border-radius:999px;font-size:12px;color:#f7dd97;
-  background:linear-gradient(90deg,rgba(244,201,93,.18),rgba(244,201,93,.05));
-  border:1px solid rgba(244,201,93,.42);
+  padding:4px 11px 4px 6px;border-radius:999px;font-size:12px;
+  color:var(--ink-2,#b8c2e6);background:rgba(255,255,255,.035);border:1px solid var(--line-2,#2a2f55);
 }
-.mk-bonus img{width:18px;height:18px;object-fit:contain}
-.mk-bonus b{color:#f4c95d;font-weight:700}
+.mk-bonus img{width:16px;height:16px;object-fit:contain}
+.mk-bonus b{color:var(--amber,#f4d03f);font-weight:700}
 
-/* Витрина-карусель: слайды лежат друг на друге, виден один. */
+/* Витрина-карусель: слайды лежат друг на друге, виден один. Под ней -
+   сегменты по числу рынков: текущий заполняется, пройденные подсвечены. */
 .mk-rot{display:grid}
-.mk-rot-slide{grid-area:1 / 1;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility .5s}
+.mk-rot-slide{grid-area:1 / 1;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility .45s}
 .mk-rot-slide.on{opacity:1;visibility:visible}
-.mk-rot-dots{display:flex;justify-content:center;gap:7px;margin-top:10px}
-.mk-rot-dots button{
-  width:8px;height:8px;padding:0;border:0;border-radius:999px;cursor:pointer;
-  background:var(--line-2,#2a2f55);transition:width .25s ease,background .25s ease;
+.mk-rot-bar{display:flex;gap:6px;margin-top:8px}
+.mk-rot-bar button{
+  flex:1;height:14px;padding:0;border:0;background:none;cursor:pointer;
+  display:flex;align-items:center;
 }
-.mk-rot-dots button.on{width:22px;background:#f4c95d}
-.mk-rot-dots button:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+.mk-rot-bar .track{position:relative;display:block;width:100%;height:3px;border-radius:999px;
+  background:var(--line-2,#2a2f55);overflow:hidden}
+.mk-rot-bar i{position:absolute;inset:0;border-radius:inherit;background:#a78bfa;
+  transform:scaleX(0);transform-origin:left}
+.mk-rot-bar button.done i{transform:scaleX(1);opacity:.4}
+.mk-rot-bar button.on i{animation:mkRotFill 7s linear forwards}
+.mk-rot:hover .mk-rot-bar button.on i,
+.mk-rot:focus-within .mk-rot-bar button.on i{animation-play-state:paused}
+.mk-rot-bar button:hover .track{background:rgba(167,139,250,.35)}
+.mk-rot-bar button:focus-visible{outline:2px solid #a78bfa;outline-offset:2px;border-radius:4px}
+@keyframes mkRotFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .mk-rot-slide{transition:none}
+  .mk-rot-bar button.on i{animation:none;transform:scaleX(1)}
+}
 
 /* ── Home: Live markets ───────────────────────────────────────────────────
    Сетка по ширине экрана, продвинутые - на две колонки и с вопросом крупнее. */
