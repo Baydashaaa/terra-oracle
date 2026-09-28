@@ -649,10 +649,15 @@
 
       + '<h3 class="step-h"><span class="n">4</span>Preview</h3>'
       + '<section class="card qform mkf-preview">'
-      + '  <div class="mkf-pcard" style="--c:' + (typeof catRgb === 'function' ? catRgb(S.category) : '139,150,184') + '">'
-      + '    <div class="mkf-ptags"><span class="cat">' + esc(S.category) + '</span>'
+      + '  <div class="mkf-pcard' + (S.promoted ? ' promo' : '') + '" style="--c:' + (typeof catRgb === 'function' ? catRgb(S.category) : '139,150,184') + '">'
+      + '    <div class="mkf-ptags">' + (S.promoted ? '<span class="cat promo-tag">★ Promoted</span>' : '')
+      + '<span class="cat">' + esc(S.category) + '</span>'
       + '      <span class="cat src on">on-chain spec</span></div>'
       + '    <h4>' + (q ? esc(q) : '<span class="mkf-hint">The question appears once the condition is filled in.</span>') + '</h4>'
+      + (S.promoted && boostStatus() && boostStatus().ok && S.boost
+        ? '    <div class="mk-bonus"><img src="assets/img/lunc.webp" alt=""><b>+' + fmtLuncLocal(S.boost.per_market)
+          + ' LUNC</b> bonus pool</div>'
+        : '')
       + '    <div class="mkf-podds"><span class="y">YES 50%</span><span class="n">NO 50%</span></div>'
       + '    <div class="mkf-pdates">'
       + '      <div><span>Predictions close</span><b>' + esc(utcText(closeTs(), true)) + '</b></div>'

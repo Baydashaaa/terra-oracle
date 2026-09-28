@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="assets/css/page/orbs.css?v=948bb47a53">
   <link rel="stylesheet" href="assets/css/shell.css?v=2de7929054">
   <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
-  <link rel="stylesheet" href="assets/css/shell-fix.css?v=202609270010">
+  <link rel="stylesheet" href="assets/css/shell-fix.css?v=202609281130">
   <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
   <link rel="stylesheet" href="assets/css/page/global-search.css?v=84387a298e">
@@ -326,6 +326,15 @@
 </section>
 
 <!-- stats strip -->
+<section class="hm-markets" id="home-markets" hidden aria-label="Live markets">
+  <div class="hm-head">
+    <h3><span class="live-dot" aria-hidden="true"></span>Live markets</h3>
+    <span class="hm-count" id="home-markets-count"></span>
+    <a class="hm-all" href="/markets" onclick="mkOpenFromHome(0);return false">View all markets &rarr;</a>
+  </div>
+  <div class="hm-grid" id="home-markets-grid"></div>
+</section>
+
 <section class="stats" aria-label="Ecosystem stats">
   <h3>Ecosystem stats</h3>
 
@@ -1754,8 +1763,8 @@
   <script src="assets/js/app/chat.js?v=098cffb07e"></script>
   <script src="assets/js/app/vote.js?v=26d1f80065"></script>
   <script src="assets/js/contract-exec.js?v=62bb19a76b"></script>
-  <script src="assets/js/app/markets.js?v=202609262330"></script>
-  <script src="assets/js/app/markets-create.js?v=202609270030"></script>
+  <script src="assets/js/app/markets.js?v=202609281130"></script>
+  <script src="assets/js/app/markets-create.js?v=202609281130"></script>
   <script src="assets/js/app/markets-court.js?v=fe5a7e4755"></script>
   <script src="assets/js/app/markets-activity.js?v=adacece7a5"></script>
   <script src="assets/js/app/hooks.js?v=408ad07d36"></script>

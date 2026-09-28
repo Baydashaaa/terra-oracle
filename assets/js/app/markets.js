@@ -395,9 +395,7 @@ function footBlock(m) {
     <div class="foot">
       <span><img src="assets/img/icons/c-volume.webp" alt="" loading="lazy"><b>${fmtLunc(total)}</b> LUNC</span>
       <span><img src="assets/img/icons/c-users.webp" alt="" loading="lazy"><b>${m.bettors_yes + m.bettors_no}</b> ${m.bettors_yes + m.bettors_no === 1 ? 'participant' : 'participants'}</span>
-      ${Number(m.boost)
-        ? `<span><img src="assets/img/lunc.webp" alt="" loading="lazy"><b>+${fmtLunc(m.boost)}</b> boost</span>`
-        : ''}
+      ${''/* доплата показана плашкой bonus pool под автором */}
     </div>`;
 }
 
@@ -409,16 +407,132 @@ function sourceTag(m) {
     : '<span class="cat src">human-resolved</span>';
 }
 
+// ── продвижение ─────────────────────────────────────────────────────────────
+//
+// Продвинутый рынок заплатил за место - это должно быть видно везде, где он
+// показан: метка, рамка, бонусный пул. Метка честно называет платное место.
+function promoTag(m) {
+  return m.promoted ? '<span class="cat promo-tag">★ Promoted</span>' : '';
+}
+function bonusChip(m) {
+  return Number(m.boost) > 0
+    ? `<div class="mk-bonus"><img src="assets/img/lunc.webp" alt="" loading="lazy">`
+      + `<b>+${fmtLunc(m.boost)} LUNC</b> bonus pool</div>`
+    : '';
+}
+
+/** Витрина: один рынок - как раньше; несколько продвинутых - карусель. */
+function mkFeatured(feats) {
+  if (feats.length < 2) return featuredCard(feats[0]);
+  return `<div class="mk-rot">`
+    + feats.map((m, i) => `<div class="mk-rot-slide${i ? '' : ' on'}">${featuredCard(m)}</div>`).join('')
+    + `<div class="mk-rot-dots">`
+    + feats.map((_, i) => `<button type="button" class="${i ? '' : 'on'}" aria-label="Promoted market ${i + 1}"></button>`).join('')
+    + `</div></div>`;
+}
+
+let mkRotTimer = null;
+function mkStartCarousel(root) {
+  clearInterval(mkRotTimer);
+  mkRotTimer = null;
+  const rot = root && root.querySelector('.mk-rot');
+  if (!rot) return;
+  const slides = rot.querySelectorAll('.mk-rot-slide');
+  const dots = rot.querySelectorAll('.mk-rot-dots button');
+  let i = 0, hold = false;
+  const go = (n) => {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+  };
+  dots.forEach((d, k) => d.addEventListener('click', (e) => { e.stopPropagation(); go(k); }));
+  rot.addEventListener('mouseenter', () => { hold = true; });
+  rot.addEventListener('mouseleave', () => { hold = false; });
+  // Сама листается, только если человек не просил меньше движения.
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  mkRotTimer = setInterval(() => {
+    if (!document.body.contains(rot)) { clearInterval(mkRotTimer); mkRotTimer = null; return; }
+    if (!hold) go(i + 1);
+  }, 7000);
+}
+
+// ── Home: прямой эфир рынков ────────────────────────────────────────────────
+//
+// Открытые рынки на главной: продвинутые первыми и крупнее, дальше - по
+// объёму пула и близости закрытия. Это и есть охват, за который платят.
+// Пока раздел закрыт, блок виден только с ключом ?preview=1.
+const MARKETS_LIVE = false;   // в день запуска на mainnet - true
+function mkPublic() {
+  if (MARKETS_LIVE) return true;
+  try { return sessionStorage.getItem('mkPreview') === '1'; } catch (e) { return false; }
+}
+
+let mkPendingOpen = null;
+/** С главной: перейти в раздел и открыть рынок, когда список отрисуется. */
+function mkOpenFromHome(id) {
+  mkPendingOpen = id || null;
+  showPage('markets');
+}
+
+async function renderHomeMarkets() {
+  const sec = document.getElementById('home-markets');
+  const grid = document.getElementById('home-markets-grid');
+  if (!sec || !grid) return;
+  if (!mkPublic()) { sec.hidden = true; return; }
+  let all;
+  try {
+    await loadProphecyConfig();
+    all = await loadProphecyMarkets();
+  } catch (e) {
+    sec.hidden = true;
+    return;
+  }
+  const now = Date.now() / 1000;
+  const pot = (m) => Number(m.pot_yes) + Number(m.pot_no) + Number(m.boost || 0);
+  const open = all.filter((m) => m.status === 'open' && Number(m.bets_close_at) > now);
+  open.sort((a, b) => (Number(!!b.promoted) - Number(!!a.promoted))
+    || (pot(b) - pot(a)) || (Number(a.bets_close_at) - Number(b.bets_close_at)));
+  const shown = open.slice(0, 8);
+  const count = document.getElementById('home-markets-count');
+  // Главная не должна ломаться из-за одного странного рынка: при ошибке
+  // блок просто прячется.
+  try {
+    grid.innerHTML = shown.length
+      ? shown.map((m) => marketCard(m).replace(`openProphecyMarket(${m.id})`, `mkOpenFromHome(${m.id})`)).join('')
+      : `<div class="hm-empty">No open markets right now.
+          <a href="/markets" onclick="mkOpenFromHome(0);return false">Open the first one</a></div>`;
+  } catch (e) {
+    sec.hidden = true;
+    return;
+  }
+  if (count) count.textContent = open.length ? `${open.length} open` : '';
+  sec.hidden = false;
+}
+
+(function () {
+  const run = () => {
+    renderHomeMarkets();
+    setInterval(() => {
+      const home = document.getElementById('page-home');
+      if (home && home.classList.contains('active')) renderHomeMarkets();
+    }, 60000);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+
 function marketCard(m) {
   return `
-  <article class="mkc" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
+  <article class="mkc${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
     <div class="head">
+      ${promoTag(m)}
       <span class="cat">${mktEsc(m.category)}</span>
       ${sourceTag(m)}
       <span class="left">${statusLine(m)}</span>
     </div>
     <h4>${mktEsc(m.question)}</h4>
     <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+    ${bonusChip(m)}
     ${oddsBlock(m)}
     ${footBlock(m)}
   </article>`;
@@ -429,11 +543,11 @@ function marketCard(m) {
  *  плиткой одинаковых карточек. */
 function featuredCard(m) {
   return `
-  <article class="mkc big" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
+  <article class="mkc big${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
     <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
     <div class="inner">
       <div class="head">
-        <span class="cat feat">${m.promoted ? 'Featured'
+        <span class="cat feat${m.promoted ? ' promo-tag' : ''}">${m.promoted ? '★ Promoted'
           : (m.status === 'settled' || m.status === 'void') ? 'Latest result' : 'Closing next'}</span>
         <span class="cat">${mktEsc(m.category)}</span>
         ${sourceTag(m)}
@@ -441,6 +555,7 @@ function featuredCard(m) {
       </div>
       <h4>${mktEsc(m.question)}</h4>
       <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+      ${bonusChip(m)}
       ${m.ruling
         ? `<p class="desc">Court decision: ${mktEsc(rulingText(m.ruling))}</p>`
         : m.reading && m.status === 'disputed'
@@ -514,17 +629,29 @@ async function renderMarkets(resolved) {
     // Первым идёт продвинутый рынок, а если такого нет - ближайший к
     // закрытию: список уже отсортирован. Один рынок на всю ширину, потому
     // что сетка из одной колонки выглядит как ошибка вёрстки.
-    const feat = list.find((m) => m.promoted) || list[0];
-    const rest = list.filter((m) => m !== feat);
+    // Витрина - все продвинутые по очереди, а без них - ближайший к
+    // закрытию. В сетке продвинутые не повторяются; среди открытых
+    // продвинутые идут первыми (сортировка стабильная).
+    const promos = resolved ? [] : list.filter((m) => m.promoted);
+    const feats = promos.length ? promos : list.slice(0, 1);
+    const rest = list.filter((m) => !feats.includes(m));
+    if (!resolved) rest.sort((a, b) => Number(!!b.promoted) - Number(!!a.promoted));
+    const featHtml = feats.length ? mkFeatured(feats) : '';
     const grid = rest.length
-      ? `<div class="mk-grid"><div>${featuredCard(feat)}</div>`
+      ? `<div class="mk-grid"><div>${featHtml}</div>`
         + `<div class="mk-list">${rest.map(marketCard).join('')}</div></div>`
-      : featuredCard(feat);
+      : featHtml;
     host.innerHTML = TEST_BANNER + (list.length
       ? grid
       : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
           resolved ? 'Settled and voided markets will be listed here with their readings.'
                    : 'Be the first to open one.'));
+    mkStartCarousel(host);
+    if (mkPendingOpen) {
+      const id = mkPendingOpen;
+      mkPendingOpen = null;
+      openProphecyMarket(id);
+    }
   } catch (e) {
     host.innerHTML = emptyPanel('Chain unavailable',
       'Could not read the markets contract. This is a node problem, not a market problem - try again shortly.');
@@ -717,16 +844,18 @@ async function openProphecyMarket(id) {
 
   host.innerHTML = `
     <div class="mk-back" onclick="renderMarkets(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
-    <article class="mkc big mk-detail" style="--c:${catRgb(m.category)}">
+    <article class="mkc big mk-detail${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}">
       <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
       <div class="inner">
         <div class="head">
+          ${promoTag(m)}
           <span class="cat">${mktEsc(m.category)}</span>
           ${sourceTag(m)}
           <span class="left">${statusLine(m)}</span>
         </div>
         <h4>${mktEsc(m.question)}</h4>
         <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
+        ${bonusChip(m)}
         ${open ? openSides(m, pct) + betPanel(m) : closedSplit(m, pct)}
         ${!open && m.status === 'open'
           ? '<div class="mk-shut">Predictions are closed, waiting for the outcome.</div>' : ''}
