@@ -321,8 +321,13 @@ instantiate ~200k, update_config ~130k.
   переменные и мнемоника
 - `ACTIONS_SECRET` заменён 29 сентября: Worker вопросов, секреты GitHub `terra-oracle` и
   `oracle-draw`. Меняется только во всех трёх местах сразу
-- Боевые ключи - в `~/.terra-mainnet` (file), тестовые - в обычном кошельке. `pool-admin-2`
-  пока лежит в обычном, надо перенести
+- Боевые ключи - в `~/.terra-mainnet` (file): `pool-admin-2` (перенесён 29 сентября, из
+  обычного удалён), `oracle-resolver`, `treasury` и остальные. Тестовые - в обычном кошельке.
+  Флаги: `K="--keyring-backend file --keyring-dir $HOME/.terra-mainnet"` и `--from pool-admin-2 $K`.
+  Именно `$HOME`, не `~`: в кавычках `~` не раскрывается, и terrad создаёт пустое хранилище
+  в папке с именем `~` в текущем каталоге
+- Правило меток NEW/SOON в меню не должно задевать `.tag.dot` (точка у Chat) - иначе она
+  растягивается в полоску
 
 ---
 
@@ -344,14 +349,16 @@ instantiate ~200k, update_config ~130k.
    адреса в `markets.js` вместо старого и `predictMsg: 'predict'` в mainnet-ветке;
    `fund_boost` из казны; снять ключ `preview=1`; `MARKETS_LIVE = true` в `markets.js`;
    совет суда - три адреса из раздела 6, кворум 2, голосование 48 ч
-7. Скопировать `contract-exec.js` в репозиторий oracle-draw
-8. Перенести `pool-admin-2` в `~/.terra-mainnet`
+7. ~~Скопировать `contract-exec.js` в репозиторий oracle-draw~~ - сделано 29 сентября. Файл
+   лежит в `oracle-draw/assets/js/`, но к страницам не подключён: минты подписывает своя копия
+   в `oracle-mint-v2.js`. Подключение - отдельная задача с проверкой минта
+8. ~~Перенести `pool-admin-2` в `~/.terra-mainnet`~~ - сделано 29 сентября
 
 ### После запуска
 
 - Первый настоящий рынок на mainnet со своего кошелька - живая проверка всего пути
-- `actions/checkout` и `setup-node` поднять до `@v5` во всех workflow (Node 20 устарел);
-  после 19 октября проверить прогоны на Ubuntu 26
+- ~~`actions/checkout` и `setup-node` до `@v5`~~ - сделано 29 сентября в terra-oracle и oracle-draw.
+  После 19 октября проверить прогоны на Ubuntu 26
 - Документация docs.terraoracle.io: раздел Markets (29 сентября)
 - Oracle Vault как источник права голоса суда (`update_config { vp_source }` у суда)
 - Рынки со свободным критерием (спорт, биржи, мировые события) через суд
