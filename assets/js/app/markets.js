@@ -1087,7 +1087,11 @@ async function submitBet() {
     btn.textContent = 'Sent, waiting for the block…';
     // Перерисовка с задержкой: сразу после отправки контракт ещё покажет
     // старые суммы, и человек решит, что ставка не прошла.
-    setTimeout(() => openProphecyMarket(m.id), 7000);
+    setTimeout(() => {
+      openProphecyMarket(m.id);
+      // И главная: вернувшись на Home, человек сразу видит свой голос.
+      if (typeof renderHomeMarkets === 'function') renderHomeMarkets();
+    }, 7000);
   } catch (e) {
     mkToast(e.message || 'Transaction failed', 'err');
     btn.disabled = false;

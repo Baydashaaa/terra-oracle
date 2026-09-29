@@ -14,6 +14,8 @@ function showPage(name, e, skipHistory) {
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
   if (name === 'markets') renderMarkets(false);
+  // Live markets на главной: свежие суммы при каждом заходе, а не через минуту.
+  if (name === 'home' && typeof renderHomeMarkets === 'function') renderHomeMarkets();
   // Mobile chat: hide footer, expand messages area
   const footer = document.querySelector('footer');
   if (_isMobileChat()) {
