@@ -36,9 +36,8 @@
       if (location.search.indexOf('preview=1') > -1) {
         try { sessionStorage.setItem('mkPreview', '1'); } catch (e) {}
       }
-      var on = false;
-      try { on = sessionStorage.getItem('mkPreview') === '1'; } catch (e) {}
-      if (on) showPage('markets');
+      // Открыт для всех с 29 сентября 2026; ключ preview больше не нужен.
+      showPage('markets');
     },
     achievements: null   // тоже нет
   };
@@ -56,7 +55,7 @@
     if (p === 'bag') return 'nft';
     if (p === 'reputation') return 'reputation';
     if (p === 'treasury') return 'treasury';
-    if (p === 'chat' || p === 'ask' || p === 'board' || p === 'draw') return p;
+    if (p === 'chat' || p === 'ask' || p === 'board' || p === 'draw' || p === 'markets') return p;
     // draw попал сюда 20 сентября: без него нижняя панель на телефоне не
     // подсвечивала раздел Draw - viewFromPath возвращал null, и highlight()
     // снимал aria-current со всех пунктов разом.

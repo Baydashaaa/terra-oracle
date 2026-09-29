@@ -37,12 +37,11 @@ const PROPHECY_NET = PROPHECY_TESTNET
       'https://lcd.terra-classic.hexxagon.io',
       'https://fcd.terra-classic.hexxagon.io',
       ],
-      // Адреса боевых 0.2.0 и суда подставляются при запуске; пока суда
-      // нет, блоки спора на mainnet не показываются.
-      prophecy: 'terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58',
-      court: '',
-      // старый 0.1.0 знает только bet; после развёртывания 0.2.1 - predict
-      predictMsg: 'bet',
+      // Боевые с 29 сентября 2026: oracle-prophecy 0.2.3 (code 11680) и
+      // oracle-court 0.1.0 (code 11681). Старый 0.1.0 на terra1w3f09... не используется.
+      prophecy: 'terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2',
+      court: 'terra1u3feuz2ugl884z3yakurm2ndynz6f83zsfsr0auzdnjztnrngshqycnqz2',
+      predictMsg: 'predict',
     };
 
 const PROPHECY_CONTRACT = PROPHECY_NET.prophecy;
@@ -465,7 +464,7 @@ function mkStartCarousel(root) {
 // Открытые рынки на главной: продвинутые первыми и крупнее, дальше - по
 // объёму пула и близости закрытия. Это и есть охват, за который платят.
 // Пока раздел закрыт, блок виден только с ключом ?preview=1.
-const MARKETS_LIVE = false;   // в день запуска на mainnet - true
+const MARKETS_LIVE = true;    // открыт 29 сентября 2026
 function mkPublic() {
   if (MARKETS_LIVE) return true;
   try { return sessionStorage.getItem('mkPreview') === '1'; } catch (e) { return false; }
@@ -612,9 +611,13 @@ async function renderMarkets(resolved) {
       border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;
       color:#ffb14e;line-height:1.6;">
       ${COURT_CONTRACT
-        ? `<strong>TEST deployment${PROPHECY_TESTNET ? ' · rebel-2' : ''}.</strong> The operator posts
-           outcomes. Anyone can dispute one, and a court decides - the operator cannot vote in it.
-           Amounts are capped. Treat this as a preview, not a settled market.`
+        ? (PROPHECY_TESTNET
+          ? `<strong>TEST deployment · rebel-2.</strong> The operator posts
+             outcomes. Anyone can dispute one, and a court decides - the operator cannot vote in it.
+             Amounts are capped. Treat this as a preview, not a settled market.`
+          : `<strong>Beta.</strong> The operator posts outcomes read from the chain. Anyone can
+             dispute one with a bond, and a council court decides - the operator cannot vote in it.
+             Predictions are capped per wallet while the section is new.`)
         : `<strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
            contract, and the same key can post and challenge them. Amounts are capped. Treat this as a
            preview, not a settled market.`}
