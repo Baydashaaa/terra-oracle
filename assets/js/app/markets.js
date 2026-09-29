@@ -113,6 +113,13 @@ function mktEsc(s) {
   });
 }
 
+/** Lookup in a dictionary by a string that came from the contract. A plain
+ *  obj[key] also finds inherited properties: "constructor" or "toString"
+ *  return a function instead of undefined and break the card (audit MKT-02). */
+function mkOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined;
+}
+
 let boardTab = 'questions';
 let openMarketId = null;
 let betSide = true;
@@ -211,10 +218,10 @@ function timeLeft(ts) {
 
 const METRIC_TEXT = {
   total_supply:    { t: () => 'the total LUNC supply', u: 'lunc' },
-  oracle_rate:     { t: (p) => `the LUNC oracle rate in ${String(p || '').replace(/^u/, '').toUpperCase()}`, u: 'raw' },
+  oracle_rate:     { t: (p) => `the LUNC oracle rate in ${mktEsc(String(p || '').replace(/^u/, '').toUpperCase())}`, u: 'raw' },
   staking_ratio:   { t: () => 'the share of LUNC staked', u: 'pct' },
   community_pool:  { t: () => 'the community pool', u: 'lunc' },
-  validator_power: { t: (p) => `the stake delegated to ${shortAddr(p)}`, u: 'lunc' },
+  validator_power: { t: (p) => `the stake delegated to ${mktEsc(shortAddr(p))}`, u: 'lunc' },
   proposal_passed: { t: (p) => `governance proposal #${mktEsc(p)}`, u: null },
 };
 
@@ -268,16 +275,16 @@ function plainSpec(m, tip) {
   if (!m.spec.metric) {
     return `Settled by people against a stated criterion: ${mktEsc(m.spec.criterion)}`;
   }
-  const info = METRIC_TEXT[m.spec.metric];
+  const info = mkOwn(METRIC_TEXT, m.spec.metric);
   const what = info ? info.t(m.spec.param) : mktEsc(m.spec.metric);
   const at = `at block <b>${Number(m.spec.height).toLocaleString('en-US')}</b>${approxDateText(m.spec.height, tip)}`;
 
   if (!info || info.u === null) return `Settles <b class="y">YES</b> if ${what} has passed, ${at}.`;
 
-  const cmp = COMPARATOR_TEXT[m.spec.comparator] || m.spec.comparator;
+  const cmp = mkOwn(COMPARATOR_TEXT, m.spec.comparator) || mktEsc(m.spec.comparator);
   let th;
   if (info.u === 'lunc') th = bigLunc(m.spec.threshold);
-  else if (info.u === 'pct') th = `${m.spec.threshold}%`;
+  else if (info.u === 'pct') th = `${mktEsc(m.spec.threshold)}%`;
   else th = mktEsc(m.spec.threshold);
 
   return `Settles <b class="y">YES</b> if ${what} is ${cmp} ${th}, ${at}.`;
@@ -288,7 +295,8 @@ function plainSpec(m, tip) {
 /** Цвет категории в виде "r,g,b": CSS прототипа кладёт его в --c и сам
  *  разводит по рамке, тексту и фону. */
 function catRgb(cat) {
-  const hex = (MARKET_COLORS[cat] || '#8b96b8').replace('#', '');
+  const c = mkOwn(MARKET_COLORS, cat);
+  const hex = (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) ? c : '#8b96b8').slice(1);
   return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
 }
 
@@ -524,7 +532,18 @@ async function renderHomeMarkets() {
   else run();
 })();
 
-function marketCard(m) {
+/** One broken market must not take the whole list down with it: the error
+ *  used to reach the global handler and show "Chain unavailable" (MKT-02). */
+function mkSafeCard(fn, m) {
+  try { return fn(m); } catch (e) {
+    console.error('[markets] could not render market', m && m.id, e);
+    return `<article class="mkc"><div class="mk-plain">Market #${Number(m && m.id) || '?'} could not be displayed.</div></article>`;
+  }
+}
+function marketCard(m) { return mkSafeCard(marketCardRaw, m); }
+function featuredCard(m) { return mkSafeCard(featuredCardRaw, m); }
+
+function marketCardRaw(m) {
   return `
   <article class="mkc${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
     <div class="head">
@@ -544,7 +563,7 @@ function marketCard(m) {
 /** Тот же рынок, которому отдано больше места: фон баннера, крупный
  *  вопрос и проценты. Первый в списке, чтобы страница не начиналась
  *  плиткой одинаковых карточек. */
-function featuredCard(m) {
+function featuredCardRaw(m) {
   return `
   <article class="mkc big${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
     <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
@@ -720,7 +739,7 @@ function verifyBlock(m) {
     return `<div class="mk-plain">The agreement is the criterion above. Nothing here is read
       from the chain, so the outcome is posted by a person.</div>`;
   }
-  const path = (METRIC_PATHS[m.spec.metric] || (() => ''))(m.spec.param || '');
+  const path = (mkOwn(METRIC_PATHS, m.spec.metric) || (() => ''))(m.spec.param || '');
   const cmd = `curl -s -H "x-cosmos-block-height: ${m.spec.height}" \\\n  "${PROPHECY_LCD[0]}${path}"`;
   const cond = m.spec.comparator
     ? `${mktEsc(m.spec.comparator)} <code>${mktEsc(m.spec.threshold)}</code>`
@@ -729,7 +748,7 @@ function verifyBlock(m) {
     <div class="mk-spec">
       <div>Metric</div><div>${mktEsc(m.spec.metric)}${m.spec.param ? ' · ' + mktEsc(m.spec.param) : ''}</div>
       <div>Condition</div><div>${cond}</div>
-      <div>Block height</div><div><code>${m.spec.height}</code></div>
+      <div>Block height</div><div><code>${mktEsc(m.spec.height)}</code></div>
     </div>
     <pre>${mktEsc(cmd)}</pre>
     <div class="mk-plain">The contract stored this the moment the market opened, so what you
@@ -799,12 +818,12 @@ function positionBlock(m, pos) {
 function evidenceBlock(m) {
   // Условие словами, как в "How this settles": сырое `lt 6000000000000000000`
   // в карточке, которую читают первой, ничего не говорит.
-  const info = METRIC_TEXT[m.spec.metric];
+  const info = mkOwn(METRIC_TEXT, m.spec.metric);
   const th = !info ? mktEsc(m.spec.threshold)
     : info.u === 'lunc' ? bigLunc(m.spec.threshold)
       : info.u === 'pct' ? mktEsc(m.spec.threshold) + '%' : mktEsc(m.spec.threshold);
   const cond = m.spec.metric && m.spec.comparator
-    ? `${COMPARATOR_TEXT[m.spec.comparator] || mktEsc(m.spec.comparator)} ${th}`
+    ? `${mkOwn(COMPARATOR_TEXT, m.spec.comparator) || mktEsc(m.spec.comparator)} ${th}`
     : m.spec.metric ? 'proposal passed' : 'stated criterion';
   // При споре показание резолвера - одна из сторон, а не установленный
   // факт: суд мог его отвергнуть. Подписи говорят, кто что утверждал.
