@@ -2354,3 +2354,16 @@
   .live-dot{animation:none}
   .mk-rot-slide,.mk-rot-dots button{transition:none}
 }
+
+/* Метки NEW/SOON в меню. Старое правило .tag из style.css (от прежнего
+   сайта) давало им margin-bottom 18px, рамку и крупные отступы - метка
+   вставала выше слова. В меню сбрасываем, метка по центру строки. */
+.rail .nav .tag,
+.app .nav .tag{
+  margin:0 0 0 auto;border:0;align-self:center;line-height:1;
+  display:inline-flex;align-items:center;padding:4px 7px;letter-spacing:.1em;
+}
+
+/* Live markets: пульсирующей точке нужно место слева, иначе кольцо
+   обрезается краем колонки. */
+.hm-head .live-dot{margin-left:8px}
