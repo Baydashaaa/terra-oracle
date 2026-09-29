@@ -65,14 +65,29 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 
 ### mainnet
 
+**Запущено 29 сентября 2026.**
+
 | | |
 |---|---|
-| старый тестовый oracle-prophecy 0.1.0, code 11643 | `terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58` - **на паузе**, будет заменён |
-| его админ, резолвер и админ миграции | `pool-admin-2` terra10u209ehlww30hknp85z0rq5uz3q5jx3pclx9xt |
+| **oracle-prophecy 0.2.3, code 11680** | `terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2` |
+| **oracle-court 0.1.0, code 11681** | `terra1u3feuz2ugl884z3yakurm2ndynz6f83zsfsr0auzdnjztnrngshqycnqz2` |
+| админ рынка и суда, админ миграции | `pool-admin-2` terra10u209ehlww30hknp85z0rq5uz3q5jx3pclx9xt |
+| резолвер (керпер в Actions) | `oracle-resolver` terra1myp7hzh6f7lp2uffzv55yvk2hjrhpz9vqt5hec, ключ в `~/.terra-mainnet` |
+| арбитр рынка | суд (адрес выше) |
+| совет суда, кворум 2, голосование 48 ч | terra1nzlwpugmtg53sqldk6j0jvnq9zjrcl59zdy325, terra1wnm5se60umvzxw66tje2vkzdwrh0gwzagv6yjx, terra1x8gxjxgq7eq2hu7yswcn76dw7snzpeu782nyez |
 | draw_pool (недельный пул) | `terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8` |
-| treasury | `terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt` |
+| treasury | `terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt`, ключ `treasury` в `~/.terra-mainnet` |
+| старый тестовый oracle-prophecy 0.1.0, code 11643 | `terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58` - на паузе, не используется |
 
-Боевые экземпляры 0.2.3 и суда на mainnet **ещё не развёрнуты**.
+Параметры: предсказание 1,000 - 1,000,000 LUNC на кошелёк на рынок, залоги создания и
+оспаривания 200,000, промо 250,000, доплата 50,000 до 3 продвигаемых в неделю, оспаривание 48 ч,
+зазор 1 ч, окно суда 72 ч, grace 7 дней, доли 5/3/2%.
+
+Фонд доплат пополнен на **300,000 LUNC** с основного кошелька Влада (terra1jh...5c2l):
+в кошельке казны было только ~72,000 LUNC. "Treasury TVL" на главной - не баланс этого кошелька.
+Резолвер пополнен на 2,000 LUNC с `pool-admin-2` (на `pool-admin-2` было 4,428 LUNC, под
+развёртывание ушло ~500). Газ развёртывания: store рынка 12M лимит, суда 2.5M (auto 1.41M не хватило),
+instantiate ~200k, update_config ~130k.
 
 ### Код и чексуммы
 
@@ -81,8 +96,8 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 | oracle-prophecy 0.2.0 | `668dd3b2748c41867075a57dfb48f7aac80910b98e278f69a65bab5589bd9b0c` | rebel-2 code 2452, до миграции |
 | oracle-prophecy 0.2.1 | `b29fa854f9e1e3da17ff8a30e7886993bab6b9098ffc9970cb2c529dba64e35b` | rebel-2 code 2457, до миграции |
 | oracle-prophecy 0.2.2 | `97f96daa6eede248806fe20376c8154f9f7048c0d0b70324867398c42e81ac96` | rebel-2 code 2458, до миграции |
-| oracle-prophecy **0.2.3** | `277c930f1de4038113922f55de942959043976fbed95b73bb484728facec203e` | rebel-2 code **2459** |
-| oracle-court 0.1.0 | `20ea2e6037916cd0e92be54fc0c777d422119127e344a98ca9c52d589be0b228` | rebel-2 code 2454 |
+| oracle-prophecy **0.2.3** | `277c930f1de4038113922f55de942959043976fbed95b73bb484728facec203e` | rebel-2 code **2459**, mainnet code **11680** |
+| oracle-court 0.1.0 | `20ea2e6037916cd0e92be54fc0c777d422119127e344a98ca9c52d589be0b228` | rebel-2 code 2454, mainnet code **11681** |
 
 Сборка: `cosmwasm/optimizer:0.16.0`. После неё владелец `artifacts/` - root, чинится
 `docker run --rm -v "$(pwd)":/code alpine chown -R $(id -u):$(id -g) /code/artifacts`.
@@ -91,7 +106,7 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 
 - oracle-prophecy `main` 9bde5bb - 0.2.3
 - oracle-court `main` 2954736
-- terra-oracle `main` 8f04bfb
+- terra-oracle `main` d6a8d13 - запуск на mainnet (адреса, `MARKETS_LIVE`, раздел без preview)
 - terra-oracle-worker `main` 0636f82 (REP за рынки)
 - terra-oracle-docs `main` c662bd7 (REP за рынки в документации)
 
@@ -179,6 +194,8 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 **Home → Live markets**: открытые рынки, продвинутые первыми и на две колонки, затем по
 объёму пула. Обновляется при переходе на главную и после предсказания. Пока раздел закрыт,
 виден только с `?preview=1`; в день запуска в `markets.js` `MARKETS_LIVE = true`.
+С 29 сентября `MARKETS_LIVE = true`, раздел открыт без ключа, на mainnet баннер "Beta"
+вместо "TEST deployment" (на rebel-2 тестовый остался).
 
 Кнопка **Close case** на странице рынка появляется, когда голосование кончилось:
 закрыть дело может любой, с отсчётом до конца окна арбитра.
@@ -197,6 +214,9 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
   приёма - объявляет. Раньше и есть предсказание на этой высоте или позже - `void`
   с причиной (`bad_spec: false`, всем возврат). Раньше, но предсказаний после высоты нет -
   объявляет. Блок или поиск не ответили - ждёт следующего прохода
+- **На mainnet работает с 29 сентября**: переменные `PROPHECY_CONTRACT`, `COURT_CONTRACT`,
+  `EXPECTED_KEEPER` = terra1myp7...5hec, секрет `KEEPER_MNEMONIC` = `oracle-resolver`.
+  Сухой прогон прошёл, `KEEPER_DRY_RUN` удалена
 - Workflow не запускается, пока в переменных репозитория нет `PROPHECY_CONTRACT`. На rebel-2
   он не настроен и не будет: там керпер только руками. Письма GitHub «job was skipped» - это оно
 - **Уведомления совету** о новом деле и напоминание за 12 ч без кворума: керпер отдаёт текст
@@ -313,13 +333,13 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 1. **Юрист** - отложен по решению Влада (раздел 6)
 2. ~~**Три адреса совета**~~ - получены и подтверждены 28 сентября (раздел 6)
 2a. ~~**Проверка суда на rebel-2**~~ - сделано 29 сентября, рынок №7
-3. **Ключ `oracle-resolver`** для керпера на mainnet, отдельно от админа
+3. ~~**Ключ `oracle-resolver`**~~ - создан 29 сентября, terra1myp7...5hec
 4. ~~**Параметры**~~ - утверждены 26 сентября (раздел 6)
 5. ~~**0.2.1 на rebel-2**~~ - сделано 25 сентября: code 2457, экземпляр мигрирован,
    сайт шлёт `predict`, проверено на рынке №4
 6. ~~**0.2.3**~~ - сделано 26 сентября, rebel-2 code 2459
 6a. ~~**REP создателям**~~ - сделано 26 сентября (раздел 6)
-6b. **Развёртывание mainnet**: загрузить 0.2.3 и суд; рынок с временным арбитром; суд;
+6b. ~~**Развёртывание mainnet**~~ - сделано 29 сентября (раздел 2). Было по плану: загрузить 0.2.3 и суд; рынок с временным арбитром; суд;
    `update_config` - арбитр суд, резолвер керпер; переменные репозитория, керпер с `KEEPER_DRY_RUN=1`;
    адреса в `markets.js` вместо старого и `predictMsg: 'predict'` в mainnet-ветке;
    `fund_boost` из казны; снять ключ `preview=1`; `MARKETS_LIVE = true` в `markets.js`;
@@ -329,6 +349,10 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 
 ### После запуска
 
+- Первый настоящий рынок на mainnet со своего кошелька - живая проверка всего пути
+- `actions/checkout` и `setup-node` поднять до `@v5` во всех workflow (Node 20 устарел);
+  после 19 октября проверить прогоны на Ubuntu 26
+- Документация docs.terraoracle.io: раздел Markets (29 сентября)
 - Oracle Vault как источник права голоса суда (`update_config { vp_source }` у суда)
 - Рынки со свободным критерием (спорт, биржи, мировые события) через суд
 - В следующей версии контракта: поле `proposed_outcome`, чтобы после спора было видно, что утверждал резолвер
