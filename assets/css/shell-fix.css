@@ -2358,8 +2358,8 @@
 /* Метки NEW/SOON в меню. Старое правило .tag из style.css (от прежнего
    сайта) давало им margin-bottom 18px, рамку и крупные отступы - метка
    вставала выше слова. В меню сбрасываем, метка по центру строки. */
-.rail .nav .tag,
-.app .nav .tag{
+.rail .nav .tag:not(.dot),
+.app .nav .tag:not(.dot){
   margin:0 0 0 auto;border:0;align-self:center;line-height:1;
   display:inline-flex;align-items:center;padding:4px 7px;letter-spacing:.1em;
 }
@@ -2367,3 +2367,7 @@
 /* Live markets: пульсирующей точке нужно место слева, иначе кольцо
    обрезается краем колонки. */
 .hm-head .live-dot{margin-left:8px}
+
+/* Точка-индикатор (.tag.dot у Chat): круг 7x7, не метка. */
+.rail .nav .tag.dot,
+.app .nav .tag.dot{margin:0 0 0 auto;padding:0;border:0;width:7px;height:7px;border-radius:50%;align-self:center}
