@@ -82,10 +82,12 @@
     // Старый контракт без залога оспаривания - блок не показываем, а не
     // отправляем сообщение, которое он не поймёт.
     if (!cfg || !cfg.challenge_bond || !COURT_CONTRACT) return '';
-    const ends = Number(m.proposed_at) + Number(cfg.challenge_secs);
+    // Окно и залог - из правил рынка (0.2.4), а не из текущего конфига.
+    const r = typeof mkRules === 'function' ? mkRules(m) : cfg;
+    const ends = Number(m.proposed_at) + Number(r.challenge_secs);
     const left = leftText(ends);
     if (!left) return '';
-    const bond = fmtLunc(cfg.challenge_bond);
+    const bond = fmtLunc(r.challenge_bond);
     const me = mkWallet();
     const blocked = me && me === cfg.resolver
       ? 'You posted this outcome, so you cannot dispute it.'
@@ -115,7 +117,7 @@
 
   window.submitChallenge = async function () {
     const m = window._prophecyMarket;
-    const cfg = prophecyCfg;
+    const cfg = typeof mkRules === 'function' ? mkRules(m) : prophecyCfg;
     const btn = document.getElementById('ch-go');
     const reading = ((document.getElementById('ch-reading') || {}).value || '').trim();
     if (!m || !btn) return;

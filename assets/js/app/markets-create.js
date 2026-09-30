@@ -365,7 +365,8 @@
     }
     return {
       metric: S.metric,
-      param: m.param ? (S.param || null) : null,
+      // Контракт 0.2.4 отклоняет параметр с пробелами.
+      param: m.param ? (String(S.param || '').trim() || null) : null,
       comparator: m.discrete ? null : S.comparator,
       threshold: raw,
       height: S.height,

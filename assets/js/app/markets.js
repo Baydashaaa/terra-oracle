@@ -120,6 +120,13 @@ function mkOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined;
 }
 
+/** Правила спора конкретного рынка. С 0.2.4 контракт хранит их в рынке, и
+ *  правка конфига их не меняет, поэтому окно и залог берутся отсюда.
+ *  Конфиг - только для рынков, созданных до 0.2.4. */
+function mkRules(m) {
+  return (m && m.rules) || prophecyCfg || {};
+}
+
 let boardTab = 'questions';
 let openMarketId = null;
 let betSide = true;
@@ -319,7 +326,7 @@ function statusLine(m) {
     // "Proposed" человеку ничего не говорит. Важно другое: идёт окно, внутри
     // которого исход ещё можно оспорить, и сколько его осталось.
     const ends = prophecyCfg && m.proposed_at
-      ? Number(m.proposed_at) + Number(prophecyCfg.challenge_secs) : 0;
+      ? Number(m.proposed_at) + Number(mkRules(m).challenge_secs) : 0;
     return `<b class="p">verifying</b>${
       ends > Math.floor(Date.now() / 1000) ? ' · ' + cd(ends) : ''}`;
   }
@@ -330,7 +337,7 @@ function statusLine(m) {
 /** Сколько осталось от окна оспаривания. */
 function challengeLeft(m) {
   if (!prophecyCfg || !m.proposed_at) return '';
-  const ends = Number(m.proposed_at) + Number(prophecyCfg.challenge_secs);
+  const ends = Number(m.proposed_at) + Number(mkRules(m).challenge_secs);
   const s = ends - Math.floor(Date.now() / 1000);
   if (s <= 0) return '';
   const h = Math.floor(s / 3600), mn = Math.floor((s % 3600) / 60);
@@ -1004,7 +1011,7 @@ function resultBlock(m) {
     return `<div class="mk-banner warn">
       <h3>Verifying · expected ${m.outcome ? 'YES' : 'NO'}</h3>
       <p>A reading has been posted and payouts stay shut while it can still be disputed${
-        left ? `. <b>${cd(Number(m.proposed_at) + Number(prophecyCfg.challenge_secs))}</b> left` : ''}.</p>
+        left ? `. <b>${cd(Number(m.proposed_at) + Number(mkRules(m).challenge_secs))}</b> left` : ''}.</p>
       ${m.reading ? `<p class="read">${mktEsc(m.reading)}</p>` : ''}</div>`;
   }
   if (m.status === 'settled') return evidenceBlock(m);
@@ -1068,7 +1075,7 @@ function updateBetCalc() {
     return;
   }
   if (max && lunc > max) {
-    box.innerHTML = `<div class="row muted"><span>Maximum per wallet on this market</span><b>${max.toLocaleString('en-US')} LUNC</b></div>`;
+    box.innerHTML = `<div class="row muted"><span>Maximum per side on this market</span><b>${max.toLocaleString('en-US')} LUNC</b></div>`;
     return;
   }
   // Собственная ставка входит в расчёт: без неё цифра завышена, и человек
@@ -1091,7 +1098,7 @@ async function submitBet() {
   const minB = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
   const maxB = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
   if ((minB && lunc < minB) || (maxB && lunc > maxB)) {
-    mkToast(`Predictions on this market are ${minB.toLocaleString('en-US')} to ${maxB.toLocaleString('en-US')} LUNC per wallet.`, 'info');
+    mkToast(`Predictions on this market are ${minB.toLocaleString('en-US')} to ${maxB.toLocaleString('en-US')} LUNC per side, per wallet.`, 'info');
     return;
   }
 
@@ -1472,7 +1479,7 @@ async function mkAbout() {
           <h5 class="mka-h">Where the losing pool goes</h5>
           <div class="mka-bar">${bar}</div>
           <div class="mka-legend">${legend}</div>
-          <p class="mka-note">From ${L(c.min_bet)} to ${L(c.max_bet)} per wallet on one market.
+          <p class="mka-note">From ${L(c.min_bet)} to ${L(c.max_bet)} per wallet on each side of one market.
             Predictions close before the answer can be seen. Collect a payout on the market page;
             Terra Classic takes its usual transfer tax from it.</p>
         </section>
