@@ -147,9 +147,11 @@
         'oracle-prophecy: challenge ' + m.id, PROPHECY_CHAIN, 600000
       );
       console.log('[prophecy] challenge tx', hash);
-      mkToast('Dispute sent. The court opens after the next block.', 'ok');
-      btn.textContent = 'Sent, waiting for the block…';
-      setTimeout(() => openProphecyMarket(m.id), 7000);
+      btn.textContent = 'Waiting for the block…';
+      await mkTrack(hash, 'Dispute', (r) => {
+        openProphecyMarket(m.id);
+        if (r.status === 'failed') { btn.disabled = false; btn.textContent = 'Dispute →'; }
+      });
     } catch (e) {
       mkToast(e.message || 'Transaction failed', 'err');
       btn.disabled = false;
@@ -264,8 +266,7 @@
         'oracle-court: vote ' + m.id, PROPHECY_CHAIN, 1100000
       );
       console.log('[court] vote tx', hash);
-      mkToast('Vote sent.', 'ok');
-      setTimeout(() => openProphecyMarket(m.id), 7000);
+      await mkTrack(hash, 'Vote', () => openProphecyMarket(m.id));
     } catch (e) {
       mkToast(e.message || 'Transaction failed', 'err');
     }
@@ -285,8 +286,11 @@
         'oracle-court: close ' + m.id, PROPHECY_CHAIN, 1800000
       );
       console.log('[court] close tx', hash);
-      mkToast('Case closed. The decision goes to the market.', 'ok');
-      setTimeout(() => openProphecyMarket(m.id), 7000);
+      if (btn) btn.textContent = 'Waiting for the block…';
+      await mkTrack(hash, 'Closing the case', (r) => {
+        openProphecyMarket(m.id);
+        if (r.status === 'failed' && btn) { btn.disabled = false; btn.textContent = 'Close the case →'; }
+      });
     } catch (e) {
       mkToast(e.message || 'Transaction failed', 'err');
       if (btn) { btn.disabled = false; btn.textContent = 'Close the case →'; }
@@ -340,8 +344,11 @@
         'oracle-prophecy: expire ' + m.id, PROPHECY_CHAIN, 1200000
       );
       console.log('[prophecy] expire tx', hash);
-      mkToast('Market voided. Refunds can be taken after the next block.', 'ok');
-      setTimeout(() => openProphecyMarket(m.id), 7000);
+      if (btn) btn.textContent = 'Waiting for the block…';
+      await mkTrack(hash, 'Voiding the market', (r) => {
+        openProphecyMarket(m.id);
+        if (r.status === 'failed' && btn) { btn.disabled = false; btn.textContent = 'Void the market →'; }
+      });
     } catch (e) {
       mkToast(e.message || 'Transaction failed', 'err');
       if (btn) { btn.disabled = false; btn.textContent = 'Void the market →'; }

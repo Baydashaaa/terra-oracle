@@ -224,8 +224,8 @@
     if (!isMember(me)) { toast('This wallet is not on the council.', 'err'); return null; }
     try {
       var hash = await window.sendExecuteContract(me, MULTISIG, msg, [], memo, CHAIN, gas);
-      toast('Sent. Updating after the next block.', 'ok');
-      setTimeout(refresh, 7000);
+      if (typeof mkTrack === 'function') await mkTrack(hash, 'Council transaction', refresh);
+      else { toast('Sent. Updating after the next block.', 'ok'); setTimeout(refresh, 7000); }
       return hash;
     } catch (e) {
       toast(e && e.message ? e.message : String(e), 'err');

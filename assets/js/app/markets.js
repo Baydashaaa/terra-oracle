@@ -1160,20 +1160,44 @@ async function submitBet() {
       'oracle-prophecy: prediction ' + m.id, PROPHECY_CHAIN, 600000
     );
     console.log('[prophecy] bet tx', hash);
-    mkToast('Prediction sent. It shows up after the next block.', 'ok');
-    btn.textContent = 'Sent, waiting for the block…';
-    // Перерисовка с задержкой: сразу после отправки контракт ещё покажет
-    // старые суммы, и человек решит, что ставка не прошла.
-    setTimeout(() => {
+    btn.textContent = 'Waiting for the block…';
+    // Перерисовка после блока: раньше контракт ещё покажет старые суммы.
+    // При отказе контракта кнопка снова доступна; если транзакция застряла,
+    // остаётся выключенной, чтобы не отправить вторую.
+    await mkTrack(hash, 'Prediction', (r) => {
       openProphecyMarket(m.id);
-      // И главная: вернувшись на Home, человек сразу видит свой голос.
       if (typeof renderHomeMarkets === 'function') renderHomeMarkets();
-    }, 7000);
+      if (r.status === 'failed') { btn.disabled = false; updateBetCalc(); }
+    });
   } catch (e) {
     mkToast(e.message || 'Transaction failed', 'err');
     btn.disabled = false;
     updateBetCalc();
   }
+}
+
+/**
+ * Аудит MKT-07: после отправки ждём блок и говорим правду - подтверждено,
+ * отказано контрактом или всё ещё в пути. До ответа ничего не объявляем
+ * успешным. Возвращает статус; onSettled вызывается в любом случае, чтобы
+ * экран перечитал состояние.
+ */
+async function mkTrack(hash, what, onSettled) {
+  mkToast(`${what}: sent, waiting for the block…`, 'info');
+  let r = { status: 'pending' };
+  if (typeof window.waitForTx === 'function') {
+    try { r = await window.waitForTx(hash, PROPHECY_CHAIN); } catch (e) { r = { status: 'pending' }; }
+  } else {
+    await new Promise((res) => setTimeout(res, 7000));
+    r = { status: 'unknown' };
+  }
+  if (r.status === 'confirmed') mkToast(`${what}: confirmed in block ${r.height.toLocaleString('en-US')}.`, 'ok');
+  else if (r.status === 'failed') mkToast(`${what} failed on chain: ${r.log || 'code ' + r.code}`, 'err');
+  else if (r.status === 'pending') {
+    mkToast(`${what}: not in a block after a minute. Check tx ${String(hash).slice(0, 10)}… in the explorer before trying again.`, 'info');
+  }
+  if (onSettled) { try { onSettled(r); } catch (e) { /* экран перечитается при следующем заходе */ } }
+  return r.status;
 }
 
 async function submitClaim() {
@@ -1186,8 +1210,7 @@ async function submitClaim() {
       'oracle-prophecy: claim ' + m.id, PROPHECY_CHAIN, 800000
     );
     console.log('[prophecy] claim tx', hash);
-    mkToast('Payout requested. It arrives after the next block.', 'ok');
-    setTimeout(() => openProphecyMarket(m.id), 7000);
+    await mkTrack(hash, 'Payout', () => openProphecyMarket(m.id));
   } catch (e) {
     mkToast(e.message || 'Transaction failed', 'err');
   }

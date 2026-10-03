@@ -856,11 +856,17 @@
       'oracle-prophecy: create', PROPHECY_CHAIN, 700000
     ).then(function (hash) {
       console.log('[prophecy] create tx', hash);
-      go.textContent = 'Sent, waiting for the block…';
-      setTimeout(function () {
+      go.textContent = 'Waiting for the block…';
+      return mkTrack(hash, 'New market', function (r) {
+        if (r.status === 'failed') {
+          // Контракт отказал: форма остаётся с данными, можно поправить.
+          go.disabled = false;
+          go.textContent = 'Publish prediction →';
+          return;
+        }
         closeCreate();
         if (typeof renderMarkets === 'function') renderMarkets(false);
-      }, 7000);
+      });
     }).catch(function (e) {
       mkToast(e.message || 'Transaction failed', 'err');
       go.disabled = false;

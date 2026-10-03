@@ -269,8 +269,53 @@
     var txHash = resp.txhash;
     if (code !== 0) throw new Error('TX rejected (code ' + code + '): ' + (resp.raw_log || ''));
     if (!txHash)    throw new Error('No txhash in broadcast response.');
+    // Хеш транзакции - sha256 её байтов. Сверяем с тем, что вернул узел:
+    // расхождение значит, что узел отчитался не о наших байтах.
+    try {
+      var local = await txHashOf(txBase64);
+      if (local && local !== String(txHash).toUpperCase()) {
+        console.warn('[tx] node returned hash ' + txHash + ', local hash is ' + local + ' - tracking the local one');
+        txHash = local;
+      }
+    } catch (e) { /* без crypto.subtle - доверяем узлу */ }
     return txHash;
   }
+
+  async function txHashOf(txBase64) {
+    if (!(window.crypto && crypto.subtle)) return null;
+    var bytes = Uint8Array.from(atob(txBase64), function (c) { return c.charCodeAt(0); });
+    var d = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+    return Array.from(d).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('').toUpperCase();
+  }
+
+  /**
+   * Аудит MKT-07. Ответ BROADCAST_MODE_SYNC значит только "принято в
+   * мемпул": контракт ещё не выполнялся и может отказать. Ждём, пока
+   * транзакция попадёт в блок, и читаем код выполнения.
+   * -> { status: 'confirmed', height } | { status: 'failed', code, log, height }
+   *    | { status: 'pending' } если за timeoutMs в блок не попала.
+   */
+  async function waitForTx(txHash, chainId, timeoutMs) {
+    var lcds = lcdFor(chainId);
+    var until = Date.now() + (timeoutMs || 60000);
+    while (Date.now() < until) {
+      await new Promise(function (r) { setTimeout(r, 2500); });
+      for (var i = 0; i < lcds.length; i++) {
+        try {
+          var r = await fetch(lcds[i] + '/cosmos/tx/v1beta1/txs/' + txHash, { signal: timeoutSignal(8000) });
+          if (r.status === 404 || r.status === 400) continue;  // ещё не в блоке у этого узла
+          if (!r.ok) continue;
+          var j = await r.json();
+          var tr = j && j.tx_response;
+          if (!tr || !tr.height || tr.height === '0') continue;
+          if (Number(tr.code || 0) === 0) return { status: 'confirmed', height: Number(tr.height) };
+          return { status: 'failed', code: Number(tr.code), log: tr.raw_log || '', height: Number(tr.height) };
+        } catch (e) { /* следующий узел */ }
+      }
+    }
+    return { status: 'pending' };
+  }
+  window.waitForTx = waitForTx;
 
   /** Pubkey для WalletConnect-сессии. */
   async function _wcGetPubkey(addr, chainId) {
