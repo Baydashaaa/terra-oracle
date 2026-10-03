@@ -30,10 +30,13 @@ const DRY       = process.env.DRY_RUN === '1';
 // секретах не тот ключ, и подписывать им нельзя.
 const EXPECTED  = process.env.EXPECTED_KEEPER || '';
 
+// 30.09: lcd.terrarebels.net и terra-classic-lcd.everstake.one больше не
+// существуют (домены не резолвятся). Узлы Hexxagon проверены: на запрос с
+// исторической высотой отдают то же число, что publicnode.
 const LCD_URLS = (process.env.LCD_URLS || [
   'https://terra-classic-lcd.publicnode.com',
-  'https://lcd.terrarebels.net',
-  'https://terra-classic-lcd.everstake.one',
+  'https://lcd.terra-classic.hexxagon.io',
+  'https://fcd.terra-classic.hexxagon.io',
 ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
 
 // RPC для проверки высоты (аудит MKT-04). LCD не сообщает, на какую высоту
@@ -41,6 +44,7 @@ const LCD_URLS = (process.env.LCD_URLS || [
 // нет. RPC abci_query возвращает высоту ответа в теле.
 const RPC_URLS = (process.env.RPC_URLS || [
   'https://terra-classic-rpc.publicnode.com',
+  'https://rpc.terra-classic.hexxagon.io',
 ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
 
 const GAS_PRICE = 28.325;
