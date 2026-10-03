@@ -157,7 +157,34 @@ async function prophecyQuery(msg) {
   throw new Error('chain unavailable');
 }
 
-async function loadProphecyMarkets() {
+// Аудит MKT-06. Раньше читались первые 500 рынков по возрастанию id, и
+// новые рынки пропадали бы из списка, как только история перевалит за 500.
+// С oracle-prophecy 0.2.5 у контракта индекс по статусу: живые рынки
+// читаются целиком, закрытые - от новых к старым, последние MK_HISTORY_PAGES
+// страниц на статус. Список, обрезанный по истории, помечен `capped`.
+const MK_LIVE_STATUSES = ['open', 'proposed', 'disputed'];
+const MK_FINAL_STATUSES = ['settled', 'void'];
+const MK_HISTORY_PAGES = 6;   // 300 последних на статус
+const MK_LIVE_PAGES = 200;    // 10 000 живых рынков - практически без предела
+
+async function mkPages(status, descending, maxPages) {
+  const list = [];
+  let after = null;
+  for (let page = 0; page < maxPages; page++) {
+    const q = { markets: { status, limit: 50 } };
+    if (after !== null) q.markets.start_after = after;
+    if (descending) q.markets.descending = true;
+    const res = await prophecyQuery(q);
+    const batch = (res && res.markets) || [];
+    list.push(...batch);
+    if (batch.length < 50) return { list, capped: false };
+    after = batch[batch.length - 1].id;
+  }
+  return { list, capped: true };
+}
+
+/** До 0.2.5 (и на тестовой сети со старым кодом): по возрастанию, 500 штук. */
+async function mkLegacyMarkets() {
   const out = [];
   let after = null;
   for (let page = 0; page < 10; page++) {
@@ -168,6 +195,24 @@ async function loadProphecyMarkets() {
     after = list[list.length - 1].id;
     if (list.length < 50) break;
   }
+  out.capped = out.length >= 500;
+  return out;
+}
+
+async function loadProphecyMarkets() {
+  let parts;
+  try {
+    parts = await Promise.all([
+      ...MK_LIVE_STATUSES.map((s) => mkPages(s, false, MK_LIVE_PAGES)),
+      ...MK_FINAL_STATUSES.map((s) => mkPages(s, true, MK_HISTORY_PAGES)),
+    ]);
+  } catch (e) {
+    // Контракт без `descending` отвергает запрос целиком.
+    return mkLegacyMarkets();
+  }
+  const out = parts.flatMap((p) => p.list);
+  out.sort((a, b) => a.id - b.id);
+  out.capped = parts.some((p) => p.capped);
   return out;
 }
 
@@ -682,7 +727,10 @@ async function renderMarkets(resolved) {
       ? grid
       : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
           resolved ? 'Settled and voided markets will be listed here with their readings.'
-                   : 'Be the first to open one.'));
+                   : 'Be the first to open one.'))
+      + (resolved && all.capped
+        ? `<p style="color:var(--muted);font-size:13px;margin:14px 2px 0;">Showing the latest ${list.length.toLocaleString('en-US')} settled and voided markets. Older ones stay on chain and open by their number.</p>`
+        : '');
     mkStartCarousel(host);
     if (mkPendingOpen) {
       const id = mkPendingOpen;
@@ -1158,7 +1206,8 @@ function renderMarketStats(all) {
   const players = all.reduce((s, m) => s + m.bettors_yes + m.bettors_no, 0);
   set('mk-stat-open', all.filter((m) => live.includes(m.status)).length);
   set('mk-stat-vol', fmtLunc(staked));
-  set('mk-stat-settled', all.filter((m) => m.status === 'settled').length);
+  const settled = all.filter((m) => m.status === 'settled').length;
+  set('mk-stat-settled', all.capped ? settled.toLocaleString('en-US') + '+' : settled);
   set('mk-stat-players', players.toLocaleString('en-US'));
 }
 

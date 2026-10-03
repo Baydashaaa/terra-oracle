@@ -54,6 +54,10 @@ const GAS_PROVISIONAL = 600_000;
 // Проход раз в 10 минут, который делает сотни транзакций, - это проход,
 // который наезжает сам на себя.
 const MAX_ACTIONS_PER_RUN = 20;
+// Аудит MKT-06: в предел входят только успешные действия. Иначе двадцать
+// старых, стабильно падающих действий занимали бы весь проход, и срочное
+// так и не выполнялось бы. Попыток всего - не больше MAX_ATTEMPTS_PER_RUN.
+const MAX_ATTEMPTS_PER_RUN = 60;
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
@@ -493,18 +497,25 @@ async function resolveSpec(m) {
 
 // ── рынки ───────────────────────────────────────────────────────────────────
 
+// Аудит MKT-06: раньше не больше 20 страниц на статус, и обрезка списка
+// нигде не отмечалась. С 0.2.5 запрос по статусу идёт по индексу контракта,
+// поэтому читаем до конца. Предел оставлен только против бесконечного цикла
+// и, если сработает, громко пишет в лог.
+const MAX_LIST_PAGES = 1000;
+
 async function listMarkets(status) {
   const out = [];
   let startAfter;
-  for (let page = 0; page < 20; page++) {
+  for (let page = 0; page < MAX_LIST_PAGES; page++) {
     const q = { markets: { status, limit: 50 } };
     if (startAfter !== undefined) q.markets.start_after = startAfter;
     const r = await smart(PROPHECY, q);
     const list = r?.markets || [];
     out.push(...list);
-    if (list.length < 50) break;
+    if (list.length < 50) return out;
     startAfter = list[list.length - 1].id;
   }
+  log(`WARNING: ${status} list cut at ${out.length} markets, the rest waits for the next run`);
   return out;
 }
 
@@ -571,6 +582,14 @@ async function driftCheck(m) {
 }
 
 /** Что сделать с рынком сейчас. Возвращает план, ничего не отправляя. */
+/** Чем меньше, тем срочнее: момент, к которому действие должно случиться. */
+function urgencyOf(m) {
+  const r = m.rules || {};
+  if (m.status === 'disputed') return Number(m.disputed_at) + Number(r.arbiter_secs || 0);
+  if (m.status === 'proposed') return Number(m.proposed_at) + Number(r.challenge_secs || 0);
+  return Number(m.resolve_after);
+}
+
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
@@ -833,11 +852,16 @@ async function main() {
     const p = await planFor(m, ctx);
     if (!p) continue;
     if (p.note) log('·', p.note);
-    else plans.push(p);
+    else plans.push({ ...p, urgency: urgencyOf(m) });
   }
+  // Сначала то, у чего ближе срок: дело суда и окно арбитра, потом расчёты,
+  // потом объявления. Внутри - по времени.
+  plans.sort((a, b) => a.urgency - b.urgency);
 
-  let done = 0, failed = 0;
-  for (const p of plans.slice(0, MAX_ACTIONS_PER_RUN)) {
+  let done = 0, failed = 0, tried = 0;
+  for (const p of plans) {
+    if (done >= MAX_ACTIONS_PER_RUN || tried >= MAX_ATTEMPTS_PER_RUN) break;
+    tried++;
     log('→', p.what);
     try {
       const hash = await execute(kp, sender, p.contract, p.msg, 'markets-keeper');
@@ -849,7 +873,7 @@ async function main() {
       failed++;
     }
   }
-  if (plans.length > MAX_ACTIONS_PER_RUN) log(`${plans.length - MAX_ACTIONS_PER_RUN} action(s) left for the next run`);
+  if (plans.length > tried) log(`${plans.length - tried} action(s) left for the next run`);
   // Ошибки начисления REP не роняют прогон: деньги рынков важнее.
   await grantCreatorRep(tip.time);
   // Уведомления тоже не роняют прогон.
