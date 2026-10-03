@@ -36,6 +36,13 @@ const LCD_URLS = (process.env.LCD_URLS || [
   'https://terra-classic-lcd.everstake.one',
 ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
 
+// RPC для проверки высоты (аудит MKT-04). LCD не сообщает, на какую высоту
+// он ответил: проверено 30.09 на всех трёх узлах выше, заголовка в ответе
+// нет. RPC abci_query возвращает высоту ответа в теле.
+const RPC_URLS = (process.env.RPC_URLS || [
+  'https://terra-classic-rpc.publicnode.com',
+].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
+
 const GAS_PRICE = 28.325;
 const FEE_HEADROOM = 1.05;
 const GAS_HEADROOM = 1.4;
@@ -327,12 +334,134 @@ async function readMetric(spec, height) {
       return { v, text: `${fromScaled(v, 4)}% staked (bonded ${bonded} / ${bonded + free})` };
     }
     case 'proposal_passed': {
-      const b = await lcdGet(`/cosmos/gov/v1beta1/proposals/${p}`, height);
+      // gov v1, а не v1beta1: v1beta1 не отдаёт предложения с новыми типами
+      // сообщений (проверено 30.09 на последнем предложении сети).
+      const b = await lcdGet(`/cosmos/gov/v1/proposals/${p}`, height);
       return { status: b.proposal.status, text: `proposal #${p} status ${b.proposal.status}` };
     }
     default:
       throw new Error('unknown metric ' + spec.metric);
   }
+}
+
+
+// ── проверка высоты через RPC (аудит MKT-04) ────────────────────────────────
+//
+// LCD принимает высоту в заголовке запроса, но не подтверждает её в ответе.
+// Узел или прокси, который заголовок выбросил, молча вернёт текущее
+// состояние, и исход посчитается не по той высоте. Поэтому то же значение
+// читается второй раз через RPC abci_query: там высота ответа приходит в теле
+// и сверяется с запрошенной. Исход объявляется, только если оба чтения дали
+// одно и то же число. Расхождение - рынок ждёт, керпер пишет причину в лог.
+
+function pbField(no, bytes) { return encodeField(no, 2, Buffer.from(bytes)); }
+function pbVarintField(no, n) { return Buffer.concat([encodeVarint((no << 3) | 0), encodeVarint(n)]); }
+
+/** Разбор protobuf: номер поля -> массив значений (Buffer или BigInt). */
+function pbParse(buf) {
+  const out = {};
+  let i = 0;
+  const varint = () => {
+    let r = 0n, shift = 0n;
+    for (;;) {
+      if (i >= buf.length) throw new Error('protobuf: truncated varint');
+      const b = buf[i++];
+      r |= BigInt(b & 0x7f) << shift;
+      if (!(b & 0x80)) return r;
+      shift += 7n;
+    }
+  };
+  while (i < buf.length) {
+    const key = Number(varint());
+    const no = key >> 3, wire = key & 7;
+    let v;
+    if (wire === 0) v = varint();
+    else if (wire === 2) { const len = Number(varint()); v = buf.subarray(i, i + len); i += len; }
+    else if (wire === 1) { v = buf.subarray(i, i + 8); i += 8; }
+    else if (wire === 5) { v = buf.subarray(i, i + 4); i += 4; }
+    else throw new Error('protobuf: unsupported wire type ' + wire);
+    (out[no] = out[no] || []).push(v);
+  }
+  return out;
+}
+const pbStr = (f, no) => (f[no] && f[no][0] ? Buffer.from(f[no][0]).toString('utf8') : '');
+const pbMsg = (f, no) => pbParse(f[no] && f[no][0] ? f[no][0] : Buffer.alloc(0));
+
+/** sdk.Dec в protobuf - целое, умноженное на 10^18, без точки. */
+function decRaw(s) {
+  if (!/^\d+$/.test(s)) throw new Error('protobuf: bad Dec ' + s);
+  return BigInt(s);
+}
+
+async function abciQuery(path, reqBytes, height) {
+  const hex = Buffer.from(reqBytes).toString('hex');
+  let lastErr;
+  for (const base of RPC_URLS) {
+    try {
+      const url = `${base}/abci_query?path=${encodeURIComponent('"' + path + '"')}&data=0x${hex}&height=${height}&prove=false`;
+      const res = await safeFetch(url);
+      const body = await res.json().catch(() => null);
+      const r = body?.result?.response;
+      if (!res.ok || !r) { lastErr = new Error(`${base} abci_query → ${res.status}`); continue; }
+      if (Number(r.code || 0) !== 0) { lastErr = new Error(`${base} abci_query: ${r.log || 'code ' + r.code}`); continue; }
+      if (String(r.height) !== String(height)) {
+        lastErr = new Error(`${base} answered for height ${r.height} instead of ${height}`);
+        continue;
+      }
+      return Buffer.from(r.value || '', 'base64');
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('all RPC endpoints failed for ' + path);
+}
+
+const GOV_STATUS = ['PROPOSAL_STATUS_UNSPECIFIED', 'PROPOSAL_STATUS_DEPOSIT_PERIOD', 'PROPOSAL_STATUS_VOTING_PERIOD',
+  'PROPOSAL_STATUS_PASSED', 'PROPOSAL_STATUS_REJECTED', 'PROPOSAL_STATUS_FAILED'];
+
+/** То же, что readMetric, но через RPC с проверкой высоты. Возвращает
+ *  { v } в той же шкале (x10^18) или { status } для голосований. */
+async function readMetricAtHeight(spec, height) {
+  const p = spec.param;
+  switch (spec.metric) {
+    case 'total_supply': {
+      const f = pbParse(await abciQuery('/cosmos.bank.v1beta1.Query/SupplyOf', pbField(1, 'uluna'), height));
+      return { v: toScaled(pbStr(pbMsg(f, 1), 2)) };
+    }
+    case 'community_pool': {
+      const f = pbParse(await abciQuery('/cosmos.distribution.v1beta1.Query/CommunityPool', Buffer.alloc(0), height));
+      const c = (f[1] || []).map(pbParse).find((x) => pbStr(x, 1) === 'uluna');
+      if (!c) throw new Error('no uluna in the community pool');
+      return { v: decRaw(pbStr(c, 2)) };
+    }
+    case 'validator_power': {
+      const f = pbParse(await abciQuery('/cosmos.staking.v1beta1.Query/Validator', pbField(1, p), height));
+      return { v: toScaled(pbStr(pbMsg(f, 1), 5)) };
+    }
+    case 'oracle_rate': {
+      const f = pbParse(await abciQuery('/terra.oracle.v1beta1.Query/ExchangeRates', Buffer.alloc(0), height));
+      const r = (f[1] || []).map(pbParse).find((x) => pbStr(x, 1) === p);
+      if (!r) throw new Error(`no oracle rate for ${p}`);
+      return { v: decRaw(pbStr(r, 2)) };
+    }
+    case 'staking_ratio': {
+      const pool = pbMsg(pbParse(await abciQuery('/cosmos.staking.v1beta1.Query/Pool', Buffer.alloc(0), height)), 1);
+      const free = BigInt(pbStr(pool, 1) || '0'), bonded = BigInt(pbStr(pool, 2) || '0');
+      if (bonded + free === 0n) throw new Error('empty staking pool');
+      return { v: (bonded * 100n * ONE) / (bonded + free) };
+    }
+    case 'proposal_passed': {
+      const f = pbParse(await abciQuery('/cosmos.gov.v1.Query/Proposal', pbVarintField(1, Number(p)), height));
+      const st = pbMsg(f, 1)[3];
+      return { status: GOV_STATUS[Number(st ? st[0] : 0n)] || 'UNKNOWN' };
+    }
+    default:
+      throw new Error('unknown metric ' + spec.metric);
+  }
+}
+
+/** Оба чтения обязаны совпасть. */
+function sameReading(a, b) {
+  if ('status' in a || 'status' in b) return a.status === b.status;
+  return a.v === b.v;
 }
 
 /** Исход по спеке. Текст reading уходит в контракт и виден людям, поэтому
@@ -341,6 +470,10 @@ async function resolveSpec(m) {
   const spec = m.spec;
   const h = Number(spec.height);
   const r = await readMetric(spec, h);
+  const checked = await readMetricAtHeight(spec, h);
+  if (!sameReading(r, checked)) {
+    throw new Error(`height check failed at ${h}: LCD gave ${r.status || fromScaled(r.v, 18)}, RPC gave ${checked.status || fromScaled(checked.v, 18)}`);
+  }
   if (spec.metric === 'proposal_passed') {
     const yes = r.status === 'PROPOSAL_STATUS_PASSED';
     return { outcome: yes, reading: `${r.text} at height ${h} - ${yes ? 'passed' : 'not passed'}` };
@@ -438,9 +571,12 @@ async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
   const due = Number(m.resolve_after);
+  // С 0.2.4 сроки спора хранятся в самом рынке и не меняются вместе с
+  // конфигом. Конфиг - только для рынков без своей копии.
+  const rules = m.rules || pcfg;
 
   if (m.status === 'open' || m.status === 'locked') {
-    if (now >= due + Number(pcfg.resolve_grace_secs)) {
+    if (now >= due + Number(rules.resolve_grace_secs)) {
       return { what: `expire #${id}: no outcome within the grace period`, contract: PROPHECY, msg: { expire: { market_id: id } } };
     }
     if (now < due) return null;
@@ -467,14 +603,14 @@ async function planFor(m, ctx) {
   }
 
   if (m.status === 'proposed') {
-    if (now >= Number(m.proposed_at) + Number(pcfg.challenge_secs)) {
+    if (now >= Number(m.proposed_at) + Number(rules.challenge_secs)) {
       return { what: `settle #${id}: challenge window passed`, contract: PROPHECY, msg: { settle: { market_id: id } } };
     }
     return null;
   }
 
   if (m.status === 'disputed') {
-    const arbEnd = Number(m.disputed_at) + Number(pcfg.arbiter_secs);
+    const arbEnd = Number(m.disputed_at) + Number(rules.arbiter_secs);
     if (now >= arbEnd) {
       return { what: `expire #${id}: the court did not rule in time`, contract: PROPHECY, msg: { expire: { market_id: id } } };
     }
@@ -628,7 +764,44 @@ async function notifyCouncil(now) {
 
 // ── main ────────────────────────────────────────────────────────────────────
 
+/** KEEPER_SELFTEST=1: читает все шесть метрик на недавней высоте обоими
+ *  способами и печатает, совпали ли. Ничего не подписывает. */
+async function selftest() {
+  const step = async (what, fn) => {
+    try { return await fn(); } catch (e) { log('ERR ', what, e.message, e.cause ? `(${e.cause.code || e.cause})` : ''); return null; }
+  };
+  const tip = await step('chain tip', chainTip);
+  if (!tip) { process.exitCode = 1; return; }
+  const h = tip.height - 100;
+  // Список предложений берём из gov v1: в v1beta1 он падает целиком, если
+  // хоть одно предложение не переводится в старый формат.
+  const vals = await step('validator list', () => lcdGet('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=1'));
+  const props = await step('proposal list', () => lcdGet('/cosmos/gov/v1/proposals?pagination.reverse=true&pagination.limit=1'));
+  const cases = [
+    { metric: 'total_supply' },
+    { metric: 'community_pool' },
+    { metric: 'staking_ratio' },
+    { metric: 'oracle_rate', param: 'uusd' },
+  ];
+  if (vals?.validators?.[0]) cases.push({ metric: 'validator_power', param: vals.validators[0].operator_address });
+  if (props?.proposals?.[0]) cases.push({ metric: 'proposal_passed', param: String(props.proposals[0].id) });
+  log(`selftest at height ${h}`);
+  let bad = 0;
+  for (const c of cases) {
+    try {
+      const a = await readMetric(c, h);
+      const b = await readMetricAtHeight(c, h);
+      const ok = sameReading(a, b);
+      if (!ok) bad++;
+      log(ok ? 'OK  ' : 'DIFF', c.metric, 'LCD', a.status || fromScaled(a.v, 18), '| RPC', b.status || fromScaled(b.v, 18));
+    } catch (e) { bad++; log('ERR ', c.metric, e.message, e.cause ? `(${e.cause.code || e.cause})` : ''); }
+  }
+  log(bad ? `${bad} problem(s)` : `all ${cases.length} match`);
+  if (bad) process.exitCode = 1;
+}
+
 async function main() {
+  if (process.env.KEEPER_SELFTEST === '1') return selftest();
   if (!PROPHECY) throw new Error('PROPHECY_CONTRACT is not set');
   if (!DRY && !MNEMONIC) throw new Error('KEEPER_MNEMONIC is not set (or run with DRY_RUN=1)');
 

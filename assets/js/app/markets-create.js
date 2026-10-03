@@ -95,7 +95,7 @@
       label: 'Governance proposal passes',
       cats: ['governance'],
       param: { label: 'Proposal id', kind: 'text', placeholder: '12345' },
-      path: function (p) { return '/cosmos/gov/v1beta1/proposals/' + p; },
+      path: function (p) { return '/cosmos/gov/v1/proposals/' + p; },
       pick: function (j) { return j && j.proposal ? j.proposal.status : null; },
       discrete: true,
       note: 'proposal status is PROPOSAL_STATUS_PASSED at the given height',

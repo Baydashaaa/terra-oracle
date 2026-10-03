@@ -99,7 +99,7 @@ const METRIC_PATHS = {
   staking_ratio: () => '/cosmos/staking/v1beta1/pool',
   community_pool: () => '/cosmos/distribution/v1beta1/community_pool',
   validator_power: (p) => `/cosmos/staking/v1beta1/validators/${p}`,
-  proposal_passed: (p) => `/cosmos/gov/v1beta1/proposals/${p}`,
+  proposal_passed: (p) => `/cosmos/gov/v1/proposals/${p}`,
 };
 
 /**
