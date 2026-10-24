@@ -1,0 +1,36 @@
+name: One-off - sweep treasury wallets
+on:
+  workflow_dispatch:
+    inputs:
+      wallet:
+        description: 'list = только показать адреса и балансы'
+        type: choice
+        options: [list, TREASURY, RESERVE, REWARDS]
+        default: list
+      dry_run:
+        type: choice
+        options: ['true', 'false']
+        default: 'true'
+permissions:
+  contents: read
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install cosmjs in a clean dir
+        run: |
+          mkdir -p /tmp/sweep && cp scripts/sweep-treasury.mjs /tmp/sweep/
+          cd /tmp/sweep && npm init -y >/dev/null && npm install --no-audit --no-fund @cosmjs/proto-signing@0.32.4 @cosmjs/stargate@0.32.4 @cosmjs/crypto@0.32.4
+      - working-directory: /tmp/sweep
+        env:
+          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC }}
+          RESERVE_MNEMONIC:  ${{ secrets.RESERVE_MNEMONIC }}
+          REWARDS_MNEMONIC:  ${{ secrets.REWARDS_MNEMONIC }}
+          KEEPER_MNEMONIC:   ${{ secrets.KEEPER_MNEMONIC }}
+          WALLET:  ${{ inputs.wallet }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node sweep-treasury.mjs
