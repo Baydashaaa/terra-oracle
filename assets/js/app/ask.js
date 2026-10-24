@@ -206,7 +206,7 @@ const TREASURY_WALLET = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw'; // Proto
 const WEEKLY_DRAW_WALLET = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8'; // Weekly Draw Pool (контракт)
 // Прежний адрес: оплаты до 1 сентября 2026 проверяются по нему.
 const WEEKLY_DRAW_WALLET_LEGACY = 'terra152lcj50e47865dwrc9u3u67rnrm6kpfnwejdjl';
-const BURN_WALLET     = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
+const BURN_WALLET     = 'terra1gl53m8f096jvs6366yzee7p3qz6yxva35pjefz';
 const PROTOCOL_WALLET = ADMIN_WALLET;
 
 // ── Admin actions ────────────────────────────────────────────────────────────

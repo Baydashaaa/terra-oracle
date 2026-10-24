@@ -62,7 +62,7 @@
     'terra152lcj50e47865dwrc9u3u67rnrm6kpfnwejdjl', // WEEKLY (кошелёк до 31 авг 2026, оставлен ради истории)
     'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm', // DAILY pool contract
     'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8', // WEEKLY pool contract
-    'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p', // COLLECTION
+    'terra1gl53m8f096jvs6366yzee7p3qz6yxva35pjefz', // COLLECTION
   ];
 
   var LS_PREFIX = 'oracleNotif:v1:';

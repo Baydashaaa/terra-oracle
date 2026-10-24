@@ -15,7 +15,7 @@ import { SigningStargateClient }    from '@cosmjs/stargate';
 const CHAIN_ID           = 'columbus-5';
 const DENOM              = 'uluna';
 
-const COLLECTION_WALLET  = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
+const COLLECTION_WALLET  = 'terra1gl53m8f096jvs6366yzee7p3qz6yxva35pjefz';
 // Цель перевода - КОНТРАКТЫ пулов (переезд 1 сентября 2026). Обычный перевод
 // ложится на баланс контракта и при ближайшем расчёте уходит в carry, а оттуда
 // в пот следующего раунда: приз пополняется со сдвигом на раунд, зато без

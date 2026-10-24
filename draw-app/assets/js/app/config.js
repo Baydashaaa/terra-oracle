@@ -119,7 +119,7 @@ async function getPoolAmount(pool) {
     return getWalletBalance(addr);
   }
 }
-const BURN_WALLET    = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
+const BURN_WALLET    = 'terra1gl53m8f096jvs6366yzee7p3qz6yxva35pjefz';
 const DEV_WALLET     = 'terra17928vmmve4tjkyh6swc2s2dfvthdpjqhttyw5j';
 const CHAIN_ID       = 'columbus-5';
 const LUNC_PER_TICKET = 25000;

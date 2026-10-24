@@ -566,7 +566,7 @@ async function loadChatFromChain() {
         'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw', // TREASURY
         'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm',  // DAILY pool contract
         'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8',  // WEEKLY pool contract
-        'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION
+        'terra1gl53m8f096jvs6366yzee7p3qz6yxva35pjefz',  // COLLECTION
       ];
       if (SYSTEM_WALLETS.includes(sender)) continue;
       // Block amounts far above 5,000 LUNC (±2% tolerance for tax) - not chat payments
