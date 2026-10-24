@@ -43,7 +43,7 @@ const BOND      = process.env.TCO_BOND    || 'terra1xnejslpfa398nn2mexv34y8737fc
 // этом те же - contract_address указывает, какую кривую дёрнуть.
 const BOND_FACTORY = process.env.TCO_BOND_FACTORY || 'terra1vd595gqyekq05p8hy9t0r9q68jtk5whleqt5py4wdwrqfykz74lqrmw8q5';
 const TOKEN     = process.env.TCO_TOKEN   || 'terra1566znlxwke0kp9jkhe6qgapsmcfdmc7k9czh380tlx80va8zlsgqzvjtfp';
-const BURN_WALLET = process.env.TCO_BURN_WALLET || 'terra10zptfez4jdvakrhu58q4nqj2te7mnpewqhu27a';
+const BURN_WALLET = process.env.TCO_BURN_WALLET || 'terra1c35meph8ke6g5xh6xc50qzhek3kyaxukyq2lpg';
 // Ожидаемый адрес кошелька выкупа. Сверяется с тем, что вывелся из
 // мнемоники: несовпадение означает не ту фразу или не тот путь деривации,
 // и продолжать нельзя.

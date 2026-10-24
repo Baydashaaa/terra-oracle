@@ -12,7 +12,7 @@ const T_WALLETS = {
   // входит. Кошелёк сжигания держит TCO, а не LUNC, - в TVL НЕ входит.
   circuit:   'terra1e53vkyt829lqjq38tqxlukgqsg9mxlwdq6mjsr', // Circuit Pool
   tcoBuy:    'terra1e2cn6vayjjf85ehatmcchcrp2awlfyuu7pu5y2', // TCO buyback
-  tcoBurn:   'terra10zptfez4jdvakrhu58q4nqj2te7mnpewqhu27a', // TCO held for burn
+  tcoBurn:   'terra1c35meph8ke6g5xh6xc50qzhek3kyaxukyq2lpg', // TCO held for burn
 };
 const T_TCO_TOKEN = 'terra1566znlxwke0kp9jkhe6qgapsmcfdmc7k9czh380tlx80va8zlsgqzvjtfp';
 const T_TCO_BOND  = 'terra1xnejslpfa398nn2mexv34y8737fcq998zz4dsnq74qn464lu9m4s604du5';
