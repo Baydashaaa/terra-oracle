@@ -35,7 +35,7 @@ const SNAPSHOT_TS = Date.parse('2026-08-01T14:47:53.167Z');
 
 // The attestor address the mnemonic must derive. A mismatch means the wrong
 // secret is configured, and we stop rather than sign with an unexpected key.
-const EXPECTED_ATTESTOR = 'terra1yza5m2dkhnxxrur8cc0qrwwmqztyj54fypwzy8';
+const EXPECTED_ATTESTOR = 'terra1x2xf2n9kdeky2ua8ygqkp8carwqhg4cxf9pcgk';
 
 const BATCH_SIZE = 8;
 // Only used for the provisional tx handed to the simulator; the real limit comes
