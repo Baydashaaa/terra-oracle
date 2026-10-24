@@ -47,7 +47,7 @@ const BURN_WALLET = process.env.TCO_BURN_WALLET || 'terra10zptfez4jdvakrhu58q4nq
 // Ожидаемый адрес кошелька выкупа. Сверяется с тем, что вывелся из
 // мнемоники: несовпадение означает не ту фразу или не тот путь деривации,
 // и продолжать нельзя.
-const BUYBACK_WALLET = process.env.TCO_BUYBACK_WALLET || 'terra1x3axkacpes4d8q2svfeneqdtv8rvcvccrn66j5';
+const BUYBACK_WALLET = process.env.TCO_BUYBACK_WALLET || 'terra1e2cn6vayjjf85ehatmcchcrp2awlfyuu7pu5y2';
 // Terra Classic - coin type 330. По умолчанию cosmjs берёт 118, и та же
 // мнемоника даёт совершенно другой адрес.
 const HD_PATH = process.env.CIRCUIT_HD_PATH || "m/44'/330'/0'/0/0";
@@ -56,7 +56,7 @@ const REWARDS   = process.env.CIRCUIT_REWARDS_CONTRACT;   // адрес claim-к
 // Из какой мнемоники ДОЛЖЕН получиться кошелёк выкупа. Сверка обязательна:
 // в секрет один раз уже попала фраза постороннего счёта, и скрипт этого
 // не заметил - просто увидел нулевой баланс и вышел.
-const EXPECTED_WALLET = process.env.CIRCUIT_BUYBACK_ADDRESS || 'terra1x3axkacpes4d8q2svfeneqdtv8rvcvccrn66j5';
+const EXPECTED_WALLET = process.env.CIRCUIT_BUYBACK_ADDRESS || 'terra1e2cn6vayjjf85ehatmcchcrp2awlfyuu7pu5y2';
 
 // Порог: покупать на меньшее бессмысленно - комиссия свопа съест больше
 const THRESHOLD_ULUNA = BigInt(process.env.CIRCUIT_EPOCH_THRESHOLD_ULUNA || 50_000_000_000);
