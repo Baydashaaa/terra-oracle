@@ -10,7 +10,7 @@ const T_WALLETS = {
   // Circuit. Пул зон - такие же деньги протокола, как daily и weekly, и
   // входит в TVL. Кошелёк выкупа копит LUNC до порога покупки TCO и тоже
   // входит. Кошелёк сжигания держит TCO, а не LUNC, - в TVL НЕ входит.
-  circuit:   'terra1lkcsxf2et3s64uwemyy257n0dcep0al40a4m55', // Circuit Pool
+  circuit:   'terra1e53vkyt829lqjq38tqxlukgqsg9mxlwdq6mjsr', // Circuit Pool
   tcoBuy:    'terra1e2cn6vayjjf85ehatmcchcrp2awlfyuu7pu5y2', // TCO buyback
   tcoBurn:   'terra10zptfez4jdvakrhu58q4nqj2te7mnpewqhu27a', // TCO held for burn
 };
