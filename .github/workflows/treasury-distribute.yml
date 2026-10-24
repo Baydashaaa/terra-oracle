@@ -34,7 +34,7 @@ jobs:
 
       - name: Run treasury distribution
         env:
-          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC }}
+          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC_V2 }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: node scripts/treasury-distribute.js
 

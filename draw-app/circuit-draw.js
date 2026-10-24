@@ -46,7 +46,7 @@ import { selectZone, ownerOfZone } from './circuit-rule.js';
 const WORKER   = process.env.CIRCUIT_WORKER_URL || 'https://oracle-draw.vladislav-baydan.workers.dev';
 const SECRET   = process.env.DISTRIBUTION_SECRET;
 const MNEMONIC = process.env.OPERATOR_MNEMONIC_CIRCUIT;
-const TREASURY = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const TREASURY = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
 const DENOM    = 'uluna';
 const PREFIX   = 'terra';
 const RPC      = process.env.RPC_URL || 'https://terra-classic-rpc.publicnode.com:443';

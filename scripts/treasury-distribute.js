@@ -10,11 +10,11 @@ import fetch from 'node-fetch';
 import { createHash } from 'crypto';
 
 const WALLETS = {
-  treasury:  'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt',
-  rewards:   'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce',
-  reserve:   'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz',
-  liquidity: 'terra1gukarslv6c8n0s2259822l7059putpqxz405su',
-  dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr',
+  treasury:  'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw',
+  rewards:   'terra10gf6zq5f0nrpcx0k2zlsrv79ec28p320fezq9q',
+  reserve:   'terra1e0m2ajgn5m8tq9dehu5w5zlvaklagdpcaeuw3a',
+  liquidity: 'terra1n9ntqdyf9st6x8uxz5fswa282evu2kgpzcyxef',
+  dev:       'terra17928vmmve4tjkyh6swc2s2dfvthdpjqhttyw5j',
 };
 const DISTRIBUTION = { rewards: 0.25, reserve: 0.15, liquidity: 0.50, dev: 0.10 };
 const LCD_URL     = 'https://terra-classic-lcd.publicnode.com';

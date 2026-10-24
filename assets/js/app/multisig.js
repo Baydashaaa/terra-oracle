@@ -17,7 +17,7 @@
 
   var MULTISIG = 'terra1vvwccg3ey00fg3xhux2cfgx2z5l47uuv0lzm72dtntctdqmf3wuqmdnm06';
   var CHAIN = 'columbus-5';
-  var TREASURY = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+  var TREASURY = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
   var LCD = ['https://terra-classic-lcd.publicnode.com', 'https://lcd.terra-classic.hexxagon.io'];
   var FINDER = 'https://finder.terraport.finance/mainnet';
   // Газ: голос и предложение дешёвые, исполнение несёт вложенные сообщения

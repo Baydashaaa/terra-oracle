@@ -2,7 +2,7 @@
 import fetch from 'node-fetch';
 import { createHash } from 'crypto';
 
-const TREASURY = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const TREASURY = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
 const LCD_URL  = 'https://terra-classic-lcd.publicnode.com';
 const CHAIN_ID = 'columbus-5';
 

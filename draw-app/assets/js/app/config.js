@@ -120,7 +120,7 @@ async function getPoolAmount(pool) {
   }
 }
 const BURN_WALLET    = 'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p';
-const DEV_WALLET     = 'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr';
+const DEV_WALLET     = 'terra17928vmmve4tjkyh6swc2s2dfvthdpjqhttyw5j';
 const CHAIN_ID       = 'columbus-5';
 const LUNC_PER_TICKET = 25000;
 
@@ -128,7 +128,7 @@ const LUNC_PER_TICKET = 25000;
 // Free entries are computed on-chain  no static JSON needed
 let freeEntriesData = {}; // { "terra1abc": { chat:1, questions:2, total:3 } }
 
-const ORACLE_TREASURY = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const ORACLE_TREASURY = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
 const CHAT_ULUNA_FE   = 5000 * 1e6;
 const QA_ULUNA_FE     = 100000 * 1e6; // 100k LUNC to Treasury (half of Q&A payment)
 const TOLERANCE_FE    = 0.01;

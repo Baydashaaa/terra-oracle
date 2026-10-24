@@ -246,7 +246,7 @@ async function main() {
   const sender = pubkeyToAddress(publicKey);
   // Safety: same address check the treasury script does - refuse to pay out
   // from an unexpected wallet if the wrong mnemonic is configured.
-  const EXPECTED_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
+  const EXPECTED_REWARDS_WALLET = 'terra10gf6zq5f0nrpcx0k2zlsrv79ec28p320fezq9q';
   if (sender !== EXPECTED_REWARDS_WALLET) throw new Error(`Address mismatch: mnemonic derives ${sender}, expected ${EXPECTED_REWARDS_WALLET}`);
   console.log(`👛 Rewards wallet: ${sender}`);
 

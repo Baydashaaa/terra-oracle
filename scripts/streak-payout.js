@@ -8,7 +8,7 @@ import { createHmac, createHash } from 'crypto';
 // Записи, созданные до 1 сентября 2026, указывают на прежний операторский
 // кошелёк недельного пула. Деньги на нём в розыгрыше больше не участвуют,
 // поэтому такие выплаты переадресуются на контракт.
-const WEEKLY_WALLET_LEGACY = 'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz';
+const WEEKLY_WALLET_LEGACY = 'terra152lcj50e47865dwrc9u3u67rnrm6kpfnwejdjl';
 const WEEKLY_POOL          = 'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8';
 function payoutTarget(to) {
   return to === WEEKLY_WALLET_LEGACY ? WEEKLY_POOL : to;

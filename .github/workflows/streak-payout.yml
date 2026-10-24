@@ -30,7 +30,7 @@ jobs:
 
       - name: Process streak payouts
         env:
-          RESERVE_MNEMONIC: ${{ secrets.RESERVE_MNEMONIC }}
+          RESERVE_MNEMONIC: ${{ secrets.RESERVE_MNEMONIC_V2 }}
           ACTIONS_SECRET:   ${{ secrets.ACTIONS_SECRET }}
           WORKER_URL:       https://terra-oracle-questions.vladislav-baydan.workers.dev
         run: node scripts/streak-payout.js

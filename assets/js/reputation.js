@@ -802,7 +802,7 @@ async function loadStatsData() {
     const poolActive        = totalContributors >= MIN_CONTRIBUTORS;
 
     // Fetch REP Rewards wallet balance directly (already 25% of treasury)
-    const REP_REWARDS_WALLET = 'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce';
+    const REP_REWARDS_WALLET = 'terra10gf6zq5f0nrpcx0k2zlsrv79ec28p320fezq9q';
     let poolLunc = 0;
     try {
       const tRes  = await fetch(`https://terra-classic-lcd.publicnode.com/cosmos/bank/v1beta1/balances/${REP_REWARDS_WALLET}`);

@@ -14,5 +14,5 @@ jobs:
       - run: npm install
       - name: Run diagnose
         env:
-          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC }}
+          TREASURY_MNEMONIC: ${{ secrets.TREASURY_MNEMONIC_V2 }}
         run: node scripts/treasury-diagnose.js

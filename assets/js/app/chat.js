@@ -563,7 +563,7 @@ async function loadChatFromChain() {
       // Filter out system/admin wallets - their transfers are not chat messages
       const SYSTEM_WALLETS = [
         'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
-        'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
+        'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw', // TREASURY
         'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm',  // DAILY pool contract
         'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8',  // WEEKLY pool contract
         'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p',  // COLLECTION

@@ -1,12 +1,12 @@
 // ─── TREASURY MODULE · terra-oracle ──────────────────────────
 const T_WALLETS = {
-  treasury:  'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // Main Treasury
+  treasury:  'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw', // Main Treasury
   daily:     'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm', // Daily Draw Pool (контракт, с 31 авг 2026)
   weekly:    'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8', // Weekly Draw Pool (контракт, с 31 авг 2026)
-  rewards:   'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce', // REP Rewards 25%
-  reserve:   'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz', // Reserve 15%
-  liquidity: 'terra1gukarslv6c8n0s2259822l7059putpqxz405su', // Liquidity 50%
-  dev:       'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr', // Development 10%
+  rewards:   'terra10gf6zq5f0nrpcx0k2zlsrv79ec28p320fezq9q', // REP Rewards 25%
+  reserve:   'terra1e0m2ajgn5m8tq9dehu5w5zlvaklagdpcaeuw3a', // Reserve 15%
+  liquidity: 'terra1n9ntqdyf9st6x8uxz5fswa282evu2kgpzcyxef', // Liquidity 50%
+  dev:       'terra17928vmmve4tjkyh6swc2s2dfvthdpjqhttyw5j', // Development 10%
   // Circuit. Пул зон - такие же деньги протокола, как daily и weekly, и
   // входит в TVL. Кошелёк выкупа копит LUNC до порога покупки TCO и тоже
   // входит. Кошелёк сжигания держит TCO, а не LUNC, - в TVL НЕ входит.

@@ -77,7 +77,7 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 | арбитр рынка | суд (адрес выше) |
 | совет суда, кворум 2, голосование 48 ч | terra1nzlwpugmtg53sqldk6j0jvnq9zjrcl59zdy325, terra1wnm5se60umvzxw66tje2vkzdwrh0gwzagv6yjx, terra1x8gxjxgq7eq2hu7yswcn76dw7snzpeu782nyez |
 | draw_pool (недельный пул) | `terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8` |
-| treasury | `terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt`, ключ `treasury` в `~/.terra-mainnet` |
+| treasury | `terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw`, ключ `treasury` в `~/.terra-mainnet` |
 | старый тестовый oracle-prophecy 0.1.0, code 11643 | `terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58` - на паузе, не используется |
 
 Участники мультисига - те же три адреса, что совет суда. Имена публично не называем.

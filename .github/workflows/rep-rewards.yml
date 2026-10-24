@@ -29,7 +29,7 @@ jobs:
 
       - name: Run REP rewards payout
         env:
-          REWARDS_MNEMONIC: ${{ secrets.REWARDS_MNEMONIC }}
+          REWARDS_MNEMONIC: ${{ secrets.REWARDS_MNEMONIC_V2 }}
           ACTIONS_SECRET:   ${{ secrets.ACTIONS_SECRET }}
           WORKER_URL:       https://terra-oracle-questions.vladislav-baydan.workers.dev
         run: node scripts/rep-rewards.js

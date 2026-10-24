@@ -52,14 +52,14 @@
   // Chat lives on-chain: messages are 5,000 LUNC transfers to the Treasury with
   // the text in the tx memo. Replies are encoded in the memo as
   // ">" + first 16 chars of the parent txHash + "|" + text.
-  var TREASURY_WALLET = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+  var TREASURY_WALLET = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
   var CHAT_MIN_ULUNA  = 5000000000;
   var CHAT_MAX_ULUNA  = 5200000000;
   var SYSTEM_WALLETS  = [
     'terra15jt5a9ycsey4hd6nlqgqxccl9aprkmg2mxmfc6', // ADMIN
-    'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt', // TREASURY
-    'terra1amp68zg7vph3nq84ummnfma4dz753ezxfqa9px', // DAILY (кошелёк до 31 авг 2026, оставлен ради истории)
-    'terra1p5l6q95kfl3hes7edy76tywav9f79n6xlkz6qz', // WEEKLY (кошелёк до 31 авг 2026, оставлен ради истории)
+    'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw', // TREASURY
+    'terra1qkewzj0jr9x9vyv38vtspfww6ugvznejapsxhl', // DAILY (кошелёк до 31 авг 2026, оставлен ради истории)
+    'terra152lcj50e47865dwrc9u3u67rnrm6kpfnwejdjl', // WEEKLY (кошелёк до 31 авг 2026, оставлен ради истории)
     'terra1d9ga3dzhg63v6rmm8ahts55ekjpwlm6dusw5cwhpt60s6t0actqqsul6tm', // DAILY pool contract
     'terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8', // WEEKLY pool contract
     'terra16m05j95p9qvq93cdtchjcpwgvny8f57vzdj06p', // COLLECTION
