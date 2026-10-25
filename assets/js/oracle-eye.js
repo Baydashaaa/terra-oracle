@@ -1,489 +1,419 @@
 /* ════════════════════════════════════════════════════════════════
-   ORACLE EYE - animated mascot + feedback widget (self-contained)
+   ORACLE EYE v2 - feedback widget in the navbar (self-contained)
    ----------------------------------------------------------------
-   Drop-in module. Include on any page with:
-     <script src="assets/js/oracle-eye.js?v=1"></script>
-   It injects its own styles, floating button and modal - no other
-   markup needed. Works on terraoracle.io and draw.terraoracle.io.
+   <script src="assets/js/oracle-eye.js?v=..."></script>
 
-   Sends feedback to the Oracle Eye worker (Telegram). Keeps all the
-   original behaviour: bug/idea/other categories, custom label,
-   screenshot attach + Ctrl+V paste + client-side compression,
-   draggable button with saved position, JSON→FormData fallback.
+   The eye sits in the top bar before the wallet button (on phones at
+   the left edge). It blinks, follows the cursor, and turns amber when
+   a JS error happens on the page - the error is attached to the report.
+   Click opens a panel: Bug / Idea / Other, text, screenshot (attach or
+   Ctrl+V), auto-attached context. Sends to the Oracle Eye worker
+   (Telegram), JSON with a FormData fallback, same as v1.
+   No top bar on the page (draw subdomain) - falls back to a fixed
+   corner button.
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  if (window.__oracleEyeLoaded) return;        // guard against double-include
+  if (window.__oracleEyeLoaded) return;
   window.__oracleEyeLoaded = true;
-
-  // В рамке на terraoracle.io/draw глаз не нужен: внешняя страница держит
-  // свой, а внутри iframe он оказывается вторым. Защита выше считает
-  // включения в ОДНОМ окне, а рамка - отдельное окно, поэтому нужен
-  // отдельный отказ. Раньше это пытался делать killEye() в embed-host.js,
-  // но он искал узлы со словом "eye" в id или классе, а здесь они
-  // называются #oe-btn и #oe-bubble.
+  // Inside the /draw iframe the outer page already shows its own eye.
   if (window.top !== window.self ||
       document.documentElement.classList.contains('is-embedded')) return;
 
   var WORKER_URL = 'https://oracle-eye.vladislav-baydan.workers.dev/feedback';
-  // Site label appended to the message (so Telegram shows where it came from)
   var SITE = (location.hostname.indexOf('draw.') === 0) ? 'draw.terraoracle.io' : 'terraoracle.io';
+  var MOBILE = '(max-width:760px)';
 
   var _fbType = 'bug';
   var _busy = false;
-  var _oeDragging = false;
+  var _errors = [];
+  var _btn = null, _panel = null, _backdrop = null, _iris = null;
 
-  /* ── Mascot phrases (no emojis) ──────────────────────────────── */
+  // v1 leftovers: dragged position and the collapsed flag
+  try { localStorage.removeItem('oe-btn-pos'); localStorage.removeItem('oe-collapsed'); } catch (e) {}
+
   var PHRASES = {
-    open:   ["Hey! What's up?", "Got something for me?", "I'm all eyes"],
+    open:   ["What did you notice?", "I'm all eyes", "Got something for me?"],
     bug:    ["Show me the bug", "What broke?"],
-    idea:   ["Ooh, an idea!", "I'm listening"],
+    idea:   ["An idea - I'm listening"],
     other:  ["Go on, I'm listening"],
-    sending:[". . ."],
-    sent:   ["Thanks! Sent it", "Got it, thank you!"],
-    error:  ["Hmm, try again"],
-    empty:  ["Type something first"],
-    hover:  ["Feedback?", "Spotted a bug?", "Share an idea?"]
+    sending:["Sending..."],
+    sent:   ["Sent. Thank you!"],
+    error:  ["Not sent. Try again"],
+    empty:  ["Type a few words first"]
   };
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  /* ── Error capture: starts at load, before the page breaks ───── */
+  function pushError(text) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+    if (!text || /^Script error\.?$/i.test(text) || /ResizeObserver loop/i.test(text)) return;
+    if (_errors.indexOf(text) !== -1) return;
+    _errors.push(text);
+    if (_errors.length > 5) _errors.shift();
+    refreshState();
+  }
+  window.addEventListener('error', function (e) {
+    var f = e && e.filename ? String(e.filename) : '';
+    if (/^(chrome|moz|safari)-extension:/.test(f)) return;       // extensions, not us
+    if (e && e.message) pushError(e.message + (f ? ' @ ' + f.split('/').pop().split('?')[0] + ':' + (e.lineno || 0) : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason;
+    pushError('Unhandled: ' + (r && r.message ? r.message : String(r)));
+  });
 
   /* ── Styles ──────────────────────────────────────────────────── */
   var css = ''
-    + '#oe-btn{position:fixed;right:24px;bottom:24px;width:102px;height:102px;border:none;background:none;cursor:grab;z-index:9998;padding:0;}'
-    + '#oe-btn .oe-eye-wrap{width:102px;height:102px;}'
-    + '#oe-bubble{position:fixed;z-index:9997;background:#16233f;border:1px solid rgba(84,147,247,0.4);border-radius:12px;padding:8px 13px;font-size:13px;color:#dce8ff;white-space:nowrap;font-family:inherit;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.4);}'
-    + '#oe-bubble.show{opacity:1;transform:translateY(0);}'
-    + '#oe-bubble:after{content:"";position:absolute;bottom:-7px;left:24px;width:12px;height:12px;background:#16233f;border-right:1px solid rgba(84,147,247,0.4);border-bottom:1px solid rgba(84,147,247,0.4);transform:rotate(45deg);}'
-    + '#oe-overlay{position:fixed;inset:0;background:rgba(4,8,18,0.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:9999;}'
-    + '#oe-overlay.open{display:flex;}'
-    + '#oe-modal{width:340px;max-width:calc(100vw - 32px);background:#0c1322;border:1px solid rgba(84,147,247,0.25);border-radius:16px;padding:0 22px 22px;font-family:inherit;box-shadow:0 20px 60px rgba(0,0,0,0.5);}'
-    + '#oe-eye-mount{display:flex;justify-content:center;margin-top:-26px;}'
-    + '#oe-title{text-align:center;font-size:15px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:0.02em;}'
-    + '#oe-msg{text-align:center;font-size:12px;color:#9fb4d8;min-height:16px;margin:4px 0 14px;transition:opacity .25s;}'
-    + '#oe-cats{display:flex;gap:7px;margin-bottom:12px;}'
-    + '.oe-cat{flex:1;background:transparent;border:1px solid rgba(84,147,247,0.2);color:#9fb4d8;font-size:12px;padding:8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s;}'
-    + '.oe-cat.active{background:rgba(84,147,247,0.12);border-color:rgba(84,147,247,0.35);color:#7fb0ff;}'
-    + '#oe-other{display:none;width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:11px;padding:7px 10px;margin-bottom:10px;outline:none;font-family:inherit;}'
-    + '#oe-text{width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(84,147,247,0.2);border-radius:8px;color:#dce8ff;font-size:13px;padding:10px;min-height:70px;resize:none;outline:none;font-family:inherit;}'
-    + '#oe-text:focus{border-color:rgba(84,147,247,0.5);}'
-    + '#oe-text::placeholder{color:rgba(255,255,255,0.25);}'
-    + '#oe-img-label{display:block;font-size:11px;color:rgba(255,255,255,0.35);padding:7px 12px;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;text-align:center;cursor:pointer;margin:10px 0 12px;transition:all .2s;}'
-    + '#oe-img-label:hover{border-color:rgba(84,147,247,0.4);color:#9fb4d8;}'
-    + '#oe-img-prev{display:none;margin-bottom:12px;position:relative;}'
-    + '#oe-img-prev img{width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1);}'
-    + '#oe-img-rm{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;line-height:1;}'
-    + '#oe-foot{display:flex;gap:8px;margin-top:4px;}'
-    + '#oe-cancel{flex:1;background:transparent;border:1px solid rgba(255,255,255,0.15);color:#9fb4d8;font-size:13px;padding:11px;border-radius:8px;cursor:pointer;font-family:inherit;}'
-    + '#oe-send{flex:2;background:linear-gradient(135deg,#4178d4,#7b5cff);border:none;color:#fff;font-size:13px;font-weight:500;padding:11px;border-radius:8px;cursor:pointer;font-family:inherit;}'
-    + '#oe-send:disabled{opacity:0.6;cursor:default;}'
+    + '@keyframes oeBlink{0%,93%,100%{transform:scaleY(1)}95.5%{transform:scaleY(.08)}}'
+    + '#oe-nav{position:relative;width:44px;height:44px;padding:0;margin:0;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:transform .2s;-webkit-tap-highlight-color:transparent;}'
+    + '#oe-nav:hover,#oe-nav.open{transform:scale(1.06);}'
+    + '#oe-nav:focus-visible{outline:2px solid #22D3EE;outline-offset:2px;border-radius:12px;}'
+    + '#oe-nav svg{width:44px;height:44px;overflow:visible;display:block;}'
+    + '#oe-nav .oe-aura{opacity:.55;transition:opacity .25s;}'
+    + '#oe-nav:hover .oe-aura,#oe-nav.open .oe-aura,#oe-nav.oe-warn .oe-aura{opacity:1;}'
+    + '#oe-nav .oe-rays{opacity:.7;transition:opacity .25s;}'
+    + '#oe-nav:hover .oe-rays,#oe-nav.open .oe-rays{opacity:1;}'
+    + '#oe-nav .oe-blinkg{transform-origin:24px 24px;transform-box:view-box;animation:oeBlink 7s infinite;}'
+    + '#oe-nav .oe-irisg{transition:transform .14s ease-out;}'
+    + '#oe-nav .oe-pupil{transform-origin:24px 24px;transform-box:view-box;transition:transform .2s;}'
+    + '#oe-nav:hover .oe-pupil,#oe-nav.open .oe-pupil{transform:scale(1.25);}'
+    + '#oe-badge{position:absolute;top:0;right:-2px;min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:8px;background:#FFB547;color:#1A1205;font:700 10px/16px "Exo 2",sans-serif;text-align:center;box-shadow:0 0 10px rgba(255,181,71,.6);display:none;pointer-events:none;}'
+    + '#oe-nav.oe-warn #oe-badge{display:block;}'
+    + '#oe-nav.oe-float{position:fixed;right:18px;bottom:18px;z-index:9998;}'
+    + '@media ' + MOBILE + '{#oe-nav{order:-1;margin-right:auto;}}'
+
+    + '#oe-backdrop{position:fixed;inset:0;z-index:9998;background:transparent;display:none;}'
+    + '#oe-backdrop.open{display:block;}'
+    + '#oe-panel{position:fixed;z-index:9999;width:380px;max-width:calc(100vw - 24px);box-sizing:border-box;padding:16px;border-radius:16px;'
+    +   'background:linear-gradient(160deg,rgba(22,18,52,.97),rgba(11,15,30,.97));border:1px solid rgba(123,92,255,.35);'
+    +   'box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 32px rgba(123,92,255,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'
+    +   'font-family:"Exo 2",sans-serif;color:#E8F0FF;display:none;max-height:calc(100dvh - 24px);overflow-y:auto;}'
+    + '#oe-panel.open{display:block;animation:oeIn .18s ease;}'
+    + '@keyframes oeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}'
+    + '#oe-panel:before{content:"";position:absolute;top:0;left:16px;right:16px;height:1px;background:linear-gradient(90deg,transparent,#7B5CFF,#00D4FF,transparent);opacity:.7;}'
+    + '#oe-panel .oe-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(123,92,255,.2);}'
+    + '#oe-panel .oe-ttl{font-family:"Rajdhani",sans-serif;font-size:15px;font-weight:700;letter-spacing:.18em;color:#fff;}'
+    + '#oe-panel .oe-pill{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:999px;background:rgba(34,211,238,.12);font-size:11px;}'
+    + '#oe-panel .oe-pill i{width:7px;height:7px;border-radius:50%;background:#22D3EE;}'
+    + '#oe-panel.oe-warn .oe-pill{background:rgba(255,181,71,.14);}'
+    + '#oe-panel.oe-warn .oe-pill i{background:#FFB547;}'
+    + '#oe-msg{font-size:12px;color:#9FB0D0;min-height:16px;margin:10px 0 2px;transition:opacity .2s;}'
+    + '#oe-cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 12px;padding:4px;border-radius:12px;background:rgba(123,92,255,.06);border:1px solid rgba(123,92,255,.15);}'
+    + '.oe-cat{height:36px;border-radius:9px;border:0;cursor:pointer;font:600 12px "Exo 2",sans-serif;letter-spacing:.04em;background:transparent;color:#8FA3C7;}'
+    + '.oe-cat.active{background:linear-gradient(135deg,#3B1FCC,#7B5CFF);color:#fff;}'
+    + '.oe-cat:focus-visible,#oe-send:focus-visible,#oe-cancel:focus-visible{outline:2px solid #22D3EE;outline-offset:2px;}'
+    + '#oe-panel .oe-lbl{display:block;margin:0 0 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;}'
+    + '#oe-other{display:none;width:100%;box-sizing:border-box;margin-bottom:10px;padding:9px 12px;border-radius:10px;border:1px solid rgba(123,92,255,.25);background:rgba(7,10,20,.6);color:#E8F0FF;font:13px "Exo 2",sans-serif;outline:none;}'
+    + '#oe-text{width:100%;box-sizing:border-box;height:96px;resize:none;padding:12px;border-radius:12px;border:1px solid rgba(123,92,255,.25);background:rgba(7,10,20,.6);color:#E8F0FF;font:13px/1.5 "Exo 2",sans-serif;outline:none;}'
+    + '#oe-text:focus,#oe-other:focus{border-color:rgba(167,139,250,.6);}'
+    + '#oe-text::placeholder,#oe-other::placeholder{color:#6B82A8;}'
+    + '#oe-img-label{display:block;margin:10px 0;padding:8px 12px;border:1px dashed rgba(123,92,255,.3);border-radius:10px;text-align:center;font-size:12px;color:#9FB0D0;cursor:pointer;transition:border-color .2s,color .2s;}'
+    + '#oe-img-label:hover{border-color:rgba(167,139,250,.6);color:#E8F0FF;}'
+    + '#oe-img-prev{display:none;margin-bottom:10px;position:relative;}'
+    + '#oe-img-prev img{width:100%;max-height:120px;object-fit:cover;border-radius:10px;border:1px solid rgba(123,92,255,.25);}'
+    + '#oe-img-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;cursor:pointer;font-size:13px;line-height:1;}'
+    + '#oe-panel .oe-lbl2{margin:2px 0 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8FA3C7;}'
+    + '#oe-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}'
+    + '#oe-chips span{padding:5px 10px;border-radius:999px;border:1px solid rgba(123,92,255,.22);background:rgba(123,92,255,.06);font-size:11px;color:#C9D6F0;}'
+    + '#oe-chips span.warn{border-color:rgba(255,181,71,.5);background:rgba(255,181,71,.1);color:#FFD08A;}'
+    + '#oe-foot{display:flex;gap:8px;}'
+    + '#oe-cancel{flex:1;height:44px;border-radius:12px;border:1px solid rgba(123,92,255,.3);background:transparent;color:#9FB0D0;font:600 12px "Exo 2",sans-serif;cursor:pointer;}'
+    + '#oe-send{flex:2;height:44px;border-radius:12px;border:1px solid rgba(123,92,255,.5);background:linear-gradient(135deg,#3B1FCC,#7B5CFF);color:#fff;font:700 12px "Exo 2",sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 20px rgba(123,92,255,.35);}'
+    + '#oe-send:disabled{opacity:.6;cursor:default;}'
     + '#oe-status{text-align:center;font-size:12px;margin-top:10px;min-height:16px;}'
-    + '#oe-hide-link{display:block;text-align:center;font-size:10px;color:rgba(159,180,216,0.55);margin-top:14px;cursor:pointer;text-decoration:underline;}'
-    + '#oe-hide-link:hover{color:#9fb4d8;}'
-    + '#oe-restore{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:#16233f;border:1px solid rgba(84,147,247,0.4);align-items:center;justify-content:center;cursor:pointer;z-index:9998;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;overflow:hidden;padding:0;touch-action:manipulation;}'
-    + '#oe-restore.show{display:flex;}'
-    + '#oe-restore.in-bar{position:static;width:38px;height:38px;flex:none;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;}'
-    + '#oe-restore.in-bar:hover{border:0;filter:brightness(1.15);}'
-    + '#oe-restore:hover{border-color:rgba(84,147,247,0.7);}';
+    + '@media ' + MOBILE + '{'
+    +   '#oe-backdrop{background:rgba(3,5,12,.6);}'
+    +   '#oe-panel{left:0!important;right:0;top:auto!important;bottom:0;width:auto;max-width:none;border-radius:24px 24px 0 0;border-bottom:0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));max-height:85dvh;}'
+    +   '#oe-panel .oe-grab{display:block;}'
+    +   '#oe-text{font-size:16px;}'
+    + '}'
+    + '#oe-panel .oe-grab{display:none;width:44px;height:5px;border-radius:3px;background:rgba(167,139,250,.4);margin:0 auto 12px;}'
+    + '@media (prefers-reduced-motion:reduce){#oe-nav .oe-blinkg{animation:none;}#oe-nav,#oe-nav .oe-irisg,#oe-nav .oe-pupil{transition:none;}#oe-panel.open{animation:none;}}';
 
-  /* ── The Eye SVG-ish markup (sizes via .scale wrapper) ───────── */
-  // size: button = 56, modal = 90 wide stage
-  function eyeMarkup(scale) {
-    // scale 1 ≈ 90px stage (modal). Button uses ~0.62.
-    var W = Math.round(64 * scale), H = Math.round(84 * scale);
-    var ballW = Math.round(54 * scale), ballH = Math.round(66 * scale);
-    var irisS = Math.round(24 * scale), pupS = Math.round(10 * scale), shineS = Math.round(5 * scale);
-    var baseW = Math.round(50 * scale), baseH = Math.round(20 * scale);
-    return ''
-      + '<div class="oe-bob" style="position:relative;width:' + W + 'px;height:' + H + 'px;">'
-      +   '<div style="position:absolute;left:' + Math.round(7*scale) + 'px;top:' + Math.round(62*scale) + 'px;width:' + baseW + 'px;height:' + baseH + 'px;background:#0e1626;border:2px solid #1d2c44;border-radius:50%;"></div>'
-      +   '<div class="oe-glow" style="position:absolute;left:' + Math.round(18*scale) + 'px;top:' + Math.round(67*scale) + 'px;width:' + Math.round(30*scale) + 'px;height:' + Math.round(7*scale) + 'px;border-radius:50%;background:#2d6cff;filter:blur(4px);opacity:.8;"></div>'
-      +   '<div style="position:absolute;left:' + Math.round(5*scale) + 'px;top:0;width:' + ballW + 'px;height:' + ballH + 'px;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 38% 30%, #fdfdff 0%, #e3e9f5 45%, #c2ccdf 100%);border:2px solid #aeb8cc;overflow:hidden;box-shadow:0 0 14px rgba(70,130,255,0.4);">'
-      +     '<div class="oe-iris" style="position:absolute;left:' + Math.round(15*scale) + 'px;top:' + Math.round(19*scale) + 'px;width:' + irisS + 'px;height:' + irisS + 'px;border-radius:50%;background:radial-gradient(circle at 40% 35%, #6db0ff 0%, #2f7be6 45%, #14346e 100%);border:2px solid #1a4ea0;transition:transform .45s cubic-bezier(.4,0,.2,1);">'
-      +       '<div style="position:absolute;left:' + Math.round(6*scale) + 'px;top:' + Math.round(6*scale) + 'px;width:' + pupS + 'px;height:' + pupS + 'px;border-radius:50%;background:#0a1f45;"></div>'
-      +       '<div style="position:absolute;left:' + Math.round(7*scale) + 'px;top:' + Math.round(4*scale) + 'px;width:' + shineS + 'px;height:' + shineS + 'px;border-radius:50%;background:#eaf3ff;"></div>'
-      +     '</div>'
-      +     '<div class="oe-lid" style="position:absolute;left:-2px;top:-2px;width:' + (ballW+2) + 'px;height:0;background:#c2ccdf;border-bottom:2px solid #aeb8cc;transition:height .12s ease;"></div>'
-      +   '</div>'
-      + '</div>';
-  }
+  /* ── The All-seeing eye ──────────────────────────────────────── */
+  var SVG = ''
+    + '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">'
+    + '<defs>'
+    +   '<radialGradient id="oe-g-iris" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#9FF6FF"/><stop offset="35%" stop-color="#00D4FF"/><stop offset="75%" stop-color="#7B5CFF"/><stop offset="100%" stop-color="#2A1580"/></radialGradient>'
+    +   '<radialGradient id="oe-g-iris-w" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFE7B0"/><stop offset="35%" stop-color="#FFB547"/><stop offset="75%" stop-color="#C2410C"/><stop offset="100%" stop-color="#5A1F05"/></radialGradient>'
+    +   '<radialGradient id="oe-g-aura" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#00D4FF" stop-opacity=".45"/><stop offset="55%" stop-color="#7B5CFF" stop-opacity=".18"/><stop offset="100%" stop-color="#7B5CFF" stop-opacity="0"/></radialGradient>'
+    +   '<radialGradient id="oe-g-aura-w" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFB547" stop-opacity=".5"/><stop offset="55%" stop-color="#FF8A3D" stop-opacity=".18"/><stop offset="100%" stop-color="#FF8A3D" stop-opacity="0"/></radialGradient>'
+    +   '<radialGradient id="oe-g-sclera" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#241C58"/><stop offset="100%" stop-color="#070A16"/></radialGradient>'
+    +   '<linearGradient id="oe-g-lid" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7B5CFF"/><stop offset="100%" stop-color="#00D4FF"/></linearGradient>'
+    +   '<linearGradient id="oe-g-ray" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#00D4FF" stop-opacity=".9"/><stop offset="100%" stop-color="#7B5CFF" stop-opacity="0"/></linearGradient>'
+    +   '<clipPath id="oe-clip"><path d="M6 24C12 13 36 13 42 24C36 35 12 35 6 24Z"/></clipPath>'
+    +   '<filter id="oe-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '</defs>'
+    + '<circle class="oe-aura" cx="24" cy="24" r="23.5" fill="url(#oe-g-aura)"/>'
+    + '<g class="oe-rays">'
+    +   '<polygon points="22.8,10 25.2,10 24,2.5" fill="url(#oe-g-ray)"/>'
+    +   '<polygon points="29.96,11.28 32.04,12.48 34.2,6.3" fill="url(#oe-g-ray)"/>'
+    +   '<polygon points="15.96,12.48 18.04,11.28 13.8,6.3" fill="url(#oe-g-ray)"/>'
+    +   '<polygon points="35.52,15.96 36.72,18.04 41,14.2" fill="url(#oe-g-ray)"/>'
+    +   '<polygon points="11.28,18.04 12.48,15.96 7,14.2" fill="url(#oe-g-ray)"/>'
+    + '</g>'
+    + '<g class="oe-blinkg">'
+    +   '<path d="M6 24C12 13 36 13 42 24C36 35 12 35 6 24Z" fill="url(#oe-g-sclera)"/>'
+    +   '<g clip-path="url(#oe-clip)"><g class="oe-irisg">'
+    +     '<circle class="oe-iris" cx="24" cy="24" r="7.4" fill="url(#oe-g-iris)" filter="url(#oe-glow)"/>'
+    +     '<circle class="oe-pupil" cx="24" cy="24" r="3.3" fill="#02030A"/>'
+    +     '<circle cx="26.6" cy="21.4" r="1.2" fill="#fff" opacity=".9"/>'
+    +   '</g></g>'
+    +   '<path d="M6 24C12 13 36 13 42 24C35 17.6 13 17.6 6 24Z" fill="url(#oe-g-lid)"/>'
+    +   '<path d="M6 24C12 35 36 35 42 24C35 30.2 13 30.2 6 24Z" fill="url(#oe-g-lid)" opacity=".5"/>'
+    + '</g>'
+    + '</svg>';
 
-  /* ── Compact standalone eyeball icon (for the small restore tab) ──────
-     The full eyeMarkup() includes a stand/base meant for a taller stage;
-     scaling that down and clipping it in a small round badge looked like
-     a messy blob. This draws just the eyeball itself, sized to sit
-     cleanly centered inside a small circle with no cropping needed. */
-  function restoreIconMarkup() {
-    var ballW = 36, ballH = 44;
-    return ''
-      + '<div style="position:relative;width:' + ballW + 'px;height:' + ballH + 'px;border-radius:50% 50% 48% 48%;background:radial-gradient(circle at 38% 30%, #fdfdff 0%, #e3e9f5 45%, #c2ccdf 100%);border:2px solid #aeb8cc;box-shadow:0 0 10px rgba(70,130,255,0.35);">'
-      +   '<div style="position:absolute;left:10px;top:13px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 40% 35%, #6db0ff 0%, #2f7be6 45%, #14346e 100%);border:2px solid #1a4ea0;">'
-      +     '<div style="position:absolute;left:4px;top:4px;width:7px;height:7px;border-radius:50%;background:#0a1f45;"></div>'
-      +     '<div style="position:absolute;left:5px;top:3px;width:3px;height:3px;border-radius:50%;background:#eaf3ff;"></div>'
-      +   '</div>'
-      + '</div>';
-  }
-
-  /* ── Build DOM ───────────────────────────────────────────────── */
+  /* ── Build ───────────────────────────────────────────────────── */
   function build() {
     var style = document.createElement('style');
     style.textContent = css;
     document.head.appendChild(style);
 
-    var btn = document.createElement('button');
-    btn.id = 'oe-btn';
-    btn.title = 'Feedback & Bug Report';
-    btn.style.position = 'fixed';
-    btn.innerHTML = '<div class="oe-eye-wrap" style="transform:scale(1.116);transform-origin:center;display:flex;align-items:center;justify-content:center;">' + eyeMarkup(1) + '</div>';
-    document.body.appendChild(btn);
+    _btn = document.createElement('button');
+    _btn.id = 'oe-nav';
+    _btn.type = 'button';
+    _btn.title = 'Report a bug or share an idea';
+    _btn.setAttribute('aria-label', 'Oracle Eye: report a bug or share an idea');
+    _btn.setAttribute('aria-haspopup', 'dialog');
+    _btn.setAttribute('aria-expanded', 'false');
+    _btn.innerHTML = SVG + '<span id="oe-badge"></span>';
+    // Random start, so the blink does not look mechanical
+    _btn.querySelector('.oe-blinkg').style.animationDelay = (-Math.random() * 7).toFixed(2) + 's';
+    _iris = _btn.querySelector('.oe-irisg');
 
-    // ── Restore tab (small peeking eye, shown only while collapsed) ──
-    var restoreBtn = document.createElement('button');
-    restoreBtn.id = 'oe-restore';
-    restoreBtn.title = 'Show Oracle Eye';
-    restoreBtn.setAttribute('aria-label', 'Show Oracle Eye');
-    restoreBtn.innerHTML = restoreIconMarkup();
-    // На десктопе свёрнутый глазок разворачивает маскота. В шапке телефона
-    // он сразу открывает форму отзыва, а вернуть маскота можно из формы.
-    restoreBtn.addEventListener('click', function () {
-      if (restoreBtn.classList.contains('in-bar')) openModal(); else expand();
-    });
-    document.body.appendChild(restoreBtn);
+    var wallet = document.getElementById('wallet-wrap');
+    var bar = document.querySelector('.topbar');
+    if (wallet && wallet.parentNode) wallet.parentNode.insertBefore(_btn, wallet);
+    else if (bar) bar.appendChild(_btn);
+    else { _btn.classList.add('oe-float'); document.body.appendChild(_btn); }
 
-    // Свёрнутый глаз встаёт туда, где стоял маскот, а не в угол по умолчанию.
-    // Видимая кнопка - берём её центр; скрытая (перезагрузка в свёрнутом
-    // виде) - сохранённую позицию. Без сохранённой остаётся угол из CSS.
-    function placeRestore() {
-      if (restoreBtn.classList.contains('in-bar')) return;
-      var x = null, y = null, r = btn.getBoundingClientRect();
-      if (r.width) { x = r.left + (r.width - 50) / 2; y = r.top + (r.height - 50) / 2; }
-      else {
-        try {
-          var sv = JSON.parse(localStorage.getItem('oe-btn-pos') || 'null');
-          if (sv && sv.left && sv.top) { x = parseFloat(sv.left) + 26; y = parseFloat(sv.top) + 26; }
-        } catch (e) {}
-      }
-      if (x === null || !isFinite(x) || !isFinite(y)) {
-        restoreBtn.style.left = restoreBtn.style.top = restoreBtn.style.right = restoreBtn.style.bottom = '';
-        return;
-      }
-      x = Math.max(4, Math.min(window.innerWidth - 54, x));
-      y = Math.max(4, Math.min(window.innerHeight - 54, y));
-      restoreBtn.style.left = x + 'px'; restoreBtn.style.top = y + 'px';
-      restoreBtn.style.right = 'auto'; restoreBtn.style.bottom = 'auto';
-    }
-    window.addEventListener('resize', function () { if (restoreBtn.classList.contains('show')) placeRestore(); });
+    _backdrop = document.createElement('div');
+    _backdrop.id = 'oe-backdrop';
+    document.body.appendChild(_backdrop);
 
-    // Телефон (до 760 px, как в shell.css): свёрнутый глазок живёт в шапке,
-    // сразу после .spacer, без круга и фона. Шире - снова плавает на экране.
-    var mqBar = window.matchMedia('(max-width:760px)');
-    function placeRestoreSpot() {
-      var bar = document.querySelector('.topbar');
-      if (mqBar.matches && bar) {
-        var sp = bar.querySelector('.spacer');
-        if (restoreBtn.parentNode !== bar) {
-          if (sp && sp.nextSibling) bar.insertBefore(restoreBtn, sp.nextSibling); else bar.appendChild(restoreBtn);
-        }
-        restoreBtn.classList.add('in-bar');
-        restoreBtn.style.left = restoreBtn.style.top = restoreBtn.style.right = restoreBtn.style.bottom = '';
-      } else {
-        if (restoreBtn.parentNode !== document.body) document.body.appendChild(restoreBtn);
-        restoreBtn.classList.remove('in-bar');
-        if (restoreBtn.classList.contains('show')) placeRestore();
-      }
-    }
-    if (mqBar.addEventListener) mqBar.addEventListener('change', placeRestoreSpot);
-    else if (mqBar.addListener) mqBar.addListener(placeRestoreSpot);
+    _panel = document.createElement('div');
+    _panel.id = 'oe-panel';
+    _panel.setAttribute('role', 'dialog');
+    _panel.setAttribute('aria-label', 'Oracle Eye');
+    _panel.innerHTML = ''
+      + '<div class="oe-grab"></div>'
+      + '<div class="oe-top"><div class="oe-ttl">ORACLE EYE</div><div class="oe-pill"><i></i><span id="oe-pill-txt">Watching</span></div></div>'
+      + '<div id="oe-msg"></div>'
+      + '<div id="oe-cats" role="group" aria-label="Type">'
+      +   '<button type="button" class="oe-cat active" data-type="bug" aria-pressed="true">Bug</button>'
+      +   '<button type="button" class="oe-cat" data-type="idea" aria-pressed="false">Idea</button>'
+      +   '<button type="button" class="oe-cat" data-type="other" aria-pressed="false">Other</button>'
+      + '</div>'
+      + '<input id="oe-other" type="text" placeholder="Your own label" aria-label="Your own label">'
+      + '<label class="oe-lbl" for="oe-text" id="oe-text-lbl">What went wrong?</label>'
+      + '<textarea id="oe-text" placeholder="What you did and what you expected to happen"></textarea>'
+      + '<label id="oe-img-label" for="oe-img">+ Attach or paste a screenshot (Ctrl+V)</label>'
+      + '<input type="file" id="oe-img" accept="image/*" style="display:none">'
+      + '<div id="oe-img-prev"><img id="oe-img-thumb" alt="Attached screenshot"><button id="oe-img-rm" type="button" aria-label="Remove screenshot">&times;</button></div>'
+      + '<div class="oe-lbl2">Attached automatically</div>'
+      + '<div id="oe-chips"></div>'
+      + '<div id="oe-foot"><button id="oe-cancel" type="button">Cancel</button><button id="oe-send" type="button">Send report</button></div>'
+      + '<div id="oe-status" role="status"></div>';
+    document.body.appendChild(_panel);
 
-    function setHideLabel(collapsed) {
-      var l = document.getElementById('oe-hide-link');
-      if (l) l.textContent = collapsed ? 'Show mascot' : 'Hide this mascot';
-    }
+    _btn.addEventListener('click', function () { isOpen() ? closePanel() : openPanel(); });
+    _backdrop.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen()) { closePanel(); _btn.focus(); } });
+    window.addEventListener('resize', function () { if (isOpen()) placePanel(); });
 
-    function collapse() {
-      placeRestore();
-      btn.style.display = 'none';
-      placeRestoreSpot();
-      setHideLabel(true);
-      bubble.classList.remove('show');
-      restoreBtn.classList.add('show');
-      try { localStorage.setItem('oe-collapsed', '1'); } catch (e) {}
-    }
-    function expand() {
-      btn.style.display = '';
-      restoreBtn.classList.remove('show');
-      setHideLabel(false);
-      try { localStorage.removeItem('oe-collapsed'); } catch (e) {}
-    }
-    window.OracleEye_hide = collapse;
-    window.OracleEye_show = expand;
-
-    var bubble = document.createElement('div');
-    bubble.id = 'oe-bubble';
-    document.body.appendChild(bubble);
-
-    var overlay = document.createElement('div');
-    overlay.id = 'oe-overlay';
-    overlay.innerHTML = ''
-      + '<div id="oe-modal">'
-      +   '<div id="oe-eye-mount"><div style="width:90px;height:96px;display:flex;justify-content:center;">' + eyeMarkup(1) + '</div></div>'
-      +   '<div id="oe-title">Oracle Eye</div>'
-      +   '<div id="oe-msg"></div>'
-      +   '<div id="oe-cats">'
-      +     '<button class="oe-cat active" data-type="bug">Bug</button>'
-      +     '<button class="oe-cat" data-type="idea">Idea</button>'
-      +     '<button class="oe-cat" data-type="other">Other</button>'
-      +   '</div>'
-      +   '<input id="oe-other" type="text" placeholder="Custom label...">'
-      +   '<textarea id="oe-text" placeholder="Describe the issue or idea..."></textarea>'
-      +   '<label id="oe-img-label" for="oe-img">+ Attach or paste screenshot (Ctrl+V)</label>'
-      +   '<input type="file" id="oe-img" accept="image/*" style="display:none;">'
-      +   '<div id="oe-img-prev"><img id="oe-img-thumb"><button id="oe-img-rm" type="button">&times;</button></div>'
-      +   '<div id="oe-foot">'
-      +     '<button id="oe-cancel" type="button">Cancel</button>'
-      +     '<button id="oe-send" type="button">Send</button>'
-      +   '</div>'
-      +   '<div id="oe-status"></div>'
-      +   '<div id="oe-hide-link">Hide this mascot</div>'
-      + '</div>';
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
-    document.body.appendChild(overlay);
-    overlay.querySelector('#oe-hide-link').addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (restoreBtn.classList.contains('show')) expand(); else collapse();
-      closeModal();
-    });
-
-    wireMascot();
     wireForm();
-    wireDrag(btn);
-
-    // Restore collapsed state immediately (before first paint of this
-    // widget) so returning visitors who hid it don't see it flash back on.
-    try {
-      if (localStorage.getItem('oe-collapsed') === '1') { btn.style.display = 'none'; restoreBtn.classList.add('show'); placeRestore(); placeRestoreSpot(); setHideLabel(true); }
-    } catch (e) {}
+    wireGaze();
+    refreshState();
   }
 
-  /* ── Mascot animation ────────────────────────────────────────── */
-  var _modalEye = {};
-  function wireMascot() {
-    var mount = document.querySelector('#oe-eye-mount');
-    _modalEye.iris = mount.querySelector('.oe-iris');
-    _modalEye.lid  = mount.querySelector('.oe-lid');
-    _modalEye.bob  = mount.querySelector('.oe-bob');
-    _modalEye.glow = mount.querySelector('.oe-glow');
+  /* ── Gaze: the pupil follows the cursor; idle glances on touch ─ */
+  function setGaze(x, y) { if (_iris) _iris.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px)'; }
+  function wireGaze() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var raf = 0, mx = 0, my = 0, lastMove = 0;
+    document.addEventListener('mousemove', function (e) {
+      mx = e.clientX; my = e.clientY; lastMove = Date.now();
+      if (!raf) raf = requestAnimationFrame(function () {
+        raf = 0;
+        var r = _btn.getBoundingClientRect(); if (!r.width) return;
+        var dx = mx - (r.left + r.width / 2), dy = my - (r.top + r.height / 2);
+        var d = Math.hypot(dx, dy) || 1, m = Math.min(2.4, d / 90);
+        setGaze(dx / d * m, dy / d * m * 0.6);
+      });
+    }, { passive: true });
+    setInterval(function () {
+      if (Date.now() - lastMove < 4000 || isOpen()) return;
+      setGaze((Math.random() * 2 - 1) * 2.2, (Math.random() * 2 - 1) * 0.9);
+    }, 3800);
+  }
 
-    // Button eye (idle blink only)
-    var bwrap = document.querySelector('#oe-btn');
-    _btnEye.iris = bwrap.querySelector('.oe-iris');
-    _btnEye.lid  = bwrap.querySelector('.oe-lid');
-    _btnEye.glow = bwrap.querySelector('.oe-glow');
+  /* ── State: normal / error caught ────────────────────────────── */
+  function refreshState() {
+    if (!_btn) return;
+    var n = _errors.length, warn = n > 0;
+    _btn.classList.toggle('oe-warn', warn);
+    _btn.querySelector('#oe-badge').textContent = n ? String(n) : '';
+    _btn.querySelector('.oe-iris').setAttribute('fill', warn ? 'url(#oe-g-iris-w)' : 'url(#oe-g-iris)');
+    _btn.querySelector('.oe-aura').setAttribute('fill', warn ? 'url(#oe-g-aura-w)' : 'url(#oe-g-aura)');
+    _btn.title = warn ? 'Something went wrong on this page - send a report' : 'Report a bug or share an idea';
+    if (_panel) {
+      _panel.classList.toggle('oe-warn', warn);
+      _panel.querySelector('#oe-pill-txt').textContent = warn ? (n === 1 ? '1 error caught' : n + ' errors caught') : 'Watching';
+    }
+  }
 
-    // idle loops - modal eye
-    setInterval(function () { if (!_busy && isOpen()) blink(_modalEye); }, 3600);
-    var tk = 0;
-    setInterval(function () { if (_busy || !isOpen()) return; tk++; moveIris(_modalEye, Math.sin(tk / 2) * 5, 0); }, 1500);
-    setInterval(function () { if (_modalEye.glow) _modalEye.glow.style.opacity = (0.55 + Math.random() * 0.35).toFixed(2); }, 900);
+  /* ── Context attached to every report ────────────────────────── */
+  function browserName() {
+    var u = navigator.userAgent, b = 'Browser';
+    if (/Edg\//.test(u)) b = 'Edge'; else if (/OPR\//.test(u)) b = 'Opera';
+    else if (/Firefox\//.test(u)) b = 'Firefox'; else if (/Chrome\//.test(u)) b = 'Chrome';
+    else if (/Safari\//.test(u)) b = 'Safari';
+    return b + (/Mobi|Android|iPhone|iPad/.test(u) ? ' mobile' : '');
+  }
+  function walletAddr() {
+    return (typeof connectedAddress !== 'undefined' && connectedAddress) ? connectedAddress
+         : (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) ? globalWalletAddress
+         : '';
+  }
+  function renderChips() {
+    var page = location.pathname + location.hash;
+    var html = '<span>Page ' + esc(page.length > 28 ? page.slice(0, 28) + '...' : page) + '</span>'
+      + '<span>' + esc(browserName()) + ', ' + window.innerWidth + '×' + window.innerHeight + '</span>'
+      + '<span>' + (walletAddr() ? 'Wallet connected' : 'No wallet') + '</span>'
+      + '<span class="' + (_errors.length ? 'warn' : '') + '">Page errors: ' + _errors.length + '</span>';
+    _panel.querySelector('#oe-chips').innerHTML = html;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // Telegram Markdown breaks on stray _ * ` [ in error text
+  function plain(s) { return String(s).replace(/[_*`\[\]]/g, ' '); }
 
-    // idle loops - button eye (always, subtle)
-    setInterval(function () { if (!isOpen()) blink(_btnEye); }, 4200);
-    setInterval(function () { if (_btnEye.glow) _btnEye.glow.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2); }, 1100);
-
-    // ── Eye follows the cursor when it comes near the button ──
-    var btnEl = document.querySelector('#oe-btn');
-    var WATCH_RADIUS = 320;
-    var MAX_OFFSET = 7;
-    var btnIris = _btnEye.iris;
-    var driftT = 0;
-    var nearNow = false;
-
-    if (btnIris) btnIris.style.transition = 'transform .15s ease-out';
-
-    window.addEventListener('mousemove', function (e) {
-      if (isOpen() || _oeDragging || !btnIris) return;
-      var r = btnEl.getBoundingClientRect();
-      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      var dx = e.clientX - cx, dy = e.clientY - cy;
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < WATCH_RADIUS) {
-        nearNow = true;
-        var len = dist || 1;
-        btnIris.style.transition = 'transform .12s ease-out';
-        btnIris.style.transform = 'translate(' + (dx / len * MAX_OFFSET).toFixed(1) + 'px,' + (dy / len * MAX_OFFSET).toFixed(1) + 'px)';
-        if (_btnEye.glow) _btnEye.glow.style.opacity = '0.95';
-      } else {
-        nearNow = false;
+  /* ── Panel ───────────────────────────────────────────────────── */
+  function isOpen() { return _panel && _panel.classList.contains('open'); }
+  function placePanel() {
+    if (window.matchMedia(MOBILE).matches || _btn.classList.contains('oe-float')) {
+      _panel.style.left = ''; _panel.style.top = '';
+      if (_btn.classList.contains('oe-float') && !window.matchMedia(MOBILE).matches) {
+        _panel.style.left = 'auto'; _panel.style.right = '18px'; _panel.style.top = 'auto'; _panel.style.bottom = '74px';
       }
-    });
-
-    // gentle idle drift only when cursor is NOT near
-    setInterval(function () {
-      if (isOpen() || nearNow || !btnIris) return;
-      driftT++;
-      btnIris.style.transition = 'transform .8s ease-in-out';
-      btnIris.style.transform = 'translate(' + (Math.sin(driftT / 2) * 3).toFixed(1) + 'px,' + (Math.cos(driftT / 3) * 2).toFixed(1) + 'px)';
-    }, 1800);
-
-    // ── Button speech bubble: on hover + occasionally while idle ──
-    var btn = document.querySelector('#oe-btn');
-    var bubble = document.querySelector('#oe-bubble');
-    var bubbleTimer = null;
-
-    function positionBubble() {
-      var r = btn.getBoundingClientRect();
-      // place bubble above the button, tail pointing down to it
-      bubble.style.left = (r.left + 6) + 'px';
-      bubble.style.top = (r.top - bubble.offsetHeight - 12) + 'px';
+      return;
     }
-    function showBubble(text, holdMs) {
-      if (isOpen()) return;
-      bubble.textContent = text;
-      bubble.style.left = '-9999px'; bubble.style.top = '-9999px';
-      bubble.classList.add('show');
-      positionBubble();
-      clearTimeout(bubbleTimer);
-      if (holdMs) bubbleTimer = setTimeout(hideBubble, holdMs);
-    }
-    function hideBubble() { bubble.classList.remove('show'); }
-
-    btn.addEventListener('mouseenter', function () { showBubble(pick(PHRASES.hover), 0); });
-    btn.addEventListener('mouseleave', function () { hideBubble(); });
-
-    // occasional idle greeting (when not hovered, not open)
-    setInterval(function () {
-      if (isOpen() || bubble.classList.contains('show')) return;
-      if (Math.random() < 0.5) showBubble(pick(PHRASES.hover), 3000);
-    }, 9000);
-
-    window.addEventListener('resize', function () { if (bubble.classList.contains('show')) positionBubble(); });
-    // keep bubble glued to button while dragging
-    setInterval(function () { if (bubble.classList.contains('show')) positionBubble(); }, 200);
+    var r = _btn.getBoundingClientRect(), w = _panel.offsetWidth || 380;
+    var left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2));
+    _panel.style.left = left + 'px';
+    _panel.style.top = (r.bottom + 10) + 'px';
   }
-  var _btnEye = {};
-
-  function moveIris(eye, x, y) { if (eye.iris) eye.iris.style.transform = 'translate(' + x + 'px,' + y + 'px)'; }
-  function blink(eye) {
-    if (!eye.lid) return;
-    var ball = eye.lid.parentElement;
-    eye.lid.style.height = (ball.offsetHeight) + 'px';
-    setTimeout(function () { eye.lid.style.height = '0'; }, 130);
+  function openPanel() {
+    renderChips();
+    refreshState();
+    _panel.classList.add('open');
+    _backdrop.classList.add('open');
+    _btn.classList.add('open');
+    _btn.setAttribute('aria-expanded', 'true');
+    placePanel();
+    say(_errors.length ? 'Something broke on this page. Tell me what you did' : pick(PHRASES.open));
+    setTimeout(function () { var t = _panel.querySelector('#oe-text'); if (t && !window.matchMedia(MOBILE).matches) t.focus(); }, 80);
   }
-  function react() {
-    if (!_modalEye.bob) return Promise.resolve();
-    var b = _modalEye.bob, n = 0;
-    return new Promise(function (res) {
-      var iv = setInterval(function () {
-        b.style.transition = 'transform .1s'; b.style.transform = (n % 2 === 0) ? 'scale(1.1)' : 'scale(1)';
-        n++; if (n > 5) { clearInterval(iv); b.style.transform = 'scale(1)'; res(); }
-      }, 100);
-    });
+  function closePanel() {
+    _panel.classList.remove('open');
+    _backdrop.classList.remove('open');
+    _btn.classList.remove('open');
+    _btn.setAttribute('aria-expanded', 'false');
+    resetForm();
+  }
+  function resetForm() {
+    _panel.querySelector('#oe-text').value = '';
+    _panel.querySelector('#oe-status').textContent = '';
+    _panel.querySelector('#oe-other').value = '';
+    selectType('bug', true);
+    removeImg();
+    var sb = _panel.querySelector('#oe-send'); sb.disabled = false; sb.textContent = 'Send report';
   }
   function say(text) {
-    var el = document.querySelector('#oe-msg'); if (!el) return;
+    var el = _panel && _panel.querySelector('#oe-msg'); if (!el) return;
     el.style.opacity = '0';
-    setTimeout(function () { el.textContent = text; el.style.opacity = '1'; }, 200);
+    setTimeout(function () { el.textContent = text; el.style.opacity = '1'; }, 150);
   }
-  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function isOpen() { var o = document.querySelector('#oe-overlay'); return o && o.classList.contains('open'); }
 
-  /* ── Form logic ──────────────────────────────────────────────── */
-  function wireForm() {
-    document.querySelectorAll('.oe-cat').forEach(function (b) {
-      b.addEventListener('click', function () { selectType(b, b.getAttribute('data-type')); });
+  /* ── Form ────────────────────────────────────────────────────── */
+  var LABELS = { bug: 'What went wrong?', idea: 'Your idea', other: 'Your message' };
+  var HINTS = { bug: 'What you did and what you expected to happen', idea: 'What would make Terra Oracle better', other: 'Anything you want to tell the team' };
+  function selectType(type, silent) {
+    _fbType = type;
+    _panel.querySelectorAll('.oe-cat').forEach(function (b) {
+      var on = b.getAttribute('data-type') === type;
+      b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    document.querySelector('#oe-text').addEventListener('input', function () { if (!_busy) blink(_modalEye); });
-    document.querySelector('#oe-img').addEventListener('change', function () { if (this.files[0]) attachImage(this.files[0], this.files[0].name); });
-    document.querySelector('#oe-img-rm').addEventListener('click', removeImg);
-    document.querySelector('#oe-cancel').addEventListener('click', closeModal);
-    document.querySelector('#oe-send').addEventListener('click', submit);
-
+    _panel.querySelector('#oe-other').style.display = (type === 'other') ? 'block' : 'none';
+    _panel.querySelector('#oe-text-lbl').textContent = LABELS[type];
+    _panel.querySelector('#oe-text').placeholder = HINTS[type];
+    if (!silent) say(pick(PHRASES[type]));
+  }
+  function wireForm() {
+    _panel.querySelectorAll('.oe-cat').forEach(function (b) {
+      b.addEventListener('click', function () { selectType(b.getAttribute('data-type')); });
+    });
+    _panel.querySelector('#oe-img').addEventListener('change', function () { if (this.files[0]) attachImage(this.files[0], this.files[0].name); });
+    _panel.querySelector('#oe-img-rm').addEventListener('click', removeImg);
+    _panel.querySelector('#oe-cancel').addEventListener('click', closePanel);
+    _panel.querySelector('#oe-send').addEventListener('click', submit);
     document.addEventListener('paste', function (e) {
       if (!isOpen()) return;
       var items = (e.clipboardData && e.clipboardData.items) || [];
       for (var i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image/') === 0) {
           var file = items[i].getAsFile();
-          if (file) { attachImage(file, 'screenshot.png'); document.querySelector('#oe-img-label').textContent = 'Screenshot pasted'; e.preventDefault(); break; }
+          if (file) { attachImage(file, 'Screenshot pasted'); e.preventDefault(); break; }
         }
       }
     });
   }
-
-  function selectType(btn, type) {
-    _fbType = type;
-    document.querySelectorAll('.oe-cat').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    document.querySelector('#oe-other').style.display = (type === 'other') ? 'block' : 'none';
-    if (type === 'bug') { say(pick(PHRASES.bug)); moveIris(_modalEye, 0, 8); setTimeout(function () { moveIris(_modalEye, 0, 0); }, 700); }
-    else if (type === 'idea') { say(pick(PHRASES.idea)); react(); }
-    else { say(pick(PHRASES.other)); }
-  }
-
   function attachImage(file, name) {
-    document.querySelector('#oe-img-label').textContent = (name || 'screenshot').slice(0, 30);
+    _panel.querySelector('#oe-img-label').textContent = String(name || 'screenshot').slice(0, 30);
     var reader = new FileReader();
     reader.onload = function (e) {
-      document.querySelector('#oe-img-thumb').src = e.target.result;
-      document.querySelector('#oe-img-prev').style.display = 'block';
+      _panel.querySelector('#oe-img-thumb').src = e.target.result;
+      _panel.querySelector('#oe-img-prev').style.display = 'block';
     };
     reader.readAsDataURL(file);
-    try { var dt = new DataTransfer(); dt.items.add(file); document.querySelector('#oe-img').files = dt.files; } catch (e) {}
+    try { var dt = new DataTransfer(); dt.items.add(file); _panel.querySelector('#oe-img').files = dt.files; } catch (e) {}
   }
   function removeImg() {
-    document.querySelector('#oe-img').value = '';
-    document.querySelector('#oe-img-prev').style.display = 'none';
-    document.querySelector('#oe-img-label').textContent = '+ Attach or paste screenshot (Ctrl+V)';
-  }
-
-  function openModal() {
-    document.querySelector('#oe-overlay').classList.add('open');
-    say(pick(PHRASES.open));
-    setTimeout(function () { document.querySelector('#oe-text').focus(); }, 100);
-  }
-  function closeModal() {
-    document.querySelector('#oe-overlay').classList.remove('open');
-    document.querySelector('#oe-text').value = '';
-    document.querySelector('#oe-status').textContent = '';
-    document.querySelectorAll('.oe-cat').forEach(function (b, i) { b.classList.toggle('active', i === 0); });
-    _fbType = 'bug';
-    removeImg();
-    document.querySelector('#oe-other').style.display = 'none';
-    var sb = document.querySelector('#oe-send'); sb.disabled = false; sb.textContent = 'Send';
+    _panel.querySelector('#oe-img').value = '';
+    _panel.querySelector('#oe-img-prev').style.display = 'none';
+    _panel.querySelector('#oe-img-label').textContent = '+ Attach or paste a screenshot (Ctrl+V)';
   }
 
   async function submit() {
     if (_busy) return;
-    var text = document.querySelector('#oe-text').value.trim();
-    var status = document.querySelector('#oe-status');
-    if (!text) { say(pick(PHRASES.empty)); return; }
+    var text = _panel.querySelector('#oe-text').value.trim();
+    var status = _panel.querySelector('#oe-status');
+    if (!text) { say(pick(PHRASES.empty)); _panel.querySelector('#oe-text').focus(); return; }
     _busy = true;
-    var btn = document.querySelector('#oe-send');
+    var btn = _panel.querySelector('#oe-send');
     btn.disabled = true; btn.textContent = 'Sending...';
     status.textContent = '';
     say(pick(PHRASES.sending));
-
     try {
-      var wallet = (typeof connectedAddress !== 'undefined' && connectedAddress) ? connectedAddress
-                 : (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) ? globalWalletAddress
-                 : 'anonymous';
-      var custom = (document.querySelector('#oe-other').value || '').trim();
-      var typeLabel = (_fbType === 'other' && custom) ? '[' + custom + ']'
+      var custom = (_panel.querySelector('#oe-other').value || '').trim();
+      var typeLabel = (_fbType === 'other' && custom) ? '[' + plain(custom) + ']'
                     : ({ bug: '[bug]', idea: '[idea]', other: '[other]' }[_fbType] || '[other]');
-      var msg = typeLabel + ' *Oracle Feedback · ' + _fbType.toUpperCase() + '*\n\n' + text + '\n\n' + wallet + '\n' + SITE;
+      var ctx = 'Page: ' + plain(location.pathname + location.hash)
+              + '\nBrowser: ' + browserName() + ', ' + window.innerWidth + 'x' + window.innerHeight;
+      if (_errors.length) ctx += '\nPage errors:\n' + _errors.map(function (e) { return '- ' + plain(e); }).join('\n');
+      var msg = typeLabel + ' *Oracle Feedback · ' + _fbType.toUpperCase() + '*\n\n' + text
+              + '\n\n' + (walletAddr() || 'anonymous') + '\n' + SITE + '\n\n' + ctx;
 
-      var imgFile = document.querySelector('#oe-img').files[0];
-      var imageBase64 = null, imageType = (imgFile && imgFile.type) || 'image/jpeg';
-      if (imgFile) {
-        imageBase64 = await compress(imgFile);
-        imageType = 'image/jpeg';
-      }
+      var imgFile = _panel.querySelector('#oe-img').files[0];
+      var imageBase64 = null, imageType = 'image/jpeg';
+      if (imgFile) imageBase64 = await compress(imgFile);
 
       var res;
       try {
         res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg, image: imageBase64, imageType: imageType }),
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg, image: imageBase64, imageType: imageType })
         });
       } catch (fetchErr) {
         var fd = new FormData();
@@ -491,20 +421,20 @@
         if (imageBase64) { fd.append('image', imageBase64); fd.append('imageType', imageType); }
         res = await fetch(WORKER_URL, { method: 'POST', body: fd });
       }
-
       if (res && res.ok) {
-        status.style.color = '#66ffaa';
-        status.textContent = 'Sent! Thank you for your feedback.';
-        say(pick(PHRASES.sent)); react();
-        setTimeout(closeModal, 2000);
+        status.style.color = '#3EE6A8';
+        status.textContent = 'Report sent. Thank you!';
+        say(pick(PHRASES.sent));
+        _errors = []; refreshState();
+        setTimeout(closePanel, 1800);
       } else {
         throw new Error('Server error ' + (res ? res.status : ''));
       }
     } catch (e) {
-      status.style.color = '#ff6b6b';
-      status.textContent = 'Failed to send. Try again.';
+      status.style.color = '#FF7A7A';
+      status.textContent = 'Not sent. Check the connection and try again.';
       say(pick(PHRASES.error));
-      btn.disabled = false; btn.textContent = 'Send';
+      btn.disabled = false; btn.textContent = 'Send report';
     }
     _busy = false;
   }
@@ -531,95 +461,13 @@
     });
   }
 
-  /* ── Draggable button (saved position, click vs drag) ────────── */
-  function wireDrag(btn) {
-    var isDragging = false, justDragged = false;
-    var startX = 0, startY = 0, startLeft = 0, startTop = 0;
-    btn.style.cursor = 'grab';
-
-    try {
-      var saved = JSON.parse(localStorage.getItem('oe-btn-pos') || 'null');
-      if (saved && saved.left && saved.top) {
-        btn.style.left = saved.left; btn.style.top = saved.top;
-        btn.style.bottom = 'auto'; btn.style.right = 'auto';
-        clampBtn();
-      }
-    } catch (e) {}
-
-    // Позиция сохраняется в px, поэтому после поворота телефона или на
-    // окне поменьше маскот мог оказаться за краем. Возвращаем в видимую зону.
-    function clampBtn() {
-      if (!btn.style.left || btn.style.left === 'auto') return;
-      var L = parseFloat(btn.style.left), T = parseFloat(btn.style.top);
-      if (!isFinite(L) || !isFinite(T)) return;
-      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, L)) + 'px';
-      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, T)) + 'px';
-    }
-    window.addEventListener('resize', clampBtn);
-
-    btn.addEventListener('mousedown', function (e) {
-      if (e.button !== 0) return;
-      isDragging = true; justDragged = false; _oeDragging = true;
-      var rect = btn.getBoundingClientRect();
-      startLeft = rect.left; startTop = rect.top; startX = e.clientX; startY = e.clientY;
-      btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
-      btn.style.bottom = 'auto'; btn.style.right = 'auto';
-      btn.style.transition = 'none'; btn.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-    window.addEventListener('mousemove', function (e) {
-      if (!isDragging) return;
-      var dx = e.clientX - startX, dy = e.clientY - startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
-      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, startLeft + dx)) + 'px';
-      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, startTop + dy)) + 'px';
-    });
-    window.addEventListener('mouseup', function () {
-      if (!isDragging) return;
-      isDragging = false; _oeDragging = false; btn.style.cursor = 'grab'; btn.style.transition = '';
-      if (justDragged) {
-        try { localStorage.setItem('oe-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch (e) {}
-      } else { openModal(); }
-      justDragged = false;
-    });
-
-    btn.addEventListener('touchstart', function (e) {
-      isDragging = true; justDragged = false; _oeDragging = true;
-      var t = e.touches[0]; var rect = btn.getBoundingClientRect();
-      startLeft = rect.left; startTop = rect.top; startX = t.clientX; startY = t.clientY;
-      btn.style.left = startLeft + 'px'; btn.style.top = startTop + 'px';
-      btn.style.bottom = 'auto'; btn.style.right = 'auto'; btn.style.transition = 'none';
-    }, { passive: true });
-    window.addEventListener('touchmove', function (e) {
-      if (!isDragging) return;
-      var t = e.touches[0]; var dx = t.clientX - startX, dy = t.clientY - startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) justDragged = true;
-      btn.style.left = Math.max(0, Math.min(window.innerWidth - 110, startLeft + dx)) + 'px';
-      btn.style.top  = Math.max(0, Math.min(window.innerHeight - 110, startTop + dy)) + 'px';
-      if (justDragged) e.preventDefault();
-    }, { passive: false });
-    window.addEventListener('touchend', function () {
-      if (!isDragging) return;
-      isDragging = false; _oeDragging = false; btn.style.transition = '';
-      if (justDragged) {
-        try { localStorage.setItem('oe-btn-pos', JSON.stringify({ left: btn.style.left, top: btn.style.top })); } catch (e) {}
-      } else { openModal(); }
-      justDragged = false;
-    });
-  }
-
   /* ── Init ────────────────────────────────────────────────────── */
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', build);
-  } else {
-    build();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+  else build();
 
-  // Expose a couple of helpers (optional external use)
   window.OracleEye = {
-    open: openModal,
-    close: closeModal,
-    hide: function () { if (window.OracleEye_hide) window.OracleEye_hide(); },
-    show: function () { if (window.OracleEye_show) window.OracleEye_show(); }
+    open: function () { if (_panel) openPanel(); },
+    close: function () { if (_panel) closePanel(); },
+    hide: function () {}, show: function () {}   // v1 API, nothing to hide in the navbar
   };
 })();
