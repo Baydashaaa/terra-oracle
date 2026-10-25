@@ -1,0 +1,75 @@
+/* ui-fix.css - подключается последним. Окно кошельков и доска на мобиле. */
+
+/* ── Окно кошельков: стиль под остальной сайт ─────────────────────────── */
+#wallet-dropdown {
+  top: calc(100% + 8px);
+  min-width: 320px;
+  padding: 14px;
+  background: linear-gradient(160deg, rgba(22,18,52,.97), rgba(11,15,30,.97));
+  border: 1px solid rgba(123,92,255,.35);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.6), 0 0 32px rgba(123,92,255,.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+#wallet-dropdown::before {
+  content: ''; position: absolute; top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  opacity: .7;
+}
+#wallet-dropdown .wallet-dropdown-title {
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .18em; color: #fff;
+  padding: 2px 4px 12px; margin-bottom: 10px;
+  border-bottom: 1px solid rgba(123,92,255,.2);
+}
+#wallet-dropdown .wallet-picker-section-title {
+  color: #a78bfa; font-size: 10px; letter-spacing: .16em; margin: 6px 4px 8px;
+}
+#wallet-dropdown .wallet-grid .wallet-option {
+  background: rgba(123,92,255,.06);
+  border: 1px solid rgba(123,92,255,.2);
+  border-radius: 12px;
+  transition: transform .15s, border-color .15s, box-shadow .15s, background .15s;
+}
+#wallet-dropdown .wallet-grid .wallet-option:hover,
+#wallet-dropdown .wallet-grid .wallet-option:focus-visible {
+  background: rgba(123,92,255,.12);
+  border-color: rgba(167,139,250,.6);
+  box-shadow: 0 0 18px rgba(123,92,255,.3);
+  transform: translateY(-1px);
+}
+#wallet-dropdown .wallet-picker-sep {
+  height: 1px; border: 0; margin: 12px 0;
+  background: linear-gradient(90deg, transparent, rgba(123,92,255,.3), transparent);
+}
+
+@media (max-width: 768px) {
+  /* На мобиле кнопка не у края экрана, поэтому окно ставим по ширине экрана */
+  #wallet-dropdown {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 72px);
+    left: 12px; right: 12px;
+    min-width: 0; width: auto;
+    max-height: calc(100dvh - 190px);
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  #wallet-dropdown .wallet-grid   { grid-template-columns: repeat(3, 1fr); }
+  #wallet-dropdown .wallet-grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── Доска на мобиле: ряды кнопок прокручиваются внутри себя ──────────── */
+@media (max-width: 768px) {
+  #board-pane-questions, .bd-layout { max-width: 100%; min-width: 0; overflow-x: clip; }
+  .bd-layout > *, .bd-side, .bd-card { min-width: 0; max-width: 100%; }
+  .bd-toolbar { flex-wrap: wrap; min-width: 0; }
+  .bd-sort, .bd-chips {
+    display: flex; flex-wrap: nowrap; gap: 8px;
+    max-width: 100%; overflow-x: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .bd-sort::-webkit-scrollbar, .bd-chips::-webkit-scrollbar { display: none; }
+  .bd-sort .vote-tab, .bd-chips .vote-tab { flex: 0 0 auto; white-space: nowrap; }
+}
