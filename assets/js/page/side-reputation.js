@@ -32,6 +32,19 @@
     }
 
     var rank = getRank(score);
+    // levelup sound: once per real rank increase of the connected wallet
+    try {
+      var _w = (typeof connectedAddress !== 'undefined' && connectedAddress) || '';
+      var _i = ['INITIATE', 'SEEKER', 'ADEPT', 'ANALYST', 'ORACLE', 'ARCHON', 'ASCENDED'].indexOf(rank && rank.name);
+      if (_w && _i >= 0) {
+        var _k = 'oracle-sound-rank:' + _w, _p = localStorage.getItem(_k);
+        if (_p === null) localStorage.setItem(_k, String(_i));
+        else if (_i > Number(_p)) {
+          localStorage.setItem(_k, String(_i));
+          if (window.OracleSound) window.OracleSound.play('levelup');
+        }
+      }
+    } catch (e) {}
     var nx = (typeof getNextRank === 'function') ? getNextRank(score) : null;
 
     if (rn) {
