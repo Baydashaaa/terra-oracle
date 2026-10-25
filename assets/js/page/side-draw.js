@@ -157,7 +157,11 @@
     // Свой такт: сообщения из рамки приходят раз в секунду, но если рамка
     // ещё не открыта или встала, клетки всё равно должны идти по
     // последнему известному остатку.
-    setInterval(paint, 1000);
+    setInterval(function () {
+      paint();
+      var m = msAt[tab];
+      if (m && window.OracleSound) window.OracleSound.tick((m.ms - (Date.now() - m.at)) / 1000);
+    }, 1000);
 
     paint();
   }

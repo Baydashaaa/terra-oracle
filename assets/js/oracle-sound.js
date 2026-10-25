@@ -315,6 +315,59 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
 
+  // hook: wallet connected (wrapped the same way page/mobile-nav.js does it)
+  window.addEventListener('load', () => {
+    const orig = window.setWalletConnected;
+    if (typeof orig !== 'function' || orig._osWrapped) return;
+    const wrapped = function (address) {
+      const r = orig.apply(this, arguments);
+      if (address) play('connect');
+      return r;
+    };
+    wrapped._osWrapped = true;
+    window.setWalletConnected = wrapped;
+  });
+
+  // hooks: contract txs (contract-exec.js) - error on reject, success/error on confirmation
+  window.addEventListener('load', () => {
+    const send = window.sendExecuteContract;
+    if (typeof send === 'function' && !send._osWrapped) {
+      const w = function () {
+        return send.apply(this, arguments).catch(e => { play('error'); throw e; });
+      };
+      w._osWrapped = true;
+      window.sendExecuteContract = w;
+    }
+    const wait = window.waitForTx;
+    if (typeof wait === 'function' && !wait._osWrapped) {
+      const w = function () {
+        return wait.apply(this, arguments).then(r => {
+          if (r && r.status === 'confirmed') play('success');
+          else if (r && r.status === 'failed') play('error');
+          return r;
+        });
+      };
+      w._osWrapped = true;
+      window.waitForTx = w;
+    }
+  });
+
+  // hooks: plain LUNC payments (app/sign.js) - success when sent, error on reject
+  window.addEventListener('load', () => {
+    ['sendLuncDirect', 'sendTwoMsgsDirect'].forEach(name => {
+      const fn = window[name];
+      if (typeof fn !== 'function' || fn._osWrapped) return;
+      const w = function () {
+        return Promise.resolve(fn.apply(this, arguments)).then(
+          r => { play('success'); return r; },
+          e => { play('error'); throw e; }
+        );
+      };
+      w._osWrapped = true;
+      window[name] = w;
+    });
+  });
+
   window.OracleSound = {
     play, tick, setEnabled, setVolume, mount,
     get enabled() { return settings.enabled; },

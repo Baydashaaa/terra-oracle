@@ -1159,6 +1159,7 @@ async function submitBet() {
       [{ denom: 'uluna', amount: String(lunc * 1e6) }],
       'oracle-prophecy: prediction ' + m.id, PROPHECY_CHAIN, 600000
     );
+    if (window.OracleSound) window.OracleSound.play('coin');
     console.log('[prophecy] bet tx', hash);
     btn.textContent = 'Waiting for the block…';
     // Перерисовка после блока: раньше контракт ещё покажет старые суммы.

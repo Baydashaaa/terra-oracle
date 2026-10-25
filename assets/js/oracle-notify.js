@@ -526,6 +526,7 @@
 
   function toast(item) {
     if (!elToasts) return;
+    if (window.OracleSound) window.OracleSound.play('notify');
     positionToasts();
     while (elToasts.children.length >= CFG.maxToasts) elToasts.removeChild(elToasts.firstChild);
 
