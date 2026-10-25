@@ -507,8 +507,19 @@ async function tLoadCircuitStrip() {
 //
 // Так и правильнее по смыслу: план 25/15/50/10 описывает раздел КАЗНЫ, а не
 // любые поступления на адрес.
-async function tDistributionOutflow(sinceMs, limit = 100) {
-  const q = encodeURIComponent(`transfer.sender='${T_WALLETS.treasury}'`);
+// Ротация ключей 24 окт 2026: казна переехала на новый адрес. Историю за период
+// собираем с обоих, а переводы на старые адреса долей засчитываем новым.
+const T_FLOW_OLD_TREASURY = 'terra1549z8zd9hkggzlwf0rcuszhc9rs9fxqfy2kagt';
+const T_FLOW_ALIAS = {
+  'terra1ty6fxd9u0jzae5lpzcs56rfclxg4q32hw5x4ce': 'terra10gf6zq5f0nrpcx0k2zlsrv79ec28p320fezq9q', // rewards
+  'terra10q6syec2e27x8g76a0mvm3frgvarl5dz27a2jz': 'terra1e0m2ajgn5m8tq9dehu5w5zlvaklagdpcaeuw3a', // reserve
+  'terra1gukarslv6c8n0s2259822l7059putpqxz405su': 'terra1n9ntqdyf9st6x8uxz5fswa282evu2kgpzcyxef', // liquidity
+  'terra17g55uzkm6cr5fcl3vzcrmu73v8as4yvf2kktzr': 'terra17928vmmve4tjkyh6swc2s2dfvthdpjqhttyw5j', // dev
+};
+
+async function tOutflowFrom(sender, sinceMs, limit) {
+  const q = encodeURIComponent(`transfer.sender='${sender}'`);
+  let sawEmpty = false;
   for (const lcd of T_LCD) {
     try {
       const url = `${lcd}/cosmos/tx/v1beta1/txs?query=${q}&pagination.limit=${limit}&order_by=2`;
@@ -517,7 +528,7 @@ async function tDistributionOutflow(sinceMs, limit = 100) {
       const d = await r.json();
       const metas = d.tx_responses || [];
       const bodies = d.txs || [];
-      if (!metas.length) continue;
+      if (!metas.length) { sawEmpty = true; continue; }
 
       const sums = {};
       let oldest = Infinity;
@@ -528,19 +539,29 @@ async function tDistributionOutflow(sinceMs, limit = 100) {
         if (metas[i].code) continue;                    // неуспешные не считаем
         const msgs = ((bodies[i] || {}).body || {}).messages || [];
         for (const m of msgs) {
-          const to = m.to_address;
-          if (!to) continue;
+          if (!m.to_address) continue;
+          const to = T_FLOW_ALIAS[m.to_address] || m.to_address;
           for (const c of (m.amount || [])) {
             if (c.denom !== 'uluna') continue;
             sums[to] = (sums[to] || 0) + Number(c.amount || 0);
           }
         }
       }
-      // Лимит упёрся раньше начала периода - окно короче заявленного
       return { sums, capped: metas.length >= limit && oldest > sinceMs };
     } catch (e) { /* следующий узел */ }
   }
-  return null;
+  return sawEmpty ? { sums: {}, capped: false } : null;
+}
+
+async function tDistributionOutflow(sinceMs, limit = 100) {
+  const parts = await Promise.all(
+    [T_WALLETS.treasury, T_FLOW_OLD_TREASURY].map(s => tOutflowFrom(s, sinceMs, limit)));
+  const ok = parts.filter(Boolean);
+  if (!ok.length) return null;
+  const sums = {};
+  for (const part of ok)
+    for (const [k, v] of Object.entries(part.sums)) sums[k] = (sums[k] || 0) + v;
+  return { sums, capped: ok.some(x => x.capped) };
 }
 
 async function tLoadDistributionFlow(days = 30) {
