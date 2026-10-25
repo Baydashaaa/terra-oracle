@@ -292,6 +292,7 @@
 
   // auto-place the toggle right before the notifications bell (oracle-notify.js builds it later)
   function autoPlace() {
+    if (window.top !== window) return; // embedded frame: the parent page has the toggle
     const bell = document.getElementById('onf-bell');
     if (!bell) return;
     const host = bell.closest('.onf-wrap') || bell;

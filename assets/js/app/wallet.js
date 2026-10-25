@@ -99,6 +99,7 @@ window.connectWallet = async function(type) {
 function setWalletConnected(address) {
   globalWalletAddress = address;
   connectedAddress = address;
+  if (window.OracleSound) window.OracleSound.play('connect');
   saveWalletSession(address);
   // Показать прогресс к бесплатной entry сразу при подключении, не дожидаясь
   // первой отправки или перезагрузки ленты.

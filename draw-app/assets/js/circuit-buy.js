@@ -351,6 +351,7 @@
 
       const memo = roundId ? 'circuit:' + roundId + ':' + count : 'circuit:' + count;
       const txHash = await send(wallet, q.payTo, q.totalUluna, memo, chain());
+      if (window.OracleSound) window.OracleSound.play('zap');
       if (!txHash) throw new Error('No transaction hash returned.');
 
       // Сначала записываем, потом зачитываем: между этими шагами покупку
