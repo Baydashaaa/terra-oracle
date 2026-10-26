@@ -1,0 +1,175 @@
+/* markets-v2.css - редизайн Markets (макет 27.10.2026).
+   Карточка рынка (.mk2c) встречается и в разделе, и на главной, поэтому
+   её правила не привязаны к #page-markets. Цвета: YES #3BE38A, NO #F37BAA,
+   золото #F2D45C, фиолетовый #7B5CFF / #A855F7. */
+
+/* ---- карточка ---- */
+:is(#page-markets,#home-markets) .mkc.mk2c{
+  display:flex;flex-direction:column;gap:16px;padding:22px 22px 18px;border-radius:20px;
+  background:linear-gradient(180deg,#151A33 0%,#10142A 100%);
+  border:1px solid rgba(200,184,255,.16);
+  box-shadow:0 30px 60px -40px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);
+  cursor:pointer;transition:border-color .25s,box-shadow .25s,translate .25s;
+}
+:is(#page-markets,#home-markets) .mkc.mk2c:hover{border-color:rgba(var(--c),.55);box-shadow:0 30px 60px -36px rgba(0,0,0,.95),0 0 32px -12px rgba(var(--c),.55);translate:0 -2px}
+:is(#page-markets,#home-markets) .mkc.mk2c.promo{border-color:rgba(242,212,92,.45)}
+:is(#page-markets,#home-markets) .mkc.mk2c.big{padding:28px 28px 22px}
+:is(#page-markets,#home-markets) .mkc.mk2c.big h4{font-size:25px}
+:is(#page-markets,#home-markets) .mk2-head{display:flex;align-items:flex-start;gap:16px}
+:is(#page-markets,#home-markets) .mk2-titles{display:flex;flex-direction:column;gap:8px;min-width:0}
+:is(#page-markets,#home-markets) .mkc.mk2c h4{margin:0;font-family:Rajdhani,sans-serif;font-weight:700;font-size:23px;line-height:1.15;color:#E8F0FF}
+:is(#page-markets,#home-markets) .mk2-orb{
+  flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:rgb(var(--c));
+  background:radial-gradient(circle at 30% 25%,rgba(var(--c),.38),rgba(var(--c),.05) 70%);
+  border:1px solid rgba(var(--c),.4);box-shadow:0 0 34px -12px rgba(var(--c),.7);
+}
+:is(#page-markets,#home-markets) .mk2-orb svg{width:26px;height:26px}
+:is(#page-markets,#home-markets) .mk2-orb.big{width:72px;height:72px;border-radius:20px}
+:is(#page-markets,#home-markets) .mk2-orb.big svg{width:36px;height:36px}
+:is(#page-markets,#home-markets) .mk2-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:#9AA6C4}
+:is(#page-markets,#home-markets) .mk2-crumb .cat{color:rgb(var(--c));font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+:is(#page-markets,#home-markets) .mk2-crumb i{font-style:normal;color:#5D6A8C}
+:is(#page-markets,#home-markets) .mk2-crumb .promo{margin-left:4px;padding:2px 8px;border-radius:999px;background:rgba(242,212,92,.14);color:#F2D45C;font-weight:600}
+:is(#page-markets,#home-markets) .mk2-note{margin:0;font-size:13.5px;line-height:1.55;color:#C9D3EA}
+
+/* ---- шкала давления ---- */
+:is(#page-markets,#home-markets) .mk2-gauge{display:flex;flex-direction:column;gap:10px}
+:is(#page-markets,#home-markets) .mk2-gauge-top{display:flex;justify-content:space-between;align-items:baseline;font-family:Rajdhani,sans-serif;font-weight:700;font-size:30px;line-height:1}
+:is(#page-markets,#home-markets) .mk2-gauge-top small{font-size:18px}
+:is(#page-markets,#home-markets) .mk2-gauge-top em{font-style:normal;font-size:15px;letter-spacing:.08em}
+:is(#page-markets,#home-markets) .mk2-gauge-top .y{color:#3BE38A}
+:is(#page-markets,#home-markets) .mk2-gauge-top .n{color:#F37BAA}
+:is(#page-markets,#home-markets) .mk2-gauge-top .lost{opacity:.45}
+:is(#page-markets,#home-markets) .mk2-gauge-top .won{margin:0 6px;padding:2px 7px;border-radius:6px;font-size:12px;background:rgba(242,212,92,.16);color:#F2D45C;vertical-align:middle}
+:is(#page-markets,#home-markets) .mk2-bar{position:relative;display:flex;height:14px;border-radius:999px;background:#2A1B2E;overflow:visible;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+:is(#page-markets,#home-markets) .mk2-bar .y{height:100%;border-radius:999px 0 0 999px;background:linear-gradient(90deg,#127A47,#3BE38A);box-shadow:0 0 18px rgba(59,227,138,.5);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+:is(#page-markets,#home-markets) .mk2-bar .n{height:100%;border-radius:0 999px 999px 0;background:linear-gradient(90deg,#E25A93,#8E2F5A);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+:is(#page-markets,#home-markets) .mk2-bar .spark{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 10px #fff;border-radius:2px}
+:is(#page-markets,#home-markets) .mk2-gauge-sub{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#9AA6C4}
+
+/* ---- низ карточки и чип фазы ---- */
+:is(#page-markets,#home-markets) .mk2-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-top:14px;border-top:1px solid rgba(200,184,255,.1);font-size:14px;color:#A9B6D3}
+:is(#page-markets,#home-markets) .mk2-foot .pool{color:#E8F0FF}
+:is(#page-markets,#home-markets) .mk2-foot .pool b{font-family:Rajdhani,sans-serif;font-size:18px;color:#F2D45C}
+:is(#page-markets,#home-markets) .mk2-phase{margin-left:auto;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;
+  background:rgba(123,92,255,.14);border:1px solid rgba(168,85,247,.4);color:#DCD2FF;white-space:nowrap}
+:is(#page-markets,#home-markets) .mk2-phase i{width:8px;height:8px;border-radius:50%;background:#A855F7;box-shadow:0 0 10px #A855F7}
+:is(#page-markets,#home-markets) .mk2-phase.open{background:rgba(59,227,138,.1);border-color:rgba(59,227,138,.4);color:#B9E9CF}
+:is(#page-markets,#home-markets) .mk2-phase.open i{background:#3BE38A;box-shadow:0 0 10px #3BE38A;animation:mk2pulse 1.6s ease-in-out infinite}
+:is(#page-markets,#home-markets) .mk2-phase.court{background:rgba(242,212,92,.1);border-color:rgba(242,212,92,.4);color:#F2D45C}
+:is(#page-markets,#home-markets) .mk2-phase.court i{background:#F2D45C;box-shadow:0 0 10px #F2D45C}
+:is(#page-markets,#home-markets) .mk2-phase.yes{background:rgba(59,227,138,.12);border-color:rgba(59,227,138,.45);color:#3BE38A}
+:is(#page-markets,#home-markets) .mk2-phase.yes i{background:#3BE38A}
+:is(#page-markets,#home-markets) .mk2-phase.no{background:rgba(243,123,170,.12);border-color:rgba(243,123,170,.45);color:#F37BAA}
+:is(#page-markets,#home-markets) .mk2-phase.no i{background:#F37BAA}
+:is(#page-markets,#home-markets) .mk2-phase.idle{background:rgba(255,255,255,.05);border-color:rgba(200,184,255,.18);color:#A9B6D3}
+:is(#page-markets,#home-markets) .mk2-phase.idle i{background:#6B7A9C;box-shadow:none}
+@keyframes mk2pulse{50%{opacity:.35}}
+
+
+/* сброс старых правил .mkc / .mkc.big, которые иначе перекрывают карточку */
+:is(#page-markets,#home-markets) .mkc.mk2c::after{display:none!important;content:none}
+:is(#page-markets,#home-markets) .mkc.mk2c.big{min-height:0}
+:is(#page-markets,#home-markets) .mkc.mk2c:hover{transform:none}
+:is(#page-markets,#home-markets) .mk2-crumb .cat{border:0;background:none;padding:0;height:auto;border-radius:0;font-size:12px}
+:is(#page-markets,#home-markets) .mk2-foot > span:not(.mk2-phase){display:inline;border:0;background:none;padding:0}
+/* ---- полоса статистики ---- */
+#page-markets .mk2-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;padding:0;border-radius:18px;overflow:hidden;
+  background:rgba(200,184,255,.12);border:1px solid rgba(200,184,255,.14)}
+#page-markets .mk2-stats .mk-stat{display:flex;flex-direction:column;gap:6px;padding:18px 22px;background:#10142A;border:0;border-radius:0;min-height:0}
+#page-markets .mk2-stats .mk-stat span{order:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mk2-stats .mk-stat b{order:1;font-family:Rajdhani,sans-serif;font-weight:700;font-size:34px;line-height:1;color:#E8F0FF}
+#page-markets .mk2-stats .mk-stat em{order:2;font-style:normal;font-size:13px;color:#C9B45A}
+#page-markets .mk2-stats .mk-stat:nth-child(2) b{color:#F2D45C}
+@media (max-width:760px){#page-markets .mk2-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---- строка Beta ---- */
+#page-markets .mk2-beta{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:13px;line-height:1.5;color:#CDB869}
+#page-markets .mk2-beta .tag{flex:none;height:22px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;
+  background:rgba(242,212,92,.12);color:#F2D45C;font-weight:600;letter-spacing:.08em;font-size:11px}
+
+/* ---- экран рынка ---- */
+#page-markets .mk2-hero{display:flex;flex-direction:column;gap:24px;padding:28px 30px;border-radius:24px;margin-bottom:22px;
+  background:linear-gradient(180deg,#161B36 0%,#10142A 100%);border:1px solid rgba(200,184,255,.16);
+  box-shadow:0 40px 80px -50px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.05)}
+#page-markets .mk2-hero.promo{border-color:rgba(242,212,92,.45)}
+#page-markets .mk2-hero h1{margin:0;font-family:Rajdhani,sans-serif;font-weight:700;font-size:clamp(26px,3.2vw,38px);line-height:1.08;color:#E8F0FF}
+#page-markets .mk2-track{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#page-markets .mk2-track li{display:flex;flex-direction:column;gap:7px;min-width:0}
+#page-markets .mk2-track .bar{height:6px;border-radius:999px;background:#232A47}
+#page-markets .mk2-track .done .bar{background:linear-gradient(90deg,#7B5CFF,#A855F7)}
+#page-markets .mk2-track .now .bar{background:linear-gradient(90deg,#A855F7,#C8B8FF);box-shadow:0 0 14px rgba(168,85,247,.8)}
+#page-markets .mk2-track b{font-size:13px;font-weight:600;color:#A9B6D3}
+#page-markets .mk2-track .done b,#page-markets .mk2-track .now b{color:#fff}
+#page-markets .mk2-track em{font-style:normal;font-size:12px;color:#9AA6C4}
+#page-markets .mk2-track .now em{color:#DCD2FF}
+@media (max-width:760px){
+  #page-markets .mk2-track{grid-template-columns:1fr;gap:12px}
+  #page-markets .mk2-track li{display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center}
+  #page-markets .mk2-track .bar{grid-row:span 2;width:36px}
+}
+
+#page-markets .mk2-body{display:flex;flex-direction:column;gap:22px}
+#page-markets .mk2-body > div:empty{display:none}
+#page-markets .mk2-gauge.bare .mk2-gauge-top,#page-markets .mk2-gauge.bare .mk2-gauge-sub{display:none}
+#page-markets .mk2-panel{display:flex;flex-direction:column;gap:16px;padding:24px 26px;border-radius:22px;background:#10142A;border:1px solid rgba(200,184,255,.14)}
+#page-markets .mk2-forecast.mkc{cursor:default;translate:none;min-height:0}
+#page-markets .mk2-forecast.mkc:hover{transform:none;box-shadow:none}
+#page-markets .mk2-panel-cap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mk2-panel .lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mk2-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#page-markets .mk2-side{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:16px}
+#page-markets .mk2-side.y{background:linear-gradient(160deg,rgba(59,227,138,.16),rgba(59,227,138,.03));border:1px solid rgba(59,227,138,.35)}
+#page-markets .mk2-side.n{background:linear-gradient(160deg,rgba(243,123,170,.16),rgba(243,123,170,.03));border:1px solid rgba(243,123,170,.35);text-align:right}
+#page-markets .mk2-side .k{font-size:13px;letter-spacing:.1em;font-weight:600}
+#page-markets .mk2-side.y .k,#page-markets .mk2-side.y .p{color:#3BE38A}
+#page-markets .mk2-side.n .k,#page-markets .mk2-side.n .p{color:#F37BAA}
+#page-markets .mk2-side .p{font-family:Rajdhani,sans-serif;font-weight:700;font-size:48px;line-height:1}
+#page-markets .mk2-side .p small{font-size:24px}
+#page-markets .mk2-side .s{font-size:13px;color:#C9D3EA}
+#page-markets .mk2-side.lost{opacity:.5}
+#page-markets .mk2-side.won{box-shadow:0 0 30px -10px rgba(242,212,92,.6)}
+
+/* ваша позиция */
+#page-markets .mk2-pos{display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:22px;
+  background:linear-gradient(170deg,#1E1847 0%,#12112E 100%);border:1px solid rgba(168,85,247,.45);box-shadow:0 0 50px -20px rgba(168,85,247,.6)}
+#page-markets .mk2-pos .lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#C8B8FF}
+#page-markets .mk2-pos-line{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:15px;color:#DCD2FF}
+#page-markets .mk2-pos-line b{font-family:Rajdhani,sans-serif;font-weight:700;font-size:32px;color:#fff;line-height:1}
+#page-markets .mk2-pos-line em{font-style:normal;font-family:Rajdhani,sans-serif;font-weight:700;font-size:20px}
+#page-markets .mk2-pos-line em.y{color:#3BE38A}
+#page-markets .mk2-pos-line em.n{color:#F37BAA}
+#page-markets .mk2-pos-out{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid rgba(200,184,255,.16)}
+#page-markets .mk2-pos-out .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#DCD2FF}
+#page-markets .mk2-pos-out b{font-weight:600}
+#page-markets .mk2-pos-out b.y{color:#3BE38A}
+#page-markets .mk2-pos-out b.n{color:#F37BAA}
+#page-markets .mk2-pos-out small{font-size:12px;opacity:.85}
+#page-markets .mk2-pos-out p{margin:2px 0 0;font-size:12px;line-height:1.5;color:#A9A0D6}
+#page-markets .mk2-pos-pay{font-size:14px;color:#DCD2FF}
+#page-markets .mk2-pos-pay b{color:#F2D45C}
+#page-markets .mk2-pos-wait{height:46px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.06);color:#A9A0D6;font-size:14px}
+#page-markets .mk2-pos-done{font-size:14px;color:#3BE38A}
+#page-markets .mk2-claim{height:48px;border:0;border-radius:12px;cursor:pointer;color:#fff;font-family:Rajdhani,sans-serif;font-weight:700;font-size:17px;
+  background:linear-gradient(135deg,#7B5CFF,#A855F7);box-shadow:0 10px 30px -10px rgba(123,92,255,.9)}
+
+/* активность: без ступенек, линия YES ярче */
+#page-markets .mk-activity .line{stroke:#3BE38A;stroke-width:2.5}
+
+/* Узкие места (главная, три карточки в ряд): значок меньше, заголовок и
+   проценты компактнее, чтобы вопрос не рассыпался по слову в строку. */
+:is(#page-markets,#home-markets) .mkc.mk2c{container-type:inline-size}
+@container (max-width: 340px){
+  .mk2-head{gap:12px}
+  .mk2-orb{width:40px;height:40px;border-radius:12px}
+  .mk2-orb svg{width:20px;height:20px}
+  .mkc.mk2c h4,.mkc.mk2c.big h4{font-size:18px !important}
+  .mk2-crumb{font-size:11px;gap:6px}
+  .mk2-gauge-top{font-size:24px !important}
+  .mk2-gauge-top small{font-size:14px !important}
+  .mk2-gauge-top em{font-size:12px !important}
+  .mk2-gauge-sub{font-size:12px;flex-direction:column;gap:2px}
+  .mk2-gauge-sub span:last-child{text-align:right}
+  .mk2-foot{font-size:13px;gap:8px 12px}
+  .mk2-phase{margin-left:0}
+}

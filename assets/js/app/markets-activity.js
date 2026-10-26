@@ -108,9 +108,15 @@
     const X = (i) => (PX + (i / steps) * (W - 2 * PX)).toFixed(1);
     const Y = (p) => (PY + ((100 - p) / 100) * (H - 2 * PY)).toFixed(1);
 
-    let d = `M${X(0)},${Y(pts[0].p)}`;
-    for (let i = 1; i < steps; i++) d += ` H${X(i)} V${Y(pts[i].p)}`;
-    d += ` H${X(steps)}`;
+    // Плавная линия через точки (кривые с горизонтальными касательными):
+    // ступеньки читались как таблица, а не как движение рынка.
+    const xs = pts.map((q, i) => +X(i)), ys = pts.map((q) => +Y(q.p));
+    xs.push(+X(steps)); ys.push(ys[ys.length - 1]);
+    let d = `M${xs[0]},${ys[0]}`;
+    for (let i = 1; i < xs.length; i++) {
+      const mx = ((xs[i - 1] + xs[i]) / 2).toFixed(1);
+      d += ` C${mx},${ys[i - 1]} ${mx},${ys[i]} ${xs[i]},${ys[i]}`;
+    }
     // Две полосы: снизу доля YES, сверху доля NO. Граница между ними и есть
     // прогноз, и каждая ставка видимо её сдвигает.
     const yesArea = `${d} V${Y(0)} H${X(0)} Z`;
@@ -124,7 +130,7 @@
 
     return `
       <div class="mk-chart-head">
-        <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · one step per prediction</span>
+        <span><i class="k y"></i>YES share &nbsp; <i class="k n"></i>NO share · after each prediction</span>
         <b class="${last >= 50 ? 'y' : 'n'}">YES ${last}% · NO ${100 - last}%</b>
       </div>
       <div class="mk-chart"><div class="mk-plot">
@@ -141,7 +147,6 @@
           </defs>
           <path d="${noArea}" class="area-no" fill="url(#mkgN)"/>
           <path d="${yesArea}" class="area-yes" fill="url(#mkgY)"/>
-          ${pts.slice(1).map((q, i) => `<line class="step" x1="${X(i + 1)}" x2="${X(i + 1)}" y1="${PY}" y2="${H - PY}"/>`).join('')}
           <line x1="${PX}" x2="${W - PX}" y1="${Y(50)}" y2="${Y(50)}" class="mid"/>
           <path d="${d}" class="line"/>
         </svg>
@@ -188,7 +193,7 @@
     if (!window._prophecyMarket || window._prophecyMarket.id !== m.id) return;
     host.innerHTML = `
       <section class="card mk-activity">
-        <h3>Activity</h3>
+        <h3>How the forecast moved</h3>
         ${bets.length
           ? chartHtml(bets, m) + feedHtml(bets)
           : '<p class="mk-lead-sm">No predictions yet. The first one shows up here.</p>'}

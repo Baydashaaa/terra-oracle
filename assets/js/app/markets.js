@@ -480,6 +480,177 @@ function bonusChip(m) {
     : '';
 }
 
+
+// ── v2: общие части карточки и экрана рынка (редизайн 27.10) ───────────────
+//
+// Карточка и экран говорят одним языком: значок категории, путь
+// "категория / метрика", шкала давления YES/NO и чип фазы рынка.
+
+const MK_CAT_ICON = {
+  economy: '<path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/>',
+  governance: '<path d="M12 3v18M5 21h14M6 7h12"/><path d="M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
+  protocol: '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/>',
+  validators: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  network: '<circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 11l10-5M7 13l10 5"/>',
+  community: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8.2 5 2.6 5 5.5"/>',
+  macro: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/>',
+  crypto: '<circle cx="12" cy="12" r="9"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9zM9 12h5a2 2 0 0 1 0 4H9zM9 8v8M11 6v2M11 16v2"/>',
+  sport: '<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/>',
+};
+const MK_METRIC_SHORT = {
+  total_supply: 'Total supply', oracle_rate: 'Oracle rate', staking_ratio: 'Staking ratio',
+  community_pool: 'Community pool', validator_power: 'Validator stake', proposal_passed: 'Proposal vote',
+};
+
+function mkOrb(m, big) {
+  const path = mkOwn(MK_CAT_ICON, m.category) || '<circle cx="12" cy="12" r="4"/>';
+  return `<span class="mk2-orb${big ? ' big' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+}
+
+function mkCrumb(m, withCreator) {
+  const metric = mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
+  return `<div class="mk2-crumb">
+    <span class="cat">${mktEsc(m.category)}</span>
+    ${metric ? `<i>/</i><span>${mktEsc(metric)}</span>` : ''}
+    ${withCreator ? `<i>/</i><span>Created by ${mktEsc(shortAddr(m.creator))}</span>` : ''}
+    ${m.promoted ? '<span class="promo">★ Promoted</span>' : ''}
+  </div>`;
+}
+
+/** Чип фазы: что происходит с рынком сейчас и сколько до следующего шага. */
+function mkPhaseChip(m) {
+  const now = Math.floor(Date.now() / 1000);
+  let cls = 'live', txt;
+  if (m.status === 'settled') { cls = m.outcome ? 'yes' : 'no'; txt = `Settled · ${m.outcome ? 'YES' : 'NO'}`; }
+  else if (m.status === 'void') { cls = 'idle'; txt = 'Void · refunded'; }
+  else if (m.status === 'disputed') { cls = 'court'; txt = 'In court'; }
+  else if (m.status === 'proposed') {
+    const ends = Number(m.proposed_at || 0) + Number(mkRules(m).challenge_secs || 0);
+    txt = ends > now ? `Verifying · ${timeLeft(ends)} left` : 'Verifying';
+  } else if (Number(m.bets_close_at) > now) {
+    cls = 'open'; txt = `Closes in ${timeLeft(m.bets_close_at)}`;
+  } else {
+    const at = Number(m.resolve_after);
+    txt = at > now ? `Outcome in ${timeLeft(at)}` : 'Outcome due';
+  }
+  return `<span class="mk2-phase ${cls}"><i aria-hidden="true"></i>${txt}</span>`;
+}
+
+/** Шкала давления: проценты над ней, суммы под ней. */
+function mkGauge(m, pct, bare) {
+  const yes = Number(m.pot_yes), no = Number(m.pot_no);
+  const sy = sideState(m, true), sn = sideState(m, false);
+  const tag = (st) => (st === 'won' ? ' <b class="won">WON</b>' : '');
+  return `
+    <div class="mk2-gauge${bare ? ' bare' : ''}">
+      <div class="mk2-gauge-top">
+        <span class="y ${sy}">${pct}<small>%</small> <em>YES</em>${tag(sy)}</span>
+        <span class="n ${sn}">${tag(sn)}<em>NO</em> ${100 - pct}<small>%</small></span>
+      </div>
+      <div class="mk2-bar" role="img" aria-label="${pct} percent YES, ${100 - pct} percent NO">
+        <span class="y" style="width:${pct}%"></span><span class="n" style="width:${100 - pct}%"></span>
+        <span class="spark" style="left:${pct}%"></span>
+      </div>
+      <div class="mk2-gauge-sub">
+        <span>${fmtLunc(yes)} LUNC · ${playersText(m.bettors_yes)}</span>
+        <span>${fmtLunc(no)} LUNC · ${playersText(m.bettors_no)}</span>
+      </div>
+    </div>`;
+}
+
+/** Низ карточки: пул, кошельки, фаза. */
+function mkFoot(m) {
+  const total = Number(m.pot_yes) + Number(m.pot_no) + Number(m.boost || 0);
+  const w = m.bettors_yes + m.bettors_no;
+  return `<div class="mk2-foot">
+    <span class="pool"><b>${fmtLunc(total)}</b> LUNC pool</span>
+    <span class="w">${w} ${w === 1 ? 'wallet' : 'wallets'}</span>
+    ${mkPhaseChip(m)}
+  </div>`;
+}
+
+/** Дорожка фаз на экране рынка: где рынок и что дальше. */
+function mkPhaseTrack(m) {
+  const now = Math.floor(Date.now() / 1000);
+  const accepting = m.status === 'open' && Number(m.bets_close_at) > now;
+  const cur = m.status === 'settled' || m.status === 'void' ? 4
+    : m.status === 'proposed' || m.status === 'disputed' ? 3
+      : accepting ? 0 : 1;
+  const r = mkRules(m);
+  const when = (ts) => {
+    const d = new Date(Number(ts) * 1000);
+    return isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+      + ', ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
+  };
+  const steps = [
+    ['Open', accepting ? `closes ${when(m.bets_close_at)}` : 'done'],
+    ['Predictions closed', cur === 1 ? 'now · waiting for the block' : cur > 1 ? 'done' : when(m.bets_close_at)],
+    ['Outcome posted', cur >= 3 ? 'done' : when(m.resolve_after)],
+    [m.status === 'disputed' ? 'In court' : 'Challenge window',
+      m.status === 'proposed' ? (challengeLeft(m) ? challengeLeft(m) + ' left' : 'closing')
+        : m.status === 'disputed' ? 'council votes'
+          : cur > 3 ? 'done' : (r.challenge_secs ? Math.round(Number(r.challenge_secs) / 3600) + ' hours' : '')],
+    [m.status === 'void' ? 'Void' : 'Settled',
+      m.status === 'settled' ? (m.outcome ? 'YES won' : 'NO won') : m.status === 'void' ? 'everyone refunded' : 'winners claim'],
+  ];
+  const at = m.status === 'proposed' || m.status === 'disputed' ? 3 : cur === 4 ? 4 : cur === 0 ? 0 : 1;
+  return `<ol class="mk2-track">${steps.map((s, i) => `
+    <li class="${i < at ? 'done' : i === at ? 'now' : ''}"><span class="bar"></span>
+      <b>${s[0]}</b><em>${mktEsc(s[1])}</em></li>`).join('')}</ol>`;
+}
+
+/** Две крупные стороны закрытого рынка с множителем выплаты. */
+function mkSidesClosed(m, pct) {
+  const side = (isYes) => {
+    const st = sideState(m, isYes);
+    const mult = payoutMultiplier(m, isYes);
+    const pot = Number(isYes ? m.pot_yes : m.pot_no);
+    return `<div class="mk2-side ${isYes ? 'y' : 'n'} ${st}">
+      <span class="k">${isYes ? 'YES' : 'NO'}${st === 'won' ? ' · won' : st === 'lost' ? ' · lost' : ''}</span>
+      <span class="p">${isYes ? pct : 100 - pct}<small>%</small></span>
+      <span class="s">${fmtLunc(pot)} LUNC · ${playersText(isYes ? m.bettors_yes : m.bettors_no)}${
+        mult && pot && m.status !== 'void' && m.status !== 'settled' ? ` · pays ×${mult.toFixed(2)}` : ''}</span>
+    </div>`;
+  };
+  return `<div class="mk2-sides">${side(true)}${side(false)}</div>`;
+}
+
+/** Ваша позиция: ставки, что получите при каждом исходе, кнопка выплаты. */
+function mkPositionPanel(m, pos) {
+  if (!pos || (!Number(pos.yes) && !Number(pos.no))) return '';
+  const yes = Number(pos.yes), no = Number(pos.no);
+  const won = m.status === 'settled' && Number(m.outcome ? pos.yes : pos.no) > 0;
+  const canClaim = (m.status === 'settled' && won) || m.status === 'void';
+  const line = [yes ? `<span><b>${fmtLunc(yes)}</b> LUNC on <em class="y">YES</em></span>` : '',
+    no ? `<span><b>${fmtLunc(no)}</b> LUNC on <em class="n">NO</em></span>` : ''].filter(Boolean).join('');
+  let outcomes = '';
+  if (m.status !== 'settled' && m.status !== 'void') {
+    const my = payoutMultiplier(m, true) || 0, mn = payoutMultiplier(m, false) || 0;
+    const ifYes = yes * my, ifNo = no * mn, staked = yes + no;
+    const row = (label, got, cls) => {
+      const d = got - staked;
+      return `<div class="row"><span>${label}</span><b class="${d >= 0 ? 'y' : 'n'}">${
+        got ? '≈ ' + fmtLunc(got) + ' LUNC' : 'nothing back'} <small>(${d >= 0 ? '+' : '−'}${fmtLunc(Math.abs(d))})</small></b></div>`;
+    };
+    outcomes = `<div class="mk2-pos-out">${row('If YES', ifYes)}${row('If NO', ifNo)}
+      <p>Estimate from the current pool after fees on the losing side, before the ${taxPct()}% network tax.</p></div>`;
+  }
+  const pay = Number(pos.payout) && !pos.claimed
+    ? `<div class="mk2-pos-pay">Pays <b>${fmtLunc(pos.payout)} LUNC</b>, about ${netLunc(pos.payout)} after the ${taxPct()}% network tax${
+        m.status === 'proposed' ? ', once the challenge window closes' : ''}</div>` : '';
+  const btn = pos.claimed
+    ? `<div class="mk2-pos-done">${m.status === 'void' ? 'Refunded' : 'Collected'} ✓</div>`
+    : canClaim
+      ? `<button onclick="submitClaim()" class="mk2-claim" type="button">${m.status === 'void' ? 'Take the refund' : 'Collect'} &rarr;</button>`
+      : m.status === 'settled' ? '' : '<div class="mk2-pos-wait">Collect opens when the market settles</div>';
+  return `<section class="mk2-pos">
+    <span class="lbl">Your position</span>
+    <div class="mk2-pos-line">${line}</div>
+    ${outcomes}${pay}${btn}
+  </section>`;
+}
+
 /** Витрина: один рынок - как раньше; несколько продвинутых - карусель. */
 function mkFeatured(feats) {
   if (feats.length < 2) return featuredCard(feats[0]);
@@ -606,53 +777,32 @@ function mkSafeCard(fn, m) {
 function marketCard(m) { return mkSafeCard(marketCardRaw, m); }
 function featuredCard(m) { return mkSafeCard(featuredCardRaw, m); }
 
-function marketCardRaw(m) {
+function marketCardRaw(m, big) {
+  const yes = Number(m.pot_yes), no = Number(m.pot_no), total = yes + no;
+  const pct = total ? Math.round((yes / total) * 100) : 50;
+  const accepting = m.status === 'open' && timeLeft(m.bets_close_at);
+  const note = m.ruling ? `Court decision: ${mktEsc(rulingText(m.ruling))}`
+    : m.reading && m.status === 'disputed' ? `Disputed reading: ${mktEsc(m.reading)}`
+      : m.reading && m.status === 'proposed' ? `Posted reading, still open to dispute: ${mktEsc(m.reading)}`
+        : m.reading ? mktEsc(m.reading) : '';
   return `
-  <article class="mkc${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
-    <div class="head">
-      ${promoTag(m)}
-      <span class="cat">${mktEsc(m.category)}</span>
-      ${sourceTag(m)}
-      <span class="left">${statusLine(m)}</span>
+  <article class="mkc mk2c${big ? ' big' : ''}${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
+    <div class="mk2-head">
+      ${mkOrb(m)}
+      <div class="mk2-titles">
+        ${mkCrumb(m)}
+        <h4>${mktEsc(m.question)}</h4>
+      </div>
     </div>
-    <h4>${mktEsc(m.question)}</h4>
-    <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
     ${bonusChip(m)}
-    ${oddsBlock(m)}
-    ${footBlock(m)}
+    ${big && note ? `<p class="mk2-note">${note}</p>` : ''}
+    ${accepting ? oddsBlock(m) : mkGauge(m, pct)}
+    ${mkFoot(m)}
   </article>`;
 }
 
-/** Тот же рынок, которому отдано больше места: фон баннера, крупный
- *  вопрос и проценты. Первый в списке, чтобы страница не начиналась
- *  плиткой одинаковых карточек. */
-function featuredCardRaw(m) {
-  return `
-  <article class="mkc big${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}" onclick="openProphecyMarket(${m.id})">
-    <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
-    <div class="inner">
-      <div class="head">
-        <span class="cat feat${m.promoted ? ' promo-tag' : ''}">${m.promoted ? '★ Promoted'
-          : (m.status === 'settled' || m.status === 'void') ? 'Latest result' : 'Closing next'}</span>
-        <span class="cat">${mktEsc(m.category)}</span>
-        ${sourceTag(m)}
-        <span class="left">${statusLine(m)}</span>
-      </div>
-      <h4>${mktEsc(m.question)}</h4>
-      <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
-      ${bonusChip(m)}
-      ${m.ruling
-        ? `<p class="desc">Court decision: ${mktEsc(rulingText(m.ruling))}</p>`
-        : m.reading && m.status === 'disputed'
-          ? `<p class="desc">Disputed reading: ${mktEsc(m.reading)}</p>`
-          : m.reading && m.status === 'proposed'
-            ? `<p class="desc">Posted reading, still open to dispute: ${mktEsc(m.reading)}</p>`
-            : m.reading ? `<p class="desc">${mktEsc(m.reading)}</p>` : ''}
-      ${oddsBlock(m)}
-      ${footBlock(m)}
-    </div>
-  </article>`;
-}
+/** Витрина: тот же рынок, крупнее. */
+function featuredCardRaw(m) { return marketCardRaw(m, true); }
 
 
 function emptyPanel(text, sub) {
@@ -689,20 +839,13 @@ async function renderMarkets(resolved) {
   // Контракт помечен в цепочке как TEST, admin и resolver - один кошелёк.
   // Пока это так, интерфейс обязан говорить об этом прямо.
   const TEST_BANNER = `
-    <div style="border:1px solid rgba(255,170,60,0.35);background:rgba(255,170,60,0.07);
-      border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;
-      color:#ffb14e;line-height:1.6;">
+    <div class="mk2-beta">
+      <span class="tag">${COURT_CONTRACT && !PROPHECY_TESTNET ? 'BETA' : 'TEST'}</span>
       ${COURT_CONTRACT
         ? (PROPHECY_TESTNET
-          ? `<strong>TEST deployment · rebel-2.</strong> The operator posts
-             outcomes. Anyone can dispute one, and a court decides - the operator cannot vote in it.
-             Amounts are capped. Treat this as a preview, not a settled market.`
-          : `<strong>Beta.</strong> The operator posts outcomes read from the chain. Anyone can
-             dispute one with a bond, and a council court decides - the operator cannot vote in it.
-             Predictions are capped per wallet while the section is new.`)
-        : `<strong>TEST deployment.</strong> Outcomes are posted by the operator, not computed by the
-           contract, and the same key can post and challenge them. Amounts are capped. Treat this as a
-           preview, not a settled market.`}
+          ? 'TEST deployment on rebel-2. Outcomes are posted by the operator and can be disputed; amounts are capped.'
+          : 'Outcomes are read from the chain, and anyone can dispute one in the council court. Caps apply while the section is new.')
+        : 'TEST deployment. Outcomes are posted by the operator, not computed by the contract. Amounts are capped.'}
     </div>`;
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
@@ -940,36 +1083,38 @@ async function openProphecyMarket(id) {
 
   host.innerHTML = `
     <div class="mk-back" onclick="renderMarkets(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
-    <article class="mkc big mk-detail${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}">
-      <img class="art" src="assets/img/banner-markets.webp" alt="" loading="lazy">
-      <div class="inner">
-        <div class="head">
-          ${promoTag(m)}
-          <span class="cat">${mktEsc(m.category)}</span>
-          ${sourceTag(m)}
-          <span class="left">${statusLine(m)}</span>
+    <section class="mk2-hero${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}">
+      <div class="mk2-head">
+        ${mkOrb(m, true)}
+        <div class="mk2-titles">
+          ${mkCrumb(m, true)}
+          <h1>${mktEsc(m.question)}</h1>
         </div>
-        <h4>${mktEsc(m.question)}</h4>
-        <div class="by">Created by ${mktEsc(shortAddr(m.creator))}</div>
-        ${bonusChip(m)}
-        ${open ? openSides(m, pct) + betPanel(m) : closedSplit(m, pct)}
-        ${!open && m.status === 'open'
-          ? '<div class="mk-shut">Predictions are closed, waiting for the outcome.</div>' : ''}
-        ${footBlock(m)}
       </div>
-    </article>
-    ${resultBlock(m)}
-    <div id="mk-dispute"></div>
-    ${positionBlock(m, pos)}
-    <div id="mk-activity"></div>
-    <section class="card mk-how">
-      <h3>How this settles</h3>
-      <p class="mk-lead">${plainSpec(m, tip)}</p>
-      <details class="mk-verify">
-        <summary>Check it against the chain yourself</summary>
-        ${verifyBlock(m)}
-      </details>
-    </section>`;
+      ${bonusChip(m)}
+      ${mkPhaseTrack(m)}
+    </section>
+    <div class="mk2-body">
+      ${mkPositionPanel(m, pos)}
+      <section class="mkc mk-detail mk2-panel mk2-forecast">
+        <div class="mk2-panel-cap">
+          <span>${open ? 'Make your call' : oddsCaption(m) || 'Forecast at close'}</span>
+          <span>${fmtLunc(total + Number(m.boost || 0))} LUNC pool · ${playersText(m.bettors_yes + m.bettors_no)}</span>
+        </div>
+        ${open ? openSides(m, pct) + betPanel(m) : mkSidesClosed(m, pct) + mkGauge(m, pct, true)}
+      </section>
+      ${resultBlock(m)}
+      <div id="mk-dispute"></div>
+      <div id="mk-activity"></div>
+      <section class="mk2-panel mk2-how">
+        <span class="lbl">How this resolves</span>
+        <p class="mk-lead">${plainSpec(m, tip)}</p>
+        <details class="mk-verify">
+          <summary>Check it on the chain yourself</summary>
+          ${verifyBlock(m)}
+        </details>
+      </section>
+    </div>`;
   if (open) updateBetCalc();
   if (window.renderDispute) window.renderDispute(m);
   if (window.renderActivity) window.renderActivity(m);

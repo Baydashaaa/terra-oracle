@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
   <link rel="stylesheet" href="assets/css/shell-fix.css?v=202610271200">
   <link rel="stylesheet" href="assets/css/motion.css?v=202610271400">
+  <link rel="stylesheet" href="assets/css/markets-v2.css?v=202610272000">
   <link rel="stylesheet" href="assets/css/contrast.css?v=202610031200">
   <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
@@ -693,28 +694,16 @@
  <!-- ─── список рынков ─── -->
  <div id="mk-browse">
 
-  <div class="mk-stats" id="mkStats">
-   <div class="mk-stat">
-    <img src="assets/img/icons/m-open.webp" alt="" width="128" height="128" loading="lazy">
-    <b id="mk-stat-open">—</b><span>Open markets</span>
-   </div>
-   <div class="mk-stat">
-    <img src="assets/img/icons/c-volume.webp" alt="" width="128" height="128" loading="lazy">
-    <b id="mk-stat-vol">—</b><span>LUNC in predictions</span>
-   </div>
-   <div class="mk-stat">
-    <img src="assets/img/icons/m-settled.webp" alt="" width="128" height="128" loading="lazy">
-    <b id="mk-stat-settled">—</b><span>Settled markets</span>
-   </div>
-   <div class="mk-stat">
-    <img src="assets/img/icons/m-creators.webp" alt="" width="128" height="128" loading="lazy">
-    <b id="mk-stat-players">—</b><span>Participants</span>
-   </div>
+  <div class="mk-stats mk2-stats" id="mkStats">
+   <div class="mk-stat"><span>Live markets</span><b id="mk-stat-open">-</b></div>
+   <div class="mk-stat"><span>In play</span><b id="mk-stat-vol">-</b><em>LUNC</em></div>
+   <div class="mk-stat"><span>Settled</span><b id="mk-stat-settled">-</b></div>
+   <div class="mk-stat"><span>Participants</span><b id="mk-stat-players">-</b></div>
   </div>
 
   <div class="mk-bar">
    <div class="chips" id="mkTabs">
-    <button type="button" aria-pressed="true"  onclick="switchMarketView(this,false)">Open</button>
+    <button type="button" aria-pressed="true"  onclick="switchMarketView(this,false)">Live</button>
     <button type="button" aria-pressed="false" onclick="switchMarketView(this,true)">Settled</button>
    </div>
   </div>
@@ -1766,12 +1755,12 @@
   <script src="assets/js/app/chat.js?v=098cffb07e"></script>
   <script src="assets/js/app/vote.js?v=26d1f80065"></script>
   <script src="assets/js/contract-exec.js?v=202610011500"></script>
-  <script src="assets/js/app/markets.js?v=202610271900"></script>
+  <script src="assets/js/app/markets.js?v=202610272000"></script>
   <script src="assets/js/app/markets-create.js?v=202610271200"></script>
   <script src="assets/js/app/markets-court.js?v=202610011500"></script>
   <script src="assets/js/app/multisig.js?v=202610011500"></script>
   <script src="assets/js/oracle-motion.js?v=202610271400"></script>
-  <script src="assets/js/app/markets-activity.js?v=adacece7a5"></script>
+  <script src="assets/js/app/markets-activity.js?v=202610272000"></script>
   <script src="assets/js/app/hooks.js?v=408ad07d36"></script>
   <script src="assets/js/profile.js?v=85e7c93224"></script>
   <script src="assets/js/reputation.js?v=202609270010"></script>
