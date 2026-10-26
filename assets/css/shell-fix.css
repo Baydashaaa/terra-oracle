@@ -2371,3 +2371,27 @@
 /* Точка-индикатор (.tag.dot у Chat): круг 7x7, не метка. */
 .rail .nav .tag.dot,
 .app .nav .tag.dot{margin:0 0 0 auto;padding:0;border:0;width:7px;height:7px;border-radius:50%;align-self:center}
+
+
+/* ---- Markets: простой режим создания и автопроверка ----
+   Статус проверки - одна строка, которую видно сразу: Valid, Invalid,
+   Checking. Подробный отчёт под ней только в продвинутом режиме. */
+#page-markets .mkf-status{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+#page-markets .mkf-status i{
+  width:9px;height:9px;border-radius:50%;flex:none;align-self:center;
+  background:var(--ink-3);
+}
+#page-markets .mkf-status b{font-family:var(--dis);font-size:15px;color:var(--ink)}
+#page-markets .mkf-status span{font-size:12.5px;color:var(--ink-3)}
+#page-markets .mkf-status.ok i{background:var(--lime);box-shadow:0 0 8px rgba(34,197,94,.6)}
+#page-markets .mkf-status.ok b{color:var(--lime)}
+#page-markets .mkf-status.warn i{background:#f4d03f}
+#page-markets .mkf-status.warn span{color:#f4d03f}
+#page-markets .mkf-status.bad i{background:var(--pink)}
+#page-markets .mkf-status.bad b{color:var(--pink)}
+#page-markets .mkf-status.checking i{background:#a78bfa;animation:mkf-pulse 1s ease-in-out infinite}
+#page-markets .mkf-status + .mkf-row,#page-markets .mkf-status + div{margin-top:10px}
+@keyframes mkf-pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){#page-markets .mkf-status.checking i{animation:none}}
+#page-markets .mkf-when{margin-top:4px}
+#page-markets .mkf-adv{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}

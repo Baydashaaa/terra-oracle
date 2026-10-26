@@ -162,11 +162,48 @@
   // закрывается не позже чем за 3% оставшегося срока (и не меньше
   // bet_cutoff контракта). Керпер дополнительно проверяет это по факту.
   var DRIFT_SHARE = 0.03;
-  function minLead() {
+  function minLeadFor(ts) {
     var cut = S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600;
-    var left = resolveTs() - Math.floor(Date.now() / 1000);
+    var left = ts - Math.floor(Date.now() / 1000);
     return Math.max(cut, Math.ceil(Math.max(0, left) * DRIFT_SHARE));
   }
+  function minLead() { return minLeadFor(resolveTs()); }
+
+  /** Самый короткий допустимый срок закрытия: дольше всего открыт приём,
+   *  и правило 3% соблюдено. null - дата так далеко, что даже 7 дней мало
+   *  (больше примерно 233 дней вперёд). */
+  function autoLeadFor(ts) {
+    var ml = minLeadFor(ts);
+    for (var i = 0; i < LEADS.length; i++) if (LEADS[i].secs >= ml) return LEADS[i].secs;
+    return null;
+  }
+
+  /** Можно ли выбрать этот день в простом режиме: приём должен остаться
+   *  открытым ещё хотя бы десять минут, и срок закрытия должен найтись. */
+  function dayOk(y, m, d) {
+    var ts = Math.floor(Date.UTC(y, m, d, S.resH) / 1000);
+    var lead = S.leadAuto ? autoLeadFor(ts) : S.lead;
+    if (!lead || lead < minLeadFor(ts)) return false;
+    return ts - lead > Math.floor(Date.now() / 1000) + 600;
+  }
+
+  /** В простом режиме дата всегда допустимая: после смены месяца или года
+   *  день, ставший недопустимым, сдвигается на ближайший подходящий. */
+  function snapDate() {
+    if (S.advanced || dayOk(S.resY, S.resM, S.resD)) return;
+    var t = Date.UTC(S.resY, S.resM, S.resD);
+    var today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+    var d;
+    for (var back = t; back >= today; back -= 86400000) {
+      d = new Date(back);
+      if (dayOk(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())) { setDay(d); return; }
+    }
+    for (var fwd = today; fwd <= today + 400 * 86400000; fwd += 86400000) {
+      d = new Date(fwd);
+      if (dayOk(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())) { setDay(d); return; }
+    }
+  }
+  function setDay(d) { S.resY = d.getUTCFullYear(); S.resM = d.getUTCMonth(); S.resD = d.getUTCDate(); }
   function leadText(secs) {
     return secs >= 86400 ? Math.ceil(secs / 3600) + ' hours'
       : secs >= 3600 ? Math.ceil(secs / 3600) + (secs > 3600 ? ' hours' : ' hour')
@@ -195,6 +232,15 @@
     threshold: '',
     resY: 0, resM: 0, resD: 0, resH: 20,   // момент разрешения, UTC
     lead: 86400,                            // за сколько закрывается приём
+    // Простой режим (по умолчанию, предложение Нанса 26.10): человек выбирает
+    // только дату. Час разрешения остаётся S.resH (20:00 UTC, пока его не
+    // поменяли в продвинутом режиме), срок закрытия выбирается сам - самый
+    // короткий из LEADS, который проходит правило 3% и bet_cutoff. Режим
+    // ничего не сбрасывает: оба читают одно и то же S, поэтому одинаковые
+    // настройки дают одинаковую спеку.
+    advanced: false,
+    leadAuto: true,                         // срок закрытия выбирается сам
+    check: { key: '', state: 'idle' },      // автопроверка по цепочке
     promoted: false,
     height: null,
     cfg: null,
@@ -390,45 +436,66 @@
 
   function hint(t) { return '<span class="mkf-hint">' + esc(t) + '</span>'; }
 
+  // ── автопроверка ──────────────────────────────────────────────────────────
+  //
+  // Раньше по кнопке "Run the check". Теперь сама, как только условие
+  // заполнено, с паузой после ввода. Результат хранится в S.check и
+  // рисуется заново при любой перерисовке формы. Финальная проверка
+  // (problems) перед транзакцией остаётся как была.
+
+  var checkTimer = null;
+  function checkKey() {
+    return [S.metric, String(S.param).trim(), S.comparator, String(S.threshold).trim()].join('|');
+  }
+  function scheduleCheck(now) {
+    clearTimeout(checkTimer);
+    var key = checkKey();
+    if (S.check.key === key && S.check.state !== 'idle') return;
+    checkTimer = setTimeout(runCheck, now ? 0 : 600);
+  }
+
   function runCheck() {
-    var box = document.getElementById('mkf-check');
-    if (!box) return;
     var m = METRICS[S.metric];
+    var key = checkKey();
 
     if (m.param && !String(S.param).trim()) {
-      box.className = 'mkf-check';
-      box.innerHTML = hint('Fill in ' + m.param.label.toLowerCase() + ' to run the check.');
-      return;
+      S.check = { key: key, state: 'idle', msg: 'Fill in ' + m.param.label.toLowerCase() + ' to check the market.' };
+      return paintCheck();
     }
     if (!m.discrete && !String(S.threshold).trim()) {
-      box.className = 'mkf-check';
-      box.innerHTML = hint('Enter a value to run the check.');
-      return;
+      S.check = { key: key, state: 'idle', msg: 'Enter a value to check the market.' };
+      return paintCheck();
     }
     var spec = buildSpec() || { metric: S.metric, param: S.param || null, height: S.height };
 
-    box.className = 'mkf-check';
-    box.innerHTML = hint('Reading the chain…');
+    S.check = { key: key, state: 'checking' };
+    paintCheck();
 
     lcdGet(m.path(spec.param || '')).then(function (j) {
+      if (checkKey() !== key) return;   // условие уже поменяли, ответ устарел
       var val = m.pick(j, spec.param);
       if (val === null || val === undefined) {
-        box.className = 'mkf-check bad';
-        box.innerHTML = '<b>Nothing to read.</b> The endpoint answered, but the value is not there. '
-          + 'A market on this spec would have to be voided, and the bond burned. Check the parameter.';
-        return;
+        S.check = { key: key, state: 'bad',
+          msg: 'The chain has no value for this. Check the ' + (m.param ? m.param.label.toLowerCase() : 'metric') + '.',
+          html: '<b>Nothing to read.</b> The endpoint answered, but the value is not there. '
+            + 'A market on this spec would have to be voided, and the bond burned. Check the parameter.' };
+        return paintCheck();
       }
 
       if (m.discrete) {
         var passed = val === 'PROPOSAL_STATUS_PASSED';
-        box.className = 'mkf-check ok';
-        box.innerHTML = '<div class="mkf-row"><span>Status right now</span><b>' + esc(String(val)) + '</b></div>'
+        var finished = /PASSED|REJECTED|FAILED/.test(String(val));
+        S.check = { key: key, state: finished ? 'warn' : 'ok',
+          now: String(val).replace('PROPOSAL_STATUS_', '').replace(/_/g, ' ').toLowerCase(),
+          would: passed,
+          msg: finished ? 'This proposal has already finished voting, so the answer is known.' : '',
+          html: '<div class="mkf-row"><span>Status right now</span><b>' + esc(String(val)) + '</b></div>'
           + '<div class="mkf-row"><span>Would settle</span><b class="' + (passed ? 'y' : 'n') + '">'
           + (passed ? 'YES' : 'NO') + '</b></div>'
           + '<div class="mkf-note">A proposal that has already finished voting is not a market. '
           + 'Pick one that is still open.</div>'
-          + '<pre>' + esc(curlFor(spec)) + '</pre>';
-        return;
+          + '<pre>' + esc(curlFor(spec)) + '</pre>' };
+        return paintCheck();
       }
 
       var th = Number(spec.threshold);
@@ -449,8 +516,9 @@
         }
       }
 
-      box.className = 'mkf-check ' + (warn ? 'warn' : 'ok');
-      box.innerHTML =
+      S.check = { key: key, state: warn ? 'warn' : 'ok', now: fmtMetric(m, val), would: would,
+        msg: warn ? 'Your value and today\'s reading are about 10^' + power + ' apart. Check the number of zeros.' : '',
+        html:
           '<div class="mkf-row"><span>Reads right now</span><b>' + esc(fmtMetric(m, val)) + '</b></div>'
         + '<div class="mkf-row"><span>Your value</span><b>' + esc(thresholdText(m, S.threshold)) + '</b></div>'
         + '<div class="mkf-row"><span>Would settle today</span><b class="' + (would ? 'y' : 'n') + '">'
@@ -458,12 +526,42 @@
         + warn
         + '<div class="mkf-note">If that is already the obvious answer, nobody will take the other side. '
         + 'A market worth opening is one you cannot call today.</div>'
-        + '<pre>' + esc(curlFor(spec)) + '</pre>';
+        + '<pre>' + esc(curlFor(spec)) + '</pre>' };
+      paintCheck();
     }).catch(function () {
-      box.className = 'mkf-check bad';
-      box.innerHTML = '<b>Could not read it.</b> Either the parameter is wrong or every node is down. '
-        + 'Do not create the market until this returns a value.';
+      if (checkKey() !== key) return;
+      S.check = { key: key, state: 'bad',
+        msg: 'Could not read the chain. The parameter may be wrong, or every node is down.',
+        html: '<b>Could not read it.</b> Either the parameter is wrong or every node is down. '
+          + 'Do not create the market until this returns a value.' };
+      paintCheck();
     });
+  }
+
+  /** Valid / Invalid / Checking - то, что видит каждый. В продвинутом
+   *  режиме под ним полный отчёт, как раньше. */
+  function paintCheck() {
+    var box = document.getElementById('mkf-check');
+    if (!box) return;
+    var c = S.check;
+    var errs = problems();
+    var status, cls, why = '';
+    if (c.state === 'checking') { status = 'Checking'; cls = 'checking'; why = 'Reading the chain…'; }
+    else if (c.state === 'bad') { status = 'Invalid'; cls = 'bad'; why = c.msg; }
+    else if (c.state === 'idle') { status = 'Not checked yet'; cls = 'idle'; why = c.msg || 'Fill in the condition above.'; }
+    else if (!S.height) { status = 'Checking'; cls = 'checking'; why = 'Estimating the block height…'; }
+    else if (errs.length) { status = 'Invalid'; cls = 'bad'; why = errs[0]; }
+    else { status = 'Valid'; cls = c.state === 'warn' ? 'warn' : 'ok'; why = c.msg || 'This market can be published.'; }
+
+    var facts = (c.state === 'ok' || c.state === 'warn')
+      ? '<div class="mkf-row"><span>Right now</span><b>' + esc(c.now) + '</b></div>'
+        + '<div class="mkf-row"><span>Would settle today</span><b class="' + (c.would ? 'y' : 'n') + '">'
+        + (c.would ? 'YES' : 'NO') + '</b></div>'
+      : '';
+
+    box.className = 'mkf-check' + (cls === 'bad' ? ' bad' : cls === 'warn' ? ' warn' : cls === 'ok' ? ' ok' : '');
+    box.innerHTML = '<div class="mkf-status ' + cls + '"><i></i><b>' + status + '</b><span>' + esc(why) + '</span></div>'
+      + (S.advanced ? (c.html || '') : facts);
   }
 
   // ── валидация ─────────────────────────────────────────────────────────────
@@ -548,14 +646,26 @@
     // Задним числом рынок не создать: контракт отклонит resolve_after в
     // прошлом. Прошедшее видно, но выбрать его нельзя.
     var nowMs = Date.now();
+    // Продвинутый режим - как раньше: закрыто только прошедшее, остальное
+    // проверяется списком ошибок. Простой - только дни, где всё сходится.
+    function monthOk(y, mo) {
+      for (var dd2 = 1; dd2 <= daysInMonth(y, mo); dd2++) if (dayOk(y, mo, dd2)) return true;
+      return false;
+    }
     for (var d = 1; d <= dim; d++) {
-      days.push({ v: d, label: String(d), off: Date.UTC(S.resY, S.resM, d, 23) < nowMs });
+      days.push({ v: d, label: String(d), off: S.advanced
+        ? Date.UTC(S.resY, S.resM, d, 23) < nowMs : !dayOk(S.resY, S.resM, d) });
     }
     for (var i = 0; i < 12; i++) {
-      months.push({ v: i, label: MONTHS[i], off: Date.UTC(S.resY, i + 1, 0, 23) < nowMs });
+      months.push({ v: i, label: MONTHS[i], off: S.advanced
+        ? Date.UTC(S.resY, i + 1, 0, 23) < nowMs : !monthOk(S.resY, i) });
     }
     var y0 = new Date().getUTCFullYear();
-    for (var y = y0; y <= y0 + 3; y++) years.push({ v: y, label: String(y) });
+    for (var y = y0; y <= y0 + 3; y++) {
+      var yOk = S.advanced;
+      if (!yOk) for (var mo = 0; mo < 12 && !yOk; mo++) yOk = monthOk(y, mo);
+      years.push({ v: y, label: String(y), off: !yOk });
+    }
     for (var h = 0; h < 24; h++) {
       hours.push({ v: h, label: pad2(h) + ':00', off: Date.UTC(S.resY, S.resM, S.resD, h) <= nowMs });
     }
@@ -563,19 +673,24 @@
       + dd('resD', days, S.resD, '84px')
       + dd('resM', months, S.resM, '100px')
       + dd('resY', years, S.resY, '104px')
-      + dd('resH', hours, S.resH, '116px')
-      + '<span class="mkf-utc">UTC</span></div>';
+      + (S.advanced ? dd('resH', hours, S.resH, '116px') + '<span class="mkf-utc">UTC</span>' : '')
+      + '</div>';
   }
 
   function render() {
     var host = document.getElementById('mk-create-host');
     if (!host) return;
+    snapDate();
     var ml = minLead();
-    if (S.lead < ml) {
+    if (S.leadAuto) {
+      var auto = autoLeadFor(resolveTs());
+      if (auto) S.lead = auto;
+    } else if (S.lead < ml) {
       for (var li = 0; li < LEADS.length; li++) {
         if (LEADS[li].secs >= ml) { S.lead = LEADS[li].secs; break; }
       }
     }
+    recalcHeight();
     var m = METRICS[S.metric];
     var bond = S.cfg ? Number(S.cfg.creation_bond) : 200000000000;
     var promo = S.cfg ? Number(S.cfg.promo_fee) : 0;
@@ -612,42 +727,24 @@
       + '  <div class="mkf-note">' + esc(m.note) + '</div>'
       + '</section>'
 
-      + '<h3 class="step-h"><span class="n">2</span>Timing</h3>'
+      + '<h3 class="step-h"><span class="n">2</span>When does it resolve?</h3>'
       + '<section class="card qform">'
-      + '  <div class="field"><label>Resolution</label>' + dateFields()
-      + '    <div class="mkf-note">The value is read at this moment. Always UTC, the same for everyone.</div>'
-      + '  </div>'
-      + '  <div class="field"><label>Predictions close</label>'
-      + '    <div class="chips" id="mkf-lead">'
-      + LEADS.map(function (l) {
-        return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (S.lead === l.secs) + '"'
-          + (l.secs < minLead() ? ' disabled title="Too short for this resolution date"' : '')
-          + '>' + l.label + '</button>';
-      }).join('')
-      + '    </div>'
-      + '    <div class="mkf-note">Predictions close <b>' + esc(utcText(closeTs(), true))
-      + '</b>. The gap exists so nobody can predict once the outcome is visible.'
-      + (minLead() > (S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600)
-        ? ' The further out the resolution, the longer the gap: at least 3% of the time left, '
-          + 'because block times drift. Here that is ' + leadText(minLead()) + '.'
-        : '')
-      + '</div>'
-      + '  </div>'
-      + '  <div class="mkf-note">'
-      + (S.height
-        ? 'Reading is taken at block <b>' + S.height + '</b>, estimated from '
-        + S.blockSecs.toFixed(2) + 's per block. Blocks drift, so the height is what settles the '
-        + 'market and the date is an approximation of it.'
-        : 'Waiting for the chain to estimate the block height.')
-      + '  </div>'
+      + (S.advanced ? '' : simpleTiming())
+      + (S.advanced ? advancedTiming() : '')
+      + '  <label class="mkf-toggle mkf-adv">'
+      + '    <input type="checkbox" id="mkf-adv"' + (S.advanced ? ' checked' : '') + '>'
+      + '    <span class="sw" aria-hidden="true"></span>'
+      + '    <span class="tx"><b>Show advanced settings</b>'
+      + '      <span>Resolution hour, when predictions close, the block height and the full check. '
+      + 'Your choices are kept either way.</span></span>'
+      + '  </label>'
       + '</section>'
 
-      + '<h3 class="step-h"><span class="n">3</span>Check it before you pay</h3>'
+      + '<h3 class="step-h"><span class="n">3</span>Check</h3>'
       + '<section class="card qform">'
-      + '  <div id="mkf-check" class="mkf-check">' + hint('Fill the condition above, then run the check.') + '</div>'
-      + '  <button type="button" class="ghost sm" id="mkf-run" style="margin-top:12px;">Run the check</button>'
+      + '  <div id="mkf-check" class="mkf-check"></div>'
+      + (S.advanced ? '  <button type="button" class="ghost sm" id="mkf-run" style="margin-top:12px;">Check again</button>' : '')
       + '</section>'
-
       + '<h3 class="step-h"><span class="n">4</span>Preview</h3>'
       + '<section class="card qform mkf-preview">'
       + '  <div class="mkf-pcard' + (S.promoted ? ' promo' : '') + '" style="--c:' + (typeof catRgb === 'function' ? catRgb(S.category) : '139,150,184') + '">'
@@ -689,6 +786,52 @@
       + '</section>';
 
     wire();
+  }
+
+
+  // ── блок времени: простой и продвинутый ──────────────────────────────────
+
+  function simpleTiming() {
+    return ''
+      + '  <div class="field"><label>Resolution date</label>' + dateFields() + '</div>'
+      + '  <div class="mkf-pdates mkf-when">'
+      + '    <div><span>Resolution</span><b>' + esc(utcText(resolveTs(), true)) + '</b></div>'
+      + '    <div><span>Predictions close</span><b>' + esc(utcText(closeTs(), true)) + '</b></div>'
+      + '  </div>'
+      + '  <div class="mkf-note">Set for you from the protocol rules. Times are estimates: the market '
+      + 'settles at a block height, and blocks run slightly fast or slow.</div>';
+  }
+
+  function advancedTiming() {
+    return ''
+      + '  <div class="field"><label>Resolution</label>' + dateFields()
+      + '    <div class="mkf-note">The value is read at this moment. Always UTC, the same for everyone.</div>'
+      + '  </div>'
+      + '  <div class="field"><label>Predictions close</label>'
+
+      + '    <div class="chips" id="mkf-lead">'
+      + '<button type="button" data-lead="auto" aria-pressed="' + S.leadAuto + '" title="The shortest gap the rules allow">Auto' + (S.leadAuto ? ': ' + LEADS.filter(function (l) { return l.secs === S.lead; }).map(function (l) { return l.label; })[0] : '') + '</button>'
+      + LEADS.map(function (l) {
+        return '<button type="button" data-lead="' + l.secs + '" aria-pressed="' + (!S.leadAuto && S.lead === l.secs) + '"'
+          + (l.secs < minLead() ? ' disabled title="Too short for this resolution date"' : '')
+          + '>' + l.label + '</button>';
+      }).join('')
+      + '    </div>'
+      + '    <div class="mkf-note">Predictions close <b>' + esc(utcText(closeTs(), true))
+      + '</b>. The gap exists so nobody can predict once the outcome is visible.'
+      + (minLead() > (S.cfg ? Number(S.cfg.bet_cutoff_secs) : 3600)
+        ? ' The further out the resolution, the longer the gap: at least 3% of the time left, '
+          + 'because block times drift. Here that is ' + leadText(minLead()) + '.'
+        : '')
+      + '</div>'
+      + '  </div>'
+      + '  <div class="mkf-note">'
+      + (S.height
+        ? 'Reading is taken at block <b>' + S.height + '</b>, estimated from '
+        + S.blockSecs.toFixed(2) + 's per block. Blocks drift, so the height is what settles the '
+        + 'market and the date is an approximation of it.'
+        : 'Waiting for the chain to estimate the block height.')
+      + '  </div>';
   }
 
   // ── продвижение ───────────────────────────────────────────────────────────
@@ -751,6 +894,14 @@
       else render();
     });
 
+    var adv = document.getElementById('mkf-adv');
+    if (adv) adv.addEventListener('change', function () {
+      S.advanced = adv.checked;
+      render();
+      var again = document.getElementById('mkf-adv');
+      if (again) again.focus();
+    });
+
     var promoBox = document.getElementById('mkf-promo');
     if (promoBox) promoBox.addEventListener('change', function () {
       S.promoted = promoBox.checked;
@@ -763,7 +914,8 @@
     if (lead) lead.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-lead]');
       if (!b) return;
-      S.lead = Number(b.dataset.lead);
+      if (b.dataset.lead === 'auto') S.leadAuto = true;
+      else { S.leadAuto = false; S.lead = Number(b.dataset.lead); }
       render();
     });
 
@@ -783,11 +935,14 @@
     });
     onDD('resH', function (v) { S.resH = Number(v); recalcHeight(); render(); });
 
-    bind('mkf-param', 'input', function (v) { S.param = v; refreshPreview(); });
-    bind('mkf-th', 'input', function (v) { S.threshold = v; refreshPreview(); });
+    bind('mkf-param', 'input', function (v) { S.param = v; refreshPreview(); scheduleCheck(); });
+    bind('mkf-th', 'input', function (v) { S.threshold = v; refreshPreview(); scheduleCheck(); });
 
     var run = document.getElementById('mkf-run');
-    if (run) run.addEventListener('click', runCheck);
+    if (run) run.addEventListener('click', function () { S.check.key = ''; scheduleCheck(true); });
+
+    paintCheck();
+    scheduleCheck();
 
     var go = document.getElementById('mkf-go');
     if (go) go.addEventListener('click', submit);
@@ -820,6 +975,7 @@
     var errs = problems();
     var go = document.getElementById('mkf-go');
     if (go) { go.disabled = errs.length > 0; go.style.opacity = errs.length ? '.45' : ''; }
+    if (S.check.state !== 'checking') paintCheck();
     var box = document.querySelector('.mkf-errs');
     if (box) {
       box.innerHTML = errs.map(function (e) { return '<div>' + esc(e) + '</div>'; }).join('');
