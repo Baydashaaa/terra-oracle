@@ -1,0 +1,30 @@
+/* motion.css - анимации слоя oracle-motion.js. Работает только при классе
+   motion-on на <html>: без скрипта ничего не прячется и не двигается. */
+
+/* Переход между разделами */
+.motion-on .page.pg-enter{animation:pgIn .42s cubic-bezier(.2,.7,.2,1) both}
+.motion-on .page.pg-fade{animation:pgFade .3s ease both}
+.motion-on .page.pg-enter > .pg-kid{animation:pgKid .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--st,0ms)}
+@keyframes pgIn{from{opacity:0}to{opacity:1}}
+@keyframes pgFade{from{opacity:0}to{opacity:1}}
+@keyframes pgKid{
+  from{opacity:0;transform:translateY(14px);filter:blur(4px)}
+  to{opacity:1;transform:none;filter:none}
+}
+
+/* Появление карточек при прокрутке */
+.motion-on .rv{opacity:0}
+.motion-on .rv.rv-in{animation:rvIn .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--rd,0ms)}
+@keyframes rvIn{
+  from{opacity:0;transform:translateY(18px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+
+/* Отклик кнопок на нажатие. Свойство scale, а не transform: оно не
+   затирает собственный transform кнопки (например, центрирование). */
+.motion-on button:not(:disabled):active,
+.motion-on .btn:not(:disabled):active,
+.motion-on .go:active{scale:.97;transition:scale .08s}
+
+/* Салют на подтверждённое действие */
+.motion-burst{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147482000}

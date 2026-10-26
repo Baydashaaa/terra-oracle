@@ -1192,7 +1192,11 @@ async function mkTrack(hash, what, onSettled) {
     await new Promise((res) => setTimeout(res, 7000));
     r = { status: 'unknown' };
   }
-  if (r.status === 'confirmed') mkToast(`${what}: confirmed in block ${r.height.toLocaleString('en-US')}.`, 'ok');
+  if (r.status === 'confirmed') {
+    mkToast(`${what}: confirmed in block ${r.height.toLocaleString('en-US')}.`, 'ok');
+    // Прогноз, новый рынок, выплата - моменты, которые стоит отметить.
+    if (/^(Prediction|New market|Payout)$/.test(what) && typeof window.oracleCelebrate === 'function') window.oracleCelebrate();
+  }
   else if (r.status === 'failed') mkToast(`${what} failed on chain: ${r.log || 'code ' + r.code}`, 'err');
   else if (r.status === 'pending') {
     mkToast(`${what}: not in a block after a minute. Check tx ${String(hash).slice(0, 10)}… in the explorer before trying again.`, 'info');
