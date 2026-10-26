@@ -552,8 +552,16 @@ async function renderHomeMarkets() {
   }
   const now = Date.now() / 1000;
   const pot = (m) => Number(m.pot_yes) + Number(m.pot_no) + Number(m.boost || 0);
-  const open = all.filter((m) => m.status === 'open' && Number(m.bets_close_at) > now);
-  open.sort((a, b) => (Number(!!b.promoted) - Number(!!a.promoted))
+  // Живые рынки - все, что ещё не рассчитаны: принимают прогнозы, ждут
+  // исхода, исход объявлен или оспорен. Раньше показывались только
+  // принимающие прогнозы, и рынок пропадал с главной в момент закрытия
+  // приёма, хотя самое интересное (исход) было впереди. Сначала те, куда
+  // ещё можно войти.
+  const isLive = (m) => m.status === 'open' || m.status === 'proposed' || m.status === 'disputed';
+  const accepting = (m) => m.status === 'open' && Number(m.bets_close_at) > now;
+  const open = all.filter(isLive);
+  open.sort((a, b) => (Number(accepting(b)) - Number(accepting(a)))
+    || (Number(!!b.promoted) - Number(!!a.promoted))
     || (pot(b) - pot(a)) || (Number(a.bets_close_at) - Number(b.bets_close_at)));
   const shown = open.slice(0, 8);
   const count = document.getElementById('home-markets-count');
@@ -562,13 +570,16 @@ async function renderHomeMarkets() {
   try {
     grid.innerHTML = shown.length
       ? shown.map((m) => marketCard(m).replace(`openProphecyMarket(${m.id})`, `mkOpenFromHome(${m.id})`)).join('')
-      : `<div class="hm-empty">No open markets right now.
+      : `<div class="hm-empty">No live markets right now.
           <a href="/markets" onclick="mkOpenFromHome(0);return false">Open the first one</a></div>`;
   } catch (e) {
     sec.hidden = true;
     return;
   }
-  if (count) count.textContent = open.length ? `${open.length} open` : '';
+  const nAcc = open.filter(accepting).length;
+  if (count) count.textContent = open.length
+    ? (nAcc ? `${nAcc} open` : '') + (open.length > nAcc ? `${nAcc ? ' · ' : ''}${open.length - nAcc} awaiting outcome` : '')
+    : '';
   sec.hidden = false;
 }
 
@@ -972,8 +983,10 @@ function mkListChrome(show) {
   });
 }
 
+/** Сторона рынка считает кошельки, а не прогнозы: два прогноза с одного
+ *  кошелька - один участник. Слово "wallet" не оставляет вопроса. */
 function playersText(n) {
-  return `${n} ${n === 1 ? 'participant' : 'participants'}`;
+  return `${n} ${n === 1 ? 'wallet' : 'wallets'}`;
 }
 
 /**
