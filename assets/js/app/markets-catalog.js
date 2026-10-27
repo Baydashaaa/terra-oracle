@@ -657,6 +657,9 @@
   // Победа техническим поражением, перенос и отмена - аннулирование.
 
   var ES_GAMES = { dota2: 'Dota 2', csgo: 'CS2', lol: 'League of Legends' };
+  // Версия картинок игр: поднять при замене файлов, иначе браузер покажет
+  // старые (или запомненную ошибку 404).
+  var GAME_IMG_V = '2';
   var E = { game: 'dota2', q: '', match: null, tpl: null, busy: false, dup: null };
 
   function esList() {
@@ -731,7 +734,7 @@
         // Картинка игры - файл assets/img/games/<игра>.png, который кладёт
         // владелец сайта. Если файла нет, карточка остаётся с одним названием.
         return '<button type="button" class="mkx-game" data-esg="' + k + '" aria-pressed="' + (E.game === k) + '">'
-          + '<img src="assets/img/games/' + k + '.png" alt="" loading="lazy" onerror="this.remove()">'
+          + '<img src="assets/img/games/' + k + '.png?v=' + GAME_IMG_V + '" alt="" loading="lazy" onerror="this.remove()">'
           + '<b>' + ES_GAMES[k] + '</b></button>';
       }).join('') + '</div>'
       + '  <label class="mk2-search mkx-search"><input id="mkx-eq" type="search" placeholder="Search a team or tournament" value="' + esc(E.q) + '"></label>'
