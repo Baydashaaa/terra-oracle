@@ -41,15 +41,15 @@
   // ── выбор категории ───────────────────────────────────────────────────────
 
   var CATS = [
-    { id: 'terra', name: 'Terra Classic', img: 'assets/img/tco.webp',
+    { id: 'terra', name: 'Terra Classic', img: 'assets/img/icons/cat-terra.webp',
       sub: 'Supply, staking, oracle rates, validators and governance, read straight from the chain.' },
-    { id: 'crypto', name: 'Crypto', img: 'assets/img/icons/stat-tvl.webp',
+    { id: 'crypto', name: 'Crypto', img: 'assets/img/icons/cat-crypto.webp',
       sub: 'Will BTC, ETH, LUNC and others be above or below a price on a date. Resolved from CoinGecko.' },
-    { id: 'sport', name: 'Sport', img: 'assets/img/icons/f-trending.webp',
+    { id: 'sport', name: 'Sport', img: 'assets/img/icons/cat-sport.webp',
       sub: 'Football from 12 top competitions, with the regular-time rule spelled out. Basketball and hockey next.' },
-    { id: 'esports', name: 'Esports', img: 'assets/img/icons/circuit.webp', soon: true,
+    { id: 'esports', name: 'Esports', img: 'assets/img/icons/cat-esports.webp', soon: true,
       sub: 'Dota 2, CS2 and League of Legends match winners.' },
-    { id: 'world', name: 'World & Economy', img: 'assets/img/icons/g-participation.webp', soon: true,
+    { id: 'world', name: 'World & Economy', img: 'assets/img/icons/cat-world.webp', soon: true,
       sub: 'Central bank decisions, inflation prints and other scheduled releases.' },
   ];
 

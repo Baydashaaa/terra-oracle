@@ -526,8 +526,8 @@ const MK_METRIC_ICON = {
 };
 const MK_CAT_IMG = {
   economy: 'stat-tvl', governance: 'g-scales', protocol: 't-development', validators: 'm-open',
-  network: 'g-parameter', community: 'g-community', macro: 'stat-markets', crypto: 'stat-tvl',
-  sport: 'f-trending',
+  network: 'g-parameter', community: 'g-community', macro: 'cat-world', world: 'cat-world', crypto: 'cat-crypto',
+  sport: 'cat-sport', esports: 'cat-esports',
 };
 function mkOrb(m, big) {
   const ref = mkRef(m);
