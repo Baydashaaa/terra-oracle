@@ -56,6 +56,8 @@ jobs:
           # Рынки вне цепочки (крипта): ключ CoinGecko Demo API.
           COINGECKO_KEY: ${{ secrets.COINGECKO_KEY }}
           FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
+          PANDASCORE_TOKEN: ${{ secrets.PANDASCORE_TOKEN }}
+          FRED_KEY: ${{ secrets.FRED_KEY }}
         run: node scripts/markets-keeper.js
 
       - name: Notify on failure

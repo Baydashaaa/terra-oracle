@@ -325,7 +325,7 @@ function approxDateText(height, tip) {
 /** Одна фраза, по которой понятно, за что держат деньги. */
 function plainSpec(m, tip) {
   const ref = mkRef(m);
-  if (ref && (ref.src === 'fd' || ref.src === 'espn')) {
+  if (ref && ['fd', 'espn', 'ps', 'fred'].includes(ref.src)) {
     return `${mktEsc(m.spec.criterion)}`;
   }
   if (ref && ref.src === 'cg') {
@@ -566,7 +566,8 @@ function mkRef(m) {
   return out.src ? out : null;
 }
 function mkRefSym(ref) { return (ref && (mkOwn(MK_CG_SYM, ref.asset) || String(ref.asset || '').toUpperCase())) || ''; }
-const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org', espn: 'ESPN' };
+const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org', espn: 'ESPN', ps: 'PandaScore', fred: 'FRED' };
+const MK_PS_GAME = { dota2: 'Dota 2', csgo: 'CS2', lol: 'League of Legends' };
 const MK_ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl' };
 function mkEspnRule(ref) {
   if (!ref || ref.src !== 'espn') return '';
@@ -576,7 +577,9 @@ function mkEspnRule(ref) {
 
 function mkCrumb(m, withCreator) {
   const ref = mkRef(m);
-  const metric = ref && ref.src === 'espn' ? `${String(ref.lg || '').toUpperCase()} · ${mkEspnRule(ref)}`
+  const metric = ref && ref.src === 'ps' ? `${mkOwn(MK_PS_GAME, ref.g) || 'Esports'} · series winner`
+    : ref && ref.src === 'fred' ? (String(ref.ev || '').indexOf('fomc') === 0 ? 'Fed rate decision' : 'US CPI, year over year')
+    : ref && ref.src === 'espn' ? `${String(ref.lg || '').toUpperCase()} · ${mkEspnRule(ref)}`
     : ref && ref.src === 'fd' ? (mkOwn(MK_FD_COMP, ref.c) || 'Football') + ' · 90 min'
     : ref && ref.src === 'cg' ? `${mkRefSym(ref)} price`
     : mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
@@ -1047,6 +1050,18 @@ window.submitClaim = submitClaim;
  *  каждому, кто открыл рынок. */
 function verifyBlock(m) {
   const ref = mkRef(m);
+  if (ref && ref.src === 'ps' && /^\d+$/.test(ref.m || '')) {
+    return `
+      <pre>${mktEsc('curl -s -H "Authorization: Bearer <your free token>" https://api.pandascore.co/matches/' + ref.m)}</pre>
+      <div class="mk-plain">The answer holds <code>status</code>, <code>winner_id</code>, <code>forfeit</code> and the series score in
+        <code>results</code>. A free token is available at pandascore.co.</div>`;
+  }
+  if (ref && ref.src === 'fred') {
+    const series = String(ref.ev || '').indexOf('fomc') === 0 ? 'DFEDTARU' : 'CPIAUCNS';
+    return `
+      <div class="mk-plain">${mktEsc(m.spec.criterion)}</div>
+      <div class="mk-plain"><a href="https://fred.stlouisfed.org/series/${series}" target="_blank" rel="noopener">Open ${series} on FRED</a></div>`;
+  }
   if (ref && ref.src === 'espn' && mkOwn(MK_ESPN_PATH, ref.lg) && /^\d+$/.test(ref.ev || '')) {
     return `
       <pre>${mktEsc('curl -s "https://site.api.espn.com/apis/site/v2/sports/' + mkOwn(MK_ESPN_PATH, ref.lg) + '/summary?event=' + ref.ev + '"')}</pre>

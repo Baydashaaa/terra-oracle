@@ -747,6 +747,81 @@ async function sportTest() {
   }
 }
 
+
+// ── киберспорт: PandaScore ──────────────────────────────────────────────────
+// spec.param: src=ps;g=<игра>;m=<id>;tpl=t1|t2;t1=<id команды>;t2=<id команды>
+// Победитель серии по winner_id. Техническое поражение, отмена, перенос - void.
+
+const PS_TOKEN = process.env.PANDASCORE_TOKEN || '';
+
+async function resolvePandaScore(m, ref) {
+  if (!/^\d+$/.test(ref.m || '') || !/^\d+$/.test(ref.t1 || '') || !/^\d+$/.test(ref.t2 || '')) {
+    return { void: 'the market does not name a PandaScore match the keeper can read' };
+  }
+  const res = await safeFetch(`https://api.pandascore.co/matches/${ref.m}`, { headers: { accept: 'application/json', authorization: `Bearer ${PS_TOKEN}` } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const x = await res.json();
+  if (x.status === 'canceled') return { void: 'the match was cancelled' };
+  if (x.forfeit) return { void: 'the match was decided by forfeit' };
+  if (x.status === 'postponed') {
+    // Перенос сам по себе не решение: ждём, пока не истечёт срок рынка (Expire).
+    return { wait: `match ${ref.m} is postponed` };
+  }
+  if (x.status !== 'finished') return { wait: `match ${ref.m} is ${x.status}` };
+  const want = Number(ref.tpl === 't1' ? ref.t1 : ref.t2);
+  const score = (x.results || []).map((r) => r.score).join('-');
+  if (x.draw) return { outcome: false, reading: `PandaScore match ${ref.m}: draw ${score}; ${ref.tpl} no` };
+  if (!x.winner_id) return { wait: `match ${ref.m} finished, winner not published yet` };
+  const outcome = Number(x.winner_id) === want;
+  return { outcome, reading: `PandaScore match ${ref.m}: winner ${x.winner?.name || x.winner_id}, series ${score}; ${ref.tpl} ${outcome ? 'yes' : 'no'}` };
+}
+
+// ── экономика: FRED ─────────────────────────────────────────────────────────
+// spec.param: src=fred;ev=fomc-*;tpl=cut|hold|hike;d=<дата решения>
+//             src=fred;ev=cpi-*;tpl=yoy;ref=<ГГГГ-ММ>, comparator gt, threshold
+// ФРС: DFEDTARU в первый день после решения против последнего дня до заседания.
+// CPI: CPIAUCNS, изменение за 12 месяцев, округление до 0.1, как у BLS.
+
+const FRED_KEY = process.env.FRED_KEY || '';
+
+async function fredObs(series, from, to) {
+  const res = await safeFetch(`https://api.stlouisfed.org/fred/series/observations?series_id=${series}&api_key=${FRED_KEY}`
+    + `&file_type=json&observation_start=${from}&observation_end=${to}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return ((await res.json()).observations || []).filter((o) => o.value !== '.');
+}
+const dayIso = (ms) => new Date(ms).toISOString().slice(0, 10);
+
+async function resolveFred(m, ref) {
+  if (String(ref.ev || '').startsWith('fomc-')) {
+    const d = Date.parse(`${ref.d}T00:00:00Z`);
+    if (!d || !['cut', 'hold', 'hike'].includes(ref.tpl)) return { void: 'the market does not name a Fed decision the keeper can read' };
+    // Заседание двухдневное: "до" - последний день перед первым днём.
+    const obs = await fredObs('DFEDTARU', dayIso(d - 6 * 86400000), dayIso(d + 6 * 86400000));
+    const before = obs.filter((o) => Date.parse(o.date) <= d - 2 * 86400000).pop();
+    const after = obs.find((o) => Date.parse(o.date) >= d + 86400000);
+    if (!before) return { wait: 'no DFEDTARU value before the meeting yet' };
+    if (!after) return { wait: 'DFEDTARU after the decision not published yet' };
+    const b = Number(before.value), a = Number(after.value);
+    const move = a < b ? 'cut' : a > b ? 'hike' : 'hold';
+    return { outcome: move === ref.tpl, reading: `FRED DFEDTARU ${before.date} ${b}% -> ${after.date} ${a}%: ${move}; ${ref.tpl} ${move === ref.tpl ? 'yes' : 'no'}` };
+  }
+  if (String(ref.ev || '').startsWith('cpi-') && /^\d{4}-\d{2}$/.test(ref.ref || '')) {
+    const [y, mo] = ref.ref.split('-').map(Number);
+    const cur = `${ref.ref}-01`, prev = `${y - 1}-${String(mo).padStart(2, '0')}-01`;
+    const obs = await fredObs('CPIAUCNS', prev, cur);
+    const c = obs.find((o) => o.date === cur), p = obs.find((o) => o.date === prev);
+    if (!c) return { wait: `CPI for ${ref.ref} not published yet` };
+    if (!p) return { void: `no CPI value for ${prev.slice(0, 7)} to compare with` };
+    const yoy = Math.round((Number(c.value) / Number(p.value) - 1) * 1000) / 10;
+    const th = Number(m.spec.threshold);
+    if (!isFinite(th)) return { void: 'the market has no inflation level' };
+    const outcome = yoy > th;
+    return { outcome, reading: `FRED CPIAUCNS ${ref.ref} ${c.value} vs ${prev.slice(0, 7)} ${p.value}: ${yoy}% y/y vs ${th}%; ${outcome ? 'above' : 'not above'}` };
+  }
+  return { void: 'unknown FRED market' };
+}
+
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
@@ -762,13 +837,15 @@ async function planFor(m, ctx) {
     if (now < due) return null;
     if (!m.spec?.metric) {
       const ref = refOf(m);
-      if (!['cg', 'fd', 'espn'].includes(ref?.src)) return { note: `#${id}: free criterion, waiting for a person to resolve` };
+      if (!['cg', 'fd', 'espn', 'ps', 'fred'].includes(ref?.src)) return { note: `#${id}: free criterion, waiting for a person to resolve` };
       if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
       // Точка данных CoinGecko на срок появляется не сразу: ждём 15 минут.
       if (ref.src === 'cg' && now < due + 900) return { note: `#${id}: waiting for CoinGecko to publish the price at the deadline` };
       try {
         const r = ref.src === 'fd' ? await resolveFootball(m, ref)
           : ref.src === 'espn' ? await resolveEspn(m, ref)
+            : ref.src === 'ps' ? await resolvePandaScore(m, ref)
+              : ref.src === 'fred' ? await resolveFred(m, ref)
             : await resolveCoinGecko(m, ref);
         if (r.wait) return { note: `#${id}: ${r.wait}` };
         if (r.void) return { what: `void #${id}: ${r.void}`, contract: PROPHECY, msg: { void: { market_id: id, bad_spec: false, reason: r.void } } };
@@ -778,7 +855,7 @@ async function planFor(m, ctx) {
           msg: { propose: { market_id: id, outcome: r.outcome, reading: r.reading.slice(0, 480) } },
         };
       } catch (e) {
-        return { note: `#${id}: could not read ${{ fd: 'football-data.org', espn: 'ESPN', cg: 'CoinGecko' }[ref.src]}: ${e.message}` };
+        return { note: `#${id}: could not read ${{ fd: 'football-data.org', espn: 'ESPN', cg: 'CoinGecko', ps: 'PandaScore', fred: 'FRED' }[ref.src]}: ${e.message}` };
       }
     }
     if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };

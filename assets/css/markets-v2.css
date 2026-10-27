@@ -275,3 +275,6 @@
 :is(#page-markets,#home-markets) .mk2-orb.mk2-crests img:last-child{right:0;bottom:0}
 
 @media (max-width:620px){#page-markets .mkx-match .tm img,#page-markets .mkx-match .nocrest{width:28px;height:28px}}
+
+#page-markets .mkx-label{font-family:Rajdhani,sans-serif;font-weight:700;font-size:18px;color:#E8F0FF}
+#page-markets .mkx-price span:last-child{font-size:14px}

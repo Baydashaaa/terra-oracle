@@ -47,10 +47,10 @@
       sub: 'Will BTC, ETH, LUNC and others be above or below a price on a date. Resolved from CoinGecko.' },
     { id: 'sport', name: 'Sport', img: 'assets/img/icons/cat-sport.webp',
       sub: 'Football from 12 top competitions, NBA and NHL, with the regular-time and overtime rules spelled out.' },
-    { id: 'esports', name: 'Esports', img: 'assets/img/icons/cat-esports.webp', soon: true,
-      sub: 'Dota 2, CS2 and League of Legends match winners.' },
-    { id: 'world', name: 'World & Economy', img: 'assets/img/icons/cat-world.webp', soon: true,
-      sub: 'Central bank decisions, inflation prints and other scheduled releases.' },
+    { id: 'esports', name: 'Esports', img: 'assets/img/icons/cat-esports.webp',
+      sub: 'Dota 2, CS2 and League of Legends series winners. Resolved from PandaScore.' },
+    { id: 'world', name: 'World & Economy', img: 'assets/img/icons/cat-world.webp',
+      sub: 'Fed rate decisions and US inflation releases. Resolved from FRED.' },
   ];
 
   function renderChooser() {
@@ -68,6 +68,8 @@
       b.onclick = function () {
         if (b.dataset.cat === 'terra') { if (typeof origOpen === 'function') origOpen(); }
         else if (b.dataset.cat === 'sport') openSport();
+        else if (b.dataset.cat === 'esports') openEsports();
+        else if (b.dataset.cat === 'world') openWorld();
         else openCrypto();
       };
     });
@@ -637,6 +639,291 @@
       if (typeof mkToast === 'function') mkToast(e.message || 'Transaction failed', 'err');
       fPaintSummary();
     });
+  }
+
+  // ── киберспорт (PandaScore) ───────────────────────────────────────────────
+  //
+  // Рынок на победителя серии (bo1/bo3/bo5) по данным PandaScore.
+  // spec.param: src=ps;g=<игра>;m=<id матча>;tpl=t1|t2;t1=<id>;t2=<id>
+  // Победа техническим поражением, перенос и отмена - аннулирование.
+
+  var ES_GAMES = { dota2: 'Dota 2', csgo: 'CS2', lol: 'League of Legends' };
+  var E = { game: 'dota2', q: '', match: null, tpl: null, busy: false, dup: null };
+
+  function esList() {
+    var d = catalog && catalog.esports;
+    return d && d.games ? (d.games[E.game] || []) : null;
+  }
+  function esMatch() {
+    var l = esList();
+    return l && l.find(function (m) { return String(m.id) === String(E.match); }) || null;
+  }
+  function esResolve(m) { return kickoff(m) + (Number(m.bo) || 3) * 5400 + 3600; }
+  function esQuestion(m) {
+    var w = E.tpl === 't1' ? m.home : m.away, o = E.tpl === 't1' ? m.away : m.home;
+    return 'Will ' + w.full + ' beat ' + o.full + '? (' + ES_GAMES[E.game] + ', ' + (m.league || 'match') + ', Bo' + (m.bo || '?') + ', '
+      + dayLabelShort(kickoff(m)) + ')';
+  }
+  function esCriterion(m) {
+    var w = E.tpl === 't1' ? m.home : m.away, o = E.tpl === 't1' ? m.away : m.home;
+    return ES_GAMES[E.game] + ' match ' + m.home.full + ' vs ' + m.away.full + ', ' + (m.league || '') + (m.event ? ' (' + m.event + ')' : '')
+      + ', best of ' + (m.bo || '?') + ', scheduled ' + timeText(kickoff(m)) + ', PandaScore match ' + m.id + '. '
+      + 'YES if ' + w.full + ' wins the series. NO if ' + o.full + ' wins it or it ends in a draw. '
+      + 'Read from PandaScore after the match is marked finished. If it is cancelled, postponed beyond 7 days, '
+      + 'or decided by forfeit, the market is voided and everyone is refunded.';
+  }
+  function esParam(m) {
+    return 'src=ps;g=' + E.game + ';m=' + m.id + ';tpl=' + E.tpl + ';t1=' + m.home.id + ';t2=' + m.away.id;
+  }
+  function esSpec(m) {
+    return { metric: null, param: esParam(m), comparator: null, threshold: null, height: null, criterion: esCriterion(m), unit: null };
+  }
+
+  function openEsports() {
+    renderEsports();
+    if (!catalog) loadCatalog().then(renderEsports).catch(renderEsports);
+  }
+
+  function renderEsports() {
+    var h = host();
+    if (!h) return;
+    var list = esList(), m = esMatch();
+    var q = E.q.trim().toLowerCase();
+    var rows = !list ? (catalogErr ? '<div class="mk-plain">The match list is not available right now.</div>' : '<div class="mk-loading">Loading matches…</div>')
+      : (function () {
+        var l = list.filter(function (x) {
+          return !q || (x.home.full + ' ' + x.away.full + ' ' + (x.league || '') + ' ' + (x.event || '')).toLowerCase().indexOf(q) >= 0;
+        });
+        if (!l.length) return '<div class="mk-plain">No matches found.</div>';
+        var out = '', day = '';
+        l.slice(0, 80).forEach(function (x) {
+          var d = dayLabel(kickoff(x));
+          if (d !== day) { day = d; out += '<div class="mkx-day">' + esc(d) + '</div>'; }
+          out += '<button type="button" class="mkx-match" data-esm="' + esc(x.id) + '" aria-pressed="' + (String(E.match) === String(x.id)) + '">'
+            + '<span class="t">' + esc(localTime(kickoff(x))) + '</span>'
+            + '<span class="tm h">' + esc(x.home.name) + crest({ crest: x.home.logo }) + '</span>'
+            + '<span class="vs">Bo' + esc(x.bo || '?') + '</span>'
+            + '<span class="tm a">' + crest({ crest: x.away.logo }) + esc(x.away.name) + '</span>'
+            + '<span class="c">' + esc(x.league || '') + '</span></button>';
+        });
+        return '<div class="mkx-matches">' + out + '</div>';
+      })();
+    var tpls = m ? '<div class="mkx-tpls">'
+      + ['t1', 't2'].map(function (t) {
+        var team = t === 't1' ? m.home : m.away;
+        return '<button type="button" class="mkx-tpl" data-est="' + t + '" aria-pressed="' + (E.tpl === t) + '">'
+          + '<b>' + esc(team.full) + ' win</b><span>wins the series</span><em>Bo' + esc(m.bo || '?') + '</em></button>';
+      }).join('') + '</div>' : '<div class="mk-plain">Pick a match first.</div>';
+
+    h.innerHTML = '<button type="button" class="mkx-backcat">&larr; Categories</button>'
+      + '<h3 class="step-h"><span class="n">1</span>Which match?</h3>'
+      + '<section class="card qform">'
+      + '  <div class="mkx-sporttabs">' + Object.keys(ES_GAMES).map(function (k) {
+        return '<button type="button" data-esg="' + k + '" aria-pressed="' + (E.game === k) + '">' + ES_GAMES[k] + '</button>';
+      }).join('') + '</div>'
+      + '  <label class="mk2-search mkx-search"><input id="mkx-eq" type="search" placeholder="Search a team or tournament" value="' + esc(E.q) + '"></label>'
+      + rows + '</section>'
+      + '<h3 class="step-h"><span class="n">2</span>Who wins?</h3>'
+      + '<section class="card qform">' + tpls + '<div class="mkf-note">The series winner, as PandaScore records it. A forfeit voids the market.</div></section>'
+      + '<h3 class="step-h"><span class="n">3</span>Review and publish</h3>'
+      + '<section class="card qform" id="mkx-sum"></section>';
+
+    h.querySelector('.mkx-backcat').onclick = renderChooser;
+    h.querySelectorAll('[data-esg]').forEach(function (b) { b.onclick = function () { E.game = b.dataset.esg; E.match = null; E.tpl = null; renderEsports(); }; });
+    h.querySelectorAll('[data-esm]').forEach(function (b) { b.onclick = function () { E.match = b.dataset.esm; E.tpl = null; renderEsports(); }; });
+    h.querySelectorAll('[data-est]').forEach(function (b) { b.onclick = function () { E.tpl = b.dataset.est; renderEsports(); genericDup(E, esParam(esMatch()), null, function () { paintGeneric(E, esFlow()); }); }; });
+    var qi = document.getElementById('mkx-eq');
+    if (qi) qi.oninput = function () {
+      E.q = qi.value; clearTimeout(qi._t);
+      qi._t = setTimeout(function () { var p = qi.selectionStart; renderEsports(); var a = document.getElementById('mkx-eq'); if (a) { a.focus(); try { a.setSelectionRange(p, p); } catch (e) {} } }, 250);
+    };
+    paintGeneric(E, esFlow());
+  }
+
+  function esFlow() {
+    var m = esMatch();
+    return {
+      ready: !!(m && E.tpl), category: 'esports', source: 'PandaScore',
+      question: m && E.tpl ? esQuestion(m) : '', spec: m && E.tpl ? esSpec(m) : null,
+      close: m ? kickoff(m) - KICKOFF_CLOSE : 0, resolve: m ? esResolve(m) : 0,
+      when: m ? [['Predictions close', kickoff(m) - KICKOFF_CLOSE], ['Scheduled start', kickoff(m)]] : [],
+      problems: [!m && 'Pick a match.', m && !E.tpl && 'Pick the winner the market is about.',
+        m && kickoff(m) - KICKOFF_CLOSE <= Math.floor(Date.now() / 1000) + 600 && 'This match starts too soon to open a market.'],
+    };
+  }
+
+  // ── мир и экономика (FRED) ────────────────────────────────────────────────
+  //
+  // ФРС: решение по ставке - по верхней границе целевого диапазона (FRED
+  //      DFEDTARU) на следующий день после решения против дня до заседания.
+  // CPI: годовая инфляция США по индексу CPI-U без сезонной поправки (FRED
+  //      CPIAUCNS), месяц к тому же месяцу год назад, с округлением до 0.1,
+  //      как в официальном релизе BLS.
+  // spec.param: src=fred;ev=<id события>;tpl=cut|hold|hike|yoy;d=<дата>|ref=<ГГГГ-ММ>
+
+  var W = { ev: null, tpl: null, th: '', busy: false, dup: null };
+  function econ() { return catalog && catalog.economy; }
+  function wEvent() { var e = econ(); return e && e.events.find(function (x) { return x.id === W.ev; }) || null; }
+  function evTs(e) { return Math.floor(Date.parse(e.at) / 1000); }
+  function wClose(e) { return e.type === 'fomc' ? evTs(e) - 30 * 3600 : evTs(e) - 3600; }
+  function wResolve(e) { return e.type === 'fomc' ? evTs(e) + 30 * 3600 : evTs(e) + 3 * 3600; }
+  function pct(v) { return Number(v).toFixed(2).replace(/0$/, '') + '%'; }
+
+  function wQuestion(e) {
+    if (e.type === 'fomc') {
+      var verb = { cut: 'cut', hold: 'hold', hike: 'raise' }[W.tpl];
+      return 'Will the Fed ' + verb + ' rates at the ' + e.meeting + ' meeting?';
+    }
+    var mon = new Date(e.ref + '-01T00:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return 'Will US CPI inflation for ' + mon + ' be above ' + W.th + '% year over year?';
+  }
+  function wCriterion(e) {
+    if (e.type === 'fomc') {
+      var d = e.at.slice(0, 10);
+      var rule = { cut: 'lower than', hold: 'equal to', hike: 'higher than' }[W.tpl];
+      return 'Federal Reserve decision of the ' + e.meeting + ' FOMC meeting, announced ' + timeText(evTs(e)) + '. '
+        + 'YES if the upper bound of the federal funds target range (FRED series DFEDTARU) on the first day after ' + d
+        + ' is ' + rule + ' its value on the last day before the meeting. NO otherwise. '
+        + 'If the meeting is moved by more than 7 days or the series is not updated within 7 days, the market is voided.';
+    }
+    return 'US consumer price inflation for ' + e.ref + ': the 12-month change in the CPI-U, all items, not seasonally adjusted '
+      + '(FRED series CPIAUCNS, the same index as the BLS headline), rounded to one decimal place as BLS reports it. '
+      + 'YES if it is above ' + W.th + '%. NO otherwise. Scheduled release ' + timeText(evTs(e)) + '. '
+      + 'If the figure is not published within 7 days of the scheduled release, the market is voided.';
+  }
+  function wParam(e) {
+    return 'src=fred;ev=' + e.id + ';tpl=' + (e.type === 'fomc' ? W.tpl : 'yoy') + ';' + (e.type === 'fomc' ? 'd=' + e.at.slice(0, 10) : 'ref=' + e.ref);
+  }
+  function wSpec(e) {
+    var cpi = e.type === 'cpi';
+    return { metric: null, param: wParam(e), comparator: cpi ? 'gt' : null, threshold: cpi ? String(W.th).replace(/[%\s]/g, '') : null,
+      height: null, criterion: wCriterion(e), unit: null };
+  }
+
+  function openWorld() {
+    renderWorld();
+    if (!catalog) loadCatalog().then(renderWorld).catch(renderWorld);
+  }
+
+  function renderWorld() {
+    var h = host();
+    if (!h) return;
+    var d = econ(), e = wEvent();
+    var list = !d ? (catalogErr ? '<div class="mk-plain">The calendar is not available right now.</div>' : '<div class="mk-loading">Loading the calendar…</div>')
+      : !d.events.length ? '<div class="mk-plain">No scheduled releases far enough ahead right now.</div>'
+        : '<div class="mkx-tpls">' + d.events.map(function (x) {
+          return '<button type="button" class="mkx-tpl" data-wev="' + esc(x.id) + '" aria-pressed="' + (W.ev === x.id) + '">'
+            + '<b>' + esc(x.name) + '</b><span>' + esc(timeText(evTs(x))) + '</span><em>' + (x.type === 'fomc' ? 'Fed' : 'BLS') + '</em></button>';
+        }).join('') + '</div>';
+    var ctx = d ? '<div class="mkx-quick"><span>Now: Fed target ' + (d.fedLower != null ? pct(d.fedLower) + ' - ' + pct(d.fedUpper) : 'n/a')
+      + (d.cpiLast ? ' · CPI ' + esc(d.cpiLast.month) + ': ' + d.cpiLast.yoy + '% y/y' : '') + '</span></div>' : '';
+    var tpls = '';
+    if (e && e.type === 'fomc') {
+      tpls = '<div class="mkx-tpls">' + [['cut', 'Cut', 'the upper bound goes down'], ['hold', 'Hold', 'no change'], ['hike', 'Hike', 'the upper bound goes up']].map(function (t) {
+        return '<button type="button" class="mkx-tpl" data-wtpl="' + t[0] + '" aria-pressed="' + (W.tpl === t[0]) + '"><b>' + t[1] + '</b><span>' + t[2] + '</span><em>Fed</em></button>';
+      }).join('') + '</div>';
+    } else if (e && e.type === 'cpi') {
+      var last = d.cpiLast ? d.cpiLast.yoy : null;
+      tpls = '<div class="mkx-cond"><span class="mkx-label">Above</span><label class="mkx-price"><input id="mkx-wth" type="text" inputmode="decimal" placeholder="'
+        + (last != null ? last.toFixed(1) : '3.0') + '" value="' + esc(W.th) + '"><span>% y/y</span></label></div>'
+        + (last != null ? '<div class="mkx-quick"><span>Last ' + last + '%</span>' + [-0.2, -0.1, 0.1, 0.2].map(function (dlt) {
+          var v = (last + dlt).toFixed(1); return '<button type="button" data-wq="' + v + '">' + v + '%</button>';
+        }).join('') + '</div>' : '');
+    } else tpls = '<div class="mk-plain">Pick a release first.</div>';
+
+    h.innerHTML = '<button type="button" class="mkx-backcat">&larr; Categories</button>'
+      + '<h3 class="step-h"><span class="n">1</span>Which release?</h3>'
+      + '<section class="card qform">' + ctx + list
+      + '<div class="mkf-note">Dates are taken from the official Federal Reserve and BLS calendars and can move; the rule of each market covers that.</div></section>'
+      + '<h3 class="step-h"><span class="n">2</span>Condition</h3>'
+      + '<section class="card qform">' + tpls + '</section>'
+      + '<h3 class="step-h"><span class="n">3</span>Review and publish</h3>'
+      + '<section class="card qform" id="mkx-sum"></section>';
+
+    h.querySelector('.mkx-backcat').onclick = renderChooser;
+    h.querySelectorAll('[data-wev]').forEach(function (b) { b.onclick = function () { W.ev = b.dataset.wev; W.tpl = null; W.th = ''; renderWorld(); }; });
+    var redup = function () { var ev = wEvent(); if (ev && (ev.type === 'cpi' ? /^\d+(\.\d+)?$/.test(W.th) : W.tpl)) genericDup(W, wParam(ev), ev.type === 'cpi' ? W.th : null, function () { paintGeneric(W, wFlow()); }); };
+    h.querySelectorAll('[data-wtpl]').forEach(function (b) { b.onclick = function () { W.tpl = b.dataset.wtpl; renderWorld(); redup(); }; });
+    h.querySelectorAll('[data-wq]').forEach(function (b) { b.onclick = function () { W.th = b.dataset.wq; renderWorld(); redup(); }; });
+    var th = document.getElementById('mkx-wth');
+    if (th) th.oninput = function () { W.th = th.value.replace(/[%\s,]/g, ''); paintGeneric(W, wFlow()); clearTimeout(th._t); th._t = setTimeout(redup, 500); };
+    paintGeneric(W, wFlow());
+  }
+
+  function wFlow() {
+    var e = wEvent();
+    var ok = e && (e.type === 'fomc' ? !!W.tpl : /^\d+(\.\d+)?$/.test(W.th));
+    return {
+      ready: !!ok, category: 'world', source: 'FRED',
+      question: ok ? wQuestion(e) : '', spec: ok ? wSpec(e) : null,
+      close: e ? wClose(e) : 0, resolve: e ? wResolve(e) : 0,
+      when: e ? [['Predictions close', wClose(e)], [e.type === 'fomc' ? 'Decision' : 'Release', evTs(e)]] : [],
+      problems: [!e && 'Pick a release.', e && !ok && (e.type === 'fomc' ? 'Pick cut, hold or hike.' : 'Enter an inflation level, for example 3.0.'),
+        e && wClose(e) <= Math.floor(Date.now() / 1000) + 600 && 'This release is too close to open a market.'],
+    };
+  }
+
+  // ── общее для киберспорта и экономики: дубли, сводка, публикация ─────────
+
+  function genericDup(st, param, th, repaint) {
+    st.dup = null;
+    if (typeof loadProphecyMarkets !== 'function') return;
+    loadProphecyMarkets().then(function (all) {
+      var live = { open: 1, locked: 1, proposed: 1, disputed: 1 };
+      var hit = all.find(function (x) { return live[x.status] && x.spec && x.spec.param === param && (x.spec.threshold || null) === (th || null); });
+      var was = st.dup;
+      st.dup = hit ? hit.id : null;
+      if (was !== st.dup) repaint();
+    }).catch(function () {});
+  }
+
+  function paintGeneric(st, f) {
+    var box = document.getElementById('mkx-sum');
+    if (!box) return;
+    var errs = f.problems.filter(Boolean);
+    if (!(typeof mkWallet === 'function' && mkWallet())) errs.push('Connect a wallet to publish.');
+    if (st.dup) errs.push('This exact market is already open.');
+    var bond = cfg() ? Number(cfg().creation_bond) : 200000e6;
+    var preview = f.ready && typeof marketCard === 'function' ? '<div class="mkx-preview">' + marketCard({
+      id: 0, question: f.question, category: f.category, creator: (typeof mkWallet === 'function' && mkWallet()) || '',
+      status: 'open', promoted: false, boost: '0', spec: f.spec, bets_close_at: f.close, resolve_after: f.resolve,
+      pot_yes: '0', pot_no: '0', bettors_yes: 0, bettors_no: 0, fees: { protocol_bps: 500, creator_bps: 300, boost_bps: 200 },
+    }).replace(/onclick="[^"]*"/, '') + '</div>' : '';
+    box.innerHTML = preview
+      + (f.when.length ? '<div class="mkf-pdates mkf-when">' + f.when.map(function (w) { return '<div><span>' + w[0] + '</span><b>' + timeText(w[1]) + '</b></div>'; }).join('') + '</div>' : '')
+      + '<div class="mkx-terms">'
+      + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
+      + '<div><span>You earn</span><b>3%</b><em>of the losing side</em></div>'
+      + '<div><span>Resolved from</span><b>' + esc(f.source) + '</b><em>disputable for 48 hours, like every market</em></div>'
+      + '</div>'
+      + (st.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
+      + (errs.length && !st.dup ? '<ul class="mkf-errs">' + errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '')
+      + '<button type="button" class="ask-go mk-place" id="mkx-go"' + (errs.length || st.busy ? ' disabled' : '') + '>'
+      + (st.busy ? 'Waiting for the block…' : 'Publish market &rarr;') + '</button>';
+    var join = document.getElementById('mkx-join');
+    if (join) join.onclick = function () { closeMarketCreate(); openProphecyMarket(st.dup); };
+    var go = document.getElementById('mkx-go');
+    if (go) go.onclick = function () {
+      if (errs.length || st.busy) return;
+      st.busy = true; paintGeneric(st, f);
+      window.sendExecuteContract(
+        mkWallet(), PROPHECY_CONTRACT,
+        { create: { question: f.question, category: f.category, spec: f.spec, bets_close_at: f.close, resolve_after: f.resolve, promoted: false } },
+        [{ denom: 'uluna', amount: cfg() ? String(cfg().creation_bond) : '200000000000' }],
+        'oracle-prophecy: create', PROPHECY_CHAIN, 700000
+      ).then(function (hash) {
+        return mkTrack(hash, 'New market', function (r) {
+          st.busy = false;
+          if (r.status === 'failed') { paintGeneric(st, f); return; }
+          closeMarketCreate();
+          if (typeof renderMarkets === 'function') renderMarkets(false);
+        });
+      }).catch(function (e) {
+        st.busy = false;
+        if (typeof mkToast === 'function') mkToast(e.message || 'Transaction failed', 'err');
+        paintGeneric(st, f);
+      });
+    };
   }
 
   // ── вход ──────────────────────────────────────────────────────────────────
