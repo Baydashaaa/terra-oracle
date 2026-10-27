@@ -25,6 +25,9 @@ curl -sI https://draw.terraoracle.io/     | grep -i content-security
 Last updated: 26 September 2026, when the strict policy moved from report-only
 to enforced after three days of observation.
 
+27 October 2026: added `oracle-events` (catalog of real-world markets) to
+`connect-src` and `coin-images.coingecko.com` (asset logos) to `img-src`.
+
 ---
 
 ## terraoracle.io
@@ -37,7 +40,7 @@ script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
            https://static.cloudflareinsights.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
-img-src 'self' data: blob: https://draw.terraoracle.io;
+img-src 'self' data: blob: https://draw.terraoracle.io https://coin-images.coingecko.com;
 frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;
 worker-src 'self' blob:;
 connect-src 'self'
@@ -45,6 +48,7 @@ connect-src 'self'
             https://oracle-chat.vladislav-baydan.workers.dev
             https://oracle-draw.vladislav-baydan.workers.dev
             https://oracle-eye.vladislav-baydan.workers.dev
+            https://oracle-events.vladislav-baydan.workers.dev
             https://s.terraoracle.io
             https://draw.terraoracle.io
             https://baydashaaa.github.io
