@@ -46,7 +46,7 @@
     { id: 'crypto', name: 'Crypto', img: 'assets/img/icons/cat-crypto.webp',
       sub: 'Will BTC, ETH, LUNC and others be above or below a price on a date. Resolved from CoinGecko.' },
     { id: 'sport', name: 'Sport', img: 'assets/img/icons/cat-sport.webp',
-      sub: 'Football from 12 top competitions, with the regular-time rule spelled out. Basketball and hockey next.' },
+      sub: 'Football from 12 top competitions, NBA and NHL, with the regular-time and overtime rules spelled out.' },
     { id: 'esports', name: 'Esports', img: 'assets/img/icons/cat-esports.webp', soon: true,
       sub: 'Dota 2, CS2 and League of Legends match winners.' },
     { id: 'world', name: 'World & Economy', img: 'assets/img/icons/cat-world.webp', soon: true,
@@ -310,27 +310,49 @@
   }
 
 
-  // ── спорт: футбол (football-data.org) ─────────────────────────────────────
+  // ── спорт: футбол (football-data.org), NBA и NHL (ESPN) ───────────────────
   //
-  // Все шаблоны - по основному времени: 90 минут плюс добавленное арбитром.
-  // Дополнительное время и пенальти не считаются. Это записано и в вопросе,
-  // и в правиле рынка, чтобы после матча не было споров.
+  // Правило каждого шаблона записано в вопросе и в criterion рынка:
+  //   футбол - только основное время (90 минут + добавленное), без
+  //            дополнительного времени и пенальти;
+  //   NBA    - с овертаймами, ничьих нет;
+  //   NHL    - два вида победы: "в основное время" (60 минут, ничья = NO)
+  //            и "с овертаймом и буллитами"; тоталы только по основному времени.
   //
-  // spec.param: src=fd;match=<id>;tpl=<шаблон>;c=<турнир>;h=<id хозяев>;a=<id гостей>
-  // spec.comparator/threshold - только у тоталов (gt 2.5).
+  // spec.param:
+  //   футбол: src=fd;match=<id>;tpl=<шаблон>;c=<турнир>;h=<id>;a=<id>
+  //   NBA/NHL: src=espn;lg=nba|nhl;ev=<id>;tpl=<шаблон>;h=<abbr>;a=<abbr>
+  // spec.comparator/threshold - только у тоталов (gt <линия>).
 
-  var F = { comp: 'all', q: '', match: null, tpl: null, line: '2.5', busy: false, dup: null };
-  var KICKOFF_CLOSE = 300;         // приём закрывается за 5 минут до начала
-  var RESOLVE_AFTER = 3 * 3600;    // исход - не раньше чем через 3 часа после начала
-  var LINES = ['1.5', '2.5', '3.5'];
+  var F = { sport: 'football', comp: 'all', q: '', match: null, tpl: null, line: null, busy: false, dup: null };
+  var KICKOFF_CLOSE = 300;          // приём закрывается за 5 минут до начала
+  var RESOLVE_AFTER = { football: 3 * 3600, nba: 4 * 3600, nhl: 4 * 3600 };
+  var SPORTS = {
+    football: { name: 'Football', source: 'football-data.org', lines: ['1.5', '2.5', '3.5'], unit: 'goals' },
+    nba: { name: 'Basketball', league: 'NBA', source: 'ESPN', lines: ['210.5', '220.5', '230.5', '240.5'], unit: 'points' },
+    nhl: { name: 'Hockey', league: 'NHL', source: 'ESPN', lines: ['4.5', '5.5', '6.5'], unit: 'goals' },
+  };
 
   function fb() { return catalog && catalog.football ? catalog.football : null; }
   function compName(code) {
+    if (F.sport !== 'football') return SPORTS[F.sport].league;
     var c = fb() && fb().comps.find(function (x) { return x.code === code; });
     return c ? c.name : code;
   }
+  /** Матчи выбранного вида спорта в одном виде. */
+  function games() {
+    if (F.sport === 'football') return fb() ? fb().matches : null;
+    var d = catalog && catalog[F.sport];
+    if (!d) return null;
+    return d.games.map(function (g) {
+      return { id: g.id, utc: g.utc, comp: SPORTS[F.sport].league,
+        home: { id: g.home.abbr, name: g.home.name, crest: g.home.logo },
+        away: { id: g.away.abbr, name: g.away.name, crest: g.away.logo } };
+    });
+  }
   function match() {
-    return fb() && fb().matches.find(function (m) { return m.id === F.match; }) || null;
+    var list = games();
+    return list && list.find(function (m) { return String(m.id) === String(F.match); }) || null;
   }
   function kickoff(m) { return Math.floor(Date.parse(m.utc) / 1000); }
   function localTime(ts) {
@@ -345,48 +367,96 @@
     if (diff === 1) return 'Tomorrow';
     return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
   }
-
-  function tplList(m) {
-    return [
-      { id: 'home_win', label: m.home.name + ' win', sub: 'in regular time' },
-      { id: 'draw', label: 'Draw', sub: 'after 90 minutes' },
-      { id: 'away_win', label: m.away.name + ' win', sub: 'in regular time' },
-      { id: 'over', label: 'Goals over', sub: 'both teams, regular time', line: true },
-    ];
-  }
-
-  function fQuestion(m) {
-    var at = dayLabelShort(kickoff(m));
-    if (F.tpl === 'home_win') return 'Will ' + m.home.name + ' beat ' + m.away.name + ' in regular time? (' + compName(m.comp) + ', ' + at + ')';
-    if (F.tpl === 'away_win') return 'Will ' + m.away.name + ' win at ' + m.home.name + ' in regular time? (' + compName(m.comp) + ', ' + at + ')';
-    if (F.tpl === 'draw') return 'Will ' + m.home.name + ' vs ' + m.away.name + ' be a draw after 90 minutes? (' + compName(m.comp) + ', ' + at + ')';
-    return 'Will ' + m.home.name + ' vs ' + m.away.name + ' have over ' + F.line + ' goals in regular time? (' + compName(m.comp) + ', ' + at + ')';
-  }
   function dayLabelShort(ts) {
     var d = new Date(ts * 1000);
     return d.getUTCDate() + ' ' + d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }) + ' ' + d.getUTCFullYear();
   }
-  function fCriterion(m) {
-    var base = 'Match ' + m.home.name + ' vs ' + m.away.name + ', ' + compName(m.comp) + ', kick-off ' + timeText(kickoff(m))
-      + ', football-data.org match ' + m.id + '. Regular time only: 90 minutes plus stoppage time added by the referee; '
-      + 'extra time and penalty shoot-outs do not count. ';
-    var rule = F.tpl === 'home_win' ? 'YES if ' + m.home.name + ' scored more goals than ' + m.away.name + ' in regular time. NO otherwise, including a draw.'
-      : F.tpl === 'away_win' ? 'YES if ' + m.away.name + ' scored more goals than ' + m.home.name + ' in regular time. NO otherwise, including a draw.'
-        : F.tpl === 'draw' ? 'YES if the regular-time score is level. NO otherwise.'
-          : 'YES if both teams together scored more than ' + F.line + ' goals in regular time. NO otherwise.';
-    return base + rule + ' Read from football-data.org after the match is marked finished. If the match is postponed, '
-      + 'cancelled, abandoned or awarded, the market is voided and everyone is refunded.';
+
+  function tplList(m) {
+    if (F.sport === 'nba') return [
+      { id: 'home_win', label: m.home.name + ' win', sub: 'overtime counts', tag: 'incl. OT' },
+      { id: 'away_win', label: m.away.name + ' win', sub: 'overtime counts', tag: 'incl. OT' },
+      { id: 'over', label: 'Points over', sub: 'both teams, overtime counts', tag: 'incl. OT', line: true },
+    ];
+    if (F.sport === 'nhl') return [
+      { id: 'home_win_reg', label: m.home.name + ' win', sub: 'in 60 minutes, a tie is NO', tag: 'regulation' },
+      { id: 'away_win_reg', label: m.away.name + ' win', sub: 'in 60 minutes, a tie is NO', tag: 'regulation' },
+      { id: 'home_win', label: m.home.name + ' win', sub: 'overtime and shootout count', tag: 'incl. OT/SO' },
+      { id: 'away_win', label: m.away.name + ' win', sub: 'overtime and shootout count', tag: 'incl. OT/SO' },
+      { id: 'over', label: 'Goals over', sub: 'both teams, 60 minutes only', tag: 'regulation', line: true },
+    ];
+    return [
+      { id: 'home_win', label: m.home.name + ' win', sub: 'in regular time', tag: '90 min' },
+      { id: 'draw', label: 'Draw', sub: 'after 90 minutes', tag: '90 min' },
+      { id: 'away_win', label: m.away.name + ' win', sub: 'in regular time', tag: '90 min' },
+      { id: 'over', label: 'Goals over', sub: 'both teams, regular time', tag: '90 min', line: true },
+    ];
   }
+  function line() { return F.line || SPORTS[F.sport].lines[1]; }
+
+  function fQuestion(m) {
+    var tail = ' (' + compName(m.comp) + ', ' + dayLabelShort(kickoff(m)) + ')';
+    var H = m.home.name, A = m.away.name, U = SPORTS[F.sport].unit;
+    if (F.sport === 'football') {
+      if (F.tpl === 'home_win') return 'Will ' + H + ' beat ' + A + ' in regular time?' + tail;
+      if (F.tpl === 'away_win') return 'Will ' + A + ' win at ' + H + ' in regular time?' + tail;
+      if (F.tpl === 'draw') return 'Will ' + H + ' vs ' + A + ' be a draw after 90 minutes?' + tail;
+      return 'Will ' + H + ' vs ' + A + ' have over ' + line() + ' goals in regular time?' + tail;
+    }
+    if (F.sport === 'nba') {
+      if (F.tpl === 'home_win') return 'Will the ' + H + ' beat the ' + A + '?' + tail;
+      if (F.tpl === 'away_win') return 'Will the ' + A + ' win at the ' + H + '?' + tail;
+      return 'Will ' + A + ' at ' + H + ' score over ' + line() + ' points?' + tail;
+    }
+    if (F.tpl === 'home_win_reg') return 'Will ' + H + ' beat ' + A + ' in regulation?' + tail;
+    if (F.tpl === 'away_win_reg') return 'Will ' + A + ' win at ' + H + ' in regulation?' + tail;
+    if (F.tpl === 'home_win') return 'Will ' + H + ' beat ' + A + ', overtime and shootout included?' + tail;
+    if (F.tpl === 'away_win') return 'Will ' + A + ' win at ' + H + ', overtime and shootout included?' + tail;
+    return 'Will ' + A + ' at ' + H + ' have over ' + line() + ' ' + U + ' in regulation?' + tail;
+  }
+
+  function fCriterion(m) {
+    var S = SPORTS[F.sport], H = m.home.name, A = m.away.name;
+    var who = F.tpl.indexOf('home') === 0 ? H : A, other = who === H ? A : H;
+    var head = H + ' vs ' + A + ', ' + compName(m.comp) + ', start ' + timeText(kickoff(m)) + ', '
+      + (F.sport === 'football' ? 'football-data.org match ' : 'ESPN event ') + m.id + '. ';
+    var tail = ' Read from ' + S.source + ' after the game is marked final. If it is postponed, cancelled, '
+      + 'abandoned or awarded, the market is voided and everyone is refunded.';
+    var rule;
+    if (F.sport === 'football') {
+      head += 'Regular time only: 90 minutes plus stoppage time added by the referee; extra time and penalty shoot-outs do not count. ';
+      rule = F.tpl === 'draw' ? 'YES if the regular-time score is level. NO otherwise.'
+        : F.tpl === 'over' ? 'YES if both teams together scored more than ' + line() + ' goals in regular time. NO otherwise.'
+          : 'YES if ' + who + ' scored more goals than ' + other + ' in regular time. NO otherwise, including a draw.';
+    } else if (F.sport === 'nba') {
+      head += 'Overtime counts; the final score includes every overtime period. ';
+      rule = F.tpl === 'over' ? 'YES if both teams together scored more than ' + line() + ' points. NO otherwise.'
+        : 'YES if ' + who + ' won the game. NO otherwise.';
+    } else if (F.tpl === 'home_win_reg' || F.tpl === 'away_win_reg') {
+      head += 'Regulation only: the three 20-minute periods; overtime and the shootout do not count. ';
+      rule = 'YES if ' + who + ' scored more goals than ' + other + ' in regulation. NO otherwise, including a tie after 60 minutes.';
+    } else if (F.tpl === 'over') {
+      head += 'Regulation only: the three 20-minute periods; overtime and the shootout do not count. ';
+      rule = 'YES if both teams together scored more than ' + line() + ' goals in regulation. NO otherwise.';
+    } else {
+      head += 'Overtime and the shootout count: the official winner of the game. ';
+      rule = 'YES if ' + who + ' won the game. NO otherwise.';
+    }
+    return head + rule + tail;
+  }
+
   function fParam(m) {
-    return 'src=fd;match=' + m.id + ';tpl=' + F.tpl + ';c=' + m.comp + ';h=' + m.home.id + ';a=' + m.away.id;
+    if (F.sport === 'football') return 'src=fd;match=' + m.id + ';tpl=' + F.tpl + ';c=' + m.comp + ';h=' + m.home.id + ';a=' + m.away.id;
+    return 'src=espn;lg=' + F.sport + ';ev=' + m.id + ';tpl=' + F.tpl
+      + ';h=' + String(m.home.id || '').toLowerCase() + ';a=' + String(m.away.id || '').toLowerCase();
   }
   function fSpec(m) {
     var over = F.tpl === 'over';
-    return { metric: null, param: fParam(m), comparator: over ? 'gt' : null, threshold: over ? F.line : null,
+    return { metric: null, param: fParam(m), comparator: over ? 'gt' : null, threshold: over ? line() : null,
       height: null, criterion: fCriterion(m), unit: null };
   }
   function fClose(m) { return kickoff(m) - KICKOFF_CLOSE; }
-  function fResolve(m) { return kickoff(m) + RESOLVE_AFTER; }
+  function fResolve(m) { return kickoff(m) + RESOLVE_AFTER[F.sport]; }
 
   function fProblems() {
     var out = [], m = match();
@@ -402,7 +472,7 @@
     F.dup = null;
     var m = match();
     if (!m || !F.tpl || typeof loadProphecyMarkets !== 'function') return;
-    var p = fParam(m), th = F.tpl === 'over' ? F.line : null;
+    var p = fParam(m), th = F.tpl === 'over' ? line() : null;
     loadProphecyMarkets().then(function (all) {
       var live = { open: 1, locked: 1, proposed: 1, disputed: 1 };
       var hit = all.find(function (x) {
@@ -424,12 +494,13 @@
   }
 
   function matchList() {
-    var data = fb();
-    if (!data) return catalogErr ? '<div class="mk-plain">The fixture list is not available right now. Try again in a minute.</div>'
-      : '<div class="mk-loading">Loading fixtures…</div>';
+    var list = games();
+    if (!list) return catalogErr ? '<div class="mk-plain">The fixture list is not available right now. Try again in a minute.</div>'
+      : catalog ? '<div class="mk-plain">No fixtures for this sport right now.</div>'
+        : '<div class="mk-loading">Loading fixtures…</div>';
     var q = F.q.trim().toLowerCase();
-    var list = data.matches.filter(function (m) {
-      if (F.comp !== 'all' && m.comp !== F.comp) return false;
+    list = list.filter(function (m) {
+      if (F.sport === 'football' && F.comp !== 'all' && m.comp !== F.comp) return false;
       if (!q) return true;
       return (m.home.name + ' ' + m.away.name + ' ' + compName(m.comp)).toLowerCase().indexOf(q) >= 0;
     });
@@ -438,7 +509,7 @@
     list.slice(0, 80).forEach(function (m) {
       var d = dayLabel(kickoff(m));
       if (d !== day) { day = d; out += '<div class="mkx-day">' + esc(d) + '</div>'; }
-      out += '<button type="button" class="mkx-match" data-match="' + m.id + '" aria-pressed="' + (F.match === m.id) + '">'
+      out += '<button type="button" class="mkx-match" data-match="' + esc(m.id) + '" aria-pressed="' + (String(F.match) === String(m.id)) + '">'
         + '<span class="t">' + esc(localTime(kickoff(m))) + '</span>'
         + '<span class="tm h">' + esc(m.home.name) + crest(m.home) + '</span>'
         + '<span class="vs">vs</span>'
@@ -452,7 +523,7 @@
     var h = host();
     if (!h) return;
     var data = fb(), m = match();
-    var comps = data ? '<div class="chips mkx-comps">'
+    var comps = F.sport === 'football' && data ? '<div class="chips mkx-comps">'
       + '<button type="button" data-comp="all" aria-pressed="' + (F.comp === 'all') + '">All</button>'
       + data.comps.map(function (c) {
         return '<button type="button" data-comp="' + esc(c.code) + '" aria-pressed="' + (F.comp === c.code) + '">'
@@ -460,32 +531,39 @@
       }).join('') + '</div>' : '';
     var tpls = m ? '<div class="mkx-tpls">' + tplList(m).map(function (t) {
       return '<button type="button" class="mkx-tpl" data-tpl="' + t.id + '" aria-pressed="' + (F.tpl === t.id) + '">'
-        + '<b>' + esc(t.label) + '</b><span>' + esc(t.sub) + '</span><em>90 min</em></button>';
+        + '<b>' + esc(t.label) + '</b><span>' + esc(t.sub) + '</span><em>' + esc(t.tag) + '</em></button>';
     }).join('') + '</div>'
-      + (F.tpl === 'over' ? '<div class="mkx-quick"><span>Line</span>' + LINES.map(function (l) {
-        return '<button type="button" data-line="' + l + '" aria-pressed="' + (F.line === l) + '">Over ' + l + '</button>';
+      + (F.tpl === 'over' ? '<div class="mkx-quick"><span>Line</span>' + SPORTS[F.sport].lines.map(function (l) {
+        return '<button type="button" data-line="' + l + '" aria-pressed="' + (line() === l) + '">Over ' + l + '</button>';
       }).join('') + '</div>' : '')
       : '<div class="mk-plain">Pick a match first.</div>';
+    var note = F.sport === 'football' ? 'Regular time only: 90 minutes plus stoppage time. Extra time and penalties do not count.'
+      : F.sport === 'nba' ? 'Overtime counts: the final score includes every overtime period.'
+        : 'Regulation markets count 60 minutes only. "Incl. OT/SO" markets use the official winner after overtime and the shootout.';
 
     h.innerHTML = '<button type="button" class="mkx-backcat">&larr; Categories</button>'
       + '<h3 class="step-h"><span class="n">1</span>Which match?</h3>'
       + '<section class="card qform">'
-      + '  <div class="mkx-sporttabs"><button type="button" aria-pressed="true">Football</button>'
-      + '<button type="button" disabled>Basketball <i>Soon</i></button><button type="button" disabled>Hockey <i>Soon</i></button></div>'
+      + '  <div class="mkx-sporttabs">' + Object.keys(SPORTS).map(function (k) {
+        return '<button type="button" data-sport="' + k + '" aria-pressed="' + (F.sport === k) + '">' + SPORTS[k].name
+          + (SPORTS[k].league ? ' <i>' + SPORTS[k].league + '</i>' : '') + '</button>';
+      }).join('') + '</div>'
       + comps
       + '  <label class="mk2-search mkx-search"><input id="mkx-q" type="search" placeholder="Search a team or competition" value="' + esc(F.q) + '"></label>'
       + matchList()
       + '</section>'
       + '<h3 class="step-h"><span class="n">2</span>What is the market about?</h3>'
-      + '<section class="card qform">' + tpls
-      + '<div class="mkf-note">Regular time only: 90 minutes plus stoppage time. Extra time and penalties do not count.</div></section>'
+      + '<section class="card qform">' + tpls + '<div class="mkf-note">' + esc(note) + '</div></section>'
       + '<h3 class="step-h"><span class="n">3</span>Review and publish</h3>'
       + '<section class="card qform" id="mkx-sum"></section>';
 
     h.querySelector('.mkx-backcat').onclick = renderChooser;
+    h.querySelectorAll('[data-sport]').forEach(function (b) {
+      b.onclick = function () { F.sport = b.dataset.sport; F.match = null; F.tpl = null; F.line = null; F.comp = 'all'; renderSport(); };
+    });
     h.querySelectorAll('[data-comp]').forEach(function (b) { b.onclick = function () { F.comp = b.dataset.comp; renderSport(); }; });
     h.querySelectorAll('[data-match]').forEach(function (b) {
-      b.onclick = function () { F.match = Number(b.dataset.match); F.tpl = null; renderSport(); };
+      b.onclick = function () { F.match = b.dataset.match; F.tpl = null; renderSport(); };
     });
     h.querySelectorAll('[data-tpl]').forEach(function (b) { b.onclick = function () { F.tpl = b.dataset.tpl; renderSport(); fCheckDup(); }; });
     h.querySelectorAll('[data-line]').forEach(function (b) { b.onclick = function () { F.line = b.dataset.line; renderSport(); fCheckDup(); }; });
@@ -518,11 +596,11 @@
     }
     box.innerHTML = preview
       + (m ? '<div class="mkf-pdates mkf-when"><div><span>Predictions close</span><b>' + timeText(fClose(m)) + '</b></div>'
-        + '<div><span>Kick-off</span><b>' + timeText(kickoff(m)) + '</b></div></div>' : '')
+        + '<div><span>Start</span><b>' + timeText(kickoff(m)) + '</b></div></div>' : '')
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
       + '<div><span>You earn</span><b>3%</b><em>of the losing side</em></div>'
-      + '<div><span>Resolved from</span><b>football-data.org</b><em>disputable for 48 hours, like every market</em></div>'
+      + '<div><span>Resolved from</span><b>' + esc(SPORTS[F.sport].source) + '</b><em>disputable for 48 hours, like every market</em></div>'
       + '</div>'
       + (F.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
       + (errs.length && !F.dup ? '<ul class="mkf-errs">' + errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '')

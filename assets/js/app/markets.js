@@ -325,7 +325,7 @@ function approxDateText(height, tip) {
 /** Одна фраза, по которой понятно, за что держат деньги. */
 function plainSpec(m, tip) {
   const ref = mkRef(m);
-  if (ref && ref.src === 'fd') {
+  if (ref && (ref.src === 'fd' || ref.src === 'espn')) {
     return `${mktEsc(m.spec.criterion)}`;
   }
   if (ref && ref.src === 'cg') {
@@ -531,6 +531,12 @@ const MK_CAT_IMG = {
 };
 function mkOrb(m, big) {
   const ref = mkRef(m);
+  // NBA/NHL: логотипы команд ESPN по аббревиатуре.
+  if (ref && ref.src === 'espn' && mkOwn(MK_ESPN_PATH, ref.lg) && /^[a-z]{2,4}$/.test(ref.h || '') && /^[a-z]{2,4}$/.test(ref.a || '')) {
+    return `<span class="mk2-orb mk2-crests${big ? ' big' : ''}" aria-hidden="true">`
+      + `<img src="https://a.espncdn.com/i/teamlogos/${ref.lg}/500/${ref.h}.png" alt="" loading="lazy">`
+      + `<img src="https://a.espncdn.com/i/teamlogos/${ref.lg}/500/${ref.a}.png" alt="" loading="lazy"></span>`;
+  }
   // Матч: гербы хозяев и гостей внахлёст вместо общей иконки категории.
   if (ref && ref.src === 'fd' && /^\d+$/.test(ref.h || '') && /^\d+$/.test(ref.a || '')) {
     return `<span class="mk2-orb mk2-crests${big ? ' big' : ''}" aria-hidden="true">`
@@ -560,11 +566,18 @@ function mkRef(m) {
   return out.src ? out : null;
 }
 function mkRefSym(ref) { return (ref && (mkOwn(MK_CG_SYM, ref.asset) || String(ref.asset || '').toUpperCase())) || ''; }
-const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org' };
+const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org', espn: 'ESPN' };
+const MK_ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl' };
+function mkEspnRule(ref) {
+  if (!ref || ref.src !== 'espn') return '';
+  if (ref.lg === 'nba') return 'incl. OT';
+  return ref.tpl === 'home_win' || ref.tpl === 'away_win' ? 'incl. OT/SO' : 'regulation';
+}
 
 function mkCrumb(m, withCreator) {
   const ref = mkRef(m);
-  const metric = ref && ref.src === 'fd' ? (mkOwn(MK_FD_COMP, ref.c) || 'Football') + ' · 90 min'
+  const metric = ref && ref.src === 'espn' ? `${String(ref.lg || '').toUpperCase()} · ${mkEspnRule(ref)}`
+    : ref && ref.src === 'fd' ? (mkOwn(MK_FD_COMP, ref.c) || 'Football') + ' · 90 min'
     : ref && ref.src === 'cg' ? `${mkRefSym(ref)} price`
     : mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
   return `<div class="mk2-crumb">
@@ -1034,6 +1047,13 @@ window.submitClaim = submitClaim;
  *  каждому, кто открыл рынок. */
 function verifyBlock(m) {
   const ref = mkRef(m);
+  if (ref && ref.src === 'espn' && mkOwn(MK_ESPN_PATH, ref.lg) && /^\d+$/.test(ref.ev || '')) {
+    return `
+      <pre>${mktEsc('curl -s "https://site.api.espn.com/apis/site/v2/sports/' + mkOwn(MK_ESPN_PATH, ref.lg) + '/summary?event=' + ref.ev + '"')}</pre>
+      <div class="mk-plain">In the answer, <code>header.competitions[0]</code> holds the status, each team's
+        <code>score</code>, <code>winner</code> and <code>linescores</code> by period.
+        ${ref.lg === 'nhl' ? 'Regulation is the sum of the first three periods.' : 'The final score includes overtime.'}</div>`;
+  }
   if (ref && ref.src === 'fd') {
     return `
       <pre>${mktEsc('curl -s -H "X-Auth-Token: <your free key>" https://api.football-data.org/v4/matches/' + ref.match)}</pre>

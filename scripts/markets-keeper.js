@@ -676,6 +676,77 @@ async function resolveFootball(m, ref) {
   };
 }
 
+
+// ── NBA и NHL: ESPN ─────────────────────────────────────────────────────────
+//
+// spec.param: src=espn;lg=nba|nhl;ev=<id>;tpl=<шаблон>;h=<abbr>;a=<abbr>
+// NBA: победа и тотал - с овертаймами (итоговый счёт).
+// NHL: *_win_reg и over - только основное время, сумма первых трёх периодов;
+//      home_win/away_win - официальный победитель (с овертаймом и буллитами).
+
+const ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl' };
+const ESPN_VOID = { STATUS_POSTPONED: 'postponed', STATUS_CANCELED: 'cancelled', STATUS_SUSPENDED: 'suspended', STATUS_FORFEIT: 'forfeited' };
+
+async function espnGame(lg, ev) {
+  const res = await safeFetch(`https://site.api.espn.com/apis/site/v2/sports/${ESPN_PATH[lg]}/summary?event=${ev}`,
+    { headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0 (terra-oracle keeper)' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  const c = body?.header?.competitions?.[0];
+  if (!c) throw new Error('no competition in the answer');
+  const side = (h) => {
+    const t = (c.competitors || []).find((x) => x.homeAway === h) || {};
+    const per = (t.linescores || []).map((l) => Number(l.value ?? l.displayValue));
+    return { name: t.team?.abbreviation || h, score: Number(t.score), winner: t.winner === true, per };
+  };
+  return { status: c.status?.type?.name, completed: c.status?.type?.completed === true, period: c.status?.period, home: side('home'), away: side('away') };
+}
+
+function espnOutcome(lg, tpl, g, line) {
+  const H = g.home, A = g.away;
+  if (lg === 'nhl' && (tpl === 'home_win_reg' || tpl === 'away_win_reg' || tpl === 'over')) {
+    if (H.per.length < 3 || A.per.length < 3 || [...H.per.slice(0, 3), ...A.per.slice(0, 3)].some((v) => !isFinite(v))) return null;
+    const h = H.per.slice(0, 3).reduce((x, y) => x + y, 0), a = A.per.slice(0, 3).reduce((x, y) => x + y, 0);
+    if (tpl === 'over') return { outcome: h + a > line, detail: `regulation ${h}-${a}, ${h + a} goals vs line ${line}` };
+    return { outcome: tpl === 'home_win_reg' ? h > a : a > h, detail: `regulation ${h}-${a}` };
+  }
+  if (!isFinite(H.score) || !isFinite(A.score)) return null;
+  if (tpl === 'over') return { outcome: H.score + A.score > line, detail: `final ${H.score}-${A.score}, ${H.score + A.score} vs line ${line}` };
+  if (!H.winner && !A.winner) return null;
+  if (tpl === 'home_win' || tpl === 'away_win') {
+    return { outcome: tpl === 'home_win' ? H.winner : A.winner, detail: `final ${H.score}-${A.score}, winner ${H.winner ? H.name : A.name}` };
+  }
+  return undefined;
+}
+
+async function resolveEspn(m, ref) {
+  if (!ESPN_PATH[ref.lg] || !/^\d+$/.test(ref.ev || '')) return { void: 'the market does not name an ESPN game the keeper can read' };
+  const g = await espnGame(ref.lg, ref.ev);
+  if (ESPN_VOID[g.status]) return { void: `the game was ${ESPN_VOID[g.status]}` };
+  if (!g.completed || g.status !== 'STATUS_FINAL') return { wait: `game ${ref.ev} is ${g.status}, waiting for the final` };
+  const r = espnOutcome(ref.lg, ref.tpl, g, Number(m.spec.threshold));
+  if (r === undefined) return { void: `unknown market template ${ref.tpl}` };
+  if (r === null) return { wait: `game ${ref.ev} is final, scores by period not complete yet` };
+  return { outcome: r.outcome, reading: `ESPN ${ref.lg.toUpperCase()} event ${ref.ev}: ${g.away.name} at ${g.home.name}, ${r.detail}; ${ref.tpl} ${r.outcome ? 'yes' : 'no'}` };
+}
+
+/** KEEPER_SPORT_TEST=1: вчерашние завершённые матчи NBA и NHL и что керпер
+ *  решил бы по каждому шаблону. Ничего не подписывает - для сверки глазами. */
+async function sportTest() {
+  const d = new Date(Date.now() - 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  for (const lg of ['nhl', 'nba']) {
+    const res = await safeFetch(`https://site.api.espn.com/apis/site/v2/sports/${ESPN_PATH[lg]}/scoreboard?dates=${d}`, { headers: { accept: 'application/json' } });
+    const body = await res.json();
+    for (const e of (body.events || []).slice(0, 8)) {
+      const g = await espnGame(lg, e.id);
+      const tpls = lg === 'nhl' ? ['home_win_reg', 'away_win_reg', 'home_win', 'away_win', 'over'] : ['home_win', 'away_win', 'over'];
+      const line = lg === 'nhl' ? 5.5 : 220.5;
+      const res2 = tpls.map((t) => { const r = espnOutcome(lg, t, g, line); return `${t}=${r ? (r.outcome ? 'YES' : 'NO') : r === null ? 'wait' : '?'}`; });
+      log(`${lg.toUpperCase()} ${e.id} ${g.status} p${g.period} ${g.away.name} ${g.away.score} [${g.away.per.join(',')}] at ${g.home.name} ${g.home.score} [${g.home.per.join(',')}] -> ${res2.join(' ')}`);
+    }
+  }
+}
+
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
@@ -691,12 +762,14 @@ async function planFor(m, ctx) {
     if (now < due) return null;
     if (!m.spec?.metric) {
       const ref = refOf(m);
-      if (ref?.src !== 'cg' && ref?.src !== 'fd') return { note: `#${id}: free criterion, waiting for a person to resolve` };
+      if (!['cg', 'fd', 'espn'].includes(ref?.src)) return { note: `#${id}: free criterion, waiting for a person to resolve` };
       if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
       // Точка данных CoinGecko на срок появляется не сразу: ждём 15 минут.
       if (ref.src === 'cg' && now < due + 900) return { note: `#${id}: waiting for CoinGecko to publish the price at the deadline` };
       try {
-        const r = ref.src === 'fd' ? await resolveFootball(m, ref) : await resolveCoinGecko(m, ref);
+        const r = ref.src === 'fd' ? await resolveFootball(m, ref)
+          : ref.src === 'espn' ? await resolveEspn(m, ref)
+            : await resolveCoinGecko(m, ref);
         if (r.wait) return { note: `#${id}: ${r.wait}` };
         if (r.void) return { what: `void #${id}: ${r.void}`, contract: PROPHECY, msg: { void: { market_id: id, bad_spec: false, reason: r.void } } };
         return {
@@ -705,7 +778,7 @@ async function planFor(m, ctx) {
           msg: { propose: { market_id: id, outcome: r.outcome, reading: r.reading.slice(0, 480) } },
         };
       } catch (e) {
-        return { note: `#${id}: could not read ${ref.src === 'fd' ? 'football-data.org' : 'CoinGecko'}: ${e.message}` };
+        return { note: `#${id}: could not read ${{ fd: 'football-data.org', espn: 'ESPN', cg: 'CoinGecko' }[ref.src]}: ${e.message}` };
       }
     }
     if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
@@ -929,6 +1002,7 @@ async function selftest() {
 
 async function main() {
   if (process.env.KEEPER_SELFTEST === '1') return selftest();
+  if (process.env.KEEPER_SPORT_TEST === '1') return sportTest();
   if (!PROPHECY) throw new Error('PROPHECY_CONTRACT is not set');
   if (!DRY && !MNEMONIC) throw new Error('KEEPER_MNEMONIC is not set (or run with DRY_RUN=1)');
 
