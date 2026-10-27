@@ -309,3 +309,19 @@
 }
 /* флаги бойцов UFC - прямоугольные, не круглые гербы */
 #page-markets .mkx-match .tm img[src*="/flags/"],#page-markets .mkx-match .tm img[src*="countries"]{width:30px;height:20px;border-radius:3px;object-fit:cover}
+
+/* ---- Treasury: карточка Markets ---- */
+#page-treasury .tm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+#page-treasury .tm-k{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.12)}
+#page-treasury .tm-k span{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#9AA6C4}
+#page-treasury .tm-k b{font-family:Rajdhani,sans-serif;font-weight:700;font-size:24px;color:#E8F0FF}
+#page-treasury .tm-k em,#page-treasury .tm-k i{font-style:normal;font-size:12px;color:#A9B6D3}
+#page-treasury .tm-flow{display:grid;gap:10px;margin:16px 0}
+#page-treasury .tm-step{display:flex;gap:12px;align-items:flex-start;font-size:13.5px;line-height:1.55;color:#C9D3EA}
+#page-treasury .tm-step b{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:Rajdhani,sans-serif;font-size:13px;color:#fff;background:linear-gradient(135deg,#7B5CFF,#A855F7)}
+#page-treasury .tm-step strong{color:#F2D45C}
+#page-treasury .tm-paid .tm-k b{font-size:20px;color:#3BE38A}
+#page-treasury .tm-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin-top:14px;font-size:12.5px;color:#9AA6C4}
+#page-treasury .tm-foot a{color:#C8B8FF}
+/* ---- Recent activity: строка с вопросом рынка ---- */
+.acts .tx .act-sub{display:block;font-style:normal;font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

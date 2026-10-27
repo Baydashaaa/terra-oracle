@@ -231,6 +231,7 @@ async function tLoadRecentTxs(retries = 5) {
       // apart from a draw share when both are 25,000 LUNC.
       let counterparty = '';
       let viaEvents = false;
+      let fromMarkets = false;
       for (const msg of msgs) {
         const to    = msg.value?.to_address   || msg.to_address   || '';
         const from  = msg.value?.from_address || msg.from_address || '';
@@ -251,6 +252,17 @@ async function tLoadRecentTxs(retries = 5) {
                       : (tx.events && tx.events.length) ? [{ events: tx.events }]
                       : [];
         rawUluna = sumTransferEvents(logSets, wallet, dir);
+        // Контракт рынков платит казне и пулам розыгрыша при расчёте рынка.
+        // Отличаем его от минта NFT по отправителю в событиях transfer.
+        if (rawUluna && typeof PROPHECY_CONTRACT !== 'undefined') {
+          fromMarkets = logSets.some(function (l) {
+            return (l.events || []).some(function (ev) {
+              return ev.type === 'transfer' && (ev.attributes || []).some(function (a) {
+                return a.key === 'sender' && a.value === PROPHECY_CONTRACT;
+              });
+            });
+          });
+        }
         // No MsgSend means the transfer came out of a contract call, and the
         // only contract paying these wallets is the NFT one. That is a firmer
         // signal than any amount.
@@ -285,6 +297,9 @@ async function tLoadRecentTxs(retries = 5) {
         label = wallet === T_WALLETS.daily  ? 'Daily draw - prize payout'
               : wallet === T_WALLETS.weekly ? 'Weekly draw - prize payout'
               : (memo || 'Treasury outflow');
+      } else if (fromMarkets) {
+        label = wallet === T_WALLETS.treasury ? 'Markets - protocol fee (2.5% of the losing side)'
+              : 'Markets - draw pool share (2.5% of the losing side)';
       } else if (viaEvents) {
         const nftTier = detectNFTTier(rawUluna);
         const pool = wallet === T_WALLETS.weekly ? 'Weekly' : 'Daily';
@@ -367,6 +382,7 @@ async function tLoadRecentTxs(retries = 5) {
   }
 }
 async function loadTreasuryData() {
+  if (typeof tLoadMarkets === 'function') tLoadMarkets();
   const btn = document.getElementById('t-refresh-btn');
   if (btn) { btn.textContent='Loading…'; btn.disabled=true; }
 
@@ -678,6 +694,54 @@ async function tLoadTvlDelta(liveTotal) {
     el.style.display = 'block';
   } catch (e) {
     el.style.display = 'none';
+  }
+}
+
+
+// ── Markets: что лежит в контракте рынков и куда уходят деньги ─────────────
+//
+// Всё считается из самого контракта, без своих оценок:
+//   залоги       - bond рынков, ещё не возвращённые создателям;
+//   в прогнозах  - банки живых рынков (YES + NO);
+//   выплачено    - доли проигравшей стороны рассчитанных рынков по их же
+//                  комиссиям: половина протокольной - казне, половина -
+//                  пулам розыгрыша, доля создателя, отчисление в фонд
+//                  продвижения.
+async function tLoadMarkets() {
+  const host = document.getElementById('t-markets');
+  if (!host || typeof loadProphecyMarkets !== 'function' || typeof PROPHECY_CONTRACT === 'undefined') return;
+  try {
+    const [all, bal] = await Promise.all([loadProphecyMarkets(), tFetchBal(PROPHECY_CONTRACT)]);
+    const live = all.filter((m) => ['open', 'locked', 'proposed', 'disputed'].includes(m.status));
+    const bonds = all.filter((m) => !m.bond_returned && !['settled', 'void'].includes(m.status))
+      .reduce((n, m) => n + Number(m.bond || 0), 0);
+    const pools = live.reduce((n, m) => n + Number(m.pot_yes) + Number(m.pot_no), 0);
+    let treasury = 0, draw = 0, creators = 0, boost = 0, settled = 0, voided = 0;
+    all.forEach((m) => {
+      if (m.status === 'void') { voided++; return; }
+      if (m.status !== 'settled' || typeof m.outcome !== 'boolean') return;
+      settled++;
+      const losing = Number(m.outcome ? m.pot_no : m.pot_yes);
+      const f = m.fees || {};
+      const protocol = Math.floor(losing * Number(f.protocol_bps || 0) / 10000);
+      draw += Math.floor(protocol / 2);
+      treasury += protocol - Math.floor(protocol / 2);
+      creators += Math.floor(losing * Number(f.creator_bps || 0) / 10000);
+      boost += Math.floor(losing * Number(f.boost_bps || 0) / 10000);
+    });
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('tm-balance', tFmt(bal));
+    set('tm-bonds', tFmt(bonds));
+    set('tm-pools', tFmt(pools));
+    set('tm-live', String(live.length));
+    set('tm-treasury', tFmt(treasury));
+    set('tm-draw', tFmt(draw));
+    set('tm-creators', tFmt(creators));
+    set('tm-boost', tFmt(boost));
+    set('tm-settled', settled + ' settled · ' + voided + ' voided');
+  } catch (e) {
+    const n = document.getElementById('tm-settled');
+    if (n) n.textContent = 'Markets data is not available right now';
   }
 }
 

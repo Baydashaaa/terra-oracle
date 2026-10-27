@@ -226,19 +226,90 @@
     }).catch(function () { return []; });
   }
 
+
+  // Рынки: создание, прогнозы, расчёт и аннулирование - из транзакций
+  // контракта (у рынка нет поля "создан", время берём у транзакции).
+  // Вопрос подставляем из списка рынков, чтобы строка говорила, о чём речь.
+  var MK_LCD = ['https://terra-classic-lcd.publicnode.com', 'https://lcd.terra-classic.hexxagon.io'];
+  function mkTxs(action, limit) {
+    if (typeof PROPHECY_CONTRACT === 'undefined') return Promise.resolve([]);
+    var q = "wasm._contract_address='" + PROPHECY_CONTRACT + "' AND wasm.action='" + action + "'";
+    var path = '/cosmos/tx/v1beta1/txs?query=' + encodeURIComponent(q) + '&order_by=ORDER_BY_DESC&pagination.limit=' + limit;
+    return (function tryAt(i) {
+      if (i >= MK_LCD.length) return Promise.resolve([]);
+      return getJSON(MK_LCD[i] + path).then(function (d) {
+        return d && d.tx_responses ? d.tx_responses : tryAt(i + 1);
+      });
+    })(0);
+  }
+  function mkAttrs(r, action) {
+    var out = [];
+    (r.events || []).forEach(function (ev) {
+      if (ev.type !== 'wasm') return;
+      var a = {};
+      (ev.attributes || []).forEach(function (x) { a[x.key] = x.value; });
+      if (a._contract_address === PROPHECY_CONTRACT && a.action === action) out.push(a);
+    });
+    return out;
+  }
+  function short(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '\u2026' : s; }
+  function fromMarkets() {
+    if (typeof loadProphecyMarkets !== 'function') return Promise.resolve([]);
+    return Promise.all([
+      loadProphecyMarkets().catch(function () { return []; }),
+      mkTxs('create', 6), mkTxs('bet', 12), mkTxs('settle', 6), mkTxs('void', 4)
+    ]).then(function (res) {
+      var byId = {};
+      (res[0] || []).forEach(function (m) { byId[m.id] = m; });
+      var out = [];
+      var add = function (rs, action, make) {
+        (rs || []).forEach(function (r) {
+          if (r.code) return;
+          var ts = Math.floor(Date.parse(r.timestamp) / 1000);
+          mkAttrs(r, action).forEach(function (a) {
+            var id = Number(a.market_id), m = byId[id];
+            var it = make(a, m);
+            if (!it) return;
+            it.type = 'markets'; it.view = 'markets'; it.target = { m: id }; it.ts = ts;
+            it.sub = m ? short(m.question, 70) : 'Market #' + id;
+            out.push(it);
+          });
+        });
+      };
+      add(res[1], 'create', function () {
+        return { ic: 'markets.webp', text: 'Market · new market', amt: '', tone: 'var(--ink-2)' };
+      });
+      add(res[2], 'bet', function (a) {
+        var yes = a.side === 'yes';
+        return { ic: 'c-volume.webp', text: 'Market · prediction ' + (yes ? 'YES' : 'NO'),
+          amt: lunc(Number(a.amount || 0) / 1e6) + ' LUNC', tone: yes ? 'var(--green)' : 'var(--pink, #F37BAA)' };
+      });
+      add(res[3], 'settle', function (a, m) {
+        var o = m && typeof m.outcome === 'boolean' ? (m.outcome ? 'YES' : 'NO') : '';
+        return { ic: 'm-settled.webp', text: 'Market · settled' + (o ? ' ' + o : ''), amt: '', tone: 'var(--green)' };
+      });
+      add(res[4], 'void', function () {
+        return { ic: 'm-settled.webp', text: 'Market · voided, refunds open', amt: '', tone: 'var(--ink-3)' };
+      });
+      return out;
+    }).catch(function () { return []; });
+  }
+
   function collect(qLimit, cLimit) {
     return Promise.all([
       getJSON(Q_WORKER + '/questions?limit=' + qLimit),
       getJSON(DRAW_WORKER + '/circuit/history?limit=' + cLimit),
       getJSON(DRAW_WORKER + '/circuit/state'),
       getJSON(DATA_ORIGIN + '/winners.json?t=' + Math.floor(Date.now() / 3600000)),
-      fromNFT()
+      fromNFT(),
+      fromMarkets()
     ]).then(function (res) {
       var items = []
         .concat(fromQuestions(res[0]))
         .concat(fromCircuit(res[1], res[2]))
         .concat(fromWinners(res[3]))
-        .concat(res[4] || []);
+        .concat(res[4] || [])
+        .concat(res[5] || []);
 
       // Свежие сверху; будущие метки отбрасываем, чтобы сбитые часы на
       // машине человека не выводили события "через 3 часа".
@@ -255,7 +326,7 @@
     return items.map(function (a, i) {
       return '<li class="act-go" role="button" tabindex="0" data-i="' + i + '">' +
         '<img class="ico" src="' + ICONS + a.ic + '" alt="" width="96" height="96" loading="lazy">' +
-        '<span class="tx"><b>' + esc(a.text) + '</b><span>' + ago(a.ts) + '</span></span>' +
+        '<span class="tx"><b>' + esc(a.text) + '</b>' + (a.sub ? '<em class="act-sub">' + esc(a.sub) + '</em>' : '') + '<span>' + ago(a.ts) + '</span></span>' +
         '<span class="amt" style="color:' + a.tone + '">' + esc(a.amt) + '</span></li>';
     }).join('');
   }
@@ -351,6 +422,10 @@
         return document.querySelector('#drawModes [data-t="' + t.tab + '"]');
       }, function (tab) { tab.click(); });
     }
+    if (it.view === 'markets' && t.m) {
+      waitFor(function () { return typeof window.openProphecyMarket === 'function' && document.getElementById('page-markets'); },
+        function () { window.openProphecyMarket(t.m); });
+    }
     if (it.view === 'board') {
       // Есть страница вопроса - открываем её, иначе прокрутка к карточке.
       var opened = t.q && typeof window.openQuestionById === 'function' && window.openQuestionById(t.q, t.a);
@@ -366,7 +441,7 @@
 
   var FILTERS = [
     ['all', 'All'], ['questions', 'Questions'], ['answers', 'Answers'],
-    ['draws', 'Draws'], ['circuit', 'Circuit'], ['nft', 'NFT']
+    ['draws', 'Draws'], ['circuit', 'Circuit'], ['nft', 'NFT'], ['markets', 'Markets']
   ];
 
   function buildModal() {

@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
   <link rel="stylesheet" href="assets/css/shell-fix.css?v=202610271200">
   <link rel="stylesheet" href="assets/css/motion.css?v=202610271500">
-  <link rel="stylesheet" href="assets/css/markets-v2.css?v=202610272300">
+  <link rel="stylesheet" href="assets/css/markets-v2.css?v=202610272330">
   <link rel="stylesheet" href="assets/css/contrast.css?v=202610031200">
   <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
@@ -1195,6 +1195,30 @@
     </div>
 
     <div class="tre-sec">
+      <div class="tre-sec-tag"><b>&#9672; Markets</b><span>Held by the markets contract, and where it goes when a market settles.</span></div>
+      <div class="tre-card tm-card" id="t-markets">
+        <div class="tm-grid">
+          <div class="tm-k"><span>Contract balance</span><b id="tm-balance">-</b><em>everything the contract holds now</em></div>
+          <div class="tm-k"><span>Creator bonds</span><b id="tm-bonds">-</b><em>locked, returned when each market settles</em></div>
+          <div class="tm-k"><span>In predictions</span><b id="tm-pools">-</b><em>across <i id="tm-live">-</i> live markets</em></div>
+        </div>
+        <div class="tm-flow">
+          <div class="tm-step"><b>1</b><span>A creator locks a <strong>200,000 LUNC bond</strong>. It stays in the contract and comes back when the market settles, unless the question cannot be checked.</span></div>
+          <div class="tm-step"><b>2</b><span>Predictions stay in the contract until the outcome is final. Winners share the losing side.</span></div>
+          <div class="tm-step"><b>3</b><span>From the losing side: <strong>2.5%</strong> to the Treasury, <strong>2.5%</strong> to the draw pools, <strong>3%</strong> to the creator, <strong>2%</strong> to the boost fund for promoted markets.</span></div>
+        </div>
+        <div class="tm-grid tm-paid">
+          <div class="tm-k"><span>Paid to Treasury</span><b id="tm-treasury">-</b></div>
+          <div class="tm-k"><span>Paid to draw pools</span><b id="tm-draw">-</b></div>
+          <div class="tm-k"><span>Paid to creators</span><b id="tm-creators">-</b></div>
+          <div class="tm-k"><span>Boost fund</span><b id="tm-boost">-</b></div>
+        </div>
+        <div class="tm-foot"><span id="tm-settled">-</span>
+          <a href="https://finder.terraport.finance/mainnet/address/terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2" target="_blank" rel="noopener">Contract on the explorer &rarr;</a></div>
+      </div>
+    </div>
+
+    <div class="tre-sec">
       <div class="tre-sec-tag"><b>&#9672; Money movement</b><span>Protocol Treasury · latest transfers.</span></div>
       <div class="tre-card">
         <div class="tre-txs" id="t-recent-txs">
@@ -1743,7 +1767,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=02321a6b89"></script>
-  <script src="assets/js/treasury.js?v=fea9d5f526"></script>
+  <script src="assets/js/treasury.js?v=202610272330"></script>
   <script src="assets/js/treasury-chart.js?v=c9260a5285"></script>
   <script src="assets/js/signAction.js?v=03cc48ba97"></script>
   <!-- Клиент контракта Oracle Mask: источник списка NFT вместо nft.lunc.tools -->
@@ -1936,7 +1960,7 @@
 <script src="assets/js/page/mobile-more.js?v=637864ae3e"></script>
 <script src="assets/js/shell-nav.js?v=202609291700"></script>
 <script src="assets/js/shell-icons.js?v=2518b9696a"></script>
-<script src="assets/js/page/side-activity.js?v=1dff0068b4"></script>
+<script src="assets/js/page/side-activity.js?v=202610272330"></script>
 <script src="assets/js/page/header-ticker.js?v=a6698d03fa"></script>
 <script src="assets/js/page/global-search.js?v=ebdf26f03e"></script>
 <script src="assets/js/page/wallet-profile.js?v=66b5abc5c9"></script>
