@@ -32,7 +32,7 @@ to enforced after three days of observation.
 
 29 October 2026: added `a.espncdn.com` (NBA and NHL team logos) to `img-src`.
 
-29 October 2026: added `cdn.pandascore.co` (esports team logos) to `img-src`.
+29 October 2026: added `cdn.pandascore.co` and `cdn-api.pandascore.co` (esports team logos) to `img-src`.
 
 ---
 
@@ -46,7 +46,7 @@ script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
            https://static.cloudflareinsights.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
-img-src 'self' data: blob: https://draw.terraoracle.io https://coin-images.coingecko.com https://crests.football-data.org https://a.espncdn.com https://cdn.pandascore.co;
+img-src 'self' data: blob: https://draw.terraoracle.io https://coin-images.coingecko.com https://crests.football-data.org https://a.espncdn.com https://cdn.pandascore.co https://cdn-api.pandascore.co;
 frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;
 worker-src 'self' blob:;
 connect-src 'self'

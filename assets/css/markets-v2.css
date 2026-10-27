@@ -285,3 +285,15 @@
 /* название турнира в одну строку */
 #page-markets .mkx-match .c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
 @media (min-width:621px){#page-markets .mkx-match{grid-template-columns:54px 1fr 34px 1fr 140px}}
+
+/* карточки игр в киберспорте */
+#page-markets .mkx-games{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+#page-markets .mkx-game{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  min-height:120px;padding:16px;border-radius:16px;text-align:center;background:linear-gradient(180deg,#151A33,#10142A);border:1px solid rgba(200,184,255,.16);
+  transition:border-color .2s,box-shadow .2s,translate .2s}
+#page-markets .mkx-game img{max-width:100%;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+#page-markets .mkx-game b{font-family:Rajdhani,sans-serif;font-size:17px;color:#E8F0FF}
+#page-markets .mkx-game:hover{border-color:rgba(168,85,247,.6);translate:0 -2px}
+#page-markets .mkx-game[aria-pressed="true"]{border-color:#A855F7;background:linear-gradient(180deg,#1E1847,#12112E);box-shadow:0 0 26px -10px rgba(168,85,247,.9)}
+#page-markets .mkx-game:focus-visible{outline:2px solid #C8B8FF;outline-offset:3px}
+@media (max-width:620px){#page-markets .mkx-game{min-height:90px}#page-markets .mkx-game img{height:44px}#page-markets .mkx-game b{font-size:14px}}

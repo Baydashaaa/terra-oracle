@@ -727,8 +727,12 @@
     h.innerHTML = '<button type="button" class="mkx-backcat">&larr; Categories</button>'
       + '<h3 class="step-h"><span class="n">1</span>Which match?</h3>'
       + '<section class="card qform">'
-      + '  <div class="mkx-sporttabs">' + Object.keys(ES_GAMES).map(function (k) {
-        return '<button type="button" data-esg="' + k + '" aria-pressed="' + (E.game === k) + '">' + ES_GAMES[k] + '</button>';
+      + '  <div class="mkx-games">' + Object.keys(ES_GAMES).map(function (k) {
+        // Картинка игры - файл assets/img/games/<игра>.png, который кладёт
+        // владелец сайта. Если файла нет, карточка остаётся с одним названием.
+        return '<button type="button" class="mkx-game" data-esg="' + k + '" aria-pressed="' + (E.game === k) + '">'
+          + '<img src="assets/img/games/' + k + '.png" alt="" loading="lazy" onerror="this.remove()">'
+          + '<b>' + ES_GAMES[k] + '</b></button>';
       }).join('') + '</div>'
       + '  <label class="mk2-search mkx-search"><input id="mkx-eq" type="search" placeholder="Search a team or tournament" value="' + esc(E.q) + '"></label>'
       + rows + '</section>'
