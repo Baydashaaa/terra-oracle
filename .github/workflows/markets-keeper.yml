@@ -55,6 +55,7 @@ jobs:
           MARKET_REP_MIN_LOSING: ${{ vars.MARKET_REP_MIN_LOSING }}
           # Рынки вне цепочки (крипта): ключ CoinGecko Demo API.
           COINGECKO_KEY: ${{ secrets.COINGECKO_KEY }}
+          FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
         run: node scripts/markets-keeper.js
 
       - name: Notify on failure

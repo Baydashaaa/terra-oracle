@@ -233,3 +233,43 @@
 #page-markets .mk2-search input{all:unset;flex:1;min-width:0;font-size:14px;color:#E8F0FF}
 #page-markets .mk2-search:focus-within{border-color:#A855F7}
 #page-markets .mk2-groups{margin:12px 0 4px}
+
+
+/* ---- спорт ---- */
+#page-markets .mkx-sporttabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+#page-markets .mkx-sporttabs button{all:unset;cursor:pointer;padding:8px 14px;border-radius:10px;border:1px solid rgba(200,184,255,.18);font:600 14px Rajdhani,sans-serif;color:#E8F0FF}
+#page-markets .mkx-sporttabs button[aria-pressed="true"]{border-color:#A855F7;background:rgba(123,92,255,.16)}
+#page-markets .mkx-sporttabs button:disabled{cursor:default;opacity:.45}
+#page-markets .mkx-sporttabs i{font-style:normal;font-size:10.5px;margin-left:4px;color:#A9B6D3}
+#page-markets .mkx-comps{margin-bottom:12px}
+#page-markets .mkx-comps button{display:inline-flex;align-items:center;gap:6px}
+#page-markets .mkx-comps img{width:16px;height:16px;object-fit:contain}
+#page-markets .mkx-search{flex:none;margin-bottom:12px;max-width:none}
+#page-markets .mkx-matches{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto;padding-right:4px}
+#page-markets .mkx-day{margin:10px 2px 2px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mkx-match{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:54px 1fr 28px 1fr 46px;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.1);font-size:14px;color:#E8F0FF;transition:border-color .2s,background .2s}
+#page-markets .mkx-match:hover{border-color:rgba(168,85,247,.5)}
+#page-markets .mkx-match[aria-pressed="true"]{border-color:#A855F7;background:rgba(123,92,255,.14)}
+#page-markets .mkx-match:focus-visible{outline:2px solid #C8B8FF;outline-offset:2px}
+#page-markets .mkx-match .t{font-family:Rajdhani,sans-serif;font-weight:700;color:#C8B8FF}
+#page-markets .mkx-match .tm{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#page-markets .mkx-match .tm.h{justify-content:flex-end;text-align:right}
+#page-markets .mkx-match .tm img,#page-markets .mkx-match .nocrest{width:22px;height:22px;object-fit:contain;flex:none}
+#page-markets .mkx-match .vs{text-align:center;font-size:11px;color:#6B7A9C}
+#page-markets .mkx-match .c{font-size:11px;color:#9AA6C4;text-align:right}
+#page-markets .mkx-tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+#page-markets .mkx-tpl{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.14)}
+#page-markets .mkx-tpl b{font-family:Rajdhani,sans-serif;font-size:17px;color:#E8F0FF;padding-right:52px}
+#page-markets .mkx-tpl span{font-size:12.5px;color:#A9B6D3}
+#page-markets .mkx-tpl em{position:absolute;top:12px;right:12px;font-style:normal;font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(242,212,92,.14);color:#F2D45C}
+#page-markets .mkx-tpl[aria-pressed="true"]{border-color:#A855F7;background:rgba(123,92,255,.14);box-shadow:0 0 22px -10px rgba(168,85,247,.9)}
+#page-markets .mkx-quick button[aria-pressed="true"]{border-color:#A855F7;background:rgba(123,92,255,.16)}
+@media (max-width:620px){#page-markets .mkx-match{grid-template-columns:44px 1fr 18px 1fr;font-size:13px}#page-markets .mkx-match .c{display:none}}
+
+/* гербы команд вместо иконки категории */
+:is(#page-markets,#home-markets) .mk2-orb.mk2-crests{display:block}
+:is(#page-markets,#home-markets) .mk2-orb.mk2-crests img{position:absolute;width:64%;height:64%;object-fit:contain}
+:is(#page-markets,#home-markets) .mk2-orb.mk2-crests img:first-child{left:0;top:0}
+:is(#page-markets,#home-markets) .mk2-orb.mk2-crests img:last-child{right:0;bottom:0}

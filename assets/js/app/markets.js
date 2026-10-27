@@ -325,6 +325,9 @@ function approxDateText(height, tip) {
 /** Одна фраза, по которой понятно, за что держат деньги. */
 function plainSpec(m, tip) {
   const ref = mkRef(m);
+  if (ref && ref.src === 'fd') {
+    return `${mktEsc(m.spec.criterion)}`;
+  }
   if (ref && ref.src === 'cg') {
     const at = Number(ref.at);
     const d = new Date(at * 1000);
@@ -527,6 +530,13 @@ const MK_CAT_IMG = {
   sport: 'f-trending',
 };
 function mkOrb(m, big) {
+  const ref = mkRef(m);
+  // Матч: гербы хозяев и гостей внахлёст вместо общей иконки категории.
+  if (ref && ref.src === 'fd' && /^\d+$/.test(ref.h || '') && /^\d+$/.test(ref.a || '')) {
+    return `<span class="mk2-orb mk2-crests${big ? ' big' : ''}" aria-hidden="true">`
+      + `<img src="https://crests.football-data.org/${ref.h}.png" alt="" loading="lazy">`
+      + `<img src="https://crests.football-data.org/${ref.a}.png" alt="" loading="lazy"></span>`;
+  }
   const icon = mkOwn(MK_METRIC_ICON, m.spec && m.spec.metric) || mkOwn(MK_CAT_IMG, m.category) || 'markets';
   return `<span class="mk2-orb${big ? ' big' : ''}" aria-hidden="true"><img src="assets/img/icons/${icon}.webp" alt="" loading="lazy"></span>`;
 }
@@ -534,7 +544,11 @@ function mkOrb(m, big) {
 // Рынки вне цепочки: ссылка на источник в spec.param, "k=v;k=v".
 const MK_CG_SYM = {
   bitcoin: 'BTC', ethereum: 'ETH', 'terra-luna': 'LUNC', terrausd: 'USTC', solana: 'SOL', binancecoin: 'BNB',
-  ripple: 'XRP', cardano: 'ADA', dogecoin: 'DOGE', cosmos: 'ATOM', tron: 'TRX', toncoin: 'TON',
+  ripple: 'XRP', cardano: 'ADA', dogecoin: 'DOGE', cosmos: 'ATOM', tron: 'TRX', toncoin: 'TON', 'the-open-network': 'TON',
+};
+const MK_FD_COMP = {
+  PL: 'Premier League', PD: 'La Liga', SA: 'Serie A', BL1: 'Bundesliga', FL1: 'Ligue 1', CL: 'Champions League',
+  DED: 'Eredivisie', PPL: 'Primeira Liga', ELC: 'Championship', BSA: 'Brasileirão', EC: 'European Championship', WC: 'World Cup',
 };
 function mkRef(m) {
   if (!m || !m.spec || m.spec.metric || !m.spec.param || m.spec.param.indexOf('src=') < 0) return null;
@@ -546,11 +560,12 @@ function mkRef(m) {
   return out.src ? out : null;
 }
 function mkRefSym(ref) { return (ref && (mkOwn(MK_CG_SYM, ref.asset) || String(ref.asset || '').toUpperCase())) || ''; }
-const MK_SRC_NAME = { cg: 'CoinGecko' };
+const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org' };
 
 function mkCrumb(m, withCreator) {
   const ref = mkRef(m);
-  const metric = ref && ref.src === 'cg' ? `${mkRefSym(ref)} price`
+  const metric = ref && ref.src === 'fd' ? (mkOwn(MK_FD_COMP, ref.c) || 'Football') + ' · 90 min'
+    : ref && ref.src === 'cg' ? `${mkRefSym(ref)} price`
     : mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
   return `<div class="mk2-crumb">
     <span class="cat">${mktEsc(m.category)}</span>
@@ -1019,6 +1034,12 @@ window.submitClaim = submitClaim;
  *  каждому, кто открыл рынок. */
 function verifyBlock(m) {
   const ref = mkRef(m);
+  if (ref && ref.src === 'fd') {
+    return `
+      <pre>${mktEsc('curl -s -H "X-Auth-Token: <your free key>" https://api.football-data.org/v4/matches/' + ref.match)}</pre>
+      <div class="mk-plain">The keeper reads <code>score.fullTime</code> when the match ends in 90 minutes, and
+        <code>score.regularTime</code> when it went to extra time. A free key is available at football-data.org.</div>`;
+  }
   if (ref && ref.src === 'cg') {
     const at = Number(ref.at);
     const api = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(ref.asset)}/market_chart/range?vs_currency=usd&from=${at - 5400}&to=${at}`;

@@ -637,6 +637,45 @@ async function resolveCoinGecko(m, ref) {
   };
 }
 
+
+// ── футбол: football-data.org ───────────────────────────────────────────────
+//
+// spec.param: src=fd;match=<id>;tpl=home_win|away_win|draw|over;c=..;h=..;a=..
+// Основное время: score.fullTime, если матч закончился за 90 минут
+// (duration REGULAR); score.regularTime, если было дополнительное время.
+// Перенесённый, отменённый, прерванный или присуждённый матч - void.
+
+const FD_KEY = process.env.FOOTBALL_DATA_KEY || '';
+const FD_VOID = { POSTPONED: 'postponed', CANCELLED: 'cancelled', SUSPENDED: 'abandoned', AWARDED: 'awarded by the competition' };
+
+async function resolveFootball(m, ref) {
+  if (!/^\d+$/.test(ref.match || '')) return { void: 'the market does not name a football-data.org match' };
+  const res = await safeFetch(`https://api.football-data.org/v4/matches/${ref.match}`, { headers: { 'X-Auth-Token': FD_KEY } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const x = await res.json();
+  if (FD_VOID[x.status]) return { void: `the match was ${FD_VOID[x.status]}` };
+  if (x.status !== 'FINISHED') return { wait: `match ${ref.match} is ${x.status}, waiting for the final whistle` };
+  const sc = x.score || {};
+  const reg = sc.duration === 'REGULAR' ? sc.fullTime : sc.regularTime;
+  if (!reg || reg.home == null || reg.away == null) return { wait: `match ${ref.match} finished, regular-time score not published yet` };
+  const h = Number(reg.home), a = Number(reg.away);
+  let outcome;
+  if (ref.tpl === 'home_win') outcome = h > a;
+  else if (ref.tpl === 'away_win') outcome = a > h;
+  else if (ref.tpl === 'draw') outcome = h === a;
+  else if (ref.tpl === 'over') {
+    const line = Number(m.spec.threshold);
+    if (!isFinite(line)) return { void: 'the market has no goal line' };
+    outcome = h + a > line;
+  } else return { void: `unknown market template ${ref.tpl}` };
+  const names = `${x.homeTeam?.shortName || x.homeTeam?.name} ${h}-${a} ${x.awayTeam?.shortName || x.awayTeam?.name}`;
+  return {
+    outcome,
+    reading: `football-data.org match ${ref.match}: ${names} in regular time (duration ${sc.duration || 'REGULAR'}); `
+      + `${ref.tpl === 'over' ? `${h + a} goals vs line ${m.spec.threshold}` : ref.tpl} ${outcome ? 'yes' : 'no'}`,
+  };
+}
+
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
@@ -652,12 +691,13 @@ async function planFor(m, ctx) {
     if (now < due) return null;
     if (!m.spec?.metric) {
       const ref = refOf(m);
-      if (ref?.src !== 'cg') return { note: `#${id}: free criterion, waiting for a person to resolve` };
+      if (ref?.src !== 'cg' && ref?.src !== 'fd') return { note: `#${id}: free criterion, waiting for a person to resolve` };
       if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
       // Точка данных CoinGecko на срок появляется не сразу: ждём 15 минут.
-      if (now < due + 900) return { note: `#${id}: waiting for CoinGecko to publish the price at the deadline` };
+      if (ref.src === 'cg' && now < due + 900) return { note: `#${id}: waiting for CoinGecko to publish the price at the deadline` };
       try {
-        const r = await resolveCoinGecko(m, ref);
+        const r = ref.src === 'fd' ? await resolveFootball(m, ref) : await resolveCoinGecko(m, ref);
+        if (r.wait) return { note: `#${id}: ${r.wait}` };
         if (r.void) return { what: `void #${id}: ${r.void}`, contract: PROPHECY, msg: { void: { market_id: id, bad_spec: false, reason: r.void } } };
         return {
           what: `propose #${id}: ${r.outcome ? 'YES' : 'NO'} - ${r.reading}`,
@@ -665,7 +705,7 @@ async function planFor(m, ctx) {
           msg: { propose: { market_id: id, outcome: r.outcome, reading: r.reading.slice(0, 480) } },
         };
       } catch (e) {
-        return { note: `#${id}: could not read CoinGecko: ${e.message}` };
+        return { note: `#${id}: could not read ${ref.src === 'fd' ? 'football-data.org' : 'CoinGecko'}: ${e.message}` };
       }
     }
     if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
