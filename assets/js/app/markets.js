@@ -563,8 +563,8 @@ function mkGauge(m, pct, bare) {
         <span class="spark" style="left:${pct}%"></span>
       </div>
       <div class="mk2-gauge-sub">
-        <span>${fmtLunc(yes)} LUNC · ${playersText(m.bettors_yes)}</span>
-        <span>${fmtLunc(no)} LUNC · ${playersText(m.bettors_no)}</span>
+        <span>${fmtLunc(yes)} LUNC<i class="w"> · ${playersText(m.bettors_yes)}</i></span>
+        <span>${fmtLunc(no)} LUNC<i class="w"> · ${playersText(m.bettors_no)}</i></span>
       </div>
     </div>`;
 }

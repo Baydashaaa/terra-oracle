@@ -178,6 +178,13 @@
 
   /** Вызывается с экрана рынка и из опроса раз в 20 секунд. Заглушка -
    *  только при первой отрисовке, чтобы блок не мигал. */
+  // Узлы индексируют транзакции по-разному: один и тот же запрос иногда
+  // возвращает пустой список, хотя прогнозы есть. Прогнозы только
+  // добавляются, поэтому держим самый длинный полученный список на рынок и
+  // никогда не заменяем его более коротким - иначе график пропадал и
+  // появлялся при каждом опросе.
+  const seen = {};
+
   window.renderActivity = async function (m) {
     const host = document.getElementById('mk-activity');
     if (!host || !m) return;
@@ -191,6 +198,18 @@
     }
     // Экран могли уже сменить на другой рынок, пока шёл запрос.
     if (!window._prophecyMarket || window._prophecyMarket.id !== m.id) return;
+    const prev = seen[m.id] || [];
+    if (bets.length < prev.length) bets = prev;
+    else seen[m.id] = bets;
+    const hasMoney = Number(m.pot_yes) + Number(m.pot_no) > 0;
+    if (!bets.length && hasMoney) {
+      // Деньги в рынке есть, а узел не нашёл ни одного прогноза - это
+      // пробел индекса узла, а не пустой рынок. Ничего не стираем.
+      if (!host.querySelector('.mk-feed')) host.innerHTML = '<div class="mk-loading">Loading activity…</div>';
+      return;
+    }
+    if (host.dataset.n === String(bets.length) && host.querySelector('.mk-feed')) return;
+    host.dataset.n = String(bets.length);
     host.innerHTML = `
       <section class="card mk-activity">
         <h3>How the forecast moved</h3>

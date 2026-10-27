@@ -168,8 +168,8 @@
   .mk2-gauge-top{font-size:24px !important}
   .mk2-gauge-top small{font-size:14px !important}
   .mk2-gauge-top em{font-size:12px !important}
-  .mk2-gauge-sub{font-size:12px;flex-direction:column;gap:2px}
-  .mk2-gauge-sub span:last-child{text-align:right}
+  .mk2-gauge-sub{font-size:12px;gap:8px;white-space:nowrap}
+  .mk2-gauge-sub .w{display:none}
   .mk2-foot{font-size:13px;gap:8px 12px}
   .mk2-phase{margin-left:0}
 }
@@ -180,3 +180,5 @@
 #page-markets .mk2-stats .mk-stat img{width:44px;height:44px}
 #page-markets .mk2-stats .mk-stat span{letter-spacing:.1em;white-space:nowrap}
 #page-markets .mk2-stats .mk-stat b{font-size:clamp(22px,2.2vw,32px)}
+
+:is(#page-markets,#home-markets) .mk2-gauge-sub .w{font-style:normal}
