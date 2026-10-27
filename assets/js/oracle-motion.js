@@ -129,7 +129,7 @@
 
   // ── 3. счётчики ────────────────────────────────────────────────────────────
 
-  var COUNT = '.stat .num, #mk-stat-open, #mk-stat-vol, #mk-stat-settled, #mk-stat-players, .stat-value, .chart-main-val';
+  var COUNT = '.stat .num, #mk-stat-open, #mk-stat-vol, #mk-stat-settled, #mk-stat-players, .stat-value, .chart-main-val, #repVal';
   var NUM_RE = /^(\D{0,3}?)([\d][\d,]*(?:\.\d+)?)(.*)$/;
 
   function tween(el, from, to, prefix, suffix, decimals) {
@@ -219,6 +219,112 @@
     })();
   };
 
+
+  // ── 5. этап 2: скользящая подсветка меню ───────────────────────────────────
+  //
+  // Одна подсветка на всё левое меню переезжает к активному пункту, а не
+  // гаснет в одном месте и зажигается в другом.
+
+  function navGlide() {
+    var rail = document.querySelector('.rail');
+    if (!rail || !rail.querySelector('.nav')) return;
+    if (getComputedStyle(rail).position === 'static') rail.style.position = 'relative';
+    var glide = document.createElement('span');
+    glide.className = 'nav-glide';
+    glide.setAttribute('aria-hidden', 'true');
+    rail.appendChild(glide);
+    document.documentElement.classList.add('nav-glide-on');
+    var first = true;
+    function place() {
+      var a = rail.querySelector('.nav[aria-current="page"]');
+      if (!a || !a.offsetParent) { glide.style.opacity = '0'; return; }
+      var r = a.getBoundingClientRect(), rr = rail.getBoundingClientRect();
+      var top = r.top - rr.top + rail.scrollTop, left = r.left - rr.left + rail.scrollLeft;
+      if (first) glide.style.transition = 'none';
+      glide.style.transform = 'translate(' + left + 'px,' + top + 'px)';
+      glide.style.width = r.width + 'px';
+      glide.style.height = r.height + 'px';
+      glide.style.opacity = '1';
+      if (first) { void glide.offsetWidth; glide.style.transition = ''; first = false; }
+    }
+    new MutationObserver(place).observe(rail, { attributes: true, subtree: true, attributeFilter: ['aria-current'] });
+    window.addEventListener('resize', place);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+    place();
+  }
+
+  // ── 6. скелетоны ───────────────────────────────────────────────────────────
+  //
+  // Пока число ещё не пришло ("-", "--"), на его месте мерцает плашка, а не
+  // висит одинокий прочерк.
+
+  var SKEL = '.stat .num, .clock b, [data-pool], #repVal, #mk-stat-open, #mk-stat-vol, #mk-stat-settled, #mk-stat-players';
+  var EMPTY = /^(-|--|\u2014|\u2013|)$/;
+  function skel(el) {
+    if (el._sk) return;
+    el._sk = true;
+    var check = function () { el.classList.toggle('sk', EMPTY.test((el.textContent || '').trim()) && !el._skDone); };
+    check();
+    new MutationObserver(function () {
+      if (!EMPTY.test((el.textContent || '').trim())) el._skDone = true;
+      check();
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+    // Если данные так и не пришли (узел недоступен), через 8 секунд плашка
+    // уступает место прочерку: бесконечное мерцание хуже честного "нет данных".
+    setTimeout(function () { el._skDone = true; el.classList.remove('sk'); }, 8000);
+  }
+  function scanSkel(root) {
+    if (!root || !root.querySelectorAll) return;
+    if (root.matches && root.matches(SKEL)) skel(root);
+    root.querySelectorAll(SKEL).forEach(skel);
+  }
+
+  // ── 7. наклон карточек модулей за курсором ─────────────────────────────────
+
+  var FINE = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  function tilt(card) {
+    if (!FINE || card._tilt) return;
+    card._tilt = true;
+    var glare = document.createElement('span');
+    glare.className = 'tilt-glare';
+    glare.setAttribute('aria-hidden', 'true');
+    card.appendChild(glare);
+    var raf = 0;
+    card.addEventListener('pointermove', function (e) {
+      var r = card.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        card.style.transform = 'perspective(900px) rotateX(' + (-y * 7).toFixed(2) + 'deg) rotateY(' + (x * 9).toFixed(2) + 'deg) translateY(-4px)';
+        card.style.setProperty('--gx', ((x + 0.5) * 100).toFixed(1) + '%');
+        card.style.setProperty('--gy', ((y + 0.5) * 100).toFixed(1) + '%');
+      });
+    });
+    card.addEventListener('pointerleave', function () {
+      cancelAnimationFrame(raf);
+      card.style.transform = '';
+    });
+  }
+  function scanTilt(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('.mod').forEach(tilt);
+  }
+
+  // ── 8. смена цифр таймера ──────────────────────────────────────────────────
+
+  function tick(el) {
+    if (el._tick) return;
+    el._tick = true;
+    var last = el.textContent;
+    new MutationObserver(function () {
+      if (el.textContent === last) return;
+      last = el.textContent;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  }
+
   // ── запуск ─────────────────────────────────────────────────────────────────
 
   function start() {
@@ -227,12 +333,19 @@
     if (active) enterPage(active.id.replace(/^page-/, ''));
     scan(document.body);
     scanCount(document.body);
+    scanSkel(document.body);
+    scanTilt(document.body);
+    document.querySelectorAll('.clock b').forEach(tick);
+    try { navGlide(); } catch (e) { /* меню без подсветки - не беда */ }
     new MutationObserver(function (muts) {
       muts.forEach(function (m) {
         m.addedNodes.forEach(function (n) {
           if (n.nodeType !== 1) return;
           scan(n);
           scanCount(n);
+          scanSkel(n);
+          scanTilt(n);
+          if (n.querySelectorAll) n.querySelectorAll('.clock b').forEach(tick);
         });
       });
     }).observe(document.body, { childList: true, subtree: true });

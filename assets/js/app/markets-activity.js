@@ -162,10 +162,10 @@
 
   // ── лента ─────────────────────────────────────────────────────────────────
 
-  function feedHtml(bets) {
+  function feedHtml(bets, fresh) {
     const me = typeof mkWallet === 'function' ? mkWallet() : null;
-    const rows = bets.slice().reverse().slice(0, 10).map((b) => `
-      <div class="r">
+    const rows = bets.slice().reverse().slice(0, 10).map((b, i) => `
+      <div class="r${i < (fresh || 0) ? ' new' : ''}">
         <span class="who${b.who === me ? ' me' : ''}">${b.who === me ? 'You' : mktEsc(shortAddr(b.who))}</span>
         <b class="${b.yes ? 'y' : 'n'}">${fmtLunc(b.amount)} LUNC on ${b.yes ? 'YES' : 'NO'}</b>
         <span class="ago">${agoText(b.t)}</span>
@@ -209,12 +209,14 @@
       return;
     }
     if (host.dataset.n === String(bets.length) && host.querySelector('.mk-feed')) return;
+    // Прогнозы, пришедшие с прошлой отрисовки, подсвечиваются в ленте.
+    const fresh = host.dataset.n ? Math.max(0, bets.length - Number(host.dataset.n)) : 0;
     host.dataset.n = String(bets.length);
     host.innerHTML = `
       <section class="card mk-activity">
         <h3>How the forecast moved</h3>
         ${bets.length
-          ? chartHtml(bets, m) + feedHtml(bets)
+          ? chartHtml(bets, m) + feedHtml(bets, fresh)
           : '<p class="mk-lead-sm">No predictions yet. The first one shows up here.</p>'}
       </section>`;
   };

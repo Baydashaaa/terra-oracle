@@ -28,3 +28,58 @@
 
 /* Салют на подтверждённое действие */
 .motion-burst{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147482000}
+
+
+/* ── этап 2 ─────────────────────────────────────────────────────────────── */
+
+/* Скользящая подсветка меню. Собственный фон активного пункта гасится,
+   его роль берёт на себя одна плашка, которая переезжает. */
+.nav-glide{
+  position:absolute;left:0;top:0;z-index:0;pointer-events:none;opacity:0;
+  border-radius:var(--r-sm,10px);
+  background:linear-gradient(90deg,rgba(59,130,246,.30),rgba(123,92,255,.10));
+  border:1px solid rgba(96,140,255,.5);
+  box-shadow:0 0 22px -8px rgba(96,140,255,.8),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .42s cubic-bezier(.3,.8,.25,1),height .42s cubic-bezier(.3,.8,.25,1),width .42s,opacity .2s;
+}
+.nav-glide-on .rail .nav{position:relative;z-index:1}
+.nav-glide-on .rail .nav[aria-current="page"]{background:transparent;border-color:transparent}
+
+/* Скелетоны: прочерк до прихода данных - мерцающая плашка */
+.motion-on .sk{
+  color:transparent !important;-webkit-text-fill-color:transparent;
+  display:inline-block;min-width:2.6em;border-radius:6px;
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 0%,rgba(200,184,255,.18) 45%,rgba(255,255,255,.05) 90%);
+  background-size:220% 100%;animation:skMove 1.3s linear infinite;
+}
+@keyframes skMove{from{background-position:120% 0}to{background-position:-120% 0}}
+#page-markets .mk-loading,.mk-loading{
+  height:84px;border-radius:16px;color:transparent;overflow:hidden;
+  background:linear-gradient(90deg,rgba(255,255,255,.03) 0%,rgba(200,184,255,.10) 45%,rgba(255,255,255,.03) 90%);
+  background-size:220% 100%;animation:skMove 1.4s linear infinite;
+}
+
+/* Наклон карточек модулей и блик за курсором */
+.motion-on .mod{transform-style:preserve-3d;transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .2s,box-shadow .2s;will-change:transform}
+.motion-on .mod .tilt-glare{
+  position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .3s;
+  background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.16),transparent 55%);
+  mix-blend-mode:screen;
+}
+.motion-on .mod:hover .tilt-glare{opacity:1}
+
+/* Цифры таймера: новая въезжает сверху */
+.motion-on .clock b.tick{animation:tickIn .32s cubic-bezier(.2,.7,.2,1)}
+@keyframes tickIn{from{opacity:.2;transform:translateY(-7px)}to{opacity:1;transform:none}}
+
+/* Шкала YES/NO заполняется, когда карточка появляется */
+.motion-on .rv-in .mk2-bar .y{transform-origin:left;animation:barGrow .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--rd,0ms) + 80ms)}
+.motion-on .rv-in .mk2-bar .n{transform-origin:right;animation:barGrow .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--rd,0ms) + 80ms)}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:none}}
+
+/* Полоса REP и прогресс заполняются плавно */
+.motion-on #repBar{transition:width .9s cubic-bezier(.2,.7,.2,1)}
+
+/* Новый прогноз в ленте подсвечивается и гаснет */
+.motion-on .mk-feed .r.new{animation:feedNew 2.4s ease-out}
+@keyframes feedNew{0%{background:rgba(168,85,247,.28);box-shadow:inset 3px 0 0 #A855F7}100%{background:transparent;box-shadow:inset 3px 0 0 transparent}}
