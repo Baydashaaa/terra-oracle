@@ -502,18 +502,28 @@ const MK_METRIC_SHORT = {
   community_pool: 'Community pool', validator_power: 'Validator stake', proposal_passed: 'Proposal vote',
 };
 
+// Значок рынка - объёмные иконки сайта, а не линейные: сначала по метрике
+// (она точнее говорит, о чём рынок), иначе по категории.
+const MK_METRIC_ICON = {
+  total_supply: 'stat-tvl', oracle_rate: 'stat-markets', staking_ratio: 'm-open',
+  community_pool: 't-reserve', validator_power: 'stat-players', proposal_passed: 'g-proposals',
+};
+const MK_CAT_IMG = {
+  economy: 'stat-tvl', governance: 'g-scales', protocol: 't-development', validators: 'm-open',
+  network: 'g-parameter', community: 'g-community', macro: 'stat-markets', crypto: 'stat-tvl',
+  sport: 'f-trending',
+};
 function mkOrb(m, big) {
-  const path = mkOwn(MK_CAT_ICON, m.category) || '<circle cx="12" cy="12" r="4"/>';
-  return `<span class="mk2-orb${big ? ' big' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+  const icon = mkOwn(MK_METRIC_ICON, m.spec && m.spec.metric) || mkOwn(MK_CAT_IMG, m.category) || 'markets';
+  return `<span class="mk2-orb${big ? ' big' : ''}" aria-hidden="true"><img src="assets/img/icons/${icon}.webp" alt="" loading="lazy"></span>`;
 }
 
 function mkCrumb(m, withCreator) {
   const metric = mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
   return `<div class="mk2-crumb">
     <span class="cat">${mktEsc(m.category)}</span>
-    ${metric ? `<i>/</i><span>${mktEsc(metric)}</span>` : ''}
-    ${withCreator ? `<i>/</i><span>Created by ${mktEsc(shortAddr(m.creator))}</span>` : ''}
+    ${metric ? `<i>&nbsp;/&nbsp;</i><span>${mktEsc(metric)}</span>` : ''}
+    ${withCreator ? `<i>&nbsp;/&nbsp;</i><span>Created by ${mktEsc(shortAddr(m.creator))}</span>` : ''}
     ${m.promoted ? '<span class="promo">★ Promoted</span>' : ''}
   </div>`;
 }

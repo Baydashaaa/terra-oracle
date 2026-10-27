@@ -18,19 +18,19 @@
 :is(#page-markets,#home-markets) .mk2-head{display:flex;align-items:flex-start;gap:16px}
 :is(#page-markets,#home-markets) .mk2-titles{display:flex;flex-direction:column;gap:8px;min-width:0}
 :is(#page-markets,#home-markets) .mkc.mk2c h4{margin:0;font-family:Rajdhani,sans-serif;font-weight:700;font-size:23px;line-height:1.15;color:#E8F0FF}
-:is(#page-markets,#home-markets) .mk2-orb{
-  flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:rgb(var(--c));
-  background:radial-gradient(circle at 30% 25%,rgba(var(--c),.38),rgba(var(--c),.05) 70%);
-  border:1px solid rgba(var(--c),.4);box-shadow:0 0 34px -12px rgba(var(--c),.7);
-}
-:is(#page-markets,#home-markets) .mk2-orb svg{width:26px;height:26px}
-:is(#page-markets,#home-markets) .mk2-orb.big{width:72px;height:72px;border-radius:20px}
-:is(#page-markets,#home-markets) .mk2-orb.big svg{width:36px;height:36px}
-:is(#page-markets,#home-markets) .mk2-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:#9AA6C4}
+:is(#page-markets,#home-markets) .mk2-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:0;font-size:12px;color:#9AA6C4}
 :is(#page-markets,#home-markets) .mk2-crumb .cat{color:rgb(var(--c));font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 :is(#page-markets,#home-markets) .mk2-crumb i{font-style:normal;color:#5D6A8C}
 :is(#page-markets,#home-markets) .mk2-crumb .promo{margin-left:4px;padding:2px 8px;border-radius:999px;background:rgba(242,212,92,.14);color:#F2D45C;font-weight:600}
 :is(#page-markets,#home-markets) .mk2-note{margin:0;font-size:13.5px;line-height:1.55;color:#C9D3EA}
+
+/* значок: объёмная иконка сайта на мягком свечении цвета категории */
+:is(#page-markets,#home-markets) .mk2-orb{flex:none;position:relative;width:60px;height:60px;display:grid;place-items:center}
+:is(#page-markets,#home-markets) .mk2-orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;
+  background:radial-gradient(circle,rgba(var(--c),.38) 0%,rgba(var(--c),.10) 45%,transparent 70%);filter:blur(4px)}
+:is(#page-markets,#home-markets) .mk2-orb img{position:relative;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+:is(#page-markets,#home-markets) .mk2-orb.big{width:84px;height:84px}
+:is(#page-markets,#home-markets) .mkc.mk2c:hover .mk2-orb img{transform:translateY(-2px) scale(1.04);transition:transform .3s}
 
 /* ---- шкала давления ---- */
 :is(#page-markets,#home-markets) .mk2-gauge{display:flex;flex-direction:column;gap:10px}
@@ -76,7 +76,9 @@
 /* ---- полоса статистики ---- */
 #page-markets .mk2-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;padding:0;border-radius:18px;overflow:hidden;
   background:rgba(200,184,255,.12);border:1px solid rgba(200,184,255,.14)}
-#page-markets .mk2-stats .mk-stat{display:flex;flex-direction:column;gap:6px;padding:18px 22px;background:#10142A;border:0;border-radius:0;min-height:0}
+#page-markets .mk2-stats .mk-stat{display:flex;flex-direction:row;align-items:center;gap:16px;padding:18px 22px;background:#10142A;border:0;border-radius:0;min-height:0;text-align:left}
+#page-markets .mk2-stats .mk-stat img{flex:none;width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+#page-markets .mk2-stats .mk-stat > div{display:flex;flex-direction:column;gap:6px;min-width:0}
 #page-markets .mk2-stats .mk-stat span{order:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9AA6C4}
 #page-markets .mk2-stats .mk-stat b{order:1;font-family:Rajdhani,sans-serif;font-weight:700;font-size:34px;line-height:1;color:#E8F0FF}
 #page-markets .mk2-stats .mk-stat em{order:2;font-style:normal;font-size:13px;color:#C9B45A}
@@ -84,7 +86,7 @@
 @media (max-width:760px){#page-markets .mk2-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ---- строка Beta ---- */
-#page-markets .mk2-beta{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:13px;line-height:1.5;color:#CDB869}
+#page-markets .mk2-beta{display:flex;justify-content:flex-start;text-align:left;width:100%;box-sizing:border-box;align-items:center;gap:10px;margin:0 0 16px;font-size:13px;line-height:1.5;color:#CDB869}
 #page-markets .mk2-beta .tag{flex:none;height:22px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;
   background:rgba(242,212,92,.12);color:#F2D45C;font-weight:600;letter-spacing:.08em;font-size:11px}
 
@@ -161,8 +163,6 @@
 :is(#page-markets,#home-markets) .mkc.mk2c{container-type:inline-size}
 @container (max-width: 340px){
   .mk2-head{gap:12px}
-  .mk2-orb{width:40px;height:40px;border-radius:12px}
-  .mk2-orb svg{width:20px;height:20px}
   .mkc.mk2c h4,.mkc.mk2c.big h4{font-size:18px !important}
   .mk2-crumb{font-size:11px;gap:6px}
   .mk2-gauge-top{font-size:24px !important}
@@ -173,3 +173,10 @@
   .mk2-foot{font-size:13px;gap:8px 12px}
   .mk2-phase{margin-left:0}
 }
+
+@media (max-width:1100px){#page-markets .mk2-stats .mk-stat img{width:44px;height:44px}}
+@media (max-width:760px){#page-markets .mk2-stats .mk-stat{flex-direction:column;align-items:flex-start;gap:10px}}
+#page-markets .mk2-stats .mk-stat{padding:16px 18px;gap:12px}
+#page-markets .mk2-stats .mk-stat img{width:44px;height:44px}
+#page-markets .mk2-stats .mk-stat span{letter-spacing:.1em;white-space:nowrap}
+#page-markets .mk2-stats .mk-stat b{font-size:clamp(22px,2.2vw,32px)}
