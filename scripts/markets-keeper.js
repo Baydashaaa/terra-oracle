@@ -590,6 +590,53 @@ function urgencyOf(m) {
   return Number(m.resolve_after);
 }
 
+
+// ── рынки вне цепочки: CoinGecko ────────────────────────────────────────────
+//
+// Ссылка на источник лежит в spec.param: "src=cg;asset=bitcoin;vs=usd;at=<unix>".
+// Правило (оно же в criterion рынка): последняя точка данных CoinGecko в USD
+// не позже срока; если за 90 минут до срока точки нет - рынок аннулируется.
+
+const CG_KEY = process.env.COINGECKO_KEY || '';
+const CG_MAX_GAP = 5400;
+
+function refOf(m) {
+  const p = m?.spec?.param;
+  if (!p || m.spec.metric || !p.includes('src=')) return null;
+  const out = {};
+  for (const kv of String(p).split(';')) {
+    const i = kv.indexOf('=');
+    if (i > 0) out[kv.slice(0, i)] = kv.slice(i + 1);
+  }
+  return out;
+}
+
+async function resolveCoinGecko(m, ref) {
+  const at = Number(ref.at);
+  if (!ref.asset || !/^[a-z0-9-]+$/.test(ref.asset) || !at || (ref.vs || 'usd') !== 'usd') {
+    return { void: 'the market does not name a CoinGecko asset and time the keeper can read' };
+  }
+  const url = `https://api.coingecko.com/api/v3/coins/${ref.asset}/market_chart/range?vs_currency=usd&from=${at - CG_MAX_GAP}&to=${at}`;
+  const res = await safeFetch(url, { headers: { accept: 'application/json', ...(CG_KEY ? { 'x-cg-demo-api-key': CG_KEY } : {}) } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  const pts = (body?.prices || []).filter((p) => Array.isArray(p) && p[0] <= at * 1000);
+  if (!pts.length) return { void: `CoinGecko has no ${ref.asset} price within 90 minutes before the deadline` };
+  const [ms, price] = pts[pts.length - 1];
+  const th = Number(m.spec.threshold);
+  if (!isFinite(th) || !isFinite(price)) throw new Error('bad number');
+  const cmp = m.spec.comparator;
+  const outcome = cmp === 'gt' ? price > th : cmp === 'gte' ? price >= th : cmp === 'lt' ? price < th : cmp === 'lte' ? price <= th : null;
+  if (outcome === null) return { void: 'unknown comparison in the market' };
+  const when = new Date(ms).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  const word = { gt: 'above', gte: 'at least', lt: 'below', lte: 'at most' }[cmp];
+  return {
+    outcome,
+    reading: `CoinGecko ${ref.asset}/usd = ${price} at ${when} (last point at or before the deadline); `
+      + `${outcome ? '' : 'not '}${word} ${m.spec.threshold}`,
+  };
+}
+
 async function planFor(m, ctx) {
   const { now, tip, pcfg, isResolver } = ctx;
   const id = m.id;
@@ -603,7 +650,24 @@ async function planFor(m, ctx) {
       return { what: `expire #${id}: no outcome within the grace period`, contract: PROPHECY, msg: { expire: { market_id: id } } };
     }
     if (now < due) return null;
-    if (!m.spec?.metric) return { note: `#${id}: free criterion, waiting for a person to resolve` };
+    if (!m.spec?.metric) {
+      const ref = refOf(m);
+      if (ref?.src !== 'cg') return { note: `#${id}: free criterion, waiting for a person to resolve` };
+      if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
+      // Точка данных CoinGecko на срок появляется не сразу: ждём 15 минут.
+      if (now < due + 900) return { note: `#${id}: waiting for CoinGecko to publish the price at the deadline` };
+      try {
+        const r = await resolveCoinGecko(m, ref);
+        if (r.void) return { what: `void #${id}: ${r.void}`, contract: PROPHECY, msg: { void: { market_id: id, bad_spec: false, reason: r.void } } };
+        return {
+          what: `propose #${id}: ${r.outcome ? 'YES' : 'NO'} - ${r.reading}`,
+          contract: PROPHECY,
+          msg: { propose: { market_id: id, outcome: r.outcome, reading: r.reading.slice(0, 480) } },
+        };
+      } catch (e) {
+        return { note: `#${id}: could not read CoinGecko: ${e.message}` };
+      }
+    }
     if (!isResolver) return { note: `#${id}: due, but this key is not the resolver` };
     if (tip.height < Number(m.spec.height)) {
       return { note: `#${id}: due by time, chain at ${tip.height}, spec height ${m.spec.height} not reached yet` };

@@ -324,6 +324,17 @@ function approxDateText(height, tip) {
 
 /** Одна фраза, по которой понятно, за что держат деньги. */
 function plainSpec(m, tip) {
+  const ref = mkRef(m);
+  if (ref && ref.src === 'cg') {
+    const at = Number(ref.at);
+    const d = new Date(at * 1000);
+    const when = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+      + ', ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
+    const cmp = mkOwn(COMPARATOR_TEXT, m.spec.comparator) || mktEsc(m.spec.comparator);
+    const th = Number(m.spec.threshold);
+    return `Settles <b class="y">YES</b> if the CoinGecko price of ${mktEsc(mkRefSym(ref))} in USD at <b>${when}</b> is ${cmp} `
+      + `<b>$${isFinite(th) ? th.toLocaleString('en-US', { maximumFractionDigits: 8 }) : mktEsc(m.spec.threshold)}</b>.`;
+  }
   if (!m.spec.metric) {
     return `Settled by people against a stated criterion: ${mktEsc(m.spec.criterion)}`;
   }
@@ -461,6 +472,8 @@ function footBlock(m) {
 /** Метка происхождения исхода. Стоит рядом с категорией, потому что это
  *  ровно то, чем рынки отличаются друг от друга по доверию. */
 function sourceTag(m) {
+  const ref = mkRef(m);
+  if (ref && mkOwn(MK_SRC_NAME, ref.src)) return `<span class="cat src on">resolved from ${mkOwn(MK_SRC_NAME, ref.src)}</span>`;
   return m.spec.metric
     ? '<span class="cat src on">on-chain spec</span>'
     : '<span class="cat src">human-resolved</span>';
@@ -518,8 +531,27 @@ function mkOrb(m, big) {
   return `<span class="mk2-orb${big ? ' big' : ''}" aria-hidden="true"><img src="assets/img/icons/${icon}.webp" alt="" loading="lazy"></span>`;
 }
 
+// Рынки вне цепочки: ссылка на источник в spec.param, "k=v;k=v".
+const MK_CG_SYM = {
+  bitcoin: 'BTC', ethereum: 'ETH', 'terra-luna': 'LUNC', terrausd: 'USTC', solana: 'SOL', binancecoin: 'BNB',
+  ripple: 'XRP', cardano: 'ADA', dogecoin: 'DOGE', cosmos: 'ATOM', tron: 'TRX', toncoin: 'TON',
+};
+function mkRef(m) {
+  if (!m || !m.spec || m.spec.metric || !m.spec.param || m.spec.param.indexOf('src=') < 0) return null;
+  const out = {};
+  String(m.spec.param).split(';').forEach((kv) => {
+    const i = kv.indexOf('=');
+    if (i > 0) out[kv.slice(0, i)] = kv.slice(i + 1);
+  });
+  return out.src ? out : null;
+}
+function mkRefSym(ref) { return (ref && (mkOwn(MK_CG_SYM, ref.asset) || String(ref.asset || '').toUpperCase())) || ''; }
+const MK_SRC_NAME = { cg: 'CoinGecko' };
+
 function mkCrumb(m, withCreator) {
-  const metric = mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
+  const ref = mkRef(m);
+  const metric = ref && ref.src === 'cg' ? `${mkRefSym(ref)} price`
+    : mkOwn(MK_METRIC_SHORT, m.spec && m.spec.metric) || (m.spec && m.spec.metric ? '' : 'Stated criterion');
   return `<div class="mk2-crumb">
     <span class="cat">${mktEsc(m.category)}</span>
     ${metric ? `<i>&nbsp;/&nbsp;</i><span>${mktEsc(metric)}</span>` : ''}
@@ -823,6 +855,35 @@ function emptyPanel(text, sub) {
   </div>`;
 }
 
+// Фильтр по разделу и поиск по тексту списка рынков.
+const MK_GROUPS = {
+  terra: ['economy', 'governance', 'protocol', 'validators', 'network', 'community', 'chain'],
+  crypto: ['crypto'],
+  sport: ['sport'],
+  esports: ['esports'],
+  world: ['macro', 'world', 'politics'],
+};
+let mkFilter = { group: 'all', q: '' };
+function mkMatchesFilter(m) {
+  if (mkFilter.group !== 'all' && !(MK_GROUPS[mkFilter.group] || []).includes(m.category)) return false;
+  const q = mkFilter.q.trim().toLowerCase();
+  if (!q) return true;
+  const ref = mkRef(m);
+  const hay = [m.question, m.category, m.creator, ref ? mkRefSym(ref) : '', m.spec && m.spec.metric].join(' ').toLowerCase();
+  return q.split(/\s+/).every((w) => hay.includes(w));
+}
+function mkSetGroup(btn, g) {
+  mkFilter.group = g;
+  document.querySelectorAll('#mkGroups button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+  renderMarkets(mkLastResolved);
+}
+let mkSearchT = 0;
+function mkSearch(v) {
+  mkFilter.q = v;
+  clearTimeout(mkSearchT);
+  mkSearchT = setTimeout(() => renderMarkets(mkLastResolved), 250);
+}
+
 async function renderMarkets(resolved) {
   mkLastResolved = !!resolved;
   // Вкладки нужны списку. Возвращаясь из рынка, подсвечиваем ту, что открыта.
@@ -864,7 +925,8 @@ async function renderMarkets(resolved) {
     const all = await loadProphecyMarkets();
     renderMarketStats(all);
     const live = ['open', 'locked', 'proposed', 'disputed'];
-    const list = all.filter((m) => (resolved ? !live.includes(m.status) : live.includes(m.status)));
+    const list = all.filter((m) => (resolved ? !live.includes(m.status) : live.includes(m.status)))
+      .filter(mkMatchesFilter);
     // Свежие сверху: у открытых интереснее ближайшие к закрытию, у закрытых -
     // последние рассчитанные.
     list.sort((a, b) => (resolved ? b.id - a.id : a.bets_close_at - b.bets_close_at));
@@ -889,7 +951,9 @@ async function renderMarkets(resolved) {
       : featHtml;
     host.innerHTML = TEST_BANNER + (list.length
       ? grid
-      : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
+      : (mkFilter.q || mkFilter.group !== 'all')
+        ? emptyPanel('Nothing matches', 'Try another word or section, or open this market yourself.')
+        : emptyPanel(resolved ? 'Nothing settled yet' : 'No open markets',
           resolved ? 'Settled and voided markets will be listed here with their readings.'
                    : 'Be the first to open one.'))
       + (resolved && all.capped
@@ -954,6 +1018,17 @@ window.submitClaim = submitClaim;
  *  готовая команда. Живёт внутри спойлера - нужна проверяющему, а не
  *  каждому, кто открыл рынок. */
 function verifyBlock(m) {
+  const ref = mkRef(m);
+  if (ref && ref.src === 'cg') {
+    const at = Number(ref.at);
+    const api = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(ref.asset)}/market_chart/range?vs_currency=usd&from=${at - 5400}&to=${at}`;
+    return `
+      <div class="mk-plain">${mktEsc(m.spec.criterion)}</div>
+      <pre>${mktEsc('curl -s "' + api + '"')}</pre>
+      <div class="mk-plain">The last price in that answer is the reading. CoinGecko keeps 5-minute points for about a day,
+        then hourly ones, so check soon after the deadline for the exact same number the keeper used.
+        <a href="https://www.coingecko.com/en/coins/${encodeURIComponent(ref.asset)}" target="_blank" rel="noopener">Open on CoinGecko</a></div>`;
+  }
   if (!m.spec.metric) {
     return `<div class="mk-plain">The agreement is the criterion above. Nothing here is read
       from the chain, so the outcome is posted by a person.</div>`;
@@ -1132,7 +1207,7 @@ async function openProphecyMarket(id) {
 
 /** Баннер, статистика и вкладки нужны списку, а не экрану одного рынка. */
 function mkListChrome(show) {
-  ['#page-markets .mk-hero', '#mkStats', '#mkTabs'].forEach((sel) => {
+  ['#page-markets .mk-hero', '#mkStats', '#page-markets .mk2-bar-row', '#mkGroups'].forEach((sel) => {
     const el = document.querySelector(sel);
     if (el) el.style.display = show ? '' : 'none';
   });

@@ -53,6 +53,8 @@ jobs:
           WORKER_URL: https://terra-oracle-questions.vladislav-baydan.workers.dev
           ACTIONS_SECRET: ${{ secrets.ACTIONS_SECRET }}
           MARKET_REP_MIN_LOSING: ${{ vars.MARKET_REP_MIN_LOSING }}
+          # Рынки вне цепочки (крипта): ключ CoinGecko Demo API.
+          COINGECKO_KEY: ${{ secrets.COINGECKO_KEY }}
         run: node scripts/markets-keeper.js
 
       - name: Notify on failure

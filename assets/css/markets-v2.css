@@ -182,3 +182,54 @@
 #page-markets .mk2-stats .mk-stat b{font-size:clamp(22px,2.2vw,32px)}
 
 :is(#page-markets,#home-markets) .mk2-gauge-sub .w{font-style:normal}
+
+
+/* ---- каталог: выбор категории и крипта ---- */
+#page-markets .mkx-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:8px}
+#page-markets .mkx-cat{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:18px;
+  background:linear-gradient(180deg,#151A33,#10142A);border:1px solid rgba(200,184,255,.16);transition:border-color .2s,translate .2s,box-shadow .2s}
+#page-markets .mkx-cat:hover{border-color:rgba(168,85,247,.6);translate:0 -2px;box-shadow:0 0 30px -12px rgba(168,85,247,.7)}
+#page-markets .mkx-cat:focus-visible{outline:2px solid #C8B8FF;outline-offset:3px}
+#page-markets .mkx-cat img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+#page-markets .mkx-cat b{font-family:Rajdhani,sans-serif;font-size:20px;color:#E8F0FF}
+#page-markets .mkx-cat b i{font-style:normal;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:11px;letter-spacing:.08em;background:rgba(255,255,255,.08);color:#A9B6D3;vertical-align:middle}
+#page-markets .mkx-cat span{font-size:13px;line-height:1.5;color:#A9B6D3}
+#page-markets .mkx-cat.soon{cursor:default;opacity:.55}
+#page-markets .mkx-cat.soon:hover{translate:none;box-shadow:none;border-color:rgba(200,184,255,.16)}
+#page-markets .mkx-backcat{all:unset;cursor:pointer;font-size:13px;color:#A9B6D3;margin:0 0 6px;display:inline-block;padding:8px 0}
+#page-markets .mkx-assets{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+#page-markets .mkx-asset{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;
+  padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.14);transition:border-color .2s,background .2s}
+#page-markets .mkx-asset img{grid-row:span 2;width:28px;height:28px;border-radius:50%}
+#page-markets .mkx-asset b{font-family:Rajdhani,sans-serif;font-size:16px;color:#E8F0FF}
+#page-markets .mkx-asset span{font-size:12px;color:#C9D3EA}
+#page-markets .mkx-asset em{grid-column:2;font-style:normal;font-size:11.5px}
+#page-markets .mkx-asset em.up{color:#3BE38A}
+#page-markets .mkx-asset em.down{color:#F37BAA}
+#page-markets .mkx-asset[aria-pressed="true"]{border-color:#A855F7;background:rgba(123,92,255,.14);box-shadow:0 0 22px -10px rgba(168,85,247,.9)}
+#page-markets .mkx-asset:focus-visible{outline:2px solid #C8B8FF;outline-offset:2px}
+#page-markets .mkx-cond{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+#page-markets .mkx-price{display:flex;align-items:center;gap:6px;flex:1 1 220px;height:48px;padding:0 14px;border-radius:12px;background:#0B0F1A;border:1px solid rgba(200,184,255,.18)}
+#page-markets .mkx-price span{color:#9AA6C4;font-family:Rajdhani,sans-serif;font-size:20px}
+#page-markets .mkx-price input{all:unset;flex:1;font-family:Rajdhani,sans-serif;font-weight:700;font-size:22px;color:#E8F0FF;min-width:0}
+#page-markets .mkx-quick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#9AA6C4}
+#page-markets .mkx-quick span{margin-right:4px}
+#page-markets .mkx-quick button{all:unset;cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,184,255,.18);font-size:12.5px;color:#DCD2FF}
+#page-markets .mkx-quick button:hover{border-color:#A855F7}
+#page-markets .mkx-date{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#9AA6C4;max-width:260px}
+#page-markets .mkx-date input{height:46px;padding:0 12px;border-radius:12px;background:#0B0F1A;border:1px solid rgba(200,184,255,.18);color:#E8F0FF;font:600 16px 'Exo 2',sans-serif;color-scheme:dark}
+#page-markets .mkx-preview{pointer-events:none;margin-bottom:16px}
+#page-markets .mkx-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+#page-markets .mkx-terms div{display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.1)}
+#page-markets .mkx-terms span{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mkx-terms b{font-family:Rajdhani,sans-serif;font-size:20px;color:#E8F0FF}
+#page-markets .mkx-terms em{font-style:normal;font-size:12px;color:#A9B6D3}
+#page-markets .mkx-dup{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;padding:12px 14px;border-radius:12px;background:rgba(242,212,92,.08);border:1px solid rgba(242,212,92,.35);color:#F2D45C;font-size:14px}
+#page-markets .mkx-dup button{all:unset;cursor:pointer;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+/* ---- поиск и разделы в списке ---- */
+#page-markets .mk2-bar-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+#page-markets .mk2-search{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.14);color:#9AA6C4;flex:0 1 280px}
+#page-markets .mk2-search input{all:unset;flex:1;min-width:0;font-size:14px;color:#E8F0FF}
+#page-markets .mk2-search:focus-within{border-color:#A855F7}
+#page-markets .mk2-groups{margin:12px 0 4px}
