@@ -491,8 +491,17 @@
     if (!catalog) loadCatalog().then(renderSport).catch(renderSport);
   }
 
-  function crest(t) {
-    return t && t.crest ? '<img src="' + esc(t.crest) + '" alt="" loading="lazy">' : '<i class="nocrest"></i>';
+  // Логотип команды. Если картинки нет или она не загрузилась, на её месте
+  // кружок с инициалами, а не значок битой картинки.
+  function initials(name) {
+    var w = String(name || '?').replace(/[^A-Za-z0-9 ]/g, ' ').trim().split(/\s+/);
+    return (w.length > 1 ? w[0][0] + w[1][0] : String(w[0] || '?').slice(0, 2)).toUpperCase();
+  }
+  function crest(t, name) {
+    var ini = esc(initials(name || (t && t.name)));
+    if (!t || !t.crest) return '<i class="nocrest">' + ini + '</i>';
+    return '<img src="' + esc(t.crest) + '" alt="" loading="lazy" referrerpolicy="no-referrer" '
+      + 'onerror="var i=document.createElement(\'i\');i.className=\'nocrest\';i.textContent=\'' + ini + '\';this.replaceWith(i)">';
   }
 
   function matchList() {
@@ -701,9 +710,9 @@
           if (d !== day) { day = d; out += '<div class="mkx-day">' + esc(d) + '</div>'; }
           out += '<button type="button" class="mkx-match" data-esm="' + esc(x.id) + '" aria-pressed="' + (String(E.match) === String(x.id)) + '">'
             + '<span class="t">' + esc(localTime(kickoff(x))) + '</span>'
-            + '<span class="tm h">' + esc(x.home.name) + crest({ crest: x.home.logo }) + '</span>'
+            + '<span class="tm h">' + esc(x.home.name) + crest({ crest: x.home.logo }, x.home.name) + '</span>'
             + '<span class="vs">Bo' + esc(x.bo || '?') + '</span>'
-            + '<span class="tm a">' + crest({ crest: x.away.logo }) + esc(x.away.name) + '</span>'
+            + '<span class="tm a">' + crest({ crest: x.away.logo }, x.away.name) + esc(x.away.name) + '</span>'
             + '<span class="c">' + esc(x.league || '') + '</span></button>';
         });
         return '<div class="mkx-matches">' + out + '</div>';

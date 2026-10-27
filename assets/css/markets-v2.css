@@ -278,3 +278,10 @@
 
 #page-markets .mkx-label{font-family:Rajdhani,sans-serif;font-weight:700;font-size:18px;color:#E8F0FF}
 #page-markets .mkx-price span:last-child{font-size:14px}
+
+/* кружок с инициалами вместо отсутствующего логотипа */
+#page-markets .mkx-match .nocrest{display:grid;place-items:center;border-radius:50%;font-style:normal;font:700 12px Rajdhani,sans-serif;
+  color:#DCD2FF;background:radial-gradient(circle at 30% 25%,rgba(168,85,247,.45),rgba(123,92,255,.12));border:1px solid rgba(168,85,247,.45)}
+/* название турнира в одну строку */
+#page-markets .mkx-match .c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+@media (min-width:621px){#page-markets .mkx-match{grid-template-columns:54px 1fr 34px 1fr 140px}}
