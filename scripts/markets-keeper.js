@@ -684,7 +684,7 @@ async function resolveFootball(m, ref) {
 // NHL: *_win_reg и over - только основное время, сумма первых трёх периодов;
 //      home_win/away_win - официальный победитель (с овертаймом и буллитами).
 
-const ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl' };
+const ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl', ufc: 'mma/ufc' };
 const ESPN_VOID = { STATUS_POSTPONED: 'postponed', STATUS_CANCELED: 'cancelled', STATUS_SUSPENDED: 'suspended', STATUS_FORFEIT: 'forfeited' };
 
 async function espnGame(lg, ev) {
@@ -719,7 +719,45 @@ function espnOutcome(lg, tpl, g, line) {
   return undefined;
 }
 
+// UFC: бой ищется в карде по дате (scoreboard?dates=), сверяются оба бойца.
+// Ничья, no contest, отмена или замена бойца - void.
+async function ufcBout(ref) {
+  const day = ref.d;
+  const next = new Date(Date.parse(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}T00:00:00Z`) + 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  for (const dd of [day, next]) {
+    const res = await safeFetch(`https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=${dd}`,
+      { headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0 (terra-oracle keeper)' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.json();
+    for (const e of body.events || []) {
+      if (String(e.id) !== String(ref.ev)) continue;
+      const c = (e.competitions || []).find((x) => String(x.id) === String(ref.b));
+      if (c) return c;
+    }
+  }
+  return null;
+}
+
+async function resolveUfc(ref) {
+  if (!/^\d{8}$/.test(ref.d || '') || !/^\d+$/.test(ref.b || '')) return { void: 'the market does not name an ESPN bout the keeper can read' };
+  const c = await ufcBout(ref);
+  if (!c) return { void: 'the bout is no longer on the card' };
+  const st = c.status?.type?.name;
+  if (ESPN_VOID[st]) return { void: `the bout was ${ESPN_VOID[st]}` };
+  if (!c.status?.type?.completed || st !== 'STATUS_FINAL') return { wait: `bout ${ref.b} is ${st}, waiting for the result` };
+  const f = c.competitors || [];
+  const a1 = f.find((x) => String(x.id) === String(ref.a1)), a2 = f.find((x) => String(x.id) === String(ref.a2));
+  if (!a1 || !a2) return { void: 'a fighter in this bout was replaced' };
+  if (!a1.winner && !a2.winner) return { void: 'the bout ended in a draw or a no contest' };
+  const want = ref.tpl === 'home_win' ? a1 : ref.tpl === 'away_win' ? a2 : null;
+  if (!want) return { void: `unknown market template ${ref.tpl}` };
+  const win = a1.winner ? a1 : a2;
+  const outcome = want === win;
+  return { outcome, reading: `ESPN UFC event ${ref.ev} bout ${ref.b}: winner ${win.athlete?.displayName || win.id}; ${ref.tpl} ${outcome ? 'yes' : 'no'}` };
+}
+
 async function resolveEspn(m, ref) {
+  if (ref.lg === 'ufc') return resolveUfc(ref);
   if (!ESPN_PATH[ref.lg] || !/^\d+$/.test(ref.ev || '')) return { void: 'the market does not name an ESPN game the keeper can read' };
   const g = await espnGame(ref.lg, ref.ev);
   if (ESPN_VOID[g.status]) return { void: `the game was ${ESPN_VOID[g.status]}` };
@@ -733,6 +771,23 @@ async function resolveEspn(m, ref) {
 /** KEEPER_SPORT_TEST=1: вчерашние завершённые матчи NBA и NHL и что керпер
  *  решил бы по каждому шаблону. Ничего не подписывает - для сверки глазами. */
 async function sportTest() {
+  // UFC: последний турнир за прошлую неделю.
+  for (let back = 1; back <= 8; back++) {
+    const dd = new Date(Date.now() - back * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+    const res = await safeFetch(`https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=${dd}`, { headers: { accept: 'application/json' } });
+    const body = await res.json();
+    const e = (body.events || []).find((x) => (x.competitions || []).some((c) => c.status?.type?.completed));
+    if (!e) continue;
+    for (const c of e.competitions.slice(0, 8)) {
+      const f = c.competitors || [];
+      if (f.length !== 2) continue;
+      const ref = { ev: e.id, b: c.id, d: dd, a1: f[0].id, a2: f[1].id };
+      const r1 = await resolveUfc({ ...ref, tpl: 'home_win' });
+      log(`UFC ${e.name} | ${f[0].athlete?.displayName} vs ${f[1].athlete?.displayName} | ${c.status?.type?.name} -> `
+        + (r1.void ? `void (${r1.void})` : r1.wait ? `wait (${r1.wait})` : `${f[0].athlete?.displayName} win = ${r1.outcome ? 'YES' : 'NO'}`));
+    }
+    break;
+  }
   const d = new Date(Date.now() - 86400000).toISOString().slice(0, 10).replace(/-/g, '');
   for (const lg of ['nhl', 'nba']) {
     const res = await safeFetch(`https://site.api.espn.com/apis/site/v2/sports/${ESPN_PATH[lg]}/scoreboard?dates=${d}`, { headers: { accept: 'application/json' } });

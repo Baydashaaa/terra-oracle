@@ -297,3 +297,15 @@
 #page-markets .mkx-game[aria-pressed="true"]{border-color:#A855F7;background:linear-gradient(180deg,#1E1847,#12112E);box-shadow:0 0 26px -10px rgba(168,85,247,.9)}
 #page-markets .mkx-game:focus-visible{outline:2px solid #C8B8FF;outline-offset:3px}
 @media (max-width:620px){#page-markets .mkx-game{min-height:90px}#page-markets .mkx-game img{height:44px}#page-markets .mkx-game b{font-size:14px}}
+
+/* турниры в футболе на телефоне: одна прокручиваемая строка, без переносов */
+@media (max-width:620px){
+  #page-markets .mkx-comps{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  #page-markets .mkx-comps::-webkit-scrollbar{display:none}
+  #page-markets .mkx-comps button{flex:none;white-space:nowrap}
+  #page-markets .mkx-sporttabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  #page-markets .mkx-sporttabs::-webkit-scrollbar{display:none}
+  #page-markets .mkx-sporttabs button{flex:none;white-space:nowrap}
+}
+/* флаги бойцов UFC - прямоугольные, не круглые гербы */
+#page-markets .mkx-match .tm img[src*="/flags/"],#page-markets .mkx-match .tm img[src*="countries"]{width:30px;height:20px;border-radius:3px;object-fit:cover}

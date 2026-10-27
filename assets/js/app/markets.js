@@ -568,9 +568,10 @@ function mkRef(m) {
 function mkRefSym(ref) { return (ref && (mkOwn(MK_CG_SYM, ref.asset) || String(ref.asset || '').toUpperCase())) || ''; }
 const MK_SRC_NAME = { cg: 'CoinGecko', fd: 'football-data.org', espn: 'ESPN', ps: 'PandaScore', fred: 'FRED' };
 const MK_PS_GAME = { dota2: 'Dota 2', csgo: 'CS2', lol: 'League of Legends' };
-const MK_ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl' };
+const MK_ESPN_PATH = { nba: 'basketball/nba', nhl: 'hockey/nhl', ufc: 'mma/ufc' };
 function mkEspnRule(ref) {
   if (!ref || ref.src !== 'espn') return '';
+  if (ref.lg === 'ufc') return 'winner';
   if (ref.lg === 'nba') return 'incl. OT';
   return ref.tpl === 'home_win' || ref.tpl === 'away_win' ? 'incl. OT/SO' : 'regulation';
 }
@@ -1061,6 +1062,12 @@ function verifyBlock(m) {
     return `
       <div class="mk-plain">${mktEsc(m.spec.criterion)}</div>
       <div class="mk-plain"><a href="https://fred.stlouisfed.org/series/${series}" target="_blank" rel="noopener">Open ${series} on FRED</a></div>`;
+  }
+  if (ref && ref.src === 'espn' && ref.lg === 'ufc' && /^\d{8}$/.test(ref.d || '')) {
+    return `
+      <pre>${mktEsc('curl -s "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=' + ref.d + '"')}</pre>
+      <div class="mk-plain">Find event <code>${mktEsc(ref.ev)}</code>, bout <code>${mktEsc(ref.b)}</code>: each fighter has
+        <code>winner</code>, and the bout has a <code>status</code>.</div>`;
   }
   if (ref && ref.src === 'espn' && mkOwn(MK_ESPN_PATH, ref.lg) && /^\d+$/.test(ref.ev || '')) {
     return `

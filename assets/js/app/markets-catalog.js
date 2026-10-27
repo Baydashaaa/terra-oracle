@@ -328,11 +328,12 @@
 
   var F = { sport: 'football', comp: 'all', q: '', match: null, tpl: null, line: null, busy: false, dup: null };
   var KICKOFF_CLOSE = 300;          // приём закрывается за 5 минут до начала
-  var RESOLVE_AFTER = { football: 3 * 3600, nba: 4 * 3600, nhl: 4 * 3600 };
+  var RESOLVE_AFTER = { football: 3 * 3600, nba: 4 * 3600, nhl: 4 * 3600, ufc: 8 * 3600 };
   var SPORTS = {
     football: { name: 'Football', source: 'football-data.org', lines: ['1.5', '2.5', '3.5'], unit: 'goals' },
     nba: { name: 'Basketball', league: 'NBA', source: 'ESPN', lines: ['210.5', '220.5', '230.5', '240.5'], unit: 'points' },
     nhl: { name: 'Hockey', league: 'NHL', source: 'ESPN', lines: ['4.5', '5.5', '6.5'], unit: 'goals' },
+    ufc: { name: 'MMA', league: 'UFC', source: 'ESPN', lines: [], unit: '' },
   };
 
   function fb() { return catalog && catalog.football ? catalog.football : null; }
@@ -344,6 +345,14 @@
   /** Матчи выбранного вида спорта в одном виде. */
   function games() {
     if (F.sport === 'football') return fb() ? fb().matches : null;
+    if (F.sport === 'ufc') {
+      var u = catalog && catalog.ufc;
+      return u ? u.bouts.map(function (b) {
+        return { id: b.id, card: b.card, cardName: b.cardName, utc: b.utc, comp: 'UFC',
+          home: { id: b.home.id, name: b.home.name, crest: b.home.flag },
+          away: { id: b.away.id, name: b.away.name, crest: b.away.flag } };
+      }) : null;
+    }
     var d = catalog && catalog[F.sport];
     if (!d) return null;
     return d.games.map(function (g) {
@@ -375,6 +384,10 @@
   }
 
   function tplList(m) {
+    if (F.sport === 'ufc') return [
+      { id: 'home_win', label: m.home.name + ' wins', sub: 'by any method', tag: 'winner' },
+      { id: 'away_win', label: m.away.name + ' wins', sub: 'by any method', tag: 'winner' },
+    ];
     if (F.sport === 'nba') return [
       { id: 'home_win', label: m.home.name + ' win', sub: 'overtime counts', tag: 'incl. OT' },
       { id: 'away_win', label: m.away.name + ' win', sub: 'overtime counts', tag: 'incl. OT' },
@@ -405,6 +418,10 @@
       if (F.tpl === 'draw') return 'Will ' + H + ' vs ' + A + ' be a draw after 90 minutes?' + tail;
       return 'Will ' + H + ' vs ' + A + ' have over ' + line() + ' goals in regular time?' + tail;
     }
+    if (F.sport === 'ufc') {
+      var w = F.tpl === 'home_win' ? H : A, o = w === H ? A : H;
+      return 'Will ' + w + ' beat ' + o + '? (' + (m.cardName || 'UFC') + ', ' + dayLabelShort(kickoff(m)) + ')';
+    }
     if (F.sport === 'nba') {
       if (F.tpl === 'home_win') return 'Will the ' + H + ' beat the ' + A + '?' + tail;
       if (F.tpl === 'away_win') return 'Will the ' + A + ' win at the ' + H + '?' + tail;
@@ -425,6 +442,12 @@
     var tail = ' Read from ' + S.source + ' after the game is marked final. If it is postponed, cancelled, '
       + 'abandoned or awarded, the market is voided and everyone is refunded.';
     var rule;
+    if (F.sport === 'ufc') {
+      return H + ' vs ' + A + ', ' + (m.cardName || 'UFC') + ', card starting ' + timeText(kickoff(m)) + ', ESPN bout ' + m.id + '. '
+        + 'YES if ' + who + ' is declared the winner, by any method: knockout, submission, decision or disqualification. NO if '
+        + other + ' wins. If the bout ends in a draw or a no contest, is cancelled, or either fighter is replaced, the market is voided '
+        + 'and everyone is refunded. Read from ESPN after the bout is marked final.';
+    }
     if (F.sport === 'football') {
       head += 'Regular time only: 90 minutes plus stoppage time added by the referee; extra time and penalty shoot-outs do not count. ';
       rule = F.tpl === 'draw' ? 'YES if the regular-time score is level. NO otherwise.'
@@ -449,6 +472,10 @@
 
   function fParam(m) {
     if (F.sport === 'football') return 'src=fd;match=' + m.id + ';tpl=' + F.tpl + ';c=' + m.comp + ';h=' + m.home.id + ';a=' + m.away.id;
+    if (F.sport === 'ufc') {
+      var day = String(m.utc).slice(0, 10).replace(/-/g, '');
+      return 'src=espn;lg=ufc;ev=' + m.card + ';b=' + m.id + ';tpl=' + F.tpl + ';a1=' + m.home.id + ';a2=' + m.away.id + ';d=' + day;
+    }
     return 'src=espn;lg=' + F.sport + ';ev=' + m.id + ';tpl=' + F.tpl
       + ';h=' + String(m.home.id || '').toLowerCase() + ';a=' + String(m.away.id || '').toLowerCase();
   }
@@ -525,7 +552,7 @@
         + '<span class="tm h">' + esc(m.home.name) + crest(m.home) + '</span>'
         + '<span class="vs">vs</span>'
         + '<span class="tm a">' + crest(m.away) + esc(m.away.name) + '</span>'
-        + '<span class="c">' + esc(m.comp) + '</span></button>';
+        + '<span class="c">' + esc(m.cardName || m.comp) + '</span></button>';
     });
     return '<div class="mkx-matches">' + out + '</div>';
   }
@@ -534,6 +561,7 @@
     var h = host();
     if (!h) return;
     var data = fb(), m = match();
+    if (F.sport === 'ufc' && F.tpl === 'over') F.tpl = null;
     var comps = F.sport === 'football' && data ? '<div class="chips mkx-comps">'
       + '<button type="button" data-comp="all" aria-pressed="' + (F.comp === 'all') + '">All</button>'
       + data.comps.map(function (c) {
@@ -549,6 +577,7 @@
       }).join('') + '</div>' : '')
       : '<div class="mk-plain">Pick a match first.</div>';
     var note = F.sport === 'football' ? 'Regular time only: 90 minutes plus stoppage time. Extra time and penalties do not count.'
+      : F.sport === 'ufc' ? 'The winner by any method. A draw, a no contest, a cancelled bout or a replaced fighter voids the market.'
       : F.sport === 'nba' ? 'Overtime counts: the final score includes every overtime period.'
         : 'Regulation markets count 60 minutes only. "Incl. OT/SO" markets use the official winner after overtime and the shootout.';
 
