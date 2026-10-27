@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="assets/css/page/about.css?v=df3b6d8f72">
   <link rel="stylesheet" href="assets/css/shell-fix.css?v=202610271200">
   <link rel="stylesheet" href="assets/css/motion.css?v=202610271500">
-  <link rel="stylesheet" href="assets/css/markets-v2.css?v=202610272330">
+  <link rel="stylesheet" href="assets/css/markets-v2.css?v=202610280100">
   <link rel="stylesheet" href="assets/css/contrast.css?v=202610031200">
   <link rel="stylesheet" href="assets/css/page/hero-slider.css?v=3d5b90f988">
   <link rel="stylesheet" href="assets/css/page/side-activity.css?v=a26a851e1f">
@@ -1114,6 +1114,47 @@
     </div>
   </div>
 
+  <!-- Markets: та же узкая полоса, что TCO. Слева что лежит в контракте
+       рынков, справа из чего это состоит и сколько уже выплачено. -->
+  <div class="tre-sec">
+    <div class="tre-sec-tag"><b>&#9672; Markets escrow</b><span>Creator bonds and predictions held by the markets contract until each market settles.</span></div>
+    <div class="tre-card tre-tco tre-mk" id="t-markets">
+      <div class="tre-tco-figs">
+        <div>
+          <div class="tre-tco-lbl">In escrow</div>
+          <div class="tre-tco-val" style="color:#C8B8FF;" id="tm-balance">-</div>
+          <div class="tre-tco-sub"><span id="tm-live">-</span> live markets</div>
+        </div>
+        <div>
+          <div class="tre-tco-lbl">Creator bonds</div>
+          <div class="tre-tco-val" style="color:#F2D45C;" id="tm-bonds">-</div>
+          <div class="tre-tco-sub">returned at settlement</div>
+        </div>
+        <div>
+          <div class="tre-tco-lbl">In predictions</div>
+          <div class="tre-tco-val" style="color:#3BE38A;" id="tm-pools">-</div>
+          <div class="tre-tco-sub">paid to the winners</div>
+        </div>
+      </div>
+      <div class="tre-tco-curve">
+        <div class="tre-tco-curve-top">
+          <span class="tre-tco-lbl">Paid out from losing sides</span>
+          <a class="tre-tco-pct tre-mk-link" href="https://finder.terraport.finance/mainnet/address/terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2" target="_blank" rel="noopener">contract &rarr;</a>
+        </div>
+        <div class="tre-mk-split" role="img" aria-label="Losing side split: 2.5% treasury, 2.5% draw pools, 3% creator, 2% boost, 90% winners">
+          <i style="flex:25;background:#5493f7"></i><i style="flex:25;background:#f5c518"></i><i style="flex:30;background:#A855F7"></i><i style="flex:20;background:#22d3ee"></i>
+        </div>
+        <div class="tre-mk-legend">
+          <span><i style="background:#5493f7"></i>Treasury <b id="tm-treasury">-</b></span>
+          <span><i style="background:#f5c518"></i>Draw pools <b id="tm-draw">-</b></span>
+          <span><i style="background:#A855F7"></i>Creators <b id="tm-creators">-</b></span>
+          <span><i style="background:#22d3ee"></i>Boost <b id="tm-boost">-</b></span>
+        </div>
+        <div class="tre-tco-sub" id="tm-settled">-</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Нижний ярус: распределение слева, движение средств справа -->
   <div class="tre-lower">
 
@@ -1191,30 +1232,6 @@
         </div>
         </div>
         <div class="tre-dist-note" id="t-dist-note">Measuring the last 30 days of inflow…</div>
-      </div>
-    </div>
-
-    <div class="tre-sec">
-      <div class="tre-sec-tag"><b>&#9672; Markets</b><span>Held by the markets contract, and where it goes when a market settles.</span></div>
-      <div class="tre-card tm-card" id="t-markets">
-        <div class="tm-grid">
-          <div class="tm-k"><span>Contract balance</span><b id="tm-balance">-</b><em>everything the contract holds now</em></div>
-          <div class="tm-k"><span>Creator bonds</span><b id="tm-bonds">-</b><em>locked, returned when each market settles</em></div>
-          <div class="tm-k"><span>In predictions</span><b id="tm-pools">-</b><em>across <i id="tm-live">-</i> live markets</em></div>
-        </div>
-        <div class="tm-flow">
-          <div class="tm-step"><b>1</b><span>A creator locks a <strong>200,000 LUNC bond</strong>. It stays in the contract and comes back when the market settles, unless the question cannot be checked.</span></div>
-          <div class="tm-step"><b>2</b><span>Predictions stay in the contract until the outcome is final. Winners share the losing side.</span></div>
-          <div class="tm-step"><b>3</b><span>From the losing side: <strong>2.5%</strong> to the Treasury, <strong>2.5%</strong> to the draw pools, <strong>3%</strong> to the creator, <strong>2%</strong> to the boost fund for promoted markets.</span></div>
-        </div>
-        <div class="tm-grid tm-paid">
-          <div class="tm-k"><span>Paid to Treasury</span><b id="tm-treasury">-</b></div>
-          <div class="tm-k"><span>Paid to draw pools</span><b id="tm-draw">-</b></div>
-          <div class="tm-k"><span>Paid to creators</span><b id="tm-creators">-</b></div>
-          <div class="tm-k"><span>Boost fund</span><b id="tm-boost">-</b></div>
-        </div>
-        <div class="tm-foot"><span id="tm-settled">-</span>
-          <a href="https://finder.terraport.finance/mainnet/address/terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2" target="_blank" rel="noopener">Contract on the explorer &rarr;</a></div>
       </div>
     </div>
 
@@ -1767,7 +1784,7 @@
     window.WORKER_URL = 'https://terra-oracle-questions.vladislav-baydan.workers.dev';
   </script>
   <script src="assets/js/draw-schedule.js?v=02321a6b89"></script>
-  <script src="assets/js/treasury.js?v=202610272330"></script>
+  <script src="assets/js/treasury.js?v=202610280100"></script>
   <script src="assets/js/treasury-chart.js?v=c9260a5285"></script>
   <script src="assets/js/signAction.js?v=03cc48ba97"></script>
   <!-- Клиент контракта Oracle Mask: источник списка NFT вместо nft.lunc.tools -->

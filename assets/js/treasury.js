@@ -738,7 +738,8 @@ async function tLoadMarkets() {
     set('tm-draw', tFmt(draw));
     set('tm-creators', tFmt(creators));
     set('tm-boost', tFmt(boost));
-    set('tm-settled', settled + ' settled · ' + voided + ' voided');
+    set('tm-settled', settled ? settled + ' settled' + (voided ? ' · ' + voided + ' voided, everyone refunded' : '') + ' · the other 90% went to the winners'
+      : 'Nothing settled yet. Each settlement splits 10% of the losing side as shown, the rest goes to the winners.');
   } catch (e) {
     const n = document.getElementById('tm-settled');
     if (n) n.textContent = 'Markets data is not available right now';
