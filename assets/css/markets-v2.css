@@ -87,7 +87,7 @@
 
 /* ---- строка Beta ---- */
 #page-markets .mk2-beta{display:flex;justify-content:flex-start;text-align:left;width:100%;box-sizing:border-box;align-items:center;gap:10px;margin:0 0 16px;font-size:13px;line-height:1.5;color:#CDB869}
-#page-markets .mk2-beta .tag{flex:none;height:22px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;
+#page-markets .mk2-beta .tag{flex:none;margin:0;height:22px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;
   background:rgba(242,212,92,.12);color:#F2D45C;font-weight:600;letter-spacing:.08em;font-size:11px}
 
 /* ---- экран рынка ---- */
@@ -319,3 +319,5 @@
 #page-treasury .tre-mk-legend b{color:var(--ink,#E8F0FF);font-weight:600;margin-left:4px}
 /* ---- Recent activity: строка с вопросом рынка ---- */
 .acts .tx .act-sub{display:block;font-style:normal;font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+#page-markets .mk2-beta .txt{flex:1 1 auto;min-width:0}

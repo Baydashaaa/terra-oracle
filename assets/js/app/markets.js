@@ -944,11 +944,11 @@ async function renderMarkets(resolved) {
   const TEST_BANNER = `
     <div class="mk2-beta">
       <span class="tag">${COURT_CONTRACT && !PROPHECY_TESTNET ? 'BETA' : 'TEST'}</span>
-      ${COURT_CONTRACT
+      <span class="txt">${COURT_CONTRACT
         ? (PROPHECY_TESTNET
           ? 'TEST deployment on rebel-2. Outcomes are posted by the operator and can be disputed; amounts are capped.'
           : 'Outcomes come from the chain or from the source named in each market, and anyone can dispute one in the council court. Caps apply while the section is new.')
-        : 'TEST deployment. Outcomes are posted by the operator, not computed by the contract. Amounts are capped.'}
+        : 'TEST deployment. Outcomes are posted by the operator, not computed by the contract. Amounts are capped.'}</span>
     </div>`;
 
   host.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;">Loading markets…</div>';
