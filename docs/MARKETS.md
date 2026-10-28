@@ -71,11 +71,11 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 |---|---|
 | **oracle-prophecy 0.2.4, code 11684** (с 30.09, до этого 0.2.3 code 11680) | `terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2` |
 | **oracle-court 0.1.1, code 11685** (с 30.09, до этого 0.1.0 code 11681) | `terra1u3feuz2ugl884z3yakurm2ndynz6f83zsfsr0auzdnjztnrngshqycnqz2` |
-| **мультисиг совета** cw3_fixed_multisig v1.1.2, code 11686, 2 из 3, предложение живёт 7 дней | `terra1vvwccg3ey00fg3xhux2cfgx2z5l47uuv0lzm72dtntctdqmf3wuqmdnm06` |
+| **мультисиг совета** cw3_fixed_multisig v1.1.2, code 11686, 2 из 3, предложение живёт 7 дней | `terra1u5awyahn8xp5kzjf02vsnjnjqzasem4k04tu2yuhj0tsjtqx6pzs8h0rvx` (с 25.10; прежний terra1vvwcc... ничем не управляет) |
 | админ рынка и суда (в конфиге), админ миграции рынка, суда и самого мультисига | мультисиг (с 30.09). `pool-admin-2` больше ничего не может в этих контрактах |
-| резолвер (керпер в Actions) | `oracle-resolver` terra1myp7hzh6f7lp2uffzv55yvk2hjrhpz9vqt5hec, ключ в `~/.terra-mainnet` |
+| резолвер (керпер в Actions) | `oracle-resolver-2` terra1y8q5x0ysvyhzu9hw0ncqm6ccdv46mnscam4tzz, ключ в `~/.terra-mainnet` (с 25.10) |
 | арбитр рынка | суд (адрес выше) |
-| совет суда, кворум 2, голосование 48 ч | terra1nzlwpugmtg53sqldk6j0jvnq9zjrcl59zdy325, terra1wnm5se60umvzxw66tje2vkzdwrh0gwzagv6yjx, terra1x8gxjxgq7eq2hu7yswcn76dw7snzpeu782nyez |
+| совет суда, кворум 2, голосование 48 ч | terra1nzlwpugmtg53sqldk6j0jvnq9zjrcl59zdy325, terra1wnm5se60umvzxw66tje2vkzdwrh0gwzagv6yjx, terra1chwts59srj665gpz2xzd3qd7ppx8xht4k7g8wx |
 | draw_pool (недельный пул) | `terra19w39c3qz6kc756hap92x374reptah9kp5825f5c67hmquy383r5qd7dmd8` |
 | treasury | `terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw`, ключ `treasury` в `~/.terra-mainnet` |
 | старый тестовый oracle-prophecy 0.1.0, code 11643 | `terra1w3f09yqcna09hgc562azuze8x4qdvnzanz429cwycm84m8lygffskwcu58` - на паузе, не используется |
@@ -265,7 +265,7 @@ instantiate ~200k, update_config ~130k.
   с причиной (`bad_spec: false`, всем возврат). Раньше, но предсказаний после высоты нет -
   объявляет. Блок или поиск не ответили - ждёт следующего прохода
 - **На mainnet работает с 29 сентября**: переменные `PROPHECY_CONTRACT`, `COURT_CONTRACT`,
-  `EXPECTED_KEEPER` = terra1myp7...5hec, секрет `KEEPER_MNEMONIC` = `oracle-resolver`.
+  `EXPECTED_KEEPER` = terra1y8q5...4tzz, секрет `KEEPER_MNEMONIC` = `oracle-resolver-2` (с 25.10).
   Сухой прогон прошёл, `KEEPER_DRY_RUN` удалена
 - Workflow не запускается, пока в переменных репозитория нет `PROPHECY_CONTRACT`. На rebel-2
   он не настроен и не будет: там керпер только руками. Письма GitHub «job was skipped» - это оно
@@ -298,7 +298,7 @@ instantiate ~200k, update_config ~130k.
   `council` на `pool-admin-2`:
   `terra1nzlwpugmtg53sqldk6j0jvnq9zjrcl59zdy325`,
   `terra1wnm5se60umvzxw66tje2vkzdwrh0gwzagv6yjx`,
-  `terra1x8gxjxgq7eq2hu7yswcn76dw7snzpeu782nyez`.
+  `terra1chwts59srj665gpz2xzd3qd7ppx8xht4k7g8wx`.
   Все новые, не совпадают с админом и резолвером. Члены совета не делают предсказаний на mainnet:
   со ставкой на рынке голосовать нельзя, и двое со ставкой делают кворум недостижимым
 - Уведомления совету - в группу Oracle Eye, а не отдельный бот
@@ -326,7 +326,7 @@ instantiate ~200k, update_config ~130k.
 - Админ рынка и суда - **мультисиг совета 2 из 3** (30.09). Изменения конфига, пауза, миграции,
   void после объявления - через панель Council на сайте (`assets/js/app/multisig.js`, видна
   только участникам; вручную `terraoracle.io/?council`). Спорный исход - по-прежнему суд в Markets
-- Админ остальных контрактов - `pool-admin-2`. Старый `terra1744ae9…cxtc` засвечен и нигде больше не админ
+- Админ остальных контрактов - `pool-admin-3`, у Oracle Score - `oracle-score-admin-2` (ротация ключей 24-25.10). `pool-admin-2` и `terra1744ae9…cxtc` выведены из всех ролей
 
 ---
 
