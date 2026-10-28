@@ -46,7 +46,7 @@
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
   var css = ''
-    + '#hw-spider{position:fixed;top:0;left:0;width:76px;height:76px;z-index:60;pointer-events:none;'
+    + '#hw-spider{position:fixed;top:0;left:0;width:64px;height:64px;z-index:60;pointer-events:none;'
     +   'filter:drop-shadow(0 4px 10px rgba(123,92,255,.45));opacity:0;transition:opacity .6s;}'
     + '#hw-spider.on{opacity:1;}'
     + '#hw-spider img{width:100%;height:100%;display:block;}'
@@ -62,7 +62,7 @@
     +   'box-shadow:0 0 18px rgba(123,92,255,.3);transition:opacity .25s,transform .25s;}'
     + '#hw-bubble.on{opacity:1;transform:translate(-50%,-100%) scale(1);}'
     + '@media (max-width:760px){'
-    +   '#hw-spider{width:58px;height:58px;}'
+    +   '#hw-spider{width:50px;height:50px;}'
     +   '#hw-watcher{width:86px;height:120px;}'
     + '}'
     + '@media (prefers-reduced-motion:reduce){#hw-watcher .hw-body{animation:none;}}';
@@ -129,17 +129,24 @@
       raf = 0;
       var w = document.getElementById('wallet-wrap');
       var bar = (w && w.closest('.topbar')) || document.querySelector('.topbar');
-      var size = sp.offsetWidth || 76;
-      if (!w || !bar) {
-        sp.style.transform = 'translate(' + (window.innerWidth - size - 220) + 'px,0)';
-        return;
+      if (!bar) { sp.style.visibility = 'hidden'; return; }
+      var size = sp.offsetWidth || 64;
+      var b = bar.getBoundingClientRect();
+      var eye = document.getElementById('oe-nav');
+      var anchor = (eye && eye.offsetParent) ? eye : w;
+      var ar = anchor ? anchor.getBoundingClientRect() : null;
+      var x;
+      if (isMobile()) {
+        // Phone: the eye sits at the left edge, the spider hangs just right of it
+        x = ar ? ar.right + 6 : b.left + 56;
+      } else {
+        // Desktop: in the empty stretch left of the eye, clear of the tickers
+        x = ar ? ar.left - size - 28 : b.right - size - 260;
+        var t = bar.querySelectorAll('.ticker');
+        var lastT = t.length ? t[t.length - 1].getBoundingClientRect() : null;
+        if (lastT && x < lastT.right + 12) { sp.style.visibility = 'hidden'; return; }
       }
-      var r = w.getBoundingClientRect(), b = bar.getBoundingClientRect();
-      // The thread starts at the top of the SVG, so its top sits on the bar edge
-      var x = r.left + r.width / 2 - size / 2;
-      x = Math.max(4, Math.min(window.innerWidth - size - 4, x));
-      var y = b.bottom - 3;
-      sp.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+      sp.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(b.top) + 'px)';
       sp.style.visibility = b.bottom < 0 ? 'hidden' : 'visible';
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(place); }
