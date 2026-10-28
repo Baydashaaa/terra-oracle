@@ -272,7 +272,7 @@
       ? '<div class="mkx-preview">' + marketCard(previewMarket()).replace(/onclick="[^"]*"/, '') + '</div>' : '')
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
-      + '<div><span>You earn</span><b>3%</b><em>of the losing side</em></div>'
+      + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
       + '<div><span>Resolved from</span><b>CoinGecko</b><em>disputable for 48 hours, like every market</em></div>'
       + '</div>'
       + (C.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
@@ -639,7 +639,7 @@
         + '<div><span>Start</span><b>' + timeText(kickoff(m)) + '</b></div></div>' : '')
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
-      + '<div><span>You earn</span><b>3%</b><em>of the losing side</em></div>'
+      + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
       + '<div><span>Resolved from</span><b>' + esc(SPORTS[F.sport].source) + '</b><em>disputable for 48 hours, like every market</em></div>'
       + '</div>'
       + (F.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
@@ -938,7 +938,7 @@
       + (f.when.length ? '<div class="mkf-pdates mkf-when">' + f.when.map(function (w) { return '<div><span>' + w[0] + '</span><b>' + timeText(w[1]) + '</b></div>'; }).join('') + '</div>' : '')
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
-      + '<div><span>You earn</span><b>3%</b><em>of the losing side</em></div>'
+      + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
       + '<div><span>Resolved from</span><b>' + esc(f.source) + '</b><em>disputable for 48 hours, like every market</em></div>'
       + '</div>'
       + (st.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')

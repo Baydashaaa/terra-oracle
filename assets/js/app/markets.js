@@ -947,7 +947,7 @@ async function renderMarkets(resolved) {
       ${COURT_CONTRACT
         ? (PROPHECY_TESTNET
           ? 'TEST deployment on rebel-2. Outcomes are posted by the operator and can be disputed; amounts are capped.'
-          : 'Outcomes are read from the chain, and anyone can dispute one in the council court. Caps apply while the section is new.')
+          : 'Outcomes come from the chain or from the source named in each market, and anyone can dispute one in the council court. Caps apply while the section is new.')
         : 'TEST deployment. Outcomes are posted by the operator, not computed by the contract. Amounts are capped.'}
     </div>`;
 
@@ -1836,7 +1836,7 @@ async function mkAbout() {
   wrap.innerHTML = `
     <div class="mk-modal-box mk-about" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="mka-title">
       <h3 id="mka-title">How markets work</h3>
-      <p class="mka-sub">Yes-or-no questions about Terra Classic, answered by the chain itself.</p>
+      <p class="mka-sub">Yes-or-no questions about Terra Classic, sport, crypto and the economy, each with its source named up front.</p>
 
       <div class="mka-tabs" role="tablist">
         <button type="button" role="tab" data-t="predict" aria-selected="true">${mkaIcon('predict')}Predict</button>
@@ -1869,9 +1869,10 @@ async function mkAbout() {
 
         <section class="mka-pane" data-p="outcome" role="tabpanel">
           <ol class="mka-steps">
-            <li><b>Predictions close</b><p>Before the answer can be read on chain.</p></li>
-            <li><b>The chain answers</b><p>At the resolution time, the keeper reads the metric at the
-              block fixed in the market and posts the result.</p></li>
+            <li><b>Predictions close</b><p>Before the answer is known.</p></li>
+            <li><b>The source answers</b><p>At the resolution time, the keeper reads the answer from the
+              source named in the market - the chain itself for Terra Classic, the named data feed for
+              sport, crypto and the economy - and posts the result.</p></li>
             <li><b>Anyone can object <span class="mka-chip">${mkDuration(c.challenge_secs)}</span></b>
               <p>Think the result is wrong? Challenge it with a bond of ${L(c.challenge_bond)}.</p>
               <div class="mka-branch">
@@ -1887,14 +1888,14 @@ async function mkAbout() {
         </section>
 
         <section class="mka-pane" data-p="create" role="tabpanel">
-          <p class="mka-lead">Anyone can open a market on Terra Classic data.</p>
+          <p class="mka-lead">Anyone can open a market on Terra Classic data, sport, crypto or the economy.</p>
           <div class="mka-bond">
             <div><span>You put up a bond</span><b>${L(c.creation_bond)}</b></div>
             ${mkaIcon('arrow', 20)}
             <div class="back"><span>It comes back in full</span><b>${L(c.creation_bond)}</b></div>
           </div>
           <p class="mka-note">The bond returns when the market settles or is voided. It is kept only if
-            the question cannot be checked on chain, and then it funds bonuses for new markets.</p>
+            the question cannot be checked, and then it funds bonuses for new markets.</p>
           <div class="mka-perks">${perks.join('')}</div>
         </section>
       </div>

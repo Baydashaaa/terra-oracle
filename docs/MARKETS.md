@@ -1,4 +1,4 @@
-# Markets - состояние на 1 октября 2026
+# Markets - состояние на 28 октября 2026
 
 Раздел прогнозов Terra Oracle Classic. Документ для продолжения работы в новом
 диалоге: что построено, где лежит, что решено, что проверено и что осталось.
@@ -282,6 +282,43 @@ instantiate ~200k, update_config ~130k.
   затем `node scripts/markets-keeper.js`
 
 ---
+
+## 5а. Каталог рынков на реальные события (27-28 октября 2026)
+
+Контракт тот же. У рынка вне цепочки нет метрики: в `spec.param` ссылка на
+источник, в `spec.criterion` полное правило словами. Исход объявляет керпер, дальше
+как у всех рынков: 48 часов на оспаривание, суд.
+
+**Каталог** - Worker `oracle-events` (`~/oracle-events-worker`, личный аккаунт
+Cloudflare, `account_id` закреплён в `wrangler.toml`), KV `EVENTS`
+`6f41e581214240f08122459d8d32511f`, cron раз в 30 минут. `GET /catalog` - всё
+сразу, `GET /health` - сводка и ошибки по источникам. Сайт читает только каталог.
+Если `wrangler` вошёл не в тот аккаунт или в окружении задан `CLOUDFLARE_API_TOKEN`
+от Delfos Hub - `unset CLOUDFLARE_API_TOKEN`, `wrangler logout`, `wrangler login`.
+
+| Раздел | `src` | Источник | Ключ (Worker и GitHub Secrets) | Правило |
+|---|---|---|---|---|
+| Crypto | `cg` | CoinGecko | `COINGECKO_KEY` | последняя точка цены не позже 20:00 UTC; нет точки за 90 минут - void |
+| Football | `fd` | football-data.org | `FOOTBALL_DATA_KEY` | только основное время (`fullTime` / `regularTime`) |
+| NBA | `espn` `lg=nba` | ESPN, без ключа | - | с овертаймами |
+| NHL | `espn` `lg=nhl` | ESPN, без ключа | - | `*_win_reg` и тотал - сумма трёх периодов; `home_win`/`away_win` - официальный победитель с OT/SO |
+| UFC | `espn` `lg=ufc` | ESPN, без ключа | - | победитель любым способом; ничья, NC, отмена, замена бойца - void |
+| Esports | `ps` | PandaScore | `PANDASCORE_TOKEN` | победитель серии; ничья - NO; техническое поражение и отмена - void |
+| Economy | `fred` | FRED | `FRED_KEY` | ФРС - `DFEDTARU` до заседания и после решения; CPI - `CPIAUCNS` за 12 месяцев, округление 0.1 |
+
+Во всех: перенос, отмена, прерывание - void, все получают возврат.
+
+- Почему не другие: бесплатный API-Sports не даёт текущий сезон (только 2022-2024),
+  официальная лента NBA отвечает 403 на серверные запросы, у ESPN нет бокса (400)
+- **Календарь экономики ведётся вручную** в `ECON_EVENTS` Worker. В декабре добавить
+  даты ФРС и BLS на 2027 год; BLS предупреждает о переносах из-за приостановки
+  финансирования
+- Проверка разбора на живых данных: `KEEPER_SPORT_TEST=1 node scripts/markets-keeper.js`
+  (прошедший турнир UFC, вчерашние NBA и NHL, ничего не подписывает)
+- CSP (`img-src`): логотипы монет, гербы, логотипы ESPN и PandaScore
+  (`cdn-api.pandascore.co`); `connect-src`: `oracle-events`. См. `SECURITY-HEADERS.md`
+- Картинки игр киберспорта - `assets/img/games/<игра>.png`, версия `GAME_IMG_V` в
+  `markets-catalog.js`; при замене файлов поднять её
 
 ## 6. Решения
 
