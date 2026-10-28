@@ -48,9 +48,8 @@
   var css = ''
     + '#hw-spider{position:fixed;top:0;left:0;width:60px;height:60px;z-index:60;pointer-events:none;'
     +   'filter:drop-shadow(0 4px 10px rgba(123,92,255,.45));opacity:0;transition:opacity .6s;}'
-    + '#hw-spider:before{content:"";position:absolute;left:50%;top:0;width:1.5px;height:40%;transform:translateX(-50%);border-radius:1px;background:linear-gradient(#eee4ff,#c9b6ff 60%,#a99bbd);box-shadow:0 0 4px rgba(200,180,255,.6);}'
     + '#hw-spider.on{opacity:1;}'
-    + '#hw-spider img{width:100%;height:100%;display:block;}'
+    + '#hw-spider svg{width:100%;height:100%;display:block;overflow:visible;}'
 
     + '#hw-watcher{position:fixed;width:120px;height:168px;z-index:55;pointer-events:none;opacity:0;'
     +   'filter:drop-shadow(0 0 18px rgba(123,92,255,.35));}'
@@ -101,6 +100,31 @@
     + '</g>'
     + '</svg>';
 
+
+  var SPIDER_SVG = ''
+    + '<svg viewBox="0 0 160 160" aria-hidden="true" focusable="false">'
+    + '<defs>'
+    +   '<radialGradient id="hw-sp-body" cx="32%" cy="24%" r="80%"><stop offset="0" stop-color="#8445d6"/><stop offset=".45" stop-color="#38135c"/><stop offset="1" stop-color="#130b22"/></radialGradient>'
+    +   '<radialGradient id="hw-sp-head" cx="35%" cy="20%" r="85%"><stop offset="0" stop-color="#58307b"/><stop offset="1" stop-color="#160c24"/></radialGradient>'
+    +   '<g id="hw-sp-legs" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-7 L-25,-17 L-29,-31 M-13,-2 L-34,-9 L-43,-23 M-14,5 L-36,9 L-46,24 M-11,12 L-27,23 L-30,39 M10,-7 L25,-17 L29,-31 M13,-2 L34,-9 L43,-23 M14,5 L36,9 L46,24 M11,12 L27,23 L30,39"/></g>'
+    + '</defs>'
+    + '<g stroke-linecap="round">'
+    +   '<path d="M80 0 V76" fill="none" stroke="#c9b6ff" stroke-opacity=".25" stroke-width="6"><animate attributeName="d" values="M80 0 V76;M80 0 V96;M80 0 V71;M80 0 V76" keyTimes="0;.5;.8;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1" dur="2.6s" repeatCount="indefinite"/></path>'
+    +   '<path d="M80 0 V76" fill="none" stroke="#eee4ff" stroke-width="2.6"><animate attributeName="d" values="M80 0 V76;M80 0 V96;M80 0 V71;M80 0 V76" keyTimes="0;.5;.8;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1" dur="2.6s" repeatCount="indefinite"/></path>'
+    + '</g>'
+    + '<g transform="translate(80 90)">'
+    +   '<animateTransform attributeName="transform" type="translate" values="80 90;80 110;80 85;80 90" keyTimes="0;.5;.8;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1" dur="2.6s" repeatCount="indefinite"/>'
+    +   '<use href="#hw-sp-legs" stroke="#a178cc" stroke-width="5.4"/>'
+    +   '<use href="#hw-sp-legs" stroke="#21102f" stroke-width="3.6"/>'
+    +   '<ellipse cx="0" cy="-2" rx="17" ry="22" fill="url(#hw-sp-body)" stroke="#b180e1" stroke-width="1.3"/>'
+    +   '<ellipse cx="-6" cy="-12" rx="4.2" ry="6" transform="rotate(25 -6 -12)" fill="#cf9aff" opacity=".4"/>'
+    +   '<ellipse cx="0" cy="16" rx="12" ry="10" fill="url(#hw-sp-head)" stroke="#9164b3" stroke-width="1"/>'
+    +   '<path d="M-7 23 L-4 29 L-3 23 M7 23 L4 29 L3 23" fill="#e9d8fc"/>'
+    +   '<path d="M-9 12 Q-5 11 -2 16 Q-7 20 -9 12 M9 12 Q5 11 2 16 Q7 20 9 12" fill="#ff9a24"/>'
+    +   '<circle cx="-6" cy="14" r="1.1" fill="#fff4bc"/><circle cx="6" cy="14" r="1.1" fill="#fff4bc"/>'
+    + '</g>'
+    + '</svg>';
+
   var QUIPS = ['Boo.', 'I see your bets.', 'The oracle never sleeps.', 'Happy Halloween.', 'Who goes there?', 'Shh... the draw is near.'];
 
   function swapArt() {
@@ -123,7 +147,7 @@
     var sp = document.createElement('div');
     sp.id = 'hw-spider';
     sp.setAttribute('aria-hidden', 'true');
-    sp.innerHTML = '<img src="' + DIR + 'spider.svg" alt="" width="160" height="160">';
+    sp.innerHTML = SPIDER_SVG;
     document.body.appendChild(sp);
     var raf = 0;
     function place() {
