@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="280" viewBox="0 0 200 280" role="img" aria-labelledby="title desc">
+  <title id="title">Le veilleur — personnage sombre Halloween</title>
+  <desc id="desc">Une silhouette encapuchonnée avec des yeux lumineux qui passent doucement du blanc au jaune et clignent. Fond transparent.</desc>
+  <defs>
+    <linearGradient id="cloak" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#272134"/><stop offset=".45" stop-color="#100e18"/><stop offset="1" stop-color="#040509"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#9b88bd" stop-opacity=".65"/><stop offset=".48" stop-color="#62527e" stop-opacity=".3"/><stop offset="1" stop-color="#241d31" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="void"><stop stop-color="#010104"/><stop offset="1" stop-color="#090711"/></radialGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white"/><stop offset=".75" stop-color="white"/><stop offset="1" stop-color="black"/>
+    </linearGradient>
+    <mask id="dissolve" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="280"><rect width="200" height="280" fill="url(#fade)"/></mask>
+    <filter id="glow" x="-100%" y="-200%" width="300%" height="500%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <style>
+    .eye-color { animation: ember 5.8s ease-in-out infinite; fill: #fff8dd; }
+    .blink { animation: blink 5.8s linear infinite; }
+    @keyframes ember { 0%,22%,100% {fill:#fffdf0} 49%,79% {fill:#ffd45c} }
+    @keyframes blink { 0%,29%,34%,76%,81%,100% {opacity:1} 31%,32%,78%,79% {opacity:.03} }
+    @media (prefers-reduced-motion: reduce) { .eye-color,.blink {animation:none} }
+  </style>
+  <g mask="url(#dissolve)">
+    <path d="M101 20 C80 23 64 48 56 78 L48 118 C32 142 25 185 16 248 L43 241 54 266 76 252 100 272 124 252 144 267 156 242 184 248 C172 191 170 149 151 119 L144 78 C137 48 123 27 101 20Z" fill="url(#cloak)" stroke="url(#rim)" stroke-width="1.6"/>
+    <path d="M101 38 C80 50 65 77 63 109 C76 131 124 131 138 109 C134 77 120 51 101 38Z" fill="url(#void)"/>
+    <path d="M99 26 C77 42 59 78 57 112 M105 30 C129 54 143 87 146 114" fill="none" stroke="url(#rim)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M61 119 Q76 139 99 148 Q119 140 140 120 L124 146 100 159 77 147Z" fill="#282133" opacity=".6"/>
+    <path d="M61 143 Q48 187 42 238 M78 154 Q67 198 68 250 M123 151 Q139 196 146 240 M101 165 L98 251" fill="none" stroke="#564566" stroke-opacity=".22" stroke-width="2"/>
+    <path d="M58 158 L35 223 53 214 64 176 M143 158 L165 224 146 215 136 176" fill="#05060b" opacity=".7"/>
+    <g class="blink">
+      <g class="eye-color" filter="url(#glow)" opacity=".65">
+        <path d="M73 85 Q83 85 91 90 Q84 96 77 91Z M109 90 Q118 85 128 85 L124 92 Q115 96 109 90Z"/>
+      </g>
+      <g class="eye-color">
+        <path d="M73 85 Q83 85 91 90 Q84 96 77 91Z M109 90 Q118 85 128 85 L124 92 Q115 96 109 90Z"/>
+      </g>
+    </g>
+  </g>
+</svg>
