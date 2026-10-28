@@ -46,8 +46,9 @@
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
   var css = ''
-    + '#hw-spider{position:fixed;top:0;left:0;width:64px;height:64px;z-index:60;pointer-events:none;'
+    + '#hw-spider{position:fixed;top:0;left:0;width:60px;height:60px;z-index:60;pointer-events:none;'
     +   'filter:drop-shadow(0 4px 10px rgba(123,92,255,.45));opacity:0;transition:opacity .6s;}'
+    + '#hw-spider:before{content:"";position:absolute;left:50%;top:0;width:1.5px;height:40%;transform:translateX(-50%);border-radius:1px;background:linear-gradient(#eee4ff,#c9b6ff 60%,#a99bbd);box-shadow:0 0 4px rgba(200,180,255,.6);}'
     + '#hw-spider.on{opacity:1;}'
     + '#hw-spider img{width:100%;height:100%;display:block;}'
 
@@ -129,24 +130,25 @@
       raf = 0;
       var w = document.getElementById('wallet-wrap');
       var bar = (w && w.closest('.topbar')) || document.querySelector('.topbar');
-      if (!bar) { sp.style.visibility = 'hidden'; return; }
-      var size = sp.offsetWidth || 64;
-      var b = bar.getBoundingClientRect();
-      var eye = document.getElementById('oe-nav');
-      var anchor = (eye && eye.offsetParent) ? eye : w;
-      var ar = anchor ? anchor.getBoundingClientRect() : null;
-      var x;
-      if (isMobile()) {
-        // Phone: the eye sits at the left edge, the spider hangs just right of it
-        x = ar ? ar.right + 6 : b.left + 56;
-      } else {
-        // Desktop: in the empty stretch left of the eye, clear of the tickers
-        x = ar ? ar.left - size - 28 : b.right - size - 260;
-        var t = bar.querySelectorAll('.ticker');
-        var lastT = t.length ? t[t.length - 1].getBoundingClientRect() : null;
-        if (lastT && x < lastT.right + 12) { sp.style.visibility = 'hidden'; return; }
+      if (!w || !bar) { sp.style.visibility = 'hidden'; return; }
+      var size = sp.offsetWidth || 60;
+      var b = bar.getBoundingClientRect(), r = w.getBoundingClientRect();
+      function vis(el) {
+        while (el && (!el.getBoundingClientRect().width || el.id === 'hw-spider')) el = el;
+        return el && el.getBoundingClientRect().width ? el : null;
       }
-      sp.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(b.top) + 'px)';
+      var prev = w.previousElementSibling, next = w.nextElementSibling;
+      while (prev && !prev.getBoundingClientRect().width) prev = prev.previousElementSibling;
+      while (next && !next.getBoundingClientRect().width) next = next.nextElementSibling;
+      var leftGap = prev ? r.left - prev.getBoundingClientRect().right : 0;
+      var rightGap = next ? next.getBoundingClientRect().left - r.right : 0;
+      var cx;
+      if (isMobile() && prev) cx = (prev.getBoundingClientRect().right + r.left) / 2;
+      else if (rightGap >= leftGap && next) cx = r.right + rightGap / 2;
+      else if (prev) cx = prev.getBoundingClientRect().right + leftGap / 2;
+      else cx = r.left - 20;
+      var x = Math.max(4, Math.min(window.innerWidth - size - 4, cx - size / 2));
+      sp.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(b.top + 1) + 'px)';
       sp.style.visibility = b.bottom < 0 ? 'hidden' : 'visible';
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(place); }
