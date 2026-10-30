@@ -256,14 +256,18 @@
     const W = 600, H = 180;
     const X = (t) => ((t - t0) / WINDOW_SECS) * W;
     const Y = (p) => H - ((p - lo) / (hi - lo)) * H;
-    let d = '';
+    let d = '', x0 = null;
     pts.forEach((q, i) => {
       if (q[0] < t0 - 2) return;
-      d += (d ? ' L' : 'M') + X(Math.max(q[0], t0)).toFixed(1) + ',' + Y(q[1]).toFixed(1);
+      const x = X(Math.max(q[0], t0));
+      if (x0 === null) x0 = x;
+      d += (d ? ' L' : 'M') + x.toFixed(1) + ',' + Y(q[1]).toFixed(1);
     });
     d += ' L' + X(t1).toFixed(1) + ',' + Y(last).toFixed(1);
     el.querySelector('.line').setAttribute('d', d);
-    el.querySelector('.area').setAttribute('d', d + ` L${W},${H} L0,${H} Z`);
+    // Заливка закрывается под первой точкой, а не в левом углу: иначе при
+    // короткой истории получался косой клин через весь график.
+    el.querySelector('.area').setAttribute('d', d + ` L${W},${H} L${(x0 || 0).toFixed(1)},${H} Z`);
 
     const yesN = yesNow(info, last);
     el.classList.toggle('is-yes', yesN);

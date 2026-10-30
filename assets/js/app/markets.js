@@ -1316,7 +1316,9 @@ function openSides(m, pct) {
 /** Ставка прямо под выбором стороны: одно место, одно действие. */
 function betPanel(m) {
   const max = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
-  const chips = [10, 50, 100, 500].filter((n) => !max || n <= max);
+  // Пресеты под цену LUNC: 10-500 были под тестовую сеть.
+  const chips = [10000, 50000, 200000, 500000].filter((n) => !max || n <= max);
+  const chipText = (n) => (n >= 1000 ? n / 1000 + 'K' : String(n));
   return `
     <div class="mk-betbox">
       <label class="mk-amount">
@@ -1326,7 +1328,7 @@ function betPanel(m) {
         <em>LUNC</em>
       </label>
       <div class="mk-chips">${chips.map((n) =>
-        `<button type="button" onclick="setBetAmount(${n})">${n}</button>`).join('')}</div>
+        `<button type="button" onclick="setBetAmount(${n})">${chipText(n)}</button>`).join('')}</div>
       <div id="bet-calc" class="mk-calc"></div>
       <button onclick="submitBet()" id="bet-go" class="ask-go mk-place" type="button">Bet</button>
       <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about ${taxPct()}%
