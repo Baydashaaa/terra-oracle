@@ -1,0 +1,103 @@
+/* markets-live.css - прямой эфир Markets (markets-live.js).
+   YES #3BE38A, NO #F37BAA, фиолетовый #7B5CFF / #A855F7. */
+
+/* ---- живая цена на экране рынка ---- */
+#page-markets .mkl-price{
+  --tone:#A855F7;
+  display:flex;flex-direction:column;gap:14px;padding:20px 22px 16px;border-radius:20px;
+  background:linear-gradient(180deg,#151A33 0%,#10142A 100%);
+  border:1px solid rgba(200,184,255,.16);
+  transition:border-color .5s,box-shadow .5s;
+}
+#page-markets .mkl-price.is-yes{--tone:#3BE38A}
+#page-markets .mkl-price.is-no{--tone:#F37BAA}
+#page-markets .mkl-price{border-color:color-mix(in srgb,var(--tone) 35%,transparent);box-shadow:0 0 40px -22px var(--tone)}
+#page-markets .mkl-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px}
+#page-markets .mkl-cell{display:flex;flex-direction:column;gap:4px;min-width:0}
+#page-markets .mkl-cell .lbl{font-size:12.5px;color:#9AA6C4}
+#page-markets .mkl-cell b{font-family:Rajdhani,sans-serif;font-weight:700;font-size:30px;line-height:1;color:#E8F0FF;font-variant-numeric:tabular-nums}
+#page-markets .mkl-cell b.cur{color:var(--tone);transition:color .5s}
+#page-markets .mkl-cell b.cur.up{animation:mklUp .7s ease-out}
+#page-markets .mkl-cell b.cur.down{animation:mklDown .7s ease-out}
+#page-markets .mkl-delta b{font-size:18px;color:#C9D3EA}
+#page-markets .mkl-verdict{margin-left:auto;display:inline-flex;align-items:center;gap:9px;height:38px;padding:0 16px;border-radius:999px;
+  font-weight:600;font-size:14px;color:var(--tone);
+  background:color-mix(in srgb,var(--tone) 12%,transparent);border:1px solid color-mix(in srgb,var(--tone) 45%,transparent);transition:all .5s}
+#page-markets .mkl-verdict i{width:9px;height:9px;border-radius:50%;background:var(--tone);box-shadow:0 0 10px var(--tone);animation:mk2pulse 1.6s ease-in-out infinite}
+
+#page-markets .mkl-chart{position:relative;height:200px;margin-right:78px;color:var(--tone)}
+#page-markets .mkl-chart svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#page-markets .mkl-chart .line{fill:none;stroke:var(--tone);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:stroke .5s}
+#page-markets .mkl-chart .tline{stroke:#C8B8FF;stroke-opacity:.6;stroke-width:1.4;stroke-dasharray:6 6;vector-effect:non-scaling-stroke}
+#page-markets .mkl-chart .head{position:absolute;right:-6px;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--tone);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--tone) 25%,transparent),0 0 16px var(--tone);transition:top .25s linear}
+#page-markets .mkl-chart .head::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tone);animation:mklRing 1.8s ease-out infinite}
+#page-markets .mkl-chart .tpill{position:absolute;right:-78px;transform:translateY(-50%);padding:4px 10px;border-radius:8px;font-size:12.5px;font-weight:600;
+  color:#E8F0FF;background:#252B4D;border:1px solid rgba(200,184,255,.25);white-space:nowrap}
+#page-markets .mkl-chart .tpill.edge{right:0;transform:none}
+#page-markets .mkl-chart .tpill.edge.top{top:0}
+#page-markets .mkl-chart .tpill.edge.bot{bottom:0;top:auto}
+#page-markets .mkl-chart .yax{position:absolute;top:0;bottom:0;right:-78px;width:72px;display:flex;flex-direction:column;justify-content:space-between;
+  font-size:11.5px;color:#7F8BAA;text-align:right;pointer-events:none;font-variant-numeric:tabular-nums}
+#page-markets .mkl-x{display:flex;justify-content:space-between;margin-right:78px;font-size:11.5px;color:#7F8BAA;font-variant-numeric:tabular-nums}
+#page-markets .mkl-note{margin:0;font-size:12.5px;line-height:1.5;color:#8C98B8}
+
+/* ---- тикер на карточке ---- */
+:is(#page-markets,#home-markets) .mkl-tick{--tone:#A855F7;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid color-mix(in srgb,var(--tone) 30%,transparent);font-size:13px;color:#C9D3EA;transition:border-color .5s}
+:is(#page-markets,#home-markets) .mkl-tick.is-yes{--tone:#3BE38A}
+:is(#page-markets,#home-markets) .mkl-tick.is-no{--tone:#F37BAA}
+:is(#page-markets,#home-markets) .mkl-tick .dot{width:7px;height:7px;border-radius:50%;background:var(--tone);box-shadow:0 0 8px var(--tone);animation:mk2pulse 1.6s ease-in-out infinite}
+:is(#page-markets,#home-markets) .mkl-tick .sym{color:#9AA6C4;font-weight:600}
+:is(#page-markets,#home-markets) .mkl-tick .cur{font-family:Rajdhani,sans-serif;font-size:17px;color:#E8F0FF;font-variant-numeric:tabular-nums}
+:is(#page-markets,#home-markets) .mkl-tick .dl{color:var(--tone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:is(#page-markets,#home-markets) .mkl-tick svg{margin-left:auto;flex:none;width:72px;height:24px;overflow:visible}
+:is(#page-markets,#home-markets) .mkl-tick path{fill:none;stroke:var(--tone);stroke-width:1.6;vector-effect:non-scaling-stroke}
+
+/* ---- обновление карточки: всплывашка и вспышка ---- */
+.mkl-bubble{position:absolute;bottom:40%;z-index:5;pointer-events:none;padding:4px 10px;border-radius:999px;font:700 14px/1 Rajdhani,sans-serif;white-space:nowrap;
+  color:#0B1020;background:#C8B8FF;box-shadow:0 6px 18px -6px rgba(0,0,0,.6);animation:mklFloat 2.2s cubic-bezier(.2,.7,.3,1) forwards}
+.mkl-bubble.y{background:#3BE38A}
+.mkl-bubble.n{background:#F37BAA}
+.mkl-flash{animation:mklFlash 1s ease-out}
+:is(#page-markets,#home-markets) .mkc.mk2c.mkl-pulse{animation:mklCard 1.6s ease-out}
+
+/* ---- лента прогнозов ---- */
+#page-markets .mkl-tape{display:flex;align-items:center;gap:14px;height:44px;margin:0 0 16px;padding:0 0 0 14px;border-radius:14px;overflow:hidden;
+  background:rgba(16,20,42,.8);border:1px solid rgba(200,184,255,.14)}
+#page-markets .mkl-tape[hidden]{display:none}
+#page-markets .mkl-tape .lbl{flex:none;display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#F37BAA}
+#page-markets .mkl-tape .lbl i{width:8px;height:8px;border-radius:50%;background:#F43F5E;box-shadow:0 0 10px #F43F5E;animation:mk2pulse 1.4s ease-in-out infinite}
+#page-markets .mkl-tape .trk{flex:1;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent)}
+#page-markets .mkl-tape .run{display:flex;width:max-content;animation:mklTape var(--dur,60s) linear infinite}
+#page-markets .mkl-tape:hover .run{animation-play-state:paused}
+#page-markets .mkl-tape .it{display:inline-flex;align-items:center;gap:8px;padding:0 22px;font-size:13px;color:#A9B6D3;text-decoration:none;white-space:nowrap;
+  border-right:1px solid rgba(200,184,255,.1)}
+#page-markets .mkl-tape .it b{font-family:Rajdhani,sans-serif;font-size:15px}
+#page-markets .mkl-tape .it.y b{color:#3BE38A}
+#page-markets .mkl-tape .it.n b{color:#F37BAA}
+#page-markets .mkl-tape .it .q{color:#E8F0FF}
+#page-markets .mkl-tape .it .a{color:#6B7A9C;font-size:12px}
+#page-markets .mkl-tape .it:hover .q{color:#C8B8FF}
+
+@keyframes mklUp{0%{text-shadow:0 0 18px #3BE38A;transform:translateY(-2px)}100%{text-shadow:none;transform:none}}
+@keyframes mklDown{0%{text-shadow:0 0 18px #F37BAA;transform:translateY(2px)}100%{text-shadow:none;transform:none}}
+@keyframes mklRing{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(2.4)}}
+@keyframes mklFloat{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}15%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-70px)}}
+@keyframes mklFlash{0%{color:#fff;text-shadow:0 0 16px rgba(200,184,255,.9)}100%{text-shadow:none}}
+@keyframes mklCard{0%{box-shadow:0 0 0 1px rgba(200,184,255,.6),0 0 40px -6px rgba(168,85,247,.7)}100%{box-shadow:0 30px 60px -40px rgba(0,0,0,.9)}}
+@keyframes mklTape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+@media (max-width:640px){
+  #page-markets .mkl-cell b{font-size:24px}
+  #page-markets .mkl-verdict{margin-left:0}
+  #page-markets .mkl-chart{height:150px;margin-right:62px}
+  #page-markets .mkl-chart .yax,#page-markets .mkl-chart .tpill:not(.edge){right:-62px}
+  #page-markets .mkl-chart .yax{width:58px;font-size:10.5px}
+  #page-markets .mkl-x{margin-right:62px}
+  :is(#page-markets,#home-markets) .mkl-tick svg{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  #page-markets .mkl-tape .run{animation:none}
+  #page-markets .mkl-chart .head::after,.mkl-tick .dot,#page-markets .mkl-verdict i{animation:none}
+}
