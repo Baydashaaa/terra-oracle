@@ -1,10 +1,12 @@
 /**
  * rounds.js - пятиминутные раунды "вверх или вниз" (контракт oracle-rounds).
  *
- * Блок на странице Markets над списком рынков. Прогноз принимается на
- * следующий раунд, пока идёт текущий; цену старта и конца пишет керпер
- * (oracle-rounds-keeper). Живую цену и поток сделок берём у markets-live.js.
+ * Вид - по образцу predict.fun: карточки активов (цель, текущая цена,
+ * сколько осталось), под ними экран раунда с графиком против цели, лентой
+ * раундов и панелью прогноза. Те же карточки - на главной.
  *
+ * Прогноз принимается на следующий раунд, пока идёт текущий. Цену старта и
+ * конца пишет керпер (oracle-rounds-keeper). Живая цена - из markets-live.js.
  * Загружать ПОСЛЕ markets.js и markets-live.js.
  */
 (function () {
@@ -16,94 +18,139 @@
   if (!NET.contract) return;
 
   const ASSETS = [
-    { id: 'BTC', name: 'Bitcoin', feed: 'BTC' },
-    { id: 'ETH', name: 'Ethereum', feed: 'ETH' },
-    { id: 'LUNC', name: 'LUNC', feed: 'LUNC' },
-    { id: 'PAXG', name: 'Gold', feed: 'PAXG' },
+    { id: 'BTC', sym: 'BTC', name: 'Bitcoin', mark: '\u20bf', color: '#F7931A' },
+    { id: 'ETH', sym: 'ETH', name: 'Ethereum', mark: '\u039e', color: '#7B8CFF' },
+    { id: 'LUNC', sym: 'LUNC', name: 'Terra Classic', mark: 'L', color: '#F2D45C' },
+    { id: 'PAXG', sym: 'Gold', name: 'Gold', mark: 'Au', color: '#E8C26A' },
   ];
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let cfg = null;
   let asset = 'BTC';
-  let side = null;           // true - UP, false - DOWN
-  let amount = 0;            // LUNC
-  let rounds = [];           // последние раунды выбранного актива, новые первыми
-  let positions = {};        // asset -> [PositionResponse]
+  let side = null;            // true - UP, false - DOWN
+  let amount = 0;             // LUNC
+  const rounds = {};          // asset -> последние раунды, новые первыми
+  let positions = {};         // asset -> [PositionResponse]
   let busy = false;
+  let state = 'loading';      // loading | ok | down
 
   const now = () => Date.now() / 1000;
-  const esc = (s) => (typeof mktEsc === 'function' ? mktEsc(s) : String(s));
   const live = () => window._mkLive || null;
-  const fmtUsd = (p) => (live() ? live().fmtUsd(p) : '$' + p);
+  const fmtUsd = (p) => (p == null ? '-' : live() ? live().fmtUsd(p) : '$' + p);
   const lunc = (u) => (typeof fmtLunc === 'function' ? fmtLunc(u) : String(Number(u) / 1e6));
   const wallet = () => (typeof mkWallet === 'function' ? mkWallet() : null);
   const toast = (m, k) => (typeof mkToast === 'function' ? mkToast(m, k) : alert(m));
+  const A = (id) => ASSETS.find((a) => a.id === id);
 
   async function q(msg) {
     const b64 = btoa(JSON.stringify(msg));
+    let last;
     for (const base of PROPHECY_LCD) {
       try {
         const r = await fetch(`${base}/cosmwasm/wasm/v1/contract/${NET.contract}/smart/${encodeURIComponent(b64)}`,
-          { signal: AbortSignal.timeout(8000) });
+          { signal: AbortSignal.timeout(10000) });
         if (r.ok) return (await r.json()).data;
-      } catch (e) { /* следующий узел */ }
+        last = new Error(`${base} ${r.status}`);
+      } catch (e) { last = e; }
     }
-    throw new Error('rounds unavailable');
+    console.warn('[rounds] query failed', msg, last);
+    throw last || new Error('rounds unavailable');
   }
 
   const R = () => (cfg ? cfg.round_secs : 300);
   const epochNow = () => Math.floor(now() / R());
-  const hm = (t) => { const d = new Date(t * 1000); return d.toTimeString().slice(0, 5); };
-  const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  const hm = (t) => new Date(t * 1000).toTimeString().slice(0, 5);
+  const mmss = (s) => { s = Math.max(0, Math.floor(s)); return [Math.floor(s / 60), s % 60].map((x) => String(x).padStart(2, '0')); };
+  const liveRound = (a) => (rounds[a] || []).find((r) => r.epoch === epochNow());
+  const nextRound = (a) => (rounds[a] || []).find((r) => r.epoch === epochNow() + 1)
+    || { epoch: epochNow() + 1, up: '0', down: '0', up_count: 0, down_count: 0 };
+  const lockOf = (a) => { const r = liveRound(a); return r && r.lock_price ? Number(r.lock_price) : null; };
+  const priceOf = (a) => { const f = live() && live().feeds[a]; return f && f.last != null ? f.last : null; };
 
-  // ── оценка выплаты ───────────────────────────────────────────────────────
   function estimate(r, up, amtU) {
     const mine = BigInt(up ? r.up : r.down) + amtU;
     const other = BigInt(up ? r.down : r.up);
     if (!other || !amtU) return null;
-    const fee = cfg ? BigInt(cfg.fee_bps) : 300n;
-    const share = other - (other * fee) / 10000n;
-    return amtU + (share * amtU) / mine;
+    const fee = BigInt(cfg ? cfg.fee_bps : 300);
+    return amtU + ((other - (other * fee) / 10000n) * amtU) / mine;
   }
-  const pct = (r) => {
-    const u = Number(r.up), d = Number(r.down);
-    return u + d ? Math.round((u / (u + d)) * 100) : 50;
-  };
 
-  // ── разметка ─────────────────────────────────────────────────────────────
+  // ── карточка актива (раздел и главная) ───────────────────────────────────
+  function cardHtml(a, sel) {
+    return `<button type="button" class="rdc" data-a="${a.id}" aria-pressed="${!!sel}" style="--ac:${a.color}">
+      <span class="rdc-h"><i class="ic">${a.mark}</i><b>${a.sym} Up or Down</b><em>5 min</em></span>
+      <svg class="rdc-sp" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+      <span class="rdc-f">
+        <span><small>Target</small><b class="t">-</b></span>
+        <span><small>Current</small><b class="c">-</b></span>
+        <span class="r"><small>Time left</small><b class="l">--:--</b></span>
+      </span>
+    </button>`;
+  }
+
+  function paintCards(root) {
+    root.querySelectorAll('.rdc').forEach((card) => {
+      const a = card.dataset.a;
+      const lock = lockOf(a), p = priceOf(a);
+      card.querySelector('.t').textContent = lock ? fmtUsd(lock) : state === 'down' ? 'offline' : '...';
+      const c = card.querySelector('.c');
+      c.textContent = fmtUsd(p);
+      card.classList.toggle('is-up', !!(lock && p && p > lock));
+      card.classList.toggle('is-dn', !!(lock && p && p < lock));
+      const [m, s] = mmss((epochNow() + 1) * R() - now());
+      card.querySelector('.l').textContent = `${m}:${s}`;
+      const f = live() && live().feeds[a];
+      if (f && f.pts.length > 1) {
+        const pts = f.pts.slice(-120);
+        let lo = Infinity, hi = -Infinity;
+        pts.forEach((q2) => { lo = Math.min(lo, q2[1]); hi = Math.max(hi, q2[1]); });
+        const rng = hi - lo || 1;
+        card.querySelector('.rdc-sp path').setAttribute('d', pts.map((q2, i) =>
+          (i ? 'L' : 'M') + (i / (pts.length - 1) * 100).toFixed(1) + ',' + (27 - ((q2[1] - lo) / rng) * 24).toFixed(1)).join(' '));
+      }
+    });
+  }
+
+  // ── экран раунда ─────────────────────────────────────────────────────────
   function shell() {
-    const tabs = ASSETS.map((a) => `<button type="button" data-a="${a.id}" aria-pressed="${a.id === asset}">${a.name}</button>`).join('');
     return `
       <section class="rd" id="rd" aria-label="Five-minute rounds">
-        <header class="rd-top">
-          <div class="rd-title"><i class="dot"></i><h3>5-minute rounds</h3><span>Up or down - settled every five minutes</span></div>
-          <div class="rd-tabs" role="tablist">${tabs}</div>
-        </header>
-        <div class="rd-grid">
-          <div class="rd-live">
-            <div class="rd-nums">
-              <div><span class="lbl">Start price</span><b class="lock">-</b></div>
-              <div><span class="lbl">Now</span><b class="cur">-</b></div>
-              <div class="rd-dl"><b class="dl"></b></div>
-              <div class="rd-clock"><span class="lbl">Ends in</span><b class="end">--:--</b></div>
+        <div class="rd-cards">${ASSETS.map((a) => cardHtml(a, a.id === asset)).join('')}</div>
+        <div class="rd-main">
+          <div class="rd-box rd-left">
+            <header class="rd-head">
+              <i class="ic"></i>
+              <div><h3></h3><span class="range"></span></div>
+              <span class="rd-live"><i></i>Live</span>
+            </header>
+            <div class="rd-figs">
+              <div><small>Price to beat</small><b class="lock">-</b></div>
+              <div><small>Current price</small><b class="cur">-</b><span class="dl"></span></div>
+              <div class="clock"><small><span>Min</span><span>Sec</span></small><b><span class="mm">--</span>:<span class="ss">--</span></b></div>
             </div>
-            <div class="rd-chart">
-              <svg viewBox="0 0 600 170" preserveAspectRatio="none" aria-hidden="true">
-                <line class="tline" x1="0" x2="600"/><path class="line"/></svg>
-              <span class="head"></span><span class="tpill">Start</span>
+            <div class="rd-plot">
+              <div class="rd-chart">
+                <svg viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true"><line class="tline" x1="0" x2="600"/><path class="line"/></svg>
+                <span class="head"></span>
+                <p class="rd-empty">Loading price…</p>
+              </div>
+              <div class="rd-yax"><span></span><span></span><span></span><em class="tpill">Target</em></div>
             </div>
+            <div class="rd-x"><span></span><span></span><span></span></div>
             <div class="rd-strip" aria-label="Recent rounds"></div>
           </div>
-          <div class="rd-bet">
-            <div class="rd-next"><b class="nlabel">Next round</b><span class="nstart"></span></div>
+          <div class="rd-box rd-right">
+            <div class="rd-next"><b>Next round</b><span class="nrange"></span></div>
+            <p class="rd-note">Predictions for the next round close when it starts. The price at that moment is its target.</p>
             <div class="rd-sides">
-              <button type="button" class="up" data-s="1"><span class="k">UP</span><span class="p">-</span><span class="m"></span></button>
-              <button type="button" class="dn" data-s="0"><span class="k">DOWN</span><span class="p">-</span><span class="m"></span></button>
+              <button type="button" class="up" data-s="1"><b>UP</b><span class="p">50%</span></button>
+              <button type="button" class="dn" data-s="0"><b>DOWN</b><span class="p">50%</span></button>
             </div>
+            <div class="rd-tap"><span>One-tap amount</span></div>
             <div class="rd-chips"></div>
-            <label class="rd-amt"><span>Amount</span><input type="text" inputmode="numeric" placeholder="0" autocomplete="off"><em>LUNC</em></label>
-            <div class="rd-win"></div>
+            <label class="rd-amt"><span>Or type</span><input type="text" inputmode="numeric" placeholder="0" autocomplete="off"><em>LUNC</em></label>
             <button type="button" class="rd-go" disabled>Pick UP or DOWN</button>
+            <div class="rd-pool"></div>
             <div class="rd-mine"></div>
           </div>
         </div>
@@ -116,15 +163,9 @@
     if (!anchor) return;
     anchor.insertAdjacentHTML('beforebegin', shell());
     const el = document.getElementById('rd');
-    el.querySelector('.rd-tabs').addEventListener('click', (e) => {
-      const b = e.target.closest('button[data-a]');
-      if (!b) return;
-      asset = b.dataset.a;
-      el.querySelectorAll('.rd-tabs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      rounds = [];
-      el.querySelector('.rd-strip').innerHTML = '';
-      feedOn();
-      refresh();
+    el.querySelector('.rd-cards').addEventListener('click', (e) => {
+      const b = e.target.closest('.rdc');
+      if (b) select(b.dataset.a);
     });
     el.querySelector('.rd-sides').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-s]');
@@ -137,89 +178,100 @@
       if (!b) return;
       amount = Number(b.dataset.v);
       el.querySelector('.rd-amt input').value = amount.toLocaleString('en-US');
+      el.querySelectorAll('.rd-chips button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
       paintBet();
     });
     el.querySelector('.rd-amt input').addEventListener('input', (e) => {
       amount = Number(String(e.target.value).replace(/[^0-9]/g, '')) || 0;
+      el.querySelectorAll('.rd-chips button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
       paintBet();
     });
     el.querySelector('.rd-go').addEventListener('click', submit);
     el.querySelector('.rd-mine').addEventListener('click', (e) => { if (e.target.closest('.rd-collect')) collect(); });
-    feedOn();
+    paintHead();
   }
 
-  function feedOn() {
+  function select(a) {
+    asset = a;
+    document.querySelectorAll('#rd .rdc').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.a === a)));
     const el = document.getElementById('rd');
-    const a = ASSETS.find((x) => x.id === asset);
-    if (!el || !live() || !a) return;
-    live().subscribe(a.feed, el);
+    if (el) el.querySelector('.rd-strip').innerHTML = '';
+    paintHead(); paintBet(); paintStrip();
+  }
+
+  function paintHead() {
+    const el = document.getElementById('rd');
+    if (!el) return;
+    const a = A(asset);
+    const ic = el.querySelector('.rd-head .ic');
+    ic.textContent = a.mark;
+    ic.style.setProperty('--ac', a.color);
+    el.querySelector('.rd-head h3').textContent = `${a.name} Up or Down · 5 min`;
+    const e0 = epochNow();
+    el.querySelector('.range').textContent = `${hm(e0 * R())} - ${hm((e0 + 1) * R())}`;
   }
 
   function paintChips() {
     const host = document.querySelector('#rd .rd-chips');
-    if (!host || !cfg || host.dataset.done) return;
+    if (!host || !cfg) return;
     const min = Number(cfg.min_bet) / 1e6, max = Number(cfg.max_bet) / 1e6;
-    // На mainnet минимум 1,000 LUNC - пресеты как у рынков. На тестнете минимум
+    // mainnet: минимум 1,000 LUNC - пресеты как у рынков. На тестнете минимум
     // меньше, и пресеты масштабируются от него.
     const base = min >= 1000 ? [10000, 50000, 200000, 500000] : [min, min * 5, min * 20, min * 50];
-    host.innerHTML = base.filter((v) => v >= min && v <= max)
-      .map((v) => `<button type="button" data-v="${v}">${v >= 1000 ? v / 1000 + 'K' : v}</button>`).join('');
-    host.dataset.done = '1';
+    const r = nextRound(asset);
+    host.innerHTML = base.filter((v) => v >= min && v <= max).map((v) => {
+      const amtU = BigInt(v) * 1000000n;
+      const est = side === null ? null : estimate(r, side, amtU);
+      return `<button type="button" data-v="${v}" aria-pressed="${amount === v}">
+        <b>${v >= 1000 ? v / 1000 + 'K' : v}</b><small>${est ? 'Win ' + lunc(est) : side === null ? 'LUNC' : 'Win -'}</small></button>`;
+    }).join('');
   }
-
-  const nextRound = () => rounds.find((r) => r.epoch === epochNow() + 1)
-    || { epoch: epochNow() + 1, up: '0', down: '0', up_count: 0, down_count: 0 };
-  const liveRound = () => rounds.find((r) => r.epoch === epochNow());
 
   function paintBet() {
     const el = document.getElementById('rd');
     if (!el || !cfg) return;
-    const r = nextRound();
-    const p = pct(r);
-    const amtU = BigInt(Math.round(amount)) * 1000000n;
-    const sides = el.querySelectorAll('.rd-sides button');
-    [[sides[0], true, p], [sides[1], false, 100 - p]].forEach(([b, up, pp]) => {
-      const pool = up ? r.up : r.down;
-      b.setAttribute('aria-pressed', String(side === up));
-      b.querySelector('.p').textContent = Number(r.up) + Number(r.down) ? pp + '%' : '50%';
-      const est = estimate(r, up, 1000000n * 1000n);
-      b.querySelector('.m').textContent = `${lunc(pool)} LUNC${est ? ` · x${(Number(est) / 1e9).toFixed(2)}` : ''}`;
-    });
-    el.querySelector('.nstart').textContent = `${hm(r.epoch * R())} - ${hm((r.epoch + 1) * R())}`;
+    const r = nextRound(asset);
+    const u = Number(r.up), d = Number(r.down);
+    const p = u + d ? Math.round((u / (u + d)) * 100) : 50;
+    const [up, dn] = el.querySelectorAll('.rd-sides button');
+    up.setAttribute('aria-pressed', String(side === true));
+    dn.setAttribute('aria-pressed', String(side === false));
+    up.querySelector('.p').textContent = p + '%';
+    dn.querySelector('.p').textContent = (100 - p) + '%';
+    el.querySelector('.nrange').textContent = `${hm(r.epoch * R())} - ${hm((r.epoch + 1) * R())}`;
+    el.querySelector('.rd-pool').innerHTML = `<span>UP pool <b>${lunc(r.up)}</b></span><span>DOWN pool <b>${lunc(r.down)}</b></span>`;
+    paintChips();
+
     const go = el.querySelector('.rd-go');
-    const win = el.querySelector('.rd-win');
     const min = Number(cfg.min_bet) / 1e6, max = Number(cfg.max_bet) / 1e6;
-    const closing = (r.epoch * R() - now()) < 10;
-    if (side === null) { go.disabled = true; go.textContent = 'Pick UP or DOWN'; win.textContent = ''; return; }
-    if (!amount) { go.disabled = true; go.textContent = 'Choose an amount'; win.textContent = ''; return; }
+    const closing = r.epoch * R() - now() < 10;
+    go.className = 'rd-go' + (side === true ? ' up' : side === false ? ' dn' : '');
+    if (side === null) { go.disabled = true; go.textContent = 'Pick UP or DOWN'; return; }
+    if (!amount) { go.disabled = true; go.textContent = 'Choose an amount'; return; }
     if (amount < min || amount > max) {
-      go.disabled = true; go.textContent = `${min.toLocaleString('en-US')} to ${max.toLocaleString('en-US')} LUNC`;
-      win.textContent = ''; return;
+      go.disabled = true; go.textContent = `${min.toLocaleString('en-US')} to ${max.toLocaleString('en-US')} LUNC per side`; return;
     }
-    const est = estimate(r, side, amtU);
-    win.innerHTML = est
-      ? `If ${side ? 'UP' : 'DOWN'} wins: <b>≈ ${lunc(est)} LUNC</b> <small>before the network tax</small>`
-      : `Nobody on ${side ? 'DOWN' : 'UP'} yet. If it stays that way, you get your stake back.`;
+    const est = estimate(r, side, BigInt(Math.round(amount)) * 1000000n);
     go.disabled = busy || closing;
-    go.className = 'rd-go ' + (side ? 'up' : 'dn');
     go.textContent = busy ? 'Waiting for the block…' : closing ? 'Next round opens in a moment'
-      : `Predict ${side ? 'UP' : 'DOWN'} · ${amount.toLocaleString('en-US')} LUNC`;
+      : `Predict ${side ? 'UP' : 'DOWN'} · ${amount.toLocaleString('en-US')} LUNC${est ? ` · win ≈ ${lunc(est)}` : ''}`;
   }
 
   function paintStrip() {
     const host = document.querySelector('#rd .rd-strip');
     if (!host) return;
     const e0 = epochNow();
-    const list = rounds.filter((r) => r.epoch < e0).slice(0, 5).reverse();
-    const cell = (r) => {
+    const list = (rounds[asset] || []).filter((r) => r.epoch < e0).slice(0, 4).reverse();
+    const pill = (r) => {
       const o = r.outcome;
       const cls = o === 'up' ? 'up' : o === 'down' ? 'dn' : o === 'void' ? 'void' : 'wait';
-      const txt = o === 'up' ? 'UP' : o === 'down' ? 'DOWN' : o === 'void' ? 'Refund' : '…';
-      return `<span class="c ${cls}" title="${r.lock_price ? 'start ' + r.lock_price : ''}${r.close_price ? ', end ' + r.close_price : ''}">${hm(r.epoch * R())}<b>${txt}</b></span>`;
+      const mark = o === 'up' ? '\u25b2' : o === 'down' ? '\u25bc' : o === 'void' ? '\u21ba' : '\u2026';
+      const tip = r.lock_price && r.close_price ? `${fmtUsd(Number(r.lock_price))} to ${fmtUsd(Number(r.close_price))}` : o === 'void' ? 'refunded' : 'settling';
+      return `<span class="p ${cls}" title="${tip}"><i>${mark}</i>${hm(r.epoch * R())}</span>`;
     };
-    host.innerHTML = list.map(cell).join('')
-      + `<span class="c now">${hm(e0 * R())}<b>Live</b></span>`
-      + `<span class="c next">${hm((e0 + 1) * R())}<b>Next</b></span>`;
+    host.innerHTML = list.map(pill).join('')
+      + `<span class="p now"><i></i>Live ${hm(e0 * R())}</span>`
+      + `<span class="p next">${hm((e0 + 1) * R())}</span>`;
   }
 
   function paintMine() {
@@ -231,82 +283,92 @@
     const due = all.filter((p) => !p.claimed && Number(p.payout) > 0);
     const open = all.filter((p) => ['accepting', 'live', 'closing'].includes(p.outcome));
     const total = due.reduce((s, p) => s + Number(p.payout), 0);
-    const row = (p) => `<div class="r"><span>${p.asset} ${hm(p.epoch * R())}</span>
+    const row = (p) => `<div class="r"><span>${A(p.asset).sym} ${hm(p.epoch * R())}</span>
       <b class="${Number(p.up) ? 'up' : 'dn'}">${Number(p.up) ? 'UP ' + lunc(p.up) : 'DOWN ' + lunc(p.down)}</b>
       <em>${p.outcome === 'accepting' ? 'starts soon' : p.outcome === 'live' ? 'live' : 'settling'}</em></div>`;
     host.innerHTML = (open.length ? `<div class="h">Your rounds</div>${open.slice(0, 4).map(row).join('')}` : '')
       + (total ? `<button type="button" class="rd-collect">Collect ${lunc(total)} LUNC</button>` : '');
   }
 
-  // ── живая часть: график и часы ───────────────────────────────────────────
+  // ── график ───────────────────────────────────────────────────────────────
   function frame() {
     const el = document.getElementById('rd');
-    if (!el || !live()) return;
-    const f = live().feeds[asset];
-    const lr = liveRound();
-    const lock = lr && lr.lock_price ? Number(lr.lock_price) : null;
-    const endAt = (epochNow() + 1) * R();
-    el.querySelector('.end').textContent = mmss(endAt - now());
-    el.querySelector('.lock').textContent = lock ? fmtUsd(lock) : 'waiting';
-    if (!f || !f.pts.length) return;
-    const last = f.last;
-    el.querySelector('.cur').textContent = fmtUsd(last);
-    const upNow = lock ? last > lock : null;
+    if (!el) return;
+    paintCards(el);
+    const e0 = epochNow(), t0 = e0 * R(), t1 = t0 + R();
+    const [m, s] = mmss(t1 - now());
+    el.querySelector('.mm').textContent = m;
+    el.querySelector('.ss').textContent = s;
+    el.querySelector('.clock').classList.toggle('hot', t1 - now() < 30);
+    const lock = lockOf(asset);
+    const lr = liveRound(asset);
+    el.querySelector('.lock').textContent = lock ? fmtUsd(lock)
+      : state === 'down' ? 'node offline' : lr && lr.outcome === 'void' ? 'no start price' : 'starting…';
+    const p = priceOf(asset);
+    el.querySelector('.cur').textContent = fmtUsd(p);
+    const dl = el.querySelector('.dl');
+    const upNow = lock && p ? p > lock : null;
     el.classList.toggle('is-up', upNow === true);
     el.classList.toggle('is-dn', upNow === false);
-    if (lock) {
-      const d = last - lock;
-      el.querySelector('.dl').textContent = `${d >= 0 ? '▲' : '▼'} ${fmtUsd(Math.abs(d))} (${((d / lock) * 100).toFixed(3)}%)`;
-    }
-    // Окно графика - текущий раунд целиком.
-    const t0 = epochNow() * R(), t1 = t0 + R();
-    const pts = f.pts.filter((p) => p[0] >= t0 - 2);
-    if (!pts.length) return;
+    dl.textContent = lock && p ? `${p >= lock ? '\u25b2' : '\u25bc'} ${Math.abs(((p - lock) / lock) * 100).toFixed(3)}%` : '';
+
+    const f = live() && live().feeds[asset];
+    const pts = f ? f.pts.filter((q2) => q2[0] >= t0 - 2) : [];
+    const empty = el.querySelector('.rd-empty');
+    const show = pts.length > 0;
+    empty.hidden = show;
+    el.querySelector('.rd-chart svg').style.visibility = show ? '' : 'hidden';
+    el.querySelector('.head').style.display = show ? '' : 'none';
+    el.querySelector('.tpill').style.display = show && lock ? '' : 'none';
+    const xs = el.querySelectorAll('.rd-x span');
+    xs[0].textContent = hm(t0); xs[1].textContent = new Date((t0 + R() / 2) * 1000).toTimeString().slice(0, 5); xs[2].textContent = hm(t1);
+    if (!show) { empty.textContent = 'Waiting for the first price…'; return; }
+
     let lo = Infinity, hi = -Infinity;
-    pts.forEach((p) => { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); });
+    pts.forEach((q2) => { lo = Math.min(lo, q2[1]); hi = Math.max(hi, q2[1]); });
     if (lock) { lo = Math.min(lo, lock); hi = Math.max(hi, lock); }
-    const pad = Math.max(hi - lo, last * 0.0002) * 0.2;
+    const pad = Math.max(hi - lo, p * 0.0003) * 0.25;
     lo -= pad; hi += pad;
-    const X = (t) => ((Math.max(t, t0) - t0) / (t1 - t0)) * 600;
-    const Y = (p) => 170 - ((p - lo) / (hi - lo)) * 170;
-    let d = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ');
-    d += ' L' + X(now()).toFixed(1) + ',' + Y(last).toFixed(1);
+    const X = (t) => ((Math.min(Math.max(t, t0), t1) - t0) / (t1 - t0)) * 600;
+    const Y = (v) => 180 - ((v - lo) / (hi - lo)) * 180;
+    const d = pts.map((q2, i) => (i ? 'L' : 'M') + X(q2[0]).toFixed(1) + ',' + Y(q2[1]).toFixed(1)).join(' ')
+      + ' L' + X(now()).toFixed(1) + ',' + Y(p).toFixed(1);
     el.querySelector('.line').setAttribute('d', d);
     const head = el.querySelector('.head');
     head.style.left = (X(now()) / 6) + '%';
-    head.style.top = (Y(last) / 1.7) + '%';
-    const tl = el.querySelector('.tline'), pill = el.querySelector('.tpill');
+    head.style.top = (Y(p) / 1.8) + '%';
+    const tl = el.querySelector('.tline');
     if (lock) {
-      tl.setAttribute('y1', Y(lock)); tl.setAttribute('y2', Y(lock));
-      tl.style.display = ''; pill.style.display = '';
-      pill.style.top = (Y(lock) / 1.7) + '%';
-    } else { tl.style.display = 'none'; pill.style.display = 'none'; }
-    // Граница раунда: перечитываем, чтобы увидеть новую цену старта.
-    if (endAt - now() < 0.5 && !el.dataset.flip) {
+      tl.setAttribute('y1', Y(lock)); tl.setAttribute('y2', Y(lock)); tl.style.display = '';
+      el.querySelector('.tpill').style.top = (Y(lock) / 1.8) + '%';
+    } else tl.style.display = 'none';
+    const ys = el.querySelectorAll('.rd-yax span');
+    ys[0].textContent = fmtUsd(hi); ys[1].textContent = fmtUsd((hi + lo) / 2); ys[2].textContent = fmtUsd(lo);
+
+    if (t1 - now() < 0.6 && !el.dataset.flip) {
       el.dataset.flip = '1';
-      setTimeout(() => { delete el.dataset.flip; refresh(); }, 12000);
+      setTimeout(() => { delete el.dataset.flip; paintHead(); refresh(); }, 12000);
     }
   }
 
   // ── данные ───────────────────────────────────────────────────────────────
   async function refresh() {
-    if (!document.getElementById('rd')) return;
     try {
       if (!cfg) cfg = await q({ config: {} });
-      const a = asset;
-      const list = await q({ rounds: { asset: a, limit: 8 } });
-      if (a !== asset) return;
-      const prev = nextRound();
-      rounds = list;
-      const nr = nextRound();
-      // Новый прогноз на следующий раунд - всплывашка над стороной.
+      const lists = await Promise.all(ASSETS.map((a) => q({ rounds: { asset: a.id, limit: 8 } })));
+      const prev = nextRound(asset);
+      ASSETS.forEach((a, i) => { rounds[a.id] = lists[i]; });
+      state = 'ok';
+      const nr = nextRound(asset);
       if (prev.epoch === nr.epoch && !REDUCED) {
         const du = Number(nr.up) - Number(prev.up), dd = Number(nr.down) - Number(prev.down);
         if (du > 0) pop(true, du);
         if (dd > 0) pop(false, dd);
       }
-      paintChips(); paintBet(); paintStrip();
-    } catch (e) { /* узел не ответил - следующий опрос */ }
+      paintBet(); paintStrip();
+    } catch (e) {
+      state = 'down';
+    }
   }
 
   async function refreshMine() {
@@ -369,34 +431,65 @@
     refreshMine();
   }
 
+  // ── главная ──────────────────────────────────────────────────────────────
+  function mountHome() {
+    if (document.getElementById('rd-home')) return;
+    const anchor = document.getElementById('home-markets');
+    if (!anchor) return;
+    anchor.insertAdjacentHTML('beforebegin', `
+      <section class="rd-home" id="rd-home" aria-label="Five-minute rounds">
+        <div class="rd-home-h"><h3><i></i>5-minute rounds</h3><a href="/markets">All rounds</a></div>
+        <div class="rd-cards">${ASSETS.map((a) => cardHtml(a, false)).join('')}</div>
+      </section>`);
+    const sec = document.getElementById('rd-home');
+    const go = (a) => {
+      select(a);
+      if (typeof mkOpenFromHome === 'function') mkOpenFromHome(0);
+      setTimeout(() => { const el = document.getElementById('rd'); if (el) el.scrollIntoView({ block: 'start', behavior: REDUCED ? 'auto' : 'smooth' }); }, 300);
+    };
+    sec.addEventListener('click', (e) => {
+      const b = e.target.closest('.rdc');
+      if (b) { e.preventDefault(); go(b.dataset.a); }
+      else if (e.target.closest('.rd-home-h a')) { e.preventDefault(); go(asset); }
+    });
+  }
+
   // ── связка ───────────────────────────────────────────────────────────────
-  function visibleNow() {
-    const el = document.getElementById('rd');
-    if (!el) return false;
-    const onMarket = typeof openMarketId !== 'undefined' && openMarketId !== null;
-    el.hidden = onMarket;
-    return !onMarket && el.offsetParent !== null && !document.hidden;
+  function visible(id) {
+    const el = document.getElementById(id);
+    return !!el && el.offsetParent !== null && !document.hidden;
   }
 
   function start() {
-    mount();
+    mount(); mountHome();
+    const hosts = [document.getElementById('rd'), document.getElementById('rd-home')].filter(Boolean);
+    if (live()) ASSETS.forEach((a) => hosts.forEach((h) => live().subscribe(a.id, h)));
     refresh(); refreshMine();
     const mo = document.getElementById('markets-list');
-    if (mo) new MutationObserver(visibleNow).observe(mo, { childList: true });
+    const hideOnMarket = () => {
+      const el = document.getElementById('rd');
+      if (el) el.hidden = typeof openMarketId !== 'undefined' && openMarketId !== null;
+    };
+    if (mo) new MutationObserver(hideOnMarket).observe(mo, { childList: true });
     let tick = 0;
     setInterval(() => {
-      if (!visibleNow()) return;
+      const onMarkets = visible('rd'), onHome = visible('rd-home');
+      if (!onMarkets && !onHome) return;
       tick++;
       if (tick % 5 === 0) refresh();
-      if (tick % 15 === 0) refreshMine();
-      paintBet();
+      if (onMarkets && tick % 15 === 0) refreshMine();
+      if (onMarkets) paintBet();
     }, 1000);
-    const loop = () => { if (visibleNow()) frame(); setTimeout(() => requestAnimationFrame(loop), 250); };
+    const loop = () => {
+      if (visible('rd')) frame();
+      const h = document.getElementById('rd-home');
+      if (h && visible('rd-home')) paintCards(h);
+      setTimeout(() => requestAnimationFrame(loop), 250);
+    };
     loop();
-    document.addEventListener('oracle:wallet', refreshMine);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window._rounds = { refresh, refreshMine, get rounds() { return rounds; } };
+  window._rounds = { refresh, refreshMine, rounds, get state() { return state; } };
 })();
