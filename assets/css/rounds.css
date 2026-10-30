@@ -127,6 +127,8 @@
 #page-markets .rd-go:disabled{cursor:default;color:var(--rd-mut);background:rgba(255,255,255,.06)}
 #page-markets .rd-pool{display:flex;justify-content:space-between;font-size:12.5px;color:var(--rd-mut)}
 #page-markets .rd-pool b{color:var(--rd-txt);font-variant-numeric:tabular-nums}
+#page-markets .rd-house{margin:-6px 0 0;font-size:12.5px;line-height:1.5;color:#C8B8FF}
+#page-markets .rd-house:empty{display:none}
 #page-markets .rd-mine{display:flex;flex-direction:column;gap:7px;font-size:13px}
 #page-markets .rd-mine:empty{display:none}
 #page-markets .rd-mine .h{padding-top:12px;border-top:1px solid var(--rd-line);font-weight:700;color:var(--rd-txt)}

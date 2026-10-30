@@ -13,8 +13,9 @@
   'use strict';
 
   const NET = (typeof PROPHECY_TESTNET !== 'undefined' && PROPHECY_TESTNET)
-    ? { contract: 'terra1erumnyvvtjkxkgedwrasuefhczetzd2qcdms650g76f3dq658qlsu3fw99' }
-    : { contract: '' };   // mainnet: адрес появится после деплоя
+    ? { contract: 'terra1erumnyvvtjkxkgedwrasuefhczetzd2qcdms650g76f3dq658qlsu3fw99', houseMax: 500 }
+    : { contract: '', houseMax: 50000 };   // mainnet: адрес появится после деплоя
+  // houseMax - потолок ответной ставки казны (MATCH_MAX_ULUNA у керпера), LUNC.
   if (!NET.contract) return;
 
   const ASSETS = [
@@ -119,9 +120,15 @@
   const lockOf = (a) => { const r = liveRound(a); return r && r.lock_price ? Number(r.lock_price) : null; };
   const priceOf = (a) => { const f = live() && live().feeds[a]; return f && f.last != null ? f.last : null; };
 
+  /** Выплата при победе. Пустую сторону за минуту до старта закрывает казна
+   *  той же суммой (до houseMax), поэтому соперник есть всегда. */
   function estimate(r, up, amtU) {
     const mine = BigInt(up ? r.up : r.down) + amtU;
-    const other = BigInt(up ? r.down : r.up);
+    let other = BigInt(up ? r.down : r.up);
+    if (!other) {
+      const cap = BigInt(NET.houseMax) * 1000000n;
+      other = mine < cap ? mine : cap;
+    }
     if (!other || !amtU) return null;
     const fee = BigInt(cfg ? cfg.fee_bps : 300);
     return amtU + ((other - (other * fee) / 10000n) * amtU) / mine;
@@ -217,6 +224,7 @@
             <label class="rd-amt"><span>Or type</span><input type="text" inputmode="numeric" placeholder="0" autocomplete="off"><em>LUNC</em></label>
             <button type="button" class="rd-go" disabled>Pick UP or DOWN</button>
             <div class="rd-pool"></div>
+            <p class="rd-house"></p>
             <div class="rd-mine"></div>
           </div>
         </div>
@@ -305,6 +313,12 @@
     dn.querySelector('.p').textContent = (100 - p) + '%';
     el.querySelector('.nrange').textContent = `${hm(r.epoch * R())} - ${hm((r.epoch + 1) * R())}`;
     el.querySelector('.rd-pool').innerHTML = `<span>UP pool <b>${lunc(r.up)}</b></span><span>DOWN pool <b>${lunc(r.down)}</b></span>`;
+    // Одна сторона пустая - казна закроет её за минуту до старта.
+    const empty = u && !d ? 'DOWN' : d && !u ? 'UP' : !u && !d ? 'the other side' : '';
+    const houseAt = hm(r.epoch * R() - 60);
+    el.querySelector('.rd-house').textContent = empty
+      ? `Nobody on ${empty} yet. At ${houseAt} the house takes it with the same amount, up to ${NET.houseMax.toLocaleString('en-US')} LUNC.`
+      : '';
     paintChips();
 
     const go = el.querySelector('.rd-go');
