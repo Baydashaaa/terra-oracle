@@ -57,6 +57,11 @@
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let cfg = null;
+  // Пока конфиг не прочитан, интерфейс работает на значениях по умолчанию:
+  // выбор стороны и суммы не должен ждать узел. Контракт всё равно проверит.
+  const DEF = { round_secs: 300, fee_bps: 300, min_bet: '1000000', max_bet: '1000000000000' };
+  const C = () => cfg || DEF;
+  let lastErr = '';
   let asset = 'BTC';
   let side = null;            // true - UP, false - DOWN
   let amount = 0;             // LUNC
@@ -110,7 +115,7 @@
     throw last || new Error('rounds unavailable');
   }
 
-  const R = () => (cfg ? cfg.round_secs : 300);
+  const R = () => C().round_secs;
   const epochNow = () => Math.floor(now() / R());
   const hm = (t) => new Date(t * 1000).toTimeString().slice(0, 5);
   const mmss = (s) => { s = Math.max(0, Math.floor(s)); return [Math.floor(s / 60), s % 60].map((x) => String(x).padStart(2, '0')); };
@@ -130,7 +135,7 @@
       other = mine < cap ? mine : cap;
     }
     if (!other || !amtU) return null;
-    const fee = BigInt(cfg ? cfg.fee_bps : 300);
+    const fee = BigInt(C().fee_bps);
     return amtU + ((other - (other * fee) / 10000n) * amtU) / mine;
   }
 
@@ -286,10 +291,10 @@
   function paintChips() {
     const host = document.querySelector('#rd .rd-chips');
     if (!host) return;
-    const min = cfg ? Number(cfg.min_bet) / 1e6 : 1000, max = cfg ? Number(cfg.max_bet) / 1e6 : 1e6;
+    const min = Number(C().min_bet) / 1e6, max = Number(C().max_bet) / 1e6;
     // mainnet: минимум 1,000 LUNC - пресеты как у рынков. На тестнете минимум
     // меньше, и пресеты масштабируются от него.
-    const base = min >= 1000 ? [10000, 50000, 200000, 500000] : [min, min * 5, min * 20, min * 50];
+    const base = min >= 1000 || !cfg ? [10000, 50000, 200000, 500000] : [min, min * 5, min * 20, min * 50];
     const r = nextRound(asset);
     host.innerHTML = base.filter((v) => v >= min && v <= max).map((v) => {
       const amtU = BigInt(v) * 1000000n;
@@ -302,7 +307,6 @@
   function paintBet() {
     const el = document.getElementById('rd');
     if (!el) return;
-    if (!cfg) { paintChips(); return; }
     const r = nextRound(asset);
     const u = Number(r.up), d = Number(r.down);
     const p = u + d ? Math.round((u / (u + d)) * 100) : 50;
@@ -322,7 +326,7 @@
     paintChips();
 
     const go = el.querySelector('.rd-go');
-    const min = Number(cfg.min_bet) / 1e6, max = Number(cfg.max_bet) / 1e6;
+    const min = Number(C().min_bet) / 1e6, max = Number(C().max_bet) / 1e6;
     const closing = r.epoch * R() - now() < 10;
     go.className = 'rd-go' + (side === true ? ' up' : side === false ? ' dn' : '');
     if (side === null) { go.disabled = true; go.textContent = 'Pick UP or DOWN'; return; }
@@ -387,7 +391,7 @@
     const lr = liveRound(asset);
     el.querySelector('.lock').textContent = lock ? fmtUsd(lock) : '-';
     el.querySelector('.lsub').textContent = lock ? ''
-      : state === 'down' ? 'Contract not reachable, retrying' : lr && lr.outcome === 'void' ? 'No start price - this round refunds'
+      : state === 'down' ? `Contract not reachable (${lastErr}), retrying` : lr && lr.outcome === 'void' ? 'No start price - this round refunds'
         : state === 'loading' ? 'Loading' : 'Set at the round start';
     const p = priceOf(asset);
     el.querySelector('.cur').textContent = fmtUsd(p);
@@ -454,6 +458,7 @@
       paintBet(); paintStrip();
     } catch (e) {
       state = 'down';
+      lastErr = String((e && e.message) || e).slice(0, 80);
     }
   }
 

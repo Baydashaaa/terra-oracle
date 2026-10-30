@@ -65,18 +65,32 @@
     f.last = p;
   }
 
+  // История для графика, когда Binance недоступен: Worker раундов отдаёт
+  // последние сделки Coinbase или Gate по секундам.
+  const HIST_URL = 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev/hist?sym=';
+
   async function seed(sym) {
     const f = feed(sym);
     if (f.seeded || !BINANCE[sym]) return;
     f.seeded = true;
-    try {
-      const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${BINANCE[sym]}&interval=1s&limit=${WINDOW_SECS}`);
-      if (!r.ok) throw new Error();
-      const rows = await r.json();
+    const merge = (rows) => {
       const old = f.pts.slice();
       f.pts = [];
-      rows.forEach((k) => push(sym, Number(k[4]), Number(k[0]) / 1000));
+      rows.forEach(([t, p]) => push(sym, p, t));
       old.forEach((pt) => push(sym, pt[1], pt[0]));
+    };
+    try {
+      const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${BINANCE[sym]}&interval=1s&limit=${WINDOW_SECS}`,
+        { signal: AbortSignal.timeout(4000) });
+      if (!r.ok) throw new Error();
+      merge((await r.json()).map((k) => [Number(k[0]) / 1000, Number(k[4])]));
+      return;
+    } catch (e) { /* ниже - Worker */ }
+    try {
+      const r = await fetch(HIST_URL + sym, { signal: AbortSignal.timeout(6000) });
+      const j = await r.json();
+      if (!r.ok || !j.pts || !j.pts.length) throw new Error();
+      merge(j.pts);
     } catch (e) { f.seeded = false; }
   }
 
