@@ -205,7 +205,7 @@
             <header class="rd-head">
               <span class="ic"></span>
               <div><h3></h3><span class="range"></span></div>
-              <span class="rd-live"><i></i>Live</span>
+              <span class="rd-live"><i></i>Live · closed to new predictions</span>
             </header>
             <div class="rd-call" hidden></div>
             <div class="rd-figs">
@@ -244,9 +244,10 @@
             </div>
           </div>
           <div class="rd-box rd-right">
-            <div class="rd-next"><b>Next round</b><span class="nrange"></span></div>
+            <div class="rd-next"><b>Predict the next round</b><span class="nrange"></span></div>
+            <div class="rd-open"><span>Open for predictions</span><b class="ncd"></b></div>
             <div class="rd-in" hidden></div>
-            <p class="rd-note">Predictions for the next round close when it starts. The price at that moment is its target.</p>
+            <p class="rd-note">The round on the chart is already running, so it takes no new predictions. Yours goes into the next one: its price at <b class="nstart"></b> becomes the target, and you win if it ends above (UP) or below (DOWN).</p>
             <div class="rd-sides">
               <button type="button" class="up" data-s="1"><b>UP</b><span class="p">50%</span></button>
               <button type="button" class="dn" data-s="0"><b>DOWN</b><span class="p">50%</span></button>
@@ -348,6 +349,9 @@
     up.querySelector('.p').textContent = p + '%';
     dn.querySelector('.p').textContent = (100 - p) + '%';
     el.querySelector('.nrange').textContent = `${hm(r.epoch * R())} - ${hm((r.epoch + 1) * R())}`;
+    el.querySelector('.nstart').textContent = hm(r.epoch * R());
+    const [cm, cs] = mmss(r.epoch * R() - now());
+    el.querySelector('.ncd').textContent = `closes in ${cm}:${cs}`;
     el.querySelector('.rd-pool').innerHTML = `<span>UP pool <b>${lunc(r.up)}</b></span><span>DOWN pool <b>${lunc(r.down)}</b></span>`;
     // Одна сторона пустая - казна закроет её за минуту до старта.
     const empty = u && !d ? 'DOWN' : d && !u ? 'UP' : !u && !d ? 'the other side' : '';
