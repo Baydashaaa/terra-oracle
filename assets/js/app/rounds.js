@@ -69,6 +69,9 @@
   let amount = 0;             // LUNC
   const rounds = {};          // asset -> последние раунды, новые первыми
   let positions = {};         // asset -> [PositionResponse]
+  // Ставка подписана, но контракт её ещё не показывает: держим её на экране
+  // со статусом "Confirming", чтобы она не пропадала после тоста.
+  let pending = [];           // { asset, epoch, up, uluna, at }
   let busy = false;
   let state = 'loading';      // loading | ok | down
 
@@ -201,6 +204,7 @@
               <div><h3></h3><span class="range"></span></div>
               <span class="rd-live"><i></i>Live</span>
             </header>
+            <div class="rd-call" hidden></div>
             <div class="rd-figs">
               <div><small>Price to beat</small><b class="lock">-</b><span class="sub lsub"></span></div>
               <div><small>Current price</small><b class="cur">-</b><span class="dl"></span></div>
@@ -222,9 +226,14 @@
             </div>
             <div class="rd-x"><span></span><span></span><span></span></div>
             <div class="rd-strip" aria-label="Recent rounds"></div>
+            <div class="rd-hist" hidden>
+              <div class="rd-hist-h"><b>Your rounds</b><span class="rd-hist-sum"></span></div>
+              <div class="rd-hist-t" role="table"></div>
+            </div>
           </div>
           <div class="rd-box rd-right">
             <div class="rd-next"><b>Next round</b><span class="nrange"></span></div>
+            <div class="rd-in" hidden></div>
             <p class="rd-note">Predictions for the next round close when it starts. The price at that moment is its target.</p>
             <div class="rd-sides">
               <button type="button" class="up" data-s="1"><b>UP</b><span class="p">50%</span></button>
@@ -236,7 +245,6 @@
             <button type="button" class="rd-go" disabled>Pick UP or DOWN</button>
             <div class="rd-pool"></div>
             <p class="rd-house"></p>
-            <div class="rd-mine"></div>
           </div>
         </div>
       </section>`;
@@ -272,7 +280,7 @@
       paintBet();
     });
     el.querySelector('.rd-go').addEventListener('click', submit);
-    el.querySelector('.rd-mine').addEventListener('click', (e) => { if (e.target.closest('.rd-collect')) collect(); });
+    el.addEventListener('click', (e) => { if (e.target.closest('.rd-collect')) collect(); });
     paintHead();
   }
 
@@ -355,27 +363,99 @@
       const cls = o === 'up' ? 'up' : o === 'down' ? 'dn' : o === 'void' ? 'void' : 'wait';
       const mark = o === 'up' ? '\u25b2' : o === 'down' ? '\u25bc' : o === 'void' ? '\u21ba' : '\u2026';
       const tip = r.lock_price && r.close_price ? `${fmtUsd(Number(r.lock_price))} to ${fmtUsd(Number(r.close_price))}` : o === 'void' ? 'refunded' : 'settling';
-      return `<span class="p ${cls}" title="${tip}"><i>${mark}</i>${hm(r.epoch * R())}</span>`;
+      const me = wallet() && (positions[asset] || []).some((p) => p.epoch === r.epoch) ? ' me' : '';
+      return `<span class="p ${cls}${me}" title="${tip}${me ? ' - you were in' : ''}"><i>${mark}</i>${hm(r.epoch * R())}</span>`;
     };
     host.innerHTML = list.map(pill).join('')
       + `<span class="p now"><i></i>Live ${hm(e0 * R())}</span>`
       + `<span class="p next">${hm((e0 + 1) * R())}</span>`;
   }
 
+  /** Позиции кошелька плюс неподтверждённые, по раундам, новые первыми. */
+  function myRounds() {
+    const map = new Map();
+    Object.entries(positions).forEach(([a, list]) => (list || []).forEach((p) => {
+      map.set(a + ':' + p.epoch, { ...p, asset: a, up: BigInt(p.up), down: BigInt(p.down) });
+    }));
+    pending = pending.filter((x) => now() - x.at < 120);
+    pending.forEach((x) => {
+      const k = x.asset + ':' + x.epoch;
+      const cur = map.get(k);
+      const have = cur ? (x.up ? cur.up : cur.down) : 0n;
+      if (have >= x.uluna) return;            // контракт уже показывает
+      const row = cur || { asset: x.asset, epoch: x.epoch, up: 0n, down: 0n, claimed: false, outcome: 'accepting', payout: '0' };
+      row.pending = true;
+      if (x.up) row.up += x.uluna; else row.down += x.uluna;
+      map.set(k, row);
+    });
+    return [...map.values()].sort((a, b) => b.epoch - a.epoch || a.asset.localeCompare(b.asset));
+  }
+
+  const callText = (p) => [p.up ? `UP ${lunc(p.up)}` : '', p.down ? `DOWN ${lunc(p.down)}` : ''].filter(Boolean).join(' + ');
+  const callCls = (p) => (p.up && p.down ? 'both' : p.up ? 'up' : 'dn');
+
+  /** Статус позиции словами. Для идущего раунда - по живой цене. */
+  function status(p) {
+    if (p.pending) return { t: 'Confirming…', c: 'wait' };
+    const o = p.outcome;
+    if (o === 'accepting') {
+      const [m, s2] = mmss(p.epoch * R() - now());
+      return { t: `Starts in ${m}:${s2}`, c: 'next' };
+    }
+    if (o === 'live' || o === 'closing') {
+      const lock = lockOf(p.asset), price = priceOf(p.asset);
+      if (!lock || !price || (p.up && p.down)) return { t: o === 'live' ? 'Live' : 'Settling', c: 'live' };
+      const win = p.up ? price > lock : price < lock;
+      return { t: win ? 'Winning now' : 'Losing now', c: win ? 'win' : 'lose' };
+    }
+    if (o === 'void') return { t: p.claimed ? 'Refunded' : 'Refund', c: 'void' };
+    const won = (o === 'up' && p.up > 0n) || (o === 'down' && p.down > 0n);
+    if (!won) return { t: 'Lost', c: 'lost' };
+    return p.claimed ? { t: 'Collected', c: 'done' } : { t: `Won +${lunc(p.payout)}`, c: 'won' };
+  }
+
   function paintMine() {
-    const host = document.querySelector('#rd .rd-mine');
-    if (!host) return;
-    if (!wallet()) { host.innerHTML = ''; return; }
-    const all = [];
-    Object.entries(positions).forEach(([a, list]) => (list || []).forEach((p) => all.push({ ...p, asset: a })));
-    const due = all.filter((p) => !p.claimed && Number(p.payout) > 0);
-    const open = all.filter((p) => ['accepting', 'live', 'closing'].includes(p.outcome));
-    const total = due.reduce((s, p) => s + Number(p.payout), 0);
-    const row = (p) => `<div class="r"><span>${A(p.asset).sym} ${hm(p.epoch * R())}</span>
-      <b class="${Number(p.up) ? 'up' : 'dn'}">${Number(p.up) ? 'UP ' + lunc(p.up) : 'DOWN ' + lunc(p.down)}</b>
-      <em>${p.outcome === 'accepting' ? 'starts soon' : p.outcome === 'live' ? 'live' : 'settling'}</em></div>`;
-    host.innerHTML = (open.length ? `<div class="h">Your rounds</div>${open.slice(0, 4).map(row).join('')}` : '')
-      + (total ? `<button type="button" class="rd-collect">Collect ${lunc(total)} LUNC</button>` : '');
+    const el = document.getElementById('rd');
+    if (!el) return;
+    const mine = wallet() ? myRounds() : [];
+    const hist = el.querySelector('.rd-hist');
+    hist.hidden = !mine.length;
+
+    // Таблица по всем активам.
+    const total = mine.filter((p) => !p.claimed && Number(p.payout) > 0).reduce((s2, p) => s2 + Number(p.payout), 0);
+    el.querySelector('.rd-hist-sum').innerHTML = total
+      ? `<button type="button" class="rd-collect">Collect ${lunc(total)} LUNC</button>` : '';
+    el.querySelector('.rd-hist-t').innerHTML = mine.slice(0, 8).map((p) => {
+      const st = status(p);
+      return `<div class="tr" role="row">
+        <span class="a">${coin(p.asset, 22)}<b>${A(p.asset).sym}</b><em>${hm(p.epoch * R())}</em></span>
+        <span class="k ${callCls(p)}">${callText(p)}</span>
+        <span class="s ${st.c}">${st.t}</span></div>`;
+    }).join('');
+
+    // Плашка над графиком: твоя ставка в идущем раунде выбранного актива.
+    const call = el.querySelector('.rd-call');
+    const liveMine = mine.find((p) => p.asset === asset && p.epoch === epochNow());
+    call.hidden = !liveMine;
+    if (liveMine) {
+      const st = status(liveMine);
+      call.className = 'rd-call ' + st.c;
+      call.innerHTML = `<span>Your call</span><b class="${callCls(liveMine)}">${callText(liveMine)}</b><em>${st.t}</em>`;
+    }
+
+    // Карточка в панели прогноза: ты уже в следующем раунде.
+    const inEl = el.querySelector('.rd-in');
+    const nextMine = mine.find((p) => p.asset === asset && p.epoch === epochNow() + 1);
+    inEl.hidden = !nextMine;
+    if (nextMine) {
+      const r = nextRound(asset);
+      const st = status(nextMine);
+      const est = nextMine.up && !nextMine.down ? estimate({ ...r, up: String(BigInt(r.up) - nextMine.up) }, true, nextMine.up)
+        : nextMine.down && !nextMine.up ? estimate({ ...r, down: String(BigInt(r.down) - nextMine.down) }, false, nextMine.down) : null;
+      inEl.innerHTML = `<div class="l1"><i></i>You're in<em>${st.t}</em></div>
+        <div class="l2"><b class="${callCls(nextMine)}">${callText(nextMine)}</b>${est ? `<span>win ≈ ${lunc(est)}</span>` : ''}</div>`;
+    }
+    paintStrip();
   }
 
   // ── график ───────────────────────────────────────────────────────────────
@@ -536,7 +616,14 @@
         [{ denom: 'uluna', amount: String(BigInt(Math.round(amount)) * 1000000n) }],
         `oracle-rounds: ${asset} ${side ? 'up' : 'down'} ${epoch}`, PROPHECY_CHAIN, 400000);
       if (window.OracleSound) window.OracleSound.play('coin');
-      const done = (r) => { busy = false; refresh(); refreshMine(); if (r && r.status === 'failed') paintBet(); };
+      const mark = { asset, epoch, up: side, uluna: BigInt(Math.round(amount)) * 1000000n, at: now() };
+      pending.push(mark);
+      paintMine();
+      const done = (r) => {
+        busy = false;
+        if (r && r.status === 'failed') { pending = pending.filter((x) => x !== mark); paintBet(); }
+        refresh(); refreshMine();
+      };
       if (typeof mkTrack === 'function') await mkTrack(hash, 'Prediction', done);
       else done();
     } catch (e) {
@@ -614,7 +701,7 @@
       tick++;
       if (tick % 5 === 0) refresh();
       if (onMarkets && tick % 15 === 0) refreshMine();
-      if (onMarkets) paintBet();
+      if (onMarkets) { paintBet(); paintMine(); }
     }, 1000);
     const loop = () => {
       if (visible('rd')) frame();

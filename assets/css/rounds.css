@@ -172,3 +172,57 @@
   background-size:200% 100%;animation:rdSk 1.3s ease-in-out infinite}
 @keyframes rdSk{from{background-position:100% 0}to{background-position:-100% 0}}
 @media (prefers-reduced-motion:reduce){.rdc .sk,#page-markets .rd .sk,.rdc-sp.sk{animation:none}}
+
+/* ---- твоя ставка ---- */
+/* в панели прогноза: ты уже в следующем раунде */
+#page-markets .rd-in{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(110,86,248,.18),rgba(110,86,248,.06));border:1px solid rgba(110,86,248,.5)}
+#page-markets .rd-in[hidden]{display:none}
+#page-markets .rd-in .l1{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#C8B8FF}
+#page-markets .rd-in .l1 i{width:8px;height:8px;border-radius:50%;background:#3BE38A;box-shadow:0 0 8px #3BE38A}
+#page-markets .rd-in .l1 em{margin-left:auto;font-style:normal;font-weight:600;color:var(--rd-mut);font-variant-numeric:tabular-nums}
+#page-markets .rd-in .l2{display:flex;align-items:baseline;gap:10px}
+#page-markets .rd-in .l2 b{font-size:18px}
+#page-markets .rd-in .l2 span{margin-left:auto;font-size:13px;font-weight:600;color:#3BE38A}
+#page-markets .rd :is(.rd-in,.rd-call,.rd-hist) .up{color:var(--rd-up)}
+#page-markets .rd :is(.rd-in,.rd-call,.rd-hist) .dn{color:var(--rd-dn)}
+#page-markets .rd :is(.rd-in,.rd-call,.rd-hist) .both{color:var(--rd-txt)}
+
+/* над графиком: твоя ставка в идущем раунде */
+#page-markets .rd-call{display:flex;align-items:center;gap:12px;margin:-4px 0 16px;padding:10px 14px;border-radius:12px;font-size:13px;
+  background:rgba(255,255,255,.04);border:1px solid var(--rd-line)}
+#page-markets .rd-call[hidden]{display:none}
+#page-markets .rd-call span{color:var(--rd-mut)}
+#page-markets .rd-call b{font-size:15px}
+#page-markets .rd-call em{margin-left:auto;font-style:normal;font-weight:700}
+#page-markets .rd-call.win{border-color:rgba(59,227,138,.45);background:rgba(59,227,138,.07)}
+#page-markets .rd-call.win em{color:#3BE38A}
+#page-markets .rd-call.lose{border-color:rgba(240,82,92,.45);background:rgba(240,82,92,.07)}
+#page-markets .rd-call.lose em{color:var(--rd-dn)}
+
+/* полоса раундов: твои отмечены точкой */
+#page-markets .rd-strip .p.me{position:relative}
+#page-markets .rd-strip .p.me::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;
+  background:#6E56F8;box-shadow:0 0 0 2px var(--rd-bg)}
+
+/* таблица "Your rounds" */
+#page-markets .rd-hist{margin-top:18px;padding-top:16px;border-top:1px solid var(--rd-line)}
+#page-markets .rd-hist[hidden]{display:none}
+#page-markets .rd-hist-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+#page-markets .rd-hist-h b{font-size:15px;color:var(--rd-txt)}
+#page-markets .rd-hist-h .rd-collect{height:36px;padding:0 16px}
+#page-markets .rd-hist-t{display:flex;flex-direction:column;gap:6px}
+#page-markets .rd-hist-t .tr{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;
+  padding:9px 12px;border-radius:10px;background:var(--rd-bg2);border:1px solid var(--rd-line);font-size:13px}
+#page-markets .rd-hist-t .a{display:flex;align-items:center;gap:8px;min-width:0}
+#page-markets .rd-hist-t .a b{color:var(--rd-txt)}
+#page-markets .rd-hist-t .a em{font-style:normal;color:var(--rd-mut);font-variant-numeric:tabular-nums}
+#page-markets .rd-hist-t .a .coin{filter:none}
+#page-markets .rd-hist-t .k{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#page-markets .rd-hist-t .s{justify-self:end;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+#page-markets .rd-hist-t .s.next{color:#C8B8FF;background:rgba(110,86,248,.14)}
+#page-markets .rd-hist-t .s.wait{color:var(--rd-gold);background:rgba(242,212,92,.12)}
+#page-markets .rd-hist-t .s.live{color:var(--rd-txt);background:rgba(255,255,255,.07)}
+#page-markets .rd-hist-t .s.win,#page-markets .rd-hist-t .s.won{color:#3BE38A;background:rgba(59,227,138,.12)}
+#page-markets .rd-hist-t .s.lose,#page-markets .rd-hist-t .s.lost{color:var(--rd-dn);background:rgba(240,82,92,.12)}
+#page-markets .rd-hist-t .s.void,#page-markets .rd-hist-t .s.done{color:var(--rd-mut);background:rgba(255,255,255,.05)}
