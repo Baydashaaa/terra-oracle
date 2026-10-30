@@ -34,6 +34,14 @@ to enforced after three days of observation.
 
 29 October 2026: added `cdn.pandascore.co` and `cdn-api.pandascore.co` (esports team logos) to `img-src`.
 
+30 October 2026: added to `connect-src` for the five-minute rounds and the live
+price charts: `oracle-rounds-keeper` and `oracle-rounds-keeper-main` (round
+state, read-only contract proxy, price history), `api.binance.com` and
+`wss://stream.binance.com:9443` (price history and live price), and
+`wss://ws-feed.exchange.coinbase.com` and `wss://api.gateio.ws` (live price
+where Binance is blocked), plus `lcd.luncblaze.com` (rebel-2 testnet node, the
+testnet mode of Markets).
+
 ---
 
 ## terraoracle.io
@@ -55,10 +63,17 @@ connect-src 'self'
             https://oracle-draw.vladislav-baydan.workers.dev
             https://oracle-eye.vladislav-baydan.workers.dev
             https://oracle-events.vladislav-baydan.workers.dev
+            https://oracle-rounds-keeper.vladislav-baydan.workers.dev
+            https://oracle-rounds-keeper-main.vladislav-baydan.workers.dev
             https://s.terraoracle.io
             https://draw.terraoracle.io
             https://baydashaaa.github.io
             https://api.coingecko.com
+            https://api.binance.com
+            wss://stream.binance.com:9443
+            wss://ws-feed.exchange.coinbase.com
+            wss://api.gateio.ws
+            https://lcd.luncblaze.com
             https://fcd.terra-classic.hexxagon.io
             https://lcd.terra-classic.hexxagon.io
             https://terra-classic-fcd.publicnode.com
