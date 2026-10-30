@@ -132,13 +132,73 @@
     cgTimer = setInterval(tick, 30000);
   }
 
+  // ── запасные живые потоки ────────────────────────────────────────────────
+  // Binance заблокирован у части провайдеров и стран. CoinGecko раз в 30 с
+  // давал график ступеньками, поэтому сначала пробуем другие сокеты, тоже
+  // посекундные: Coinbase для BTC, ETH и золота, Gate для LUNC.
+  const ALT = {
+    BTC: ['cb', 'BTC-USD'], ETH: ['cb', 'ETH-USD'], PAXG: ['cb', 'PAXG-USD'],
+    SOL: ['cb', 'SOL-USD'], XRP: ['cb', 'XRP-USD'], ADA: ['cb', 'ADA-USD'], DOGE: ['cb', 'DOGE-USD'], ATOM: ['cb', 'ATOM-USD'],
+    LUNC: ['gate', 'LUNC_USDT'], USTC: ['gate', 'USTC_USDT'], BNB: ['gate', 'BNB_USDT'], TRX: ['gate', 'TRX_USDT'], TON: ['gate', 'TON_USDT'],
+  };
+  const alt = { cb: null, gate: null, cbKey: '', gateKey: '' };
+  const altOn = new Set();
+
+  function altSync() {
+    const want = (venue) => [...altOn].filter((s) => ALT[s] && ALT[s][0] === venue && feeds[s] && feeds[s].subs.size);
+    const cbSyms = want('cb'), gateSyms = want('gate');
+    const cbKey = cbSyms.sort().join(','), gateKey = gateSyms.sort().join(',');
+    if (cbKey !== alt.cbKey) {
+      if (alt.cb) { alt.cb.onclose = null; alt.cb.close(); alt.cb = null; }
+      alt.cbKey = cbKey;
+      if (cbSyms.length) {
+        const back = {};
+        cbSyms.forEach((s) => { back[ALT[s][1]] = s; });
+        try {
+          const w = new WebSocket('wss://ws-feed.exchange.coinbase.com');
+          w.onopen = () => w.send(JSON.stringify({ type: 'subscribe', product_ids: Object.keys(back), channels: ['ticker'] }));
+          w.onmessage = (ev) => {
+            try { const d = JSON.parse(ev.data); if (d.type === 'ticker' && back[d.product_id]) push(back[d.product_id], Number(d.price)); } catch (e) { /* кадр */ }
+          };
+          w.onclose = () => { alt.cb = null; alt.cbKey = ''; setTimeout(altSync, 5000); };
+          alt.cb = w;
+        } catch (e) { /* остаётся CoinGecko */ }
+      }
+    }
+    if (gateKey !== alt.gateKey) {
+      if (alt.gate) { alt.gate.onclose = null; alt.gate.close(); alt.gate = null; }
+      alt.gateKey = gateKey;
+      if (gateSyms.length) {
+        const back = {};
+        gateSyms.forEach((s) => { back[ALT[s][1]] = s; });
+        try {
+          const w = new WebSocket('wss://api.gateio.ws/ws/v4/');
+          w.onopen = () => w.send(JSON.stringify({ time: Math.floor(Date.now() / 1000), channel: 'spot.tickers', event: 'subscribe', payload: Object.keys(back) }));
+          w.onmessage = (ev) => {
+            try {
+              const d = JSON.parse(ev.data);
+              const r = d.result;
+              if (d.channel === 'spot.tickers' && d.event === 'update' && r && back[r.currency_pair]) push(back[r.currency_pair], Number(r.last));
+            } catch (e) { /* кадр */ }
+          };
+          w.onclose = () => { alt.gate = null; alt.gateKey = ''; setTimeout(altSync, 5000); };
+          alt.gate = w;
+        } catch (e) { /* остаётся CoinGecko */ }
+      }
+    }
+  }
+
   function subscribe(sym, id) {
     if (!BINANCE[sym]) return;
     feed(sym).subs.add(id);
     seed(sym);
     syncSocket();
-    // Binance молчит (блок провайдера, регион) - не ждём три обрыва сокета.
-    setTimeout(() => { if (feed(sym).last == null) startCgPoll(); }, 6000);
+    // Binance молчит (блок провайдера, регион): через 5 с - другой живой
+    // поток, а если и его нет - CoinGecko раз в 30 с.
+    setTimeout(() => {
+      if (feed(sym).last == null && ALT[sym]) { altOn.add(sym); altSync(); }
+    }, 5000);
+    setTimeout(() => { if (feed(sym).last == null) startCgPoll(); }, 12000);
   }
   function unsubscribeMissing() {
     Object.keys(feeds).forEach((s) => {
