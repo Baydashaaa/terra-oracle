@@ -18,11 +18,41 @@
   if (!NET.contract) return;
 
   const ASSETS = [
-    { id: 'BTC', sym: 'BTC', name: 'Bitcoin', mark: '\u20bf', color: '#F7931A' },
-    { id: 'ETH', sym: 'ETH', name: 'Ethereum', mark: '\u039e', color: '#7B8CFF' },
-    { id: 'LUNC', sym: 'LUNC', name: 'Terra Classic', mark: 'L', color: '#F2D45C' },
-    { id: 'PAXG', sym: 'Gold', name: 'Gold', mark: 'Au', color: '#E8C26A' },
+    { id: 'BTC', sym: 'BTC', name: 'Bitcoin', color: '#F7931A' },
+    { id: 'ETH', sym: 'ETH', name: 'Ethereum', color: '#8C8CFF' },
+    { id: 'LUNC', sym: 'LUNC', name: 'Terra Classic', color: '#F2D45C' },
+    { id: 'PAXG', sym: 'Gold', name: 'Gold', color: '#E9C46A' },
   ];
+
+  // Монеты: LUNC - картинка сайта, остальные - векторные, в одной манере:
+  // объёмный круг с бликом и ободком.
+  let coinN = 0;
+  function coin(id, size) {
+    if (id === 'LUNC') return `<img class="coin" src="assets/img/lunc.webp" alt="" width="${size}" height="${size}">`;
+    const n = ++coinN;
+    const base = {
+      BTC: ['#FFC266', '#F7931A', '#C46A00'],
+      ETH: ['#A9B0FF', '#6C72E8', '#3B3FA8'],
+      PAXG: ['#5A4618', '#33280E', '#171106'],
+    }[id];
+    const glyph = id === 'BTC'
+      ? `<text x="32" y="44" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="34" fill="#fff" transform="rotate(14 32 32)">\u20bf</text>`
+      : id === 'ETH'
+        ? `<g fill="#fff"><path d="M32 10 18.5 32.4 32 40.4l13.5-8z" opacity=".95"/><path d="M32 10v30.4l13.5-8z" opacity=".7"/><path d="M32 43 18.5 35 32 54l13.5-19z" opacity=".95"/><path d="M32 43v11l13.5-19z" opacity=".7"/></g>`
+        : `<defs><linearGradient id="cg${n}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE9A3"/><stop offset=".55" stop-color="#E9B949"/><stop offset="1" stop-color="#A9761A"/></linearGradient></defs>
+           <path d="M15 42h34l-5-14H20z" fill="url(#cg${n}b)"/><path d="M20 28h24l-2.6-7H22.6z" fill="url(#cg${n}b)" opacity=".9"/>
+           <path d="M15 42h34l-1.2 3H16.2z" fill="#8A5E12"/><path d="M22 30h20" stroke="#FFF4CC" stroke-width="1.4" opacity=".7"/>`;
+    return `<svg class="coin" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><radialGradient id="cg${n}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${base[0]}"/><stop offset=".6" stop-color="${base[1]}"/><stop offset="1" stop-color="${base[2]}"/></radialGradient></defs>
+      <circle cx="32" cy="32" r="30" fill="url(#cg${n})"/>
+      <circle cx="32" cy="32" r="28.5" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.5"/>
+      <ellipse cx="24" cy="16" rx="13" ry="6" fill="#fff" opacity=".18" transform="rotate(-20 24 16)"/>
+      ${glyph}</svg>`;
+  }
+
+  // Таймер по цифре в ячейке фиксированной ширины: у шрифта сайта цифры
+  // разной ширины, и время прыгало при смене секунд.
+  const digits = (str) => [...str].map((c) => (c === ':' ? '<i>:</i>' : `<span>${c}</span>`)).join('');
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let cfg = null;
@@ -42,8 +72,20 @@
   const toast = (m, k) => (typeof mkToast === 'function' ? mkToast(m, k) : alert(m));
   const A = (id) => ASSETS.find((a) => a.id === id);
 
+  // Тестовый LCD не отдаёт CORS: браузер его не читает. Тогда идём через
+  // keeper-Worker (/q - только чтение и только этот контракт). Что сработало
+  // первым, то и запоминаем.
+  const PROXY = 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev/q?m=';
+  let viaProxy = false;
   async function q(msg) {
     const b64 = btoa(JSON.stringify(msg));
+    if (viaProxy) {
+      try {
+        const r = await fetch(PROXY + encodeURIComponent(b64), { signal: AbortSignal.timeout(10000) });
+        const j = await r.json();
+        if (r.ok) return j.data;
+      } catch (e) { /* ниже - прямой узел */ }
+    }
     let last;
     for (const base of PROPHECY_LCD) {
       try {
@@ -51,6 +93,14 @@
           { signal: AbortSignal.timeout(10000) });
         if (r.ok) return (await r.json()).data;
         last = new Error(`${base} ${r.status}`);
+      } catch (e) { last = e; }
+    }
+    if (!viaProxy) {
+      try {
+        const r = await fetch(PROXY + encodeURIComponent(b64), { signal: AbortSignal.timeout(10000) });
+        const j = await r.json();
+        if (r.ok) { viaProxy = true; return j.data; }
+        last = new Error(j.error || 'proxy ' + r.status);
       } catch (e) { last = e; }
     }
     console.warn('[rounds] query failed', msg, last);
@@ -77,9 +127,14 @@
 
   // ── карточка актива (раздел и главная) ───────────────────────────────────
   function cardHtml(a, sel) {
+    // Свой id градиента у каждой карточки: если ссылаться на градиент из
+    // скрытой страницы, Chrome его не рисует.
+    const gid = 'rdcf' + (++coinN);
     return `<button type="button" class="rdc" data-a="${a.id}" aria-pressed="${!!sel}" style="--ac:${a.color}">
-      <span class="rdc-h"><i class="ic">${a.mark}</i><b>${a.sym} Up or Down</b><em>5 min</em></span>
-      <svg class="rdc-sp" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path/></svg>
+      <span class="rdc-h">${coin(a.id, 34)}<span class="tt"><b>${a.sym} Up or Down</b><small>${a.name}</small></span><em>5 min</em></span>
+      <svg class="rdc-sp" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+        <path class="a" fill="url(#${gid})"/><path class="l"/></svg>
       <span class="rdc-f">
         <span><small>Target</small><b class="t">-</b></span>
         <span><small>Current</small><b class="c">-</b></span>
@@ -92,21 +147,24 @@
     root.querySelectorAll('.rdc').forEach((card) => {
       const a = card.dataset.a;
       const lock = lockOf(a), p = priceOf(a);
-      card.querySelector('.t').textContent = lock ? fmtUsd(lock) : state === 'down' ? 'offline' : '...';
+      card.querySelector('.t').textContent = lock ? fmtUsd(lock) : '-';
       const c = card.querySelector('.c');
       c.textContent = fmtUsd(p);
       card.classList.toggle('is-up', !!(lock && p && p > lock));
       card.classList.toggle('is-dn', !!(lock && p && p < lock));
       const [m, s] = mmss((epochNow() + 1) * R() - now());
-      card.querySelector('.l').textContent = `${m}:${s}`;
+      const lEl = card.querySelector('.l');
+      if (lEl.dataset.v !== m + s) { lEl.dataset.v = m + s; lEl.innerHTML = digits(`${m}:${s}`); }
       const f = live() && live().feeds[a];
       if (f && f.pts.length > 1) {
         const pts = f.pts.slice(-120);
         let lo = Infinity, hi = -Infinity;
         pts.forEach((q2) => { lo = Math.min(lo, q2[1]); hi = Math.max(hi, q2[1]); });
         const rng = hi - lo || 1;
-        card.querySelector('.rdc-sp path').setAttribute('d', pts.map((q2, i) =>
-          (i ? 'L' : 'M') + (i / (pts.length - 1) * 100).toFixed(1) + ',' + (27 - ((q2[1] - lo) / rng) * 24).toFixed(1)).join(' '));
+        const d = pts.map((q2, i) =>
+          (i ? 'L' : 'M') + (i / (pts.length - 1) * 100).toFixed(1) + ',' + (27 - ((q2[1] - lo) / rng) * 24).toFixed(1)).join(' ');
+        card.querySelector('.rdc-sp .l').setAttribute('d', d);
+        card.querySelector('.rdc-sp .a').setAttribute('d', d + ' L100,30 L0,30 Z');
       }
     });
   }
@@ -119,18 +177,20 @@
         <div class="rd-main">
           <div class="rd-box rd-left">
             <header class="rd-head">
-              <i class="ic"></i>
+              <span class="ic"></span>
               <div><h3></h3><span class="range"></span></div>
               <span class="rd-live"><i></i>Live</span>
             </header>
             <div class="rd-figs">
-              <div><small>Price to beat</small><b class="lock">-</b></div>
+              <div><small>Price to beat</small><b class="lock">-</b><span class="sub lsub"></span></div>
               <div><small>Current price</small><b class="cur">-</b><span class="dl"></span></div>
-              <div class="clock"><small><span>Min</span><span>Sec</span></small><b><span class="mm">--</span>:<span class="ss">--</span></b></div>
+              <div class="clock"><small><span>Min</span><span>Sec</span></small><b class="cd"></b></div>
             </div>
             <div class="rd-plot">
               <div class="rd-chart">
-                <svg viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true"><line class="tline" x1="0" x2="600"/><path class="line"/></svg>
+                <svg viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
+                  <defs><linearGradient id="rdArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+                  <path class="area" fill="url(#rdArea)"/><line class="tline" x1="0" x2="600"/><path class="line"/></svg>
                 <span class="head"></span>
                 <p class="rd-empty">Loading price…</p>
               </div>
@@ -203,9 +263,7 @@
     const el = document.getElementById('rd');
     if (!el) return;
     const a = A(asset);
-    const ic = el.querySelector('.rd-head .ic');
-    ic.textContent = a.mark;
-    ic.style.setProperty('--ac', a.color);
+    el.querySelector('.rd-head .ic').innerHTML = coin(a.id, 44);
     el.querySelector('.rd-head h3').textContent = `${a.name} Up or Down · 5 min`;
     const e0 = epochNow();
     el.querySelector('.range').textContent = `${hm(e0 * R())} - ${hm((e0 + 1) * R())}`;
@@ -213,8 +271,8 @@
 
   function paintChips() {
     const host = document.querySelector('#rd .rd-chips');
-    if (!host || !cfg) return;
-    const min = Number(cfg.min_bet) / 1e6, max = Number(cfg.max_bet) / 1e6;
+    if (!host) return;
+    const min = cfg ? Number(cfg.min_bet) / 1e6 : 1000, max = cfg ? Number(cfg.max_bet) / 1e6 : 1e6;
     // mainnet: минимум 1,000 LUNC - пресеты как у рынков. На тестнете минимум
     // меньше, и пресеты масштабируются от него.
     const base = min >= 1000 ? [10000, 50000, 200000, 500000] : [min, min * 5, min * 20, min * 50];
@@ -229,7 +287,8 @@
 
   function paintBet() {
     const el = document.getElementById('rd');
-    if (!el || !cfg) return;
+    if (!el) return;
+    if (!cfg) { paintChips(); return; }
     const r = nextRound(asset);
     const u = Number(r.up), d = Number(r.down);
     const p = u + d ? Math.round((u / (u + d)) * 100) : 50;
@@ -297,13 +356,15 @@
     paintCards(el);
     const e0 = epochNow(), t0 = e0 * R(), t1 = t0 + R();
     const [m, s] = mmss(t1 - now());
-    el.querySelector('.mm').textContent = m;
-    el.querySelector('.ss').textContent = s;
+    const cd = el.querySelector('.cd');
+    if (cd.dataset.v !== m + s) { cd.dataset.v = m + s; cd.innerHTML = digits(`${m}:${s}`); }
     el.querySelector('.clock').classList.toggle('hot', t1 - now() < 30);
     const lock = lockOf(asset);
     const lr = liveRound(asset);
-    el.querySelector('.lock').textContent = lock ? fmtUsd(lock)
-      : state === 'down' ? 'node offline' : lr && lr.outcome === 'void' ? 'no start price' : 'starting…';
+    el.querySelector('.lock').textContent = lock ? fmtUsd(lock) : '-';
+    el.querySelector('.lsub').textContent = lock ? ''
+      : state === 'down' ? 'Contract not reachable, retrying' : lr && lr.outcome === 'void' ? 'No start price - this round refunds'
+        : state === 'loading' ? 'Loading' : 'Set at the round start';
     const p = priceOf(asset);
     el.querySelector('.cur').textContent = fmtUsd(p);
     const dl = el.querySelector('.dl');
@@ -334,6 +395,7 @@
     const d = pts.map((q2, i) => (i ? 'L' : 'M') + X(q2[0]).toFixed(1) + ',' + Y(q2[1]).toFixed(1)).join(' ')
       + ' L' + X(now()).toFixed(1) + ',' + Y(p).toFixed(1);
     el.querySelector('.line').setAttribute('d', d);
+    el.querySelector('.area').setAttribute('d', d + ` L${X(now()).toFixed(1)},180 L${X(pts[0][0]).toFixed(1)},180 Z`);
     const head = el.querySelector('.head');
     head.style.left = (X(now()) / 6) + '%';
     head.style.top = (Y(p) / 1.8) + '%';
@@ -445,6 +507,10 @@
     const go = (a) => {
       select(a);
       if (typeof mkOpenFromHome === 'function') mkOpenFromHome(0);
+      // В разделе могла остаться открытой форма создания рынка или экран
+      // одного рынка - тогда раунды не видны.
+      if (typeof window.closeMarketCreate === 'function') window.closeMarketCreate();
+      if (typeof openMarketId !== 'undefined' && openMarketId !== null && typeof renderMarkets === 'function') renderMarkets(false);
       setTimeout(() => { const el = document.getElementById('rd'); if (el) el.scrollIntoView({ block: 'start', behavior: REDUCED ? 'auto' : 'smooth' }); }, 300);
     };
     sec.addEventListener('click', (e) => {
