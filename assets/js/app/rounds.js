@@ -247,7 +247,7 @@
             <div class="rd-next"><b>Predict the next round</b><span class="nrange"></span></div>
             <div class="rd-open"><span>Open for predictions</span><b class="ncd"></b></div>
             <div class="rd-in" hidden></div>
-            <p class="rd-note">The round on the chart is already running, so it takes no new predictions. Yours goes into the next one: its price at <b class="nstart"></b> becomes the target, and you win if it ends above (UP) or below (DOWN).</p>
+            <p class="rd-note">The price at <b class="nstart"></b> becomes the target. <button type="button" class="rd-how">How rounds work</button></p>
             <div class="rd-sides">
               <button type="button" class="up" data-s="1"><b>UP</b><span class="p">50%</span></button>
               <button type="button" class="dn" data-s="0"><b>DOWN</b><span class="p">50%</span></button>
@@ -260,6 +260,19 @@
             <p class="rd-house"></p>
           </div>
         </div>
+        <dialog class="rd-dlg" aria-labelledby="rd-dlg-h">
+          <h3 id="rd-dlg-h">How rounds work</h3>
+          <ol>
+            <li><b>Pick the next round.</b> The round on the chart is already running. Predictions go into the next one and close the moment it starts.</li>
+            <li><b>The start price is the target.</b> UP wins if the price five minutes later is higher, DOWN wins if it is lower.</li>
+            <li><b>Winners share the losing side.</b> You get your stake back plus your share of the other side, minus a ${(C().fee_bps / 100).toFixed(0)}% fee taken only from the losing side.</li>
+            <li><b>Always someone on the other side.</b> If everyone is on one side, a minute before the start the house takes the other side with the same amount, up to ${NET.houseMax.toLocaleString('en-US')} LUNC.</li>
+            <li><b>Refunds, never a guess.</b> If the price does not move, a side stays empty, or the price is not posted in time, everyone gets their stake back with no fee.</li>
+            <li><b>Where the price comes from.</b> The median of several exchanges, posted on chain at every boundary together with each exchange's price, so anyone can check it.</li>
+            <li><b>Collect.</b> Winnings wait in the contract until you press Collect. Terra Classic's network tax takes about 0.5% of each transfer.</li>
+          </ol>
+          <form method="dialog"><button class="rd-go">Got it</button></form>
+        </dialog>
       </section>`;
   }
 
@@ -299,7 +312,10 @@
       bookTab = b.dataset.b;
       book = null; paintBook(); loadBook();
     });
-    el.addEventListener('click', (e) => { if (e.target.closest('.rd-collect')) collect(); });
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.rd-collect')) collect();
+      if (e.target.closest('.rd-how')) { const d = el.querySelector('.rd-dlg'); if (d && d.showModal) d.showModal(); }
+    });
     paintHead();
   }
 
@@ -507,11 +523,19 @@
     // Неподтверждённая своя ставка - сразу в стакан.
     const w = wallet();
     const rows = { up: b.up.map((x) => ({ ...x })), down: b.down.map((x) => ({ ...x })) };
-    pending.filter((x) => x.asset === asset && x.epoch === e).forEach((x) => {
-      const list = rows[x.up ? 'up' : 'down'];
-      const mine = list.find((r) => r.addr === w);
-      if (!mine) list.unshift({ addr: w, amount: x.uluna.toString(), pending: true });
-    });
+    // Своя ставка: из позиций контракта (подтверждена) или из только что
+    // подписанной (confirming). Поиск по транзакциям может отставать от блока.
+    if (w) {
+      const pos = (positions[asset] || []).find((p) => p.epoch === e);
+      [['up', true], ['down', false]].forEach(([k, up]) => {
+        const list = rows[k];
+        if (list.some((r) => r.addr === w)) return;
+        const conf = pos ? BigInt(up ? pos.up : pos.down) : 0n;
+        const pend = pending.filter((x) => x.asset === asset && x.epoch === e && x.up === up).reduce((t, x) => t + x.uluna, 0n);
+        if (conf > 0n) list.unshift({ addr: w, amount: conf.toString() });
+        else if (pend > 0n) list.unshift({ addr: w, amount: pend.toString(), pending: true });
+      });
+    }
     const sum = (l) => l.reduce((t, r) => t + BigInt(r.amount), 0n);
     const tot = { up: sum(rows.up), down: sum(rows.down) };
     const fee = BigInt(C().fee_bps);
@@ -663,6 +687,30 @@
     }
   }
 
+  // Результат своего раунда - тостом, звуком и в колокольчик (OracleNotify).
+  // Уже закрытые на момент открытия страницы раунды не объявляем: только те,
+  // что закрылись, пока страница открыта.
+  let seenFinal = null;
+  function announce() {
+    const w = wallet();
+    if (!w || !window.OracleNotify) return;
+    const fin = myRounds().filter((p) => !p.pending && ['up', 'down', 'void'].includes(p.outcome));
+    if (!seenFinal) { seenFinal = new Set(fin.map((p) => p.asset + ':' + p.epoch)); return; }
+    fin.forEach((p) => {
+      const k = p.asset + ':' + p.epoch;
+      if (seenFinal.has(k)) return;
+      seenFinal.add(k);
+      const won = (p.outcome === 'up' && p.up > 0n) || (p.outcome === 'down' && p.down > 0n);
+      const what = `${A(p.asset).sym} ${hm(p.epoch * R())} - ${hm((p.epoch + 1) * R())}`;
+      const item = p.outcome === 'void'
+        ? { kind: 'claim', title: 'Round refunded', body: `${what}: your ${lunc(p.up + p.down)} LUNC is ready to collect.` }
+        : won
+          ? { kind: 'win', title: `You won +${lunc(p.payout)} LUNC`, body: `${what} closed ${p.outcome.toUpperCase()}. Collect it on the Markets page.` }
+          : { kind: 'circ', title: 'Round lost', body: `${what} closed ${p.outcome.toUpperCase()}. Your call: ${callText(p)}.` };
+      window.OracleNotify.push({ id: `round:${NET.contract.slice(-6)}:${k}`, link: '/markets', ...item });
+    });
+  }
+
   async function refreshMine() {
     const w = wallet();
     if (!w || !document.getElementById('rd')) { positions = {}; paintMine(); return; }
@@ -670,6 +718,7 @@
       const res = await Promise.all(ASSETS.map((a) => q({ positions: { address: w, asset: a.id, limit: 20 } })));
       ASSETS.forEach((a, i) => { positions[a.id] = res[i]; });
       paintMine();
+      announce();
     } catch (e) { /* позже */ }
   }
 
@@ -782,7 +831,8 @@
       tick++;
       if (tick % 5 === 0) refresh();
       if (onMarkets && tick % 5 === 2) loadBook();
-      if (onMarkets && tick % 15 === 0) refreshMine();
+      const into = Math.floor(now()) % R();
+      if ((onMarkets && tick % 15 === 0) || (wallet() && into > 5 && into < 40 && tick % 5 === 1)) refreshMine();
       if (onMarkets) { paintBet(); paintMine(); paintBook(); }
     }, 1000);
     const loop = () => {
@@ -796,5 +846,19 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 
-  window._rounds = { refresh, refreshMine, rounds, get state() { return state; } };
+  // Для ленты Live (markets-live.js): последние прогнозы по раундам.
+  window._roundsTape = async () => {
+    const r = await fetch(NET.worker + '/recent', { signal: AbortSignal.timeout(6000) });
+    const j = await r.json();
+    return (j.items || []).map((x) => ({
+      round: true, key: 'r' + x.key, t: x.t, yes: x.up, amount: x.amount, who: x.who, house: x.house, asset: x.asset,
+      label: `${(A(x.asset) || { sym: x.asset }).sym} Up or Down ${hm(x.epoch * R())}`,
+    }));
+  };
+  const openRound = (a) => {
+    select(a);
+    const el = document.getElementById('rd');
+    if (el) el.scrollIntoView({ block: 'start', behavior: REDUCED ? 'auto' : 'smooth' });
+  };
+  window._rounds = { refresh, refreshMine, rounds, open: openRound, get state() { return state; } };
 })();

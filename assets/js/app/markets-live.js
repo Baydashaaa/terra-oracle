@@ -608,6 +608,14 @@
   }
   function tapeHtml() {
     const item = (b) => {
+      // Прогноз раунда: своя подпись и переход к раунду этого актива.
+      if (b.round) {
+        return `<a class="it ${b.yes ? 'y' : 'n'}" href="#" data-round="${esc(b.asset)}">
+          <span class="w">${esc(b.house ? 'House' : typeof shortAddr === 'function' ? shortAddr(b.who) : b.who.slice(0, 10))}</span>
+          <b>${shortLunc(b.amount)} LUNC ${b.yes ? 'UP' : 'DOWN'}</b>
+          <span class="q">${esc(b.label)}</span>
+          <span class="a">${ago(b.t)}</span></a>`;
+      }
       const m = cache.get(b.id);
       const q = m ? m.question : `Market #${b.id}`;
       return `<a class="it ${b.yes ? 'y' : 'n'}" href="#" onclick="openProphecyMarket(${b.id});return false">
@@ -625,8 +633,13 @@
     if (!anchor || !visible()) return;
     let tape = document.getElementById('mkl-tape');
     if (onMarketScreen()) { if (tape) tape.hidden = true; return; }
-    let list;
-    try { list = await loadTape(); } catch (e) { return; }
+    let list = [];
+    try { list = await loadTape(); } catch (e) { /* рынки не ответили - покажем раунды */ }
+    // Прогнозы пятиминутных раундов (rounds.js) - в ту же ленту, по времени.
+    if (typeof window._roundsTape === 'function') {
+      try { list = list.concat(await window._roundsTape()); } catch (e) { /* без раундов */ }
+    }
+    list.sort((a, b) => b.t - a.t);
     if (!list.length) return;
     const fresh = list.filter((b) => !tapeSeen.has(b.key));
     if (!fresh.length && tape) { tape.hidden = false; return; }
@@ -638,6 +651,12 @@
       const top = document.getElementById('rd') || document.getElementById('mkStats') || anchor;
       top.insertAdjacentHTML('beforebegin', '<div id="mkl-tape" class="mkl-tape" role="marquee" aria-label="Latest predictions"></div>');
       tape = document.getElementById('mkl-tape');
+      tape.addEventListener('click', (e) => {
+        const a = e.target.closest('[data-round]');
+        if (!a) return;
+        e.preventDefault();
+        if (window._rounds && window._rounds.open) window._rounds.open(a.dataset.round);
+      });
     }
     tape.hidden = false;
     tape.innerHTML = tapeHtml();
