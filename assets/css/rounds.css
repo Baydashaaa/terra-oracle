@@ -162,3 +162,13 @@
 @media (prefers-reduced-motion:reduce){
   #page-markets .rd-live i,.rd-home-h h3 i{animation:none}
 }
+
+/* скелетон: пока нет данных - мягкий перелив вместо прочерка */
+.rdc .sk,#page-markets .rd .sk{display:inline-block;min-width:5.5em;min-height:1em;border-radius:6px;color:transparent!important;
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.05) 100%);background-size:200% 100%;
+  animation:rdSk 1.3s ease-in-out infinite}
+#page-markets .rd-figs b.sk{min-width:7em;min-height:28px}
+.rdc-sp.sk{border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.03) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.03) 100%);
+  background-size:200% 100%;animation:rdSk 1.3s ease-in-out infinite}
+@keyframes rdSk{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.rdc .sk,#page-markets .rd .sk,.rdc-sp.sk{animation:none}}

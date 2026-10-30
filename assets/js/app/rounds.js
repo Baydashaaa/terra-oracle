@@ -13,8 +13,10 @@
   'use strict';
 
   const NET = (typeof PROPHECY_TESTNET !== 'undefined' && PROPHECY_TESTNET)
-    ? { contract: 'terra1erumnyvvtjkxkgedwrasuefhczetzd2qcdms650g76f3dq658qlsu3fw99', houseMax: 500 }
-    : { contract: '', houseMax: 50000 };   // mainnet: адрес появится после деплоя
+    ? { contract: 'terra1erumnyvvtjkxkgedwrasuefhczetzd2qcdms650g76f3dq658qlsu3fw99', houseMax: 500,
+        worker: 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev' }
+    : { contract: '', houseMax: 50000,      // mainnet: адрес появится после деплоя
+        worker: 'https://oracle-rounds-keeper-main.vladislav-baydan.workers.dev' };
   // houseMax - потолок ответной ставки казны (MATCH_MAX_ULUNA у керпера), LUNC.
   if (!NET.contract) return;
 
@@ -81,7 +83,7 @@
   // Тестовый LCD не отдаёт CORS: браузер его не читает. Тогда идём через
   // keeper-Worker (/q - только чтение и только этот контракт). Что сработало
   // первым, то и запоминаем.
-  const PROXY = 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev/q?m=';
+  const PROXY = NET.worker + '/q?m=';
   // На тестнете прямой узел без CORS: каждый запрос ждал таймаута 10 с, прежде
   // чем уйти на Worker. Там сразу идём через Worker.
   let viaProxy = PROPHECY_LCD.some((u) => /luncblaze/.test(u));
@@ -161,9 +163,13 @@
     root.querySelectorAll('.rdc').forEach((card) => {
       const a = card.dataset.a;
       const lock = lockOf(a), p = priceOf(a);
-      card.querySelector('.t').textContent = lock ? fmtUsd(lock) : '-';
+      const tEl = card.querySelector('.t');
+      tEl.textContent = lock ? fmtUsd(lock) : state === 'loading' ? '' : '-';
+      tEl.classList.toggle('sk', !lock && state === 'loading');
       const c = card.querySelector('.c');
-      c.textContent = fmtUsd(p);
+      c.textContent = p == null ? '' : fmtUsd(p);
+      c.classList.toggle('sk', p == null);
+      card.querySelector('.rdc-sp').classList.toggle('sk', !(live() && live().feeds[a] && live().feeds[a].pts.length > 1));
       card.classList.toggle('is-up', !!(lock && p && p > lock));
       card.classList.toggle('is-dn', !!(lock && p && p < lock));
       const [m, s] = mmss((epochNow() + 1) * R() - now());
@@ -389,12 +395,16 @@
     clk.classList.toggle('hot', t1 - now() < 30);
     const lock = lockOf(asset);
     const lr = liveRound(asset);
-    el.querySelector('.lock').textContent = lock ? fmtUsd(lock) : '-';
+    const lockEl = el.querySelector('.lock');
+    lockEl.textContent = lock ? fmtUsd(lock) : state === 'loading' ? '' : '-';
+    lockEl.classList.toggle('sk', !lock && state === 'loading');
     el.querySelector('.lsub').textContent = lock ? ''
       : state === 'down' ? `Contract not reachable (${lastErr}), retrying` : lr && lr.outcome === 'void' ? 'No start price - this round refunds'
         : state === 'loading' ? 'Loading' : 'Set at the round start';
     const p = priceOf(asset);
-    el.querySelector('.cur').textContent = fmtUsd(p);
+    const curEl = el.querySelector('.cur');
+    curEl.textContent = p == null ? '' : fmtUsd(p);
+    curEl.classList.toggle('sk', p == null);
     const dl = el.querySelector('.dl');
     const upNow = lock && p ? p > lock : null;
     el.classList.toggle('is-up', upNow === true);
@@ -442,12 +452,43 @@
   }
 
   // ── данные ───────────────────────────────────────────────────────────────
+  // Последнее состояние - в браузере: при открытии страницы карточки сразу
+  // показывают его, пока идёт свежий запрос. Раунды на 5 минут, поэтому
+  // старше 10 минут не берём.
+  const CACHE_KEY = 'rdState:' + NET.contract;
+  function loadCached() {
+    try {
+      const j = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (!j || now() - j.time > 600) return;
+      cfg = j.config;
+      ASSETS.forEach((a) => { if (j.rounds[a.id]) rounds[a.id] = j.rounds[a.id]; });
+      state = 'cached';
+    } catch (e) { /* нет кэша */ }
+  }
+
+  async function fetchState() {
+    // Один запрос к Worker вместо пяти к узлу. Не вышло - старым путём.
+    try {
+      const r = await fetch(NET.worker + '/state', { signal: AbortSignal.timeout(8000) });
+      const j = await r.json();
+      if (r.ok && j.config && j.rounds) return j;
+      throw new Error(j.error || 'state ' + r.status);
+    } catch (e) {
+      const config = await q({ config: {} });
+      const lists = await Promise.all(ASSETS.map((a) => q({ rounds: { asset: a.id, limit: 8 } })));
+      const out = { time: Math.floor(now()), config, rounds: {} };
+      ASSETS.forEach((a, i) => { out.rounds[a.id] = lists[i]; });
+      return out;
+    }
+  }
+
   async function refresh() {
     try {
-      if (!cfg) cfg = await q({ config: {} });
-      const lists = await Promise.all(ASSETS.map((a) => q({ rounds: { asset: a.id, limit: 8 } })));
+      const j = await fetchState();
+      cfg = j.config;
       const prev = nextRound(asset);
-      ASSETS.forEach((a, i) => { rounds[a.id] = lists[i]; });
+      ASSETS.forEach((a) => { rounds[a.id] = j.rounds[a.id] || []; });
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Math.floor(now()), config: j.config, rounds: j.rounds })); } catch (e) { /* приватный режим */ }
       state = 'ok';
       const nr = nextRound(asset);
       if (prev.epoch === nr.epoch && !REDUCED) {
@@ -556,6 +597,7 @@
   }
 
   function start() {
+    loadCached();
     mount(); mountHome();
     const hosts = [document.getElementById('rd'), document.getElementById('rd-home')].filter(Boolean);
     if (live()) ASSETS.forEach((a) => hosts.forEach((h) => live().subscribe(a.id, h)));
