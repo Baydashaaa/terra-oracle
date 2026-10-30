@@ -633,7 +633,10 @@
     fresh.forEach((b) => tapeSeen.add(b.key));
     tapeItems = list.slice(0, 12);
     if (!tape) {
-      anchor.insertAdjacentHTML('beforebegin', '<div id="mkl-tape" class="mkl-tape" role="marquee" aria-label="Latest predictions"></div>');
+      // Лента - сразу под шапкой раздела: над раундами, если они есть, иначе
+      // над статистикой. Внизу, над списком, её не замечали.
+      const top = document.getElementById('rd') || document.getElementById('mkStats') || anchor;
+      top.insertAdjacentHTML('beforebegin', '<div id="mkl-tape" class="mkl-tape" role="marquee" aria-label="Latest predictions"></div>');
       tape = document.getElementById('mkl-tape');
     }
     tape.hidden = false;

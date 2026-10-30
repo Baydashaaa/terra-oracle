@@ -298,9 +298,8 @@
     const host = document.querySelector('#rd .rd-chips');
     if (!host) return;
     const min = Number(C().min_bet) / 1e6, max = Number(C().max_bet) / 1e6;
-    // mainnet: минимум 1,000 LUNC - пресеты как у рынков. На тестнете минимум
-    // меньше, и пресеты масштабируются от него.
-    const base = min >= 1000 || !cfg ? [10000, 50000, 200000, 500000] : [min, min * 5, min * 20, min * 50];
+    // Пресеты как у рынков, одинаковые на тестнете и mainnet.
+    const base = [10000, 50000, 200000, 500000];
     const r = nextRound(asset);
     host.innerHTML = base.filter((v) => v >= min && v <= max).map((v) => {
       const amtU = BigInt(v) * 1000000n;
