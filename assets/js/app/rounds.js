@@ -52,7 +52,7 @@
 
   // Таймер по цифре в ячейке фиксированной ширины: у шрифта сайта цифры
   // разной ширины, и время прыгало при смене секунд.
-  const digits = (str) => [...str].map((c) => (c === ':' ? '<i>:</i>' : `<span>${c}</span>`)).join('');
+  const digits = (str) => [...str].map((c) => (c === ':' ? '<span class="sep">:</span>' : `<span class="dg">${c}</span>`)).join('');
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let cfg = null;
@@ -76,7 +76,9 @@
   // keeper-Worker (/q - только чтение и только этот контракт). Что сработало
   // первым, то и запоминаем.
   const PROXY = 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev/q?m=';
-  let viaProxy = false;
+  // На тестнете прямой узел без CORS: каждый запрос ждал таймаута 10 с, прежде
+  // чем уйти на Worker. Там сразу идём через Worker.
+  let viaProxy = PROPHECY_LCD.some((u) => /luncblaze/.test(u));
   async function q(msg) {
     const b64 = btoa(JSON.stringify(msg));
     if (viaProxy) {
@@ -134,11 +136,11 @@
       <span class="rdc-h">${coin(a.id, 34)}<span class="tt"><b>${a.sym} Up or Down</b><small>${a.name}</small></span><em>5 min</em></span>
       <svg class="rdc-sp" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
-        <path class="a" fill="url(#${gid})"/><path class="l"/></svg>
+        <path class="sa" fill="url(#${gid})"/><path class="sl"/></svg>
       <span class="rdc-f">
         <span><small>Target</small><b class="t">-</b></span>
         <span><small>Current</small><b class="c">-</b></span>
-        <span class="r"><small>Time left</small><b class="l">--:--</b></span>
+        <span class="r"><small>Time left</small><b class="tl">--:--</b></span>
       </span>
     </button>`;
   }
@@ -153,7 +155,7 @@
       card.classList.toggle('is-up', !!(lock && p && p > lock));
       card.classList.toggle('is-dn', !!(lock && p && p < lock));
       const [m, s] = mmss((epochNow() + 1) * R() - now());
-      const lEl = card.querySelector('.l');
+      const lEl = card.querySelector('.tl');
       if (lEl.dataset.v !== m + s) { lEl.dataset.v = m + s; lEl.innerHTML = digits(`${m}:${s}`); }
       const f = live() && live().feeds[a];
       if (f && f.pts.length > 1) {
@@ -163,8 +165,8 @@
         const rng = hi - lo || 1;
         const d = pts.map((q2, i) =>
           (i ? 'L' : 'M') + (i / (pts.length - 1) * 100).toFixed(1) + ',' + (27 - ((q2[1] - lo) / rng) * 24).toFixed(1)).join(' ');
-        card.querySelector('.rdc-sp .l').setAttribute('d', d);
-        card.querySelector('.rdc-sp .a').setAttribute('d', d + ' L100,30 L0,30 Z');
+        card.querySelector('.rdc-sp .sl').setAttribute('d', d);
+        card.querySelector('.rdc-sp .sa').setAttribute('d', d + ' L100,30 L0,30 Z');
       }
     });
   }
@@ -184,7 +186,11 @@
             <div class="rd-figs">
               <div><small>Price to beat</small><b class="lock">-</b><span class="sub lsub"></span></div>
               <div><small>Current price</small><b class="cur">-</b><span class="dl"></span></div>
-              <div class="clock"><small><span>Min</span><span>Sec</span></small><b class="cd"></b></div>
+              <div class="rd-clock">
+                <span class="u"><b class="mm"></b><small>Min</small></span>
+                <span class="colon">:</span>
+                <span class="u"><b class="ss"></b><small>Sec</small></span>
+              </div>
             </div>
             <div class="rd-plot">
               <div class="rd-chart">
@@ -356,9 +362,13 @@
     paintCards(el);
     const e0 = epochNow(), t0 = e0 * R(), t1 = t0 + R();
     const [m, s] = mmss(t1 - now());
-    const cd = el.querySelector('.cd');
-    if (cd.dataset.v !== m + s) { cd.dataset.v = m + s; cd.innerHTML = digits(`${m}:${s}`); }
-    el.querySelector('.clock').classList.toggle('hot', t1 - now() < 30);
+    const clk = el.querySelector('.rd-clock');
+    if (clk.dataset.v !== m + s) {
+      clk.dataset.v = m + s;
+      clk.querySelector('.mm').innerHTML = digits(m);
+      clk.querySelector('.ss').innerHTML = digits(s);
+    }
+    clk.classList.toggle('hot', t1 - now() < 30);
     const lock = lockOf(asset);
     const lr = liveRound(asset);
     el.querySelector('.lock').textContent = lock ? fmtUsd(lock) : '-';
