@@ -1,0 +1,93 @@
+/* rounds.css - пятиминутные раунды на странице Markets (rounds.js).
+   UP #3BE38A, DOWN #F37BAA, фиолетовый #A855F7. */
+#page-markets .rd{--tone:#A855F7;margin:0 0 18px;padding:20px 22px;border-radius:22px;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(123,92,255,.14),transparent 55%),linear-gradient(180deg,#151A33,#10142A);
+  border:1px solid color-mix(in srgb,var(--tone) 32%,transparent);box-shadow:0 0 50px -30px var(--tone);transition:border-color .5s,box-shadow .5s}
+#page-markets .rd[hidden]{display:none}
+#page-markets .rd.is-up{--tone:#3BE38A}
+#page-markets .rd.is-dn{--tone:#F37BAA}
+#page-markets .rd-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+#page-markets .rd-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+#page-markets .rd-title h3{margin:0;font:700 22px/1 Rajdhani,sans-serif;color:#E8F0FF}
+#page-markets .rd-title span{font-size:13px;color:#8C98B8}
+#page-markets .rd-title .dot{align-self:center;width:9px;height:9px;border-radius:50%;background:#F43F5E;box-shadow:0 0 10px #F43F5E;animation:mk2pulse 1.4s ease-in-out infinite}
+#page-markets .rd-tabs{display:flex;gap:6px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04)}
+#page-markets .rd-tabs button{padding:7px 14px;border:0;border-radius:9px;background:none;color:#A9B6D3;font:600 13.5px/1 inherit;cursor:pointer}
+#page-markets .rd-tabs button[aria-pressed="true"]{background:#7B5CFF;color:#fff}
+#page-markets .rd-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:18px}
+
+/* левая часть: цена и график */
+#page-markets .rd-nums{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 26px;margin-bottom:12px}
+#page-markets .rd-nums > div{display:flex;flex-direction:column;gap:4px}
+#page-markets .rd-nums .lbl{font-size:12.5px;color:#9AA6C4}
+#page-markets .rd-nums b{font:700 26px/1 Rajdhani,sans-serif;color:#E8F0FF;font-variant-numeric:tabular-nums}
+#page-markets .rd-nums b.cur{color:var(--tone);transition:color .5s}
+#page-markets .rd-dl b{font-size:16px;color:var(--tone)}
+#page-markets .rd-clock{margin-left:auto;text-align:right}
+#page-markets .rd-clock b{color:#F2D45C}
+#page-markets .rd-chart{position:relative;height:170px;margin-bottom:12px}
+#page-markets .rd-chart svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#page-markets .rd-chart .line{fill:none;stroke:var(--tone);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:stroke .5s}
+#page-markets .rd-chart .tline{stroke:#C8B8FF;stroke-opacity:.6;stroke-width:1.4;stroke-dasharray:6 6;vector-effect:non-scaling-stroke}
+#page-markets .rd-chart .head{position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--tone);box-shadow:0 0 14px var(--tone)}
+#page-markets .rd-chart .head::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tone);animation:mklRing 1.8s ease-out infinite}
+#page-markets .rd-chart .tpill{position:absolute;right:0;transform:translateY(-120%);padding:3px 8px;border-radius:7px;font-size:11.5px;font-weight:600;color:#E8F0FF;background:#252B4D;border:1px solid rgba(200,184,255,.25)}
+#page-markets .rd-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+#page-markets .rd-strip .c{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding:7px 8px;border-radius:10px;
+  font-size:12px;color:#9AA6C4;background:rgba(255,255,255,.03);border:1px solid rgba(200,184,255,.12)}
+#page-markets .rd-strip .c b{font:700 13px/1 Rajdhani,sans-serif;letter-spacing:.04em}
+#page-markets .rd-strip .c.up b{color:#3BE38A}
+#page-markets .rd-strip .c.dn b{color:#F37BAA}
+#page-markets .rd-strip .c.void b{color:#8C98B8}
+#page-markets .rd-strip .c.now{border-color:color-mix(in srgb,var(--tone) 55%,transparent);color:#E8F0FF}
+#page-markets .rd-strip .c.now b{color:var(--tone)}
+#page-markets .rd-strip .c.next{border-style:dashed;color:#C8B8FF}
+
+/* правая часть: прогноз */
+#page-markets .rd-bet{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:rgba(10,13,30,.55);border:1px solid rgba(200,184,255,.12)}
+#page-markets .rd-next{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#9AA6C4}
+#page-markets .rd-next b{font:700 16px/1 Rajdhani,sans-serif;color:#E8F0FF}
+#page-markets .rd-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#page-markets .rd-sides button{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border-radius:14px;cursor:pointer;
+  font:inherit;transition:transform .15s,box-shadow .25s,background .25s}
+#page-markets .rd-sides .up{background:rgba(59,227,138,.08);border:1px solid rgba(59,227,138,.35);color:#3BE38A}
+#page-markets .rd-sides .dn{background:rgba(243,123,170,.08);border:1px solid rgba(243,123,170,.35);color:#F37BAA}
+#page-markets .rd-sides .up[aria-pressed="true"]{background:rgba(59,227,138,.2);box-shadow:0 0 0 2px #3BE38A,0 0 24px -6px #3BE38A}
+#page-markets .rd-sides .dn[aria-pressed="true"]{background:rgba(243,123,170,.2);box-shadow:0 0 0 2px #F37BAA,0 0 24px -6px #F37BAA}
+#page-markets .rd-sides button:active{transform:scale(.98)}
+#page-markets .rd-sides .k{font:700 18px/1 Rajdhani,sans-serif;letter-spacing:.06em}
+#page-markets .rd-sides .p{font:700 26px/1 Rajdhani,sans-serif;color:#E8F0FF}
+#page-markets .rd-sides .m{font-size:11.5px;color:#9AA6C4;text-align:center}
+#page-markets .rd-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#page-markets .rd-chips button{padding:8px 0;border-radius:10px;border:1px solid rgba(200,184,255,.2);background:rgba(255,255,255,.04);color:#E8F0FF;font:600 13.5px/1 inherit;cursor:pointer}
+#page-markets .rd-chips button:hover{border-color:#A855F7}
+#page-markets .rd-amt{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(200,184,255,.14);font-size:12.5px;color:#9AA6C4}
+#page-markets .rd-amt input{flex:1;min-width:0;border:0;background:none;color:#E8F0FF;font:700 20px/1 Rajdhani,sans-serif;outline:none}
+#page-markets .rd-amt em{font-style:normal}
+#page-markets .rd-win{min-height:18px;font-size:13px;color:#C9D3EA}
+#page-markets .rd-win b{color:#F2D45C;font-family:Rajdhani,sans-serif;font-size:16px}
+#page-markets .rd-win small{color:#7F8BAA}
+#page-markets .rd-go{padding:13px;border:0;border-radius:12px;font:700 15px/1 inherit;color:#0B1020;background:#7B5CFF;cursor:pointer;transition:filter .2s}
+#page-markets .rd-go.up{background:#3BE38A}
+#page-markets .rd-go.dn{background:#F37BAA}
+#page-markets .rd-go:disabled{background:rgba(255,255,255,.08);color:#7F8BAA;cursor:default}
+#page-markets .rd-mine{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+#page-markets .rd-mine .h{color:#9AA6C4}
+#page-markets .rd-mine .r{display:flex;gap:10px;align-items:baseline}
+#page-markets .rd-mine .r b.up{color:#3BE38A}
+#page-markets .rd-mine .r b.dn{color:#F37BAA}
+#page-markets .rd-mine .r em{margin-left:auto;font-style:normal;color:#7F8BAA}
+#page-markets .rd-collect{padding:10px;border-radius:10px;border:1px solid #F2D45C;background:rgba(242,212,92,.12);color:#F2D45C;font:700 14px/1 inherit;cursor:pointer}
+
+@media (max-width:900px){
+  #page-markets .rd-grid{grid-template-columns:1fr}
+  #page-markets .rd-chart{height:140px}
+}
+@media (max-width:520px){
+  #page-markets .rd{padding:16px 14px}
+  #page-markets .rd-nums b{font-size:21px}
+  #page-markets .rd-tabs{width:100%;justify-content:space-between}
+}
+@media (prefers-reduced-motion:reduce){
+  #page-markets .rd-title .dot,#page-markets .rd-chart .head::after{animation:none}
+}

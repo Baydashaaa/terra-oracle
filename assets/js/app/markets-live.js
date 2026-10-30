@@ -43,6 +43,7 @@
   const BINANCE = {
     BTC: 'BTCUSDT', ETH: 'ETHUSDT', LUNC: 'LUNCUSDT', USTC: 'USTCUSDT', SOL: 'SOLUSDT', BNB: 'BNBUSDT',
     XRP: 'XRPUSDT', ADA: 'ADAUSDT', DOGE: 'DOGEUSDT', ATOM: 'ATOMUSDT', TRX: 'TRXUSDT', TON: 'TONUSDT',
+    PAXG: 'PAXGUSDT',
   };
   const feeds = {};              // sym -> { pts: [[t, p]], subs: Set, last }
   let ws = null, wsSyms = '', wsFails = 0, cgTimer = null;
@@ -114,7 +115,7 @@
 
   // Запасной путь, если Binance недоступен в регионе: CoinGecko раз в 30 с.
   const CG_ID = { BTC: 'bitcoin', ETH: 'ethereum', LUNC: 'terra-luna', USTC: 'terrausd', SOL: 'solana', BNB: 'binancecoin',
-    XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', ATOM: 'cosmos', TRX: 'tron', TON: 'the-open-network' };
+    XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', ATOM: 'cosmos', TRX: 'tron', TON: 'the-open-network', PAXG: 'pax-gold' };
   function startCgPoll() {
     if (cgTimer) return;
     const tick = async () => {
@@ -615,5 +616,6 @@
   else start();
 
   // Для проверки из консоли.
-  window._mkLive = { feeds, cache, pollList, pollTape };
+  // feeds/subscribe/fmtUsd нужны раундам (rounds.js): один поток цен на страницу.
+  window._mkLive = { feeds, cache, pollList, pollTape, subscribe, fmtUsd, unsubscribeMissing };
 })();
