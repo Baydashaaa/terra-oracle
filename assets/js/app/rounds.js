@@ -72,11 +72,14 @@
   // Ставка подписана, но контракт её ещё не показывает: держим её на экране
   // со статусом "Confirming", чтобы она не пропадала после тоста.
   let pending = [];           // { asset, epoch, up, uluna, at }
+  let bookTab = 'next';       // next | live
+  let book = null;            // { asset, epoch, up: [{addr, amount, house}], down: [...] }
   let busy = false;
   let state = 'loading';      // loading | ok | down
 
   const now = () => Date.now() / 1000;
   const live = () => window._mkLive || null;
+  const esc = (x) => (typeof mktEsc === 'function' ? mktEsc(x) : String(x).replace(/[<>&"]/g, ''));
   const fmtUsd = (p) => (p == null ? '-' : live() ? live().fmtUsd(p) : '$' + p);
   const lunc = (u) => (typeof fmtLunc === 'function' ? fmtLunc(u) : String(Number(u) / 1e6));
   const wallet = () => (typeof mkWallet === 'function' ? mkWallet() : null);
@@ -226,6 +229,15 @@
             </div>
             <div class="rd-x"><span></span><span></span><span></span></div>
             <div class="rd-strip" aria-label="Recent rounds"></div>
+            <div class="rd-book">
+              <div class="rd-book-h"><b>Round book</b>
+                <div class="rd-book-tabs" role="tablist"><button type="button" data-b="next" aria-pressed="true"></button><button type="button" data-b="live" aria-pressed="false"></button></div>
+              </div>
+              <div class="rd-book-g">
+                <div class="col up"><div class="ch"><b>UP</b><span class="tot"></span></div><div class="rows"></div></div>
+                <div class="col dn"><div class="ch"><b>DOWN</b><span class="tot"></span></div><div class="rows"></div></div>
+              </div>
+            </div>
             <div class="rd-hist" hidden>
               <div class="rd-hist-h"><b>Your rounds</b><span class="rd-hist-sum"></span></div>
               <div class="rd-hist-t" role="table"></div>
@@ -280,6 +292,12 @@
       paintBet();
     });
     el.querySelector('.rd-go').addEventListener('click', submit);
+    el.querySelector('.rd-book-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-b]');
+      if (!b) return;
+      bookTab = b.dataset.b;
+      book = null; paintBook(); loadBook();
+    });
     el.addEventListener('click', (e) => { if (e.target.closest('.rd-collect')) collect(); });
     paintHead();
   }
@@ -290,6 +308,7 @@
     const el = document.getElementById('rd');
     if (el) el.querySelector('.rd-strip').innerHTML = '';
     paintHead(); paintBet(); paintStrip();
+    book = null; paintBook(); loadBook();
   }
 
   function paintHead() {
@@ -458,6 +477,64 @@
     paintStrip();
   }
 
+  // ── стакан раунда ─────────────────────────────────────────────────────────
+  const bookEpoch = () => epochNow() + (bookTab === 'next' ? 1 : 0);
+
+  async function loadBook() {
+    const a = asset, e = bookEpoch();
+    try {
+      const r = await fetch(`${NET.worker}/book?asset=${a}&epoch=${e}`, { signal: AbortSignal.timeout(8000) });
+      const j = await r.json();
+      if (!r.ok || j.error) return;
+      if (a === asset && e === bookEpoch()) { book = j; paintBook(); }
+    } catch (err) { /* следующий опрос */ }
+  }
+
+  function paintBook() {
+    const el = document.getElementById('rd');
+    if (!el) return;
+    const e = bookEpoch();
+    const [nb, lb] = el.querySelectorAll('.rd-book-tabs button');
+    nb.textContent = `Next ${hm((epochNow() + 1) * R())}`;
+    lb.textContent = `Live ${hm(epochNow() * R())}`;
+    nb.setAttribute('aria-pressed', String(bookTab === 'next'));
+    lb.setAttribute('aria-pressed', String(bookTab === 'live'));
+    const b = book && book.asset === asset && book.epoch === e ? book : { up: [], down: [] };
+    // Неподтверждённая своя ставка - сразу в стакан.
+    const w = wallet();
+    const rows = { up: b.up.map((x) => ({ ...x })), down: b.down.map((x) => ({ ...x })) };
+    pending.filter((x) => x.asset === asset && x.epoch === e).forEach((x) => {
+      const list = rows[x.up ? 'up' : 'down'];
+      const mine = list.find((r) => r.addr === w);
+      if (!mine) list.unshift({ addr: w, amount: x.uluna.toString(), pending: true });
+    });
+    const sum = (l) => l.reduce((t, r) => t + BigInt(r.amount), 0n);
+    const tot = { up: sum(rows.up), down: sum(rows.down) };
+    const fee = BigInt(C().fee_bps);
+    const pays = (mine, other) => (mine && other ? 1 + Number(other - (other * fee) / 10000n) / Number(mine) : null);
+    const max = [...rows.up, ...rows.down].reduce((m, r) => (BigInt(r.amount) > m ? BigInt(r.amount) : m), 1n);
+    ['up', 'down'].forEach((k) => {
+      const col = el.querySelector(`.rd-book-g .col.${k === 'up' ? 'up' : 'dn'}`);
+      const other = k === 'up' ? tot.down : tot.up;
+      const x = pays(tot[k], other);
+      col.querySelector('.tot').textContent = tot[k]
+        ? `${lunc(tot[k])} LUNC${x ? ` · pays x${x.toFixed(2)}` : ' · no rival yet'}`
+        : 'empty';
+      col.querySelector('.rows').innerHTML = rows[k].length ? rows[k].map((r) => {
+        const amt = BigInt(r.amount);
+        const me = w && r.addr === w;
+        const who = me ? 'You' : r.house ? 'House' : (typeof shortAddr === 'function' ? shortAddr(r.addr) : r.addr.slice(0, 10) + '…');
+        const win = me && other ? amt + ((other - (other * fee) / 10000n) * amt) / tot[k] : null;
+        const pct = Math.max(4, Number((amt * 100n) / max));
+        return `<div class="row${me ? ' me' : ''}${r.house ? ' house' : ''}">
+          <i style="width:${pct}%"></i>
+          <span class="w">${esc(who)}${r.pending ? ' <small>confirming</small>' : ''}</span>
+          <b>${lunc(amt)}</b>
+          ${me ? `<em>${win ? 'win ≈ ' + lunc(win) : 'waiting for a rival'}</em>` : ''}</div>`;
+      }).join('') : `<p class="none">Nobody on ${k === 'up' ? 'UP' : 'DOWN'} yet</p>`;
+    });
+  }
+
   // ── график ───────────────────────────────────────────────────────────────
   function frame() {
     const el = document.getElementById('rd');
@@ -622,7 +699,7 @@
       const done = (r) => {
         busy = false;
         if (r && r.status === 'failed') { pending = pending.filter((x) => x !== mark); paintBet(); }
-        refresh(); refreshMine();
+        refresh(); refreshMine(); loadBook();
       };
       if (typeof mkTrack === 'function') await mkTrack(hash, 'Prediction', done);
       else done();
@@ -700,8 +777,9 @@
       if (!onMarkets && !onHome) return;
       tick++;
       if (tick % 5 === 0) refresh();
+      if (onMarkets && tick % 5 === 2) loadBook();
       if (onMarkets && tick % 15 === 0) refreshMine();
-      if (onMarkets) { paintBet(); paintMine(); }
+      if (onMarkets) { paintBet(); paintMine(); paintBook(); }
     }, 1000);
     const loop = () => {
       if (visible('rd')) frame();

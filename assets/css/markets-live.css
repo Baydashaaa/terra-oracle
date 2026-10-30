@@ -101,3 +101,22 @@
   #page-markets .mkl-tape .run{animation:none}
   #page-markets .mkl-chart .head::after,.mkl-tick .dot,#page-markets .mkl-verdict i{animation:none}
 }
+
+/* ---- аккуратный текст в карточках рынков ---- */
+/* Колонки не уже 260 px: в 190 px заголовки рвались на 5 строк, а плашка WON
+   наезжала на проценты. */
+#page-markets .mk-grid .mk-list{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+/* Категория и источник - одной строкой с многоточием. */
+:is(#page-markets,#home-markets) .mk2-crumb{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;min-width:0}
+:is(#page-markets,#home-markets) .mk2-crumb > *{flex:none}
+:is(#page-markets,#home-markets) .mk2-crumb > *:last-child{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Заголовок обычной карточки - не больше трёх строк. */
+:is(#page-markets,#home-markets) .mkc.mk2c:not(.big) h4{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  line-height:1.25;text-wrap:balance}
+/* Проценты и плашка WON - в одну линию, не друг на друге. */
+:is(#page-markets,#home-markets) .mk2-gauge-top{gap:8px;flex-wrap:nowrap;white-space:nowrap}
+:is(#page-markets,#home-markets) .mk2-gauge-top > span{display:inline-flex;align-items:baseline;gap:4px;min-width:0}
+:is(#page-markets,#home-markets) .mk2-gauge-top .won{display:inline-flex;align-items:center;height:20px;margin:0 4px;line-height:1;letter-spacing:.04em}
+/* Суммы сторон и низ карточки - выровнены по базовой линии. */
+:is(#page-markets,#home-markets) .mk2-gauge-sub{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+:is(#page-markets,#home-markets) .mk2-foot{align-items:center}
