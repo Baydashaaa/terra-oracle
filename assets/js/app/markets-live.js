@@ -136,6 +136,8 @@
     feed(sym).subs.add(id);
     seed(sym);
     syncSocket();
+    // Binance молчит (блок провайдера, регион) - не ждём три обрыва сокета.
+    setTimeout(() => { if (feed(sym).last == null) startCgPoll(); }, 6000);
   }
   function unsubscribeMissing() {
     Object.keys(feeds).forEach((s) => {
@@ -594,6 +596,12 @@
       if (el) new MutationObserver(onDom).observe(el, { childList: true, subtree: true });
     });
     onDom();
+    // Главная могла отрисоваться раньше этого модуля - кэш тогда пуст.
+    setTimeout(() => {
+      if (!cache.size && typeof window.loadProphecyMarkets === 'function') {
+        window.loadProphecyMarkets().then(onDom).catch(() => {});
+      }
+    }, 2000);
     raf = requestAnimationFrame(frame);
     setInterval(pollList, LIST_POLL_MS);
     setInterval(pollTape, TAPE_POLL_MS);
