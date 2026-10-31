@@ -361,3 +361,18 @@
 #page-markets .rd-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 #page-markets .rd-strip::-webkit-scrollbar{display:none}
 #page-markets .rd-strip .p{flex:none}
+
+/* ---- карточка-div на главной: своя раскладка ----
+   Общий стиль сайта для [role="button"] центрировал содержимое и сжимал
+   его по ширине. Здесь всё по левому краю и на всю ширину карточки. */
+.rd-cards .rdc.act{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;text-align:left;
+  width:auto;height:auto;min-width:0;padding:16px 16px 14px;gap:12px;line-height:normal}
+.rd-cards .rdc.act > *{width:100%;min-width:0}
+.rd-cards .rdc.act .rdc-h{justify-content:flex-start}
+.rd-cards .rdc.act .rdc-f{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;justify-items:start}
+.rd-cards .rdc.act .rdc-f .r{justify-self:end;align-items:flex-end}
+.rd-cards .rdc.act .rdc-f b{font-size:13px}
+.rd-cards .rdc .rdc-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.rd-cards .rdc .rdc-act button{box-sizing:border-box;width:100%;min-width:0;height:38px;margin:0;padding:0 10px;
+  display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;
+  font:700 13px/1 inherit;letter-spacing:.02em;white-space:nowrap;box-shadow:none}
