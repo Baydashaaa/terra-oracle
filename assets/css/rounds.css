@@ -33,7 +33,7 @@
 .rdc .sep{display:inline-block;width:.32em;text-align:center}
 
 /* ---- блок раздела ---- */
-#page-markets .rd{display:flex;flex-direction:column;gap:14px;margin:0 0 20px}
+#page-markets .rd{display:flex;flex-direction:column;gap:14px;margin:0 0 20px;container-type:inline-size;container-name:rd}
 #page-markets .rd[hidden]{display:none}
 /* три колонки, как у predict.fun: график | стакан и вкладки | прогноз */
 #page-markets .rd-main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,.85fr) 320px;gap:14px;align-items:stretch}
@@ -146,10 +146,15 @@
 .rd-home-h h3 i{width:8px;height:8px;border-radius:50%;background:#F43F5E;animation:mk2pulse 1.4s ease-in-out infinite}
 .rd-home-h a{font-size:13px;color:#A78BFA;text-decoration:none}
 
-@media (max-width:1400px){
+/* Колонки - по ширине самого блока, а не окна: между боковыми панелями
+   сайта на раунды остаётся ~1280 px даже на мониторе 1920. */
+@container rd (max-width:1500px){
   /* график во всю ширину, под ним стакан и прогноз */
-  #page-markets .rd-main{grid-template-columns:minmax(0,1fr) 320px}
+  #page-markets .rd-main{grid-template-columns:minmax(0,1fr) 340px}
   #page-markets .rd-left{grid-column:1 / -1}
+}
+@container rd (max-width:820px){
+  #page-markets .rd-main{grid-template-columns:1fr}
 }
 @media (max-width:1100px){
   .rd-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -349,3 +354,10 @@
 .rdc-act .dn{color:var(--rd-dn);background:rgba(240,82,92,.12);border:1px solid rgba(240,82,92,.4)}
 .rdc-act .up:hover{color:#fff;background:var(--rd-up)}
 .rdc-act .dn:hover{color:#fff;background:var(--rd-dn)}
+
+/* вкладки и полоса раундов - в одну строку */
+#page-markets .rd-book-tabs,#page-markets .rd-tabs,#page-markets .rd-when{flex-wrap:nowrap}
+#page-markets .rd-book-tabs button,#page-markets .rd-tabs button,#page-markets .rd-when button{white-space:nowrap}
+#page-markets .rd-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#page-markets .rd-strip::-webkit-scrollbar{display:none}
+#page-markets .rd-strip .p{flex:none}

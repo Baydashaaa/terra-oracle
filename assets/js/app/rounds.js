@@ -722,6 +722,12 @@
     el.classList.toggle('is-dn', upNow === false);
     dl.textContent = lock && p ? `${p >= lock ? '\u25b2' : '\u25bc'} ${Math.abs(((p - lock) / lock) * 100).toFixed(3)}%` : '';
 
+    // 1m: последние 60 с и запас справа, как у predict.fun - видно каждое
+    // движение. 5m: весь раунд. Объявлено до фильтра точек: раньше стояло
+    // ниже, и отрисовка падала на обращении к ещё не объявленной переменной.
+    const zoom = win < R();
+    const v0 = zoom ? now() - win : t0;
+    const v1 = zoom ? now() + win * 0.08 : t1;
     const f = live() && live().feeds[asset];
     const pts = f ? f.pts.filter((q2) => q2[0] >= (zoom ? v0 - 2 : t0 - 2)) : [];
     const empty = el.querySelector('.rd-empty');
@@ -730,11 +736,6 @@
     el.querySelector('.rd-chart svg').style.visibility = show ? '' : 'hidden';
     el.querySelector('.head').style.display = show ? '' : 'none';
     el.querySelector('.tpill').style.display = show && lock ? '' : 'none';
-    // 1m: последние 60 с и запас справа, как у predict.fun - видно каждое
-    // движение. 5m: весь раунд.
-    const zoom = win < R();
-    const v0 = zoom ? now() - win : t0;
-    const v1 = zoom ? now() + win * 0.08 : t1;
     const hms = (t) => new Date(t * 1000).toTimeString().slice(0, zoom ? 8 : 5);
     const xs = el.querySelectorAll('.rd-x span');
     xs[0].textContent = hms(v0); xs[1].textContent = hms((v0 + v1) / 2); xs[2].textContent = hms(Math.min(v1, t1));
