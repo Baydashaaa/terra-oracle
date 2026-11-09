@@ -205,7 +205,7 @@ async function mkLegacyMarkets() {
 // главной и в ленте. Для рынков, созданных с ошибкой, пока менять контракты
 // нельзя (загрузка кода в columbus-5 закрыта до whitelist).
 const MK_HIDDEN = new Set(PROPHECY_TESTNET ? [] : [
-  // 0, // пример: id рынка - причина
+  5, // proposal #12236, created by mistake
 ]);
 const mkVisible = (m) => !MK_HIDDEN.has(Number(m.id));
 
