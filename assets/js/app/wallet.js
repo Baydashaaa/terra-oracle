@@ -14,6 +14,29 @@ function loadWalletSession() {
 }
 function clearWalletSession() { localStorage.removeItem('wallet_session'); }
 
+// Одно событие "кошелёк изменился" для всех разделов. Раньше подключение
+// обновляло только шапку, чат, Ask и профиль, а рынки, форма создания рынка,
+// раунды и колокольчик узнавали о кошельке лишь после перезагрузки страницы:
+// человек подключался и видел "Connect a wallet to publish".
+function emitWalletChange(address) {
+  try { window.dispatchEvent(new CustomEvent('oracle:wallet', { detail: { address: address || null } })); } catch (e) { /* старый браузер */ }
+}
+
+// Разделы, у которых нет своего подписчика, обновляем здесь.
+window.addEventListener('oracle:wallet', function () {
+  setTimeout(function () {
+    try {
+      // Открытый рынок: блок прогноза и "твоя позиция" зависят от кошелька.
+      if (typeof openMarketId !== 'undefined' && openMarketId !== null && typeof openProphecyMarket === 'function'
+          && document.getElementById('page-markets')?.classList.contains('active')) {
+        openProphecyMarket(openMarketId);
+      }
+      if (window.OracleNotify && typeof window.OracleNotify.refresh === 'function') window.OracleNotify.refresh();
+      if (typeof renderProfilePage === 'function' && document.getElementById('page-profile')?.classList.contains('active')) renderProfilePage();
+    } catch (e) { console.warn('[wallet] refresh after change failed', e); }
+  }, 50);
+});
+
 window.toggleWalletDropdown = function() {
   document.getElementById('wallet-dropdown').classList.toggle('open');
 }
@@ -162,6 +185,8 @@ function setWalletConnected(address) {
     }
   }, 200);
 
+  emitWalletChange(address);
+
   // Load profile from Worker (profile.js loads after app.js)
   setTimeout(() => {
     if (typeof loadProfileFromWorker === 'function') {
@@ -218,5 +243,6 @@ window.disconnectWallet = function() {
 
   try { disconnectChatKeplr(); } catch(e) {}
   renderOracleBag();
+  emitWalletChange(null);
 }
 

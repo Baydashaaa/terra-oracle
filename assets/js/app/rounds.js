@@ -958,6 +958,9 @@
     return !!el && el.offsetParent !== null && !document.hidden;
   }
 
+  // Подключили, сменили или отключили кошелёк - сразу свои позиции.
+  window.addEventListener('oracle:wallet', () => { positions = {}; pending = []; refreshMine(); paintBet(); paintBook(); });
+
   function start() {
     loadCached();
     mount(); mountHome();

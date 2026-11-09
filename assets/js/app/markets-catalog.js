@@ -53,7 +53,16 @@
       sub: 'Fed rate decisions and US inflation releases. Resolved from FRED.' },
   ];
 
+  // Функция пересчёта открытой сейчас формы: при смене кошелька пропадает
+  // или появляется "Connect a wallet to publish".
+  var repaint = null;
+  window.addEventListener('oracle:wallet', function () {
+    var h = host();
+    if (repaint && h && h.offsetParent !== null) { try { repaint(); } catch (e) { /* форма уже закрыта */ } }
+  });
+
   function renderChooser() {
+    repaint = null;
     var h = host();
     if (!h) return;
     h.innerHTML = '<h3 class="step-h"><span class="n">1</span>What is your market about?</h3>'
@@ -252,6 +261,7 @@
     if (th) th.oninput = function () { C.th = th.value; paintSummary(); clearTimeout(th._t); th._t = setTimeout(checkDup, 500); };
     var dt = document.getElementById('mkx-date');
     if (dt) dt.onchange = function () { C.date = dt.value; paintSummary(); checkDup(); };
+    repaint = paintSummary;
     paintSummary();
   }
 
@@ -618,6 +628,7 @@
         if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (e) {} }
       }, 250);
     };
+    repaint = fPaintSummary;
     fPaintSummary();
   }
 
@@ -782,6 +793,7 @@
       E.q = qi.value; clearTimeout(qi._t);
       qi._t = setTimeout(function () { var p = qi.selectionStart; renderEsports(); var a = document.getElementById('mkx-eq'); if (a) { a.focus(); try { a.setSelectionRange(p, p); } catch (e) {} } }, 250);
     };
+    repaint = function () { paintGeneric(E, esFlow()); };
     paintGeneric(E, esFlow());
   }
 
@@ -892,6 +904,7 @@
     h.querySelectorAll('[data-wq]').forEach(function (b) { b.onclick = function () { W.th = b.dataset.wq; renderWorld(); redup(); }; });
     var th = document.getElementById('mkx-wth');
     if (th) th.oninput = function () { W.th = th.value.replace(/[%\s,]/g, ''); paintGeneric(W, wFlow()); clearTimeout(th._t); th._t = setTimeout(redup, 500); };
+    repaint = function () { paintGeneric(W, wFlow()); };
     paintGeneric(W, wFlow());
   }
 
