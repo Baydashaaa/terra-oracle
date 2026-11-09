@@ -195,9 +195,19 @@ async function mkLegacyMarkets() {
     after = list[list.length - 1].id;
     if (list.length < 50) break;
   }
-  out.capped = out.length >= 500;
-  return out;
+  const vis = out.filter(mkVisible);
+  vis.capped = out.length >= 500;
+  return vis;
 }
+
+// Рынки, скрытые с сайта. Контракт не меняется: рынок рассчитывается как
+// обычно и открывается по прямой ссылке, но не показывается в списке, на
+// главной и в ленте. Для рынков, созданных с ошибкой, пока менять контракты
+// нельзя (загрузка кода в columbus-5 закрыта до whitelist).
+const MK_HIDDEN = new Set(PROPHECY_TESTNET ? [] : [
+  // 0, // пример: id рынка - причина
+]);
+const mkVisible = (m) => !MK_HIDDEN.has(Number(m.id));
 
 async function loadProphecyMarkets() {
   let parts;
@@ -210,7 +220,7 @@ async function loadProphecyMarkets() {
     // Контракт без `descending` отвергает запрос целиком.
     return mkLegacyMarkets();
   }
-  const out = parts.flatMap((p) => p.list);
+  const out = parts.flatMap((p) => p.list).filter(mkVisible);
   out.sort((a, b) => a.id - b.id);
   out.capped = parts.some((p) => p.capped);
   return out;
