@@ -170,3 +170,20 @@
 #wallet-connected-panel .wb-row.sk em{width:48px}
 #wallet-connected-panel .wb-none{margin:6px 4px;font-size:11.5px;color:var(--muted, #8A96B4)}
 @keyframes rdSk{from{background-position:100% 0}to{background-position:-100% 0}}
+
+/* ---- ползунок суммы: доля баланса ---- */
+#page-markets .mk-slide{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
+#page-markets .mk-slide.off .mk-range,#page-markets .mk-slide.off .mk-pct{opacity:.4;pointer-events:none}
+#page-markets .mk-slide-top{display:flex;justify-content:flex-end;font-size:12.5px;color:#9AA6C4}
+#page-markets .mk-bal b{color:#E8F0FF;font-variant-numeric:tabular-nums}
+#page-markets .mk-range{--p:0%;-webkit-appearance:none;appearance:none;width:100%;height:6px;margin:0;border-radius:999px;cursor:pointer;outline:none;
+  background:linear-gradient(90deg,#7B5CFF 0,#A855F7 var(--p),rgba(255,255,255,.08) var(--p))}
+#page-markets .mk-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #7B5CFF;
+  box-shadow:0 0 0 4px rgba(123,92,255,.2),0 2px 6px rgba(0,0,0,.5);cursor:grab}
+#page-markets .mk-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #7B5CFF;box-shadow:0 0 0 4px rgba(123,92,255,.2);cursor:grab}
+#page-markets .mk-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(123,92,255,.4)}
+#page-markets .mk-pct{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#page-markets .mk-pct button{height:30px;border-radius:8px;cursor:pointer;font:600 12.5px/1 inherit;color:#C9D3EA;
+  background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.16)}
+#page-markets .mk-pct button:hover{border-color:#7B5CFF}
+#page-markets .mk-pct button[aria-pressed="true"]{color:#fff;background:rgba(123,92,255,.3);border-color:#7B5CFF}

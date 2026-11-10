@@ -141,6 +141,19 @@
     } finally { busy = false; }
   }
 
+  // Балансы для других модулей (ползунок суммы в Markets): та же выборка
+  // и тот же кэш на 30 с, без второго набора запросов к узлу.
+  window.walletBalances = {
+    async get(force) {
+      const a = addr();
+      if (!a || testnet()) return null;
+      if (!force && last.addr === a && Date.now() - last.at < FRESH_MS && last.rows) return last.rows;
+      const rows = await fetchRows(a);
+      if (addr() === a) { last = { addr: a, at: Date.now(), rows }; paint(rows); }
+      return rows;
+    },
+  };
+
   // Окно открыли - обновить; кошелёк сменили - сбросить.
   const origToggle = window.toggleWalletDropdown;
   window.toggleWalletDropdown = function () {

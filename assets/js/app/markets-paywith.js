@@ -110,6 +110,24 @@
     if (!box || box.querySelector('.mk-pay') || !tokens || !tokens.length) return;
     const chips = ['LUNC', ...tokens.map((t) => t.symbol)].map((s) => chip('data-pay', s, s === pay)).join('');
     box.insertAdjacentHTML('afterbegin', `<div class="mk-pay"><span>Pay with</span><div class="mk-pay-row">${chips}</div></div>`);
+    const amountRow = box.querySelector('.mk-amount');
+    if (amountRow) {
+      amountRow.insertAdjacentHTML('afterend', `<div class="mk-slide">
+        <div class="mk-slide-top"><span class="mk-bal">Balance: …</span></div>
+        <input type="range" class="mk-range" min="0" max="100" step="1" value="0" aria-label="Share of your balance">
+        <div class="mk-pct">${[25, 50, 75].map((p) => `<button type="button" data-pct="${p}">${p}%</button>`).join('')}<button type="button" data-pct="100">Max</button></div>
+      </div>`);
+      const slide = box.querySelector('.mk-slide');
+      const range = slide.querySelector('.mk-range');
+      range.addEventListener('input', () => applyPct(Number(range.value)));
+      slide.querySelector('.mk-pct').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-pct]');
+        if (b) applyPct(Number(b.dataset.pct));
+      });
+      // Ввод руками - ползунок встаёт на соответствующую долю.
+      const inp = document.getElementById('bet-amount');
+      if (inp) inp.addEventListener('input', followInput);
+    }
     box.querySelector('.mk-pay').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-pay]');
       if (!b) return;
@@ -118,9 +136,91 @@
       const inp = document.getElementById('bet-amount');
       if (inp) inp.value = '';
       sync();
+      paintBalance();
       window.updateBetCalc();
     });
     sync();
+    paintBalance();
+  }
+
+  // ── ползунок: доля баланса ─────────────────────────────────────────────────
+  // LUNC: сверху вычитаются газ и налог сети, иначе "Max" упирается в
+  // нехватку средств на комиссию, и ограничивает максимум рынка на сторону.
+  // Токен: весь баланс - газ платится в LUNC отдельно.
+  const GAS_RESERVE_LUNC = 100;
+  let balance = null;   // { sym, raw, decimals }
+  let lastForce = 0;
+
+  async function paintBalance(force) {
+    // Блок прогноза перерисовывается после каждой транзакции - баланс берём
+    // свежий, но не чаще раза в 15 с.
+    if (force === undefined) force = Date.now() - lastForce > 15000;
+    if (force) lastForce = Date.now();
+    const box = document.querySelector('#markets-list .mk-slide');
+    if (!box) return;
+    const lbl = box.querySelector('.mk-bal');
+    if (!mkWallet()) { lbl.textContent = 'Connect a wallet to use your balance'; box.classList.add('off'); return; }
+    box.classList.remove('off');
+    const want = pay;
+    try {
+      const rows = window.walletBalances ? await window.walletBalances.get(force) : null;
+      const r = rows && rows.find((x) => x.symbol === want);
+      if (want !== pay) return;
+      balance = r && r.raw !== null ? { sym: want, raw: r.raw, decimals: r.decimals } : null;
+    } catch (e) { balance = null; }
+    lbl.innerHTML = balance
+      ? `Balance: <b>${fmt(Number(balance.raw) / 10 ** balance.decimals, balance.decimals > 0 ? 4 : 0)} ${esc(want)}</b>`
+      : 'Balance unavailable';
+    followInput();
+  }
+
+  /** Доступно для прогноза, в единицах токена. Проценты ползунка - от
+   *  этого числа; максимум рынка на сторону - только потолок суммы. */
+  function usable() {
+    if (!balance || balance.sym !== pay) return 0;
+    let v = Number(balance.raw) / 10 ** balance.decimals;
+    if (pay === 'LUNC') {
+      const tax = typeof mkTaxRate === 'function' ? mkTaxRate() : 0.005;
+      return Math.floor(Math.max(0, v * (1 - tax) - GAS_RESERVE_LUNC));
+    }
+    return v;
+  }
+  /** Потолок суммы: для LUNC - максимум рынка на сторону. */
+  function cap(v) {
+    if (pay !== 'LUNC') return v;
+    const max = prophecyCfg ? Number(prophecyCfg.max_bet) / 1e6 : 0;
+    return max ? Math.min(v, max) : v;
+  }
+
+  function applyPct(p) {
+    const inp = document.getElementById('bet-amount');
+    const u = usable();
+    if (!inp || !u) return;
+    let v = cap((u * p) / 100);
+    // LUNC - целые; токен - до 6 знаков, вниз, чтобы не превысить баланс.
+    v = pay === 'LUNC' ? Math.floor(v) : Math.floor(v * 1e6) / 1e6;
+    inp.value = pay === 'LUNC' ? String(v) : String(v);
+    const range = document.querySelector('#markets-list .mk-range');
+    if (range) range.value = String(p);
+    markPct(p);
+    window.updateBetCalc();
+  }
+
+  function followInput() {
+    const range = document.querySelector('#markets-list .mk-range');
+    if (!range) return;
+    const u = usable();
+    const v = Number(String((document.getElementById('bet-amount') || {}).value || '').replace(/,/g, '')) || 0;
+    const p = u ? Math.min(100, Math.round((v / u) * 100)) : 0;
+    range.value = String(p);
+    range.style.setProperty('--p', p + '%');
+    markPct(null);
+  }
+
+  function markPct(p) {
+    const range = document.querySelector('#markets-list .mk-range');
+    if (range && p != null) range.style.setProperty('--p', p + '%');
+    document.querySelectorAll('#markets-list .mk-pct button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.pct) === p)));
   }
 
   /** Подписи и пресеты под выбранный токен. */
@@ -359,6 +459,8 @@
       mkToast(e.message || 'Transaction failed', 'err');
     }
   };
+
+  window.addEventListener('oracle:wallet', () => { balance = null; setTimeout(() => paintBalance(true), 100); });
 
   // ── связка ────────────────────────────────────────────────────────────────
   function start() {
