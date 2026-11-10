@@ -134,3 +134,12 @@
 #page-markets .mk-cas-q{margin:0;font-size:12.5px;line-height:1.5;color:#A9B6D3}
 #page-markets .mk-cas-q:empty{display:none}
 #page-markets .mk-cas-q b{color:#3BE38A}
+
+/* чипы токенов с логотипами */
+#page-markets .mk-pay-row button{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px 0 8px}
+#page-markets .mk-pay-row button img{width:18px;height:18px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.06)}
+#page-markets .mk-pay-row button[aria-pressed="true"] img{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+
+/* логотипы команд киберспорта: квадратные картинки - мягкая подложка */
+:is(#page-markets,#home-markets) .mk2-orb.mk2-crests.es img{border-radius:12px;padding:3px;box-sizing:border-box;
+  background:rgba(14,18,36,.85);box-shadow:0 4px 12px -4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(200,184,255,.14)}

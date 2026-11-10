@@ -46,6 +46,9 @@ testnet mode of Markets).
 prediction box quotes a swap to LUNC through it (`/tokens`, `/route`) when a
 prediction is paid with another token.
 
+10 November 2026: added `orbitwire-proxy` to `img-src`: token logos in the
+Markets "Pay with" and "Collect as" rows come through its `/logo` path.
+
 ---
 
 ## terraoracle.io
@@ -58,7 +61,7 @@ script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'
            https://static.cloudflareinsights.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
-img-src 'self' data: blob: https://draw.terraoracle.io https://coin-images.coingecko.com https://crests.football-data.org https://a.espncdn.com https://cdn.pandascore.co https://cdn-api.pandascore.co;
+img-src 'self' data: blob: https://draw.terraoracle.io https://orbitwire-proxy.vladislav-baydan.workers.dev https://coin-images.coingecko.com https://crests.football-data.org https://a.espncdn.com https://cdn.pandascore.co https://cdn-api.pandascore.co;
 frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com;
 worker-src 'self' blob:;
 connect-src 'self'

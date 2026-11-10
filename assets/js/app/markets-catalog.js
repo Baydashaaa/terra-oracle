@@ -34,9 +34,16 @@
   function loadCatalog() {
     return fetch(EVENTS_URL + '/catalog', { headers: { accept: 'application/json' } })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { catalog = j; catalogErr = null; return j; })
+      .then(function (j) {
+        catalog = j; catalogErr = null;
+        if (typeof window.mkEsLearn === 'function') { try { window.mkEsLearn(j); } catch (e) { /* не мешать форме */ } }
+        return j;
+      })
       .catch(function (e) { catalogErr = e.message || String(e); throw e; });
   }
+
+  // Каталог нужен и карточкам рынков: логотипы киберспортивных команд.
+  window.mkCatalogLoad = function () { return catalog ? Promise.resolve(catalog) : loadCatalog(); };
 
   // ── выбор категории ───────────────────────────────────────────────────────
 

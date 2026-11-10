@@ -539,8 +539,52 @@ const MK_CAT_IMG = {
   network: 'g-parameter', community: 'g-community', macro: 'cat-world', world: 'cat-world', crypto: 'cat-crypto',
   sport: 'cat-sport', esports: 'cat-esports',
 };
+// Логотипы киберспортивных команд. В рынке хранятся только номера команд
+// PandaScore (128 символов spec.param на ссылки не хватает), а адрес картинки
+// по номеру не построить. Поэтому логотипы берутся из каталога событий, пока
+// матч в нём есть, и запоминаются в браузере - после матча карточка их не
+// теряет. До загрузки каталога стоит иконка категории, потом она заменяется
+// на месте (mkEsLearn).
+const MK_ES_LOGOS = (() => { try { return JSON.parse(localStorage.getItem('mkEsLogos') || '{}') || {}; } catch (e) { return {}; } })();
+const mkEsOk = (u) => typeof u === 'string' && /^https:\/\/cdn(-api)?\.pandascore\.co\//.test(u);
+let mkEsAsked = false;
+function mkEsCrests(t1, t2, big) {
+  const a = MK_ES_LOGOS[t1], b = MK_ES_LOGOS[t2];
+  if (!mkEsOk(a) || !mkEsOk(b)) return null;
+  return `<span class="mk2-orb mk2-crests es${big ? ' big' : ''}" aria-hidden="true">`
+    + `<img src="${a}" alt="" loading="lazy"><img src="${b}" alt="" loading="lazy"></span>`;
+}
+function mkEsLearn(cat) {
+  const games = cat && cat.esports && cat.esports.games;
+  if (games) {
+    Object.values(games).forEach((list) => (list || []).forEach((x) => {
+      [x.home, x.away].forEach((t) => { if (t && t.id != null && mkEsOk(t.logo)) MK_ES_LOGOS[String(t.id)] = t.logo; });
+    }));
+    const keys = Object.keys(MK_ES_LOGOS);
+    keys.slice(0, Math.max(0, keys.length - 600)).forEach((k) => delete MK_ES_LOGOS[k]);
+    try { localStorage.setItem('mkEsLogos', JSON.stringify(MK_ES_LOGOS)); } catch (e) { /* приватный режим */ }
+  }
+  document.querySelectorAll('.mk2-orb[data-es]').forEach((el) => {
+    const [t1, t2] = el.dataset.es.split(',');
+    const html = mkEsCrests(t1, t2, el.classList.contains('big'));
+    if (html) el.outerHTML = html;
+  });
+}
+window.mkEsLearn = mkEsLearn;
+
 function mkOrb(m, big) {
   const ref = mkRef(m);
+  // Киберспорт: логотипы обеих команд внахлёст, как гербы в футболе.
+  if (ref && ref.src === 'ps' && /^\d+$/.test(ref.t1 || '') && /^\d+$/.test(ref.t2 || '')) {
+    const html = mkEsCrests(ref.t1, ref.t2, big);
+    if (html) return html;
+    // Логотипов ещё нет - один раз подтянуть каталог; иконка заменится сама.
+    if (!mkEsAsked && typeof window.mkCatalogLoad === 'function') {
+      mkEsAsked = true;
+      setTimeout(() => window.mkCatalogLoad().then(mkEsLearn).catch(() => {}), 0);
+    }
+    return `<span class="mk2-orb${big ? ' big' : ''}" data-es="${ref.t1},${ref.t2}" aria-hidden="true"><img src="assets/img/icons/cat-esports.webp" alt="" loading="lazy"></span>`;
+  }
   // NBA/NHL: логотипы команд ESPN по аббревиатуре.
   if (ref && ref.src === 'espn' && mkOwn(MK_ESPN_PATH, ref.lg) && /^[a-z]{2,4}$/.test(ref.h || '') && /^[a-z]{2,4}$/.test(ref.a || '')) {
     return `<span class="mk2-orb mk2-crests${big ? ' big' : ''}" aria-hidden="true">`

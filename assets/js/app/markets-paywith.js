@@ -66,6 +66,11 @@
   let timer = null;
 
   const esc = (s) => (typeof mktEsc === 'function' ? mktEsc(s) : String(s));
+  // Логотип токена: LUNC - картинка сайта, остальные - через прокси (/logo),
+  // чтобы CSP сайта разрешал один адрес, а не каждый сервер логотипов.
+  const logo = (sym) => (sym === 'LUNC' ? 'assets/img/lunc.webp' : `${PROXY}/logo?sym=${encodeURIComponent(sym)}`);
+  const chip = (attr, sym, on) => `<button type="button" ${attr}="${esc(sym)}" aria-pressed="${on}">`
+    + `<img src="${logo(sym)}" alt="" width="18" height="18" loading="lazy" onerror="this.remove()"><span>${esc(sym)}</span></button>`;
   const tok = () => (tokens || []).find((t) => t.symbol === pay);
   const fmt = (n, d) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 0 : d });
 
@@ -103,8 +108,7 @@
   function inject() {
     const box = document.querySelector('#markets-list .mk-betbox');
     if (!box || box.querySelector('.mk-pay') || !tokens || !tokens.length) return;
-    const chips = ['LUNC', ...tokens.map((t) => t.symbol)]
-      .map((s) => `<button type="button" data-pay="${esc(s)}" aria-pressed="${s === pay}">${esc(s)}</button>`).join('');
+    const chips = ['LUNC', ...tokens.map((t) => t.symbol)].map((s) => chip('data-pay', s, s === pay)).join('');
     box.insertAdjacentHTML('afterbegin', `<div class="mk-pay"><span>Pay with</span><div class="mk-pay-row">${chips}</div></div>`);
     box.querySelector('.mk-pay').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-pay]');
@@ -283,8 +287,7 @@
   function injectCollect() {
     const btn = document.querySelector('#markets-list button[onclick="submitClaim()"]');
     if (!btn || btn.previousElementSibling && btn.previousElementSibling.classList.contains('mk-pay')) return;
-    const chips = ['LUNC', ...tokens.map((t) => t.symbol)]
-      .map((s) => `<button type="button" data-cas="${esc(s)}" aria-pressed="${s === collectAs}">${esc(s)}</button>`).join('');
+    const chips = ['LUNC', ...tokens.map((t) => t.symbol)].map((s) => chip('data-cas', s, s === collectAs)).join('');
     btn.insertAdjacentHTML('beforebegin', `<div class="mk-pay mk-cas"><span>Collect as</span><div class="mk-pay-row">${chips}</div><p class="mk-cas-q"></p></div>`);
     const row = btn.previousElementSibling;
     row.addEventListener('click', (e) => {
