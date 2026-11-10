@@ -76,6 +76,32 @@
   const chip = (attr, sym, on) => `<button type="button" ${attr}="${esc(sym)}" aria-pressed="${on}">`
     + `<img src="${logo(sym)}" alt="" width="18" height="18" loading="lazy" onerror="this.remove()"><span>${esc(sym)}</span></button>`;
   const tok = () => (tokens || []).find((t) => t.symbol === pay);
+
+  /**
+   * Сообщение обмена в формате биржи из котировки /route.
+   *   terraswap (Terraswap, Terraport): swap { offer_asset:{info, amount}, ... }
+   *   garuda: swap { offer_asset:{native|cw20}, min_receive }
+   * CW20 в обоих случаях - send токену с вложенным swap для пула.
+   * minReceive - минимум выхода: у Garuda это защита самой биржи; у
+   * Terraswap защиту даёт belief_price + max_spread (или следующий шаг).
+   */
+  function swapMsg(q, offerRaw, minReceive, extra) {
+    const native = q.dir === 'from_lunc' ? 'uluna' : q.token.info.native_token && q.token.info.native_token.denom;
+    if (q.kind === 'garuda') {
+      const asset = q.dir === 'from_lunc' ? { native: 'uluna' } : q.token.ginfo;
+      if (native) {
+        return { contract: q.pool, msg: { swap: { offer_asset: asset, min_receive: String(minReceive) } }, funds: [{ denom: native, amount: offerRaw }] };
+      }
+      return { contract: q.token.ginfo.cw20, msg: { send: { contract: q.pool, amount: offerRaw,
+        msg: btoa(JSON.stringify({ swap: { min_receive: String(minReceive) } })) } }, funds: [] };
+    }
+    const info = q.dir === 'from_lunc' ? { native_token: { denom: 'uluna' } } : q.token.info;
+    if (native) {
+      return { contract: q.pool, msg: { swap: Object.assign({ offer_asset: { info, amount: offerRaw } }, extra) }, funds: [{ denom: native, amount: offerRaw }] };
+    }
+    return { contract: info.token.contract_addr, msg: { send: { contract: q.pool, amount: offerRaw,
+      msg: btoa(JSON.stringify({ swap: extra })) } }, funds: [] };
+  }
   const fmt = (n, d) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 0 : d });
 
   async function loadTokens() {
@@ -320,13 +346,9 @@
 
     const raw = toRaw(amt, t.decimals);
     const pred = minOut(quote);
-    const info = quote.token.info;
-    // Обмен: родной токен - сообщение пулу с монетами; CW20 - send токену
-    // с вложенным swap для пула. max_spread мягкий: жёсткую защиту даёт
-    // сумма прогноза ниже - меньше LUNC после обмена, и всё откатится.
-    const swap = info.native_token
-      ? { contract: quote.pool, msg: { swap: { offer_asset: { info, amount: raw }, max_spread: '0.05' } }, funds: [{ denom: info.native_token.denom, amount: raw }] }
-      : { contract: info.token.contract_addr, msg: { send: { contract: quote.pool, amount: raw, msg: btoa(JSON.stringify({ swap: { max_spread: '0.05' } })) } }, funds: [] };
+    // max_spread мягкий: жёсткую защиту даёт сумма прогноза ниже - меньше
+    // LUNC после обмена, и всё откатится. У Garuda - min_receive 99% расчёта.
+    const swap = swapMsg(quote, raw, BigInt(Math.floor(Number(quote.return_uluna) * (1 - SLIP))), { max_spread: '0.05' });
     const predict = {
       contract: PROPHECY_CONTRACT,
       msg: { [PROPHECY_NET.predictMsg]: { market_id: m.id, side: betSide } },
@@ -445,12 +467,9 @@
       return;
     }
     const claim = { contract: PROPHECY_CONTRACT, msg: { claim: { market_id: m.id } }, funds: [] };
-    const swap = {
-      contract: cquote.pool,
-      msg: { swap: { offer_asset: { info: { native_token: { denom: 'uluna' } }, amount: cquote.offer },
-        belief_price: belief(cquote.offer, cquote.return_amount), max_spread: '0.01' } },
-      funds: [{ denom: 'uluna', amount: cquote.offer }],
-    };
+    const swap = swapMsg({ ...cquote, dir: 'from_lunc' }, cquote.offer,
+      BigInt(Math.floor(Number(cquote.return_amount) * 0.99)),
+      { belief_price: belief(cquote.offer, cquote.return_amount), max_spread: '0.01' });
     try {
       const hash = await window.sendExecuteMany(mkWallet(), [claim, swap],
         `oracle-prophecy: claim ${m.id} as ${collectAs}`, PROPHECY_CHAIN, 1600000);
