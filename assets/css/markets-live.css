@@ -240,3 +240,14 @@
   #page-markets .mk2-toolbar .mk2-search{flex:1 1 100%;margin-left:0}
   #page-markets .mk2-toolbar .mk2-sep{display:none}
 }
+
+/* строка фильтров: всё прижато влево, поиск - справа; ровные отступы */
+#page-markets .mk2-toolbar{justify-content:flex-start;gap:8px}
+#page-markets .mk2-toolbar #mkTabs{flex:none;display:flex;gap:6px;margin:0}
+#page-markets .mk2-toolbar .mk2-sep{margin:0 4px}
+/* Блоки списка разносит сам контейнер (#mk-browse - колонка с gap), свои
+   нижние отступы у ленты, фильтров и BETA складывались с ним вдвое. */
+#page-markets #mk-browse{gap:12px}
+#page-markets .mk2-toolbar,#page-markets .mkl-tape,#page-markets #mk-browse .rd{margin:0}
+/* BETA - внутри #markets-list, шаг контейнера на неё не действует. */
+#page-markets #markets-list .mk2-beta{margin:0 2px 12px}
