@@ -57,7 +57,11 @@
 
   const PROXY = 'https://orbitwire-proxy.vladislav-baydan.workers.dev';
   const SLIP = 0.01;              // запас на движение цены между расчётом и блоком
-  const GAS = 1200000;            // обмен + прогноз
+  // Обмен + прогноз. Обмен CW20 на Terraport v2 занял ~980K газа из 1.2M,
+  // а Garuda и Terraport v3 могут быть тяжелее, отсюда 1.6M. Комиссия на
+  // Terra Classic считается от лимита, а не от потраченного (1.6M ≈ 45 LUNC),
+  // поэтому лимит не завышен сверх нужного.
+  const GAS = 1600000;
 
   let tokens = null;              // [{ symbol, available, address, decimals, dex, pool, ... }]
   let pay = 'LUNC';
@@ -449,7 +453,7 @@
     };
     try {
       const hash = await window.sendExecuteMany(mkWallet(), [claim, swap],
-        `oracle-prophecy: claim ${m.id} as ${collectAs}`, PROPHECY_CHAIN, 1300000);
+        `oracle-prophecy: claim ${m.id} as ${collectAs}`, PROPHECY_CHAIN, 1600000);
       await mkTrack(hash, `Payout in ${collectAs}`, (r) => {
         cquote = null;
         openProphecyMarket(m.id);
