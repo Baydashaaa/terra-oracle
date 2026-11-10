@@ -230,7 +230,8 @@
     </ol>`;
     return `
       <section class="rd" id="rd" aria-label="Five-minute rounds">
-        <div class="rd-cards">${ASSETS.map((a) => cardHtml(a, a.id === asset)).join('')}</div>
+        <div class="rd-home-h"><h3><i></i>5-minute rounds</h3><button type="button" class="rd-toggle" aria-expanded="false">Open rounds</button></div>
+        <div class="rd-cards">${ASSETS.map((a) => cardHtml(a, false, true)).join('')}</div>
         <div class="rd-main">
           <div class="rd-box rd-left">
             <header class="rd-head">
@@ -318,10 +319,21 @@
     if (!anchor) return;
     anchor.insertAdjacentHTML('beforebegin', shell());
     const el = document.getElementById('rd');
+    // На списке рынков раунды - полоса карточек. Полный экран (график,
+    // стакан, прогноз) раскрывается по клику на карточку или её UP/DOWN.
     el.querySelector('.rd-cards').addEventListener('click', (e) => {
       const b = e.target.closest('.rdc');
-      if (b) select(b.dataset.a);
+      if (!b) return;
+      const sideBtn = e.target.closest('.rdc-act button[data-s]');
+      select(b.dataset.a);
+      if (sideBtn) { side = sideBtn.dataset.s === '1'; setAhead(1); }
+      expand(true);
     });
+    el.querySelector('.rd-cards').addEventListener('keydown', (e) => {
+      const b = e.target.closest('.rdc');
+      if (b && e.target === b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(b.dataset.a); expand(true); }
+    });
+    el.querySelector('.rd-toggle').addEventListener('click', () => expand(!expanded));
     el.querySelector('.rd-sides').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-s]');
       if (!b) return;
@@ -367,6 +379,19 @@
     paintHead();
   }
 
+  let expanded = false;
+  function expand(v) {
+    expanded = !!v;
+    const el = document.getElementById('rd');
+    if (!el) return;
+    el.classList.toggle('open', expanded);
+    const t = el.querySelector('.rd-toggle');
+    t.textContent = expanded ? 'Hide' : 'Open rounds';
+    t.setAttribute('aria-expanded', String(expanded));
+    el.querySelectorAll('.rdc').forEach((x) => x.setAttribute('aria-pressed', String(expanded && x.dataset.a === asset)));
+    if (expanded) { paintHead(); paintBet(); paintStrip(); paintMine(); paintBook(); loadBook(); }
+  }
+
   function setAhead(k) {
     ahead = k === 2 ? 2 : 1;
     bookTab = ahead === 2 ? 'after' : 'next';
@@ -386,7 +411,7 @@
 
   function select(a) {
     asset = a;
-    document.querySelectorAll('#rd .rdc').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.a === a)));
+    document.querySelectorAll('#rd .rdc').forEach((x) => x.setAttribute('aria-pressed', String(expanded && x.dataset.a === a)));
     const el = document.getElementById('rd');
     if (el) el.querySelector('.rd-strip').innerHTML = '';
     paintHead(); paintBet(); paintStrip();
@@ -932,6 +957,7 @@
     const go = (a, up) => {
       select(a);
       if (up !== undefined) { side = up; setAhead(1); }
+      expand(true);
       if (typeof mkOpenFromHome === 'function') mkOpenFromHome(0);
       // В разделе могла остаться открытой форма создания рынка или экран
       // одного рынка - тогда раунды не видны.
@@ -1007,6 +1033,7 @@
   };
   const openRound = (a) => {
     select(a);
+    expand(true);
     const el = document.getElementById('rd');
     if (el) el.scrollIntoView({ block: 'start', behavior: REDUCED ? 'auto' : 'smooth' });
   };

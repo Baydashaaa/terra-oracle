@@ -376,3 +376,9 @@
 .rd-cards .rdc .rdc-act button{box-sizing:border-box;width:100%;min-width:0;height:38px;margin:0;padding:0 10px;
   display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;
   font:700 13px/1 inherit;letter-spacing:.02em;white-space:nowrap;box-shadow:none}
+
+/* ---- раунды на списке рынков: полоса карточек, полный экран по клику ---- */
+#page-markets .rd .rd-home-h{margin:0 2px -2px}
+#page-markets .rd-toggle{height:30px;padding:0 14px;border-radius:9px;cursor:pointer;font:600 12.5px/1 inherit;color:#C8B8FF;
+  background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.4)}
+#page-markets .rd:not(.open) .rd-main,#page-markets .rd:not(.open) .rd-bottom{display:none}

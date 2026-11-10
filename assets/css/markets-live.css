@@ -187,3 +187,56 @@
   background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.16)}
 #page-markets .mk-pct button:hover{border-color:#7B5CFF}
 #page-markets .mk-pct button[aria-pressed="true"]{color:#fff;background:rgba(123,92,255,.3);border-color:#7B5CFF}
+
+/* ---- экран рынка: что происходит сейчас ---- */
+#page-markets .mk2-now{display:flex;align-items:flex-start;gap:14px;margin:0 0 18px;padding:16px 20px;border-radius:18px;
+  background:linear-gradient(90deg,rgba(242,212,92,.10),rgba(242,212,92,.03));border:1px solid rgba(242,212,92,.32)}
+#page-markets .mk2-now .dot{flex:none;width:10px;height:10px;margin-top:6px;border-radius:50%;background:#F2D45C;box-shadow:0 0 10px #F2D45C;animation:mk2pulse 1.6s ease-in-out infinite}
+#page-markets .mk2-now b{color:#E8F0FF;font-size:15px}
+#page-markets .mk2-now p{margin:4px 0 0;font-size:13.5px;line-height:1.55;color:#B9C4DE}
+#page-markets .mk2-now p b{font-size:13.5px;color:#F2D45C;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){#page-markets .mk2-now .dot{animation:none}}
+
+/* ===== Markets: компактная раскладка списка ===== */
+/* якорь на месте прежнего блока статистики */
+#page-markets .mk2-anchor{display:none!important}
+
+/* шапка: ниже, без длинного текста; статистика и кнопки - одной строкой */
+#page-markets .mk-hero{min-height:0}
+#page-markets .mk-hero .copy{flex:1 1 auto;max-width:860px;padding:20px 28px;display:grid;
+  grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 24px}
+#page-markets .mk-hero .copy h2{grid-column:1 / -1;margin:0;font-size:clamp(24px,2.4vw,32px);line-height:1.05}
+#page-markets .mk-hero .copy .lead{grid-column:1 / -1;margin:0;font-size:13.5px;letter-spacing:.02em;max-width:62ch}
+#page-markets .mk-hero-stats{grid-column:1;display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 0 0;font-size:13px;color:#A9B6D3}
+#page-markets .mk-hero-stats b{margin-right:5px;font:700 17px/1 Rajdhani,sans-serif;color:#F2D45C;font-variant-numeric:tabular-nums}
+#page-markets .mk-hero-stats span + span{padding-left:16px;border-left:1px solid rgba(200,184,255,.18)}
+#page-markets .mk-hero .copy .btns{grid-column:2;margin:6px 0 0;flex-wrap:nowrap}
+#page-markets .mk-hero .copy .btns .btn{height:40px;padding:0 16px;font-size:13.5px}
+#page-markets .mk-hero .scrim{background:linear-gradient(90deg,rgba(4,7,22,.96) 0%,rgba(4,7,22,.86) 42%,rgba(4,7,22,.3) 74%,transparent 92%)}
+
+/* одна строка фильтров: Live/Settled, категории, поиск */
+#page-markets .mk2-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+#page-markets .mk2-toolbar .mk2-sep{width:1px;height:22px;background:rgba(200,184,255,.18);flex:none}
+#page-markets .mk2-toolbar .mk2-groups{display:flex;flex:1 1 auto;min-width:0;margin:0;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#page-markets .mk2-toolbar .mk2-groups::-webkit-scrollbar{display:none}
+#page-markets .mk2-toolbar .mk2-groups button{flex:none}
+#page-markets .mk2-toolbar .mk2-search{flex:0 1 240px;margin-left:auto;min-width:160px}
+
+/* BETA - тихая подпись над сеткой, а не полоса во всю ширину */
+#page-markets .mk2-beta{display:flex;align-items:baseline;gap:8px;margin:0 2px 10px;padding:0;border:0;background:none;font-size:12.5px;color:#7F8BAA}
+#page-markets .mk2-beta .tag{padding:1px 7px;border-radius:6px;font-size:10px;letter-spacing:.1em;color:#F2D45C;background:rgba(242,212,92,.1);border:1px solid rgba(242,212,92,.3)}
+#page-markets .mk2-beta .txt{color:#7F8BAA}
+
+/* рынки сеткой по три; витрина - только у продвинутых */
+#page-markets .mk-list.mk2-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
+#page-markets .mk2-carousel + .mk-list.mk2-cards,#page-markets .mk2c.big + .mk-list.mk2-cards{margin-top:14px}
+
+/* лента Live: стоит на месте, пока записи помещаются в строку */
+#page-markets .mkl-tape .run.still{animation:none}
+
+@media (max-width:820px){
+  #page-markets .mk-hero .copy{grid-template-columns:1fr;padding:18px}
+  #page-markets .mk-hero .copy .btns{grid-column:1;flex-wrap:wrap}
+  #page-markets .mk2-toolbar .mk2-search{flex:1 1 100%;margin-left:0}
+  #page-markets .mk2-toolbar .mk2-sep{display:none}
+}

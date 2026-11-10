@@ -625,8 +625,10 @@
         <span class="a">${ago(b.t)}</span></a>`;
     };
     const run = tapeItems.map(item).join('');
-    // Дорожка повторена дважды, чтобы прокрутка шла без шва.
-    return `<span class="lbl"><i></i>Live</span><div class="trk"><div class="run">${run}${run}</div></div>`;
+    // Один проход. Если записи не помещаются в строку, pollTape удвоит
+    // дорожку и запустит прокрутку; если помещаются - лента стоит на месте.
+    // Раньше дорожка удваивалась всегда, и две записи шли по кругу парами.
+    return `<span class="lbl"><i></i>Live</span><div class="trk"><div class="run still">${run}</div></div>`;
   }
   async function pollTape() {
     const anchor = document.querySelector('#page-markets #markets-list');
@@ -661,7 +663,12 @@
     tape.hidden = false;
     tape.innerHTML = tapeHtml();
     const run = tape.querySelector('.run');
-    if (run) run.style.setProperty('--dur', Math.max(30, tapeItems.length * 6) + 's');
+    const trk = tape.querySelector('.trk');
+    if (run && trk && run.scrollWidth > trk.clientWidth + 8) {
+      run.innerHTML += run.innerHTML;
+      run.classList.remove('still');
+      run.style.setProperty('--dur', Math.max(30, tapeItems.length * 6) + 's');
+    }
   }
 
   // ── связка ───────────────────────────────────────────────────────────────

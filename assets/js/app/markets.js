@@ -728,6 +728,34 @@ function mkPhaseTrack(m) {
       <b>${s[0]}</b><em>${mktEsc(s[1])}</em></li>`).join('')}</ol>`;
 }
 
+/**
+ * Что происходит с рынком прямо сейчас и чего ждать. Полоса этапов говорила
+ * об этом одной мелкой строкой ("now · waiting for the block"), и было
+ * непонятно, почему рынок закрыт и когда будет результат.
+ */
+function mkNowBanner(m) {
+  const now = Math.floor(Date.now() / 1000);
+  const waiting = (m.status === 'open' && Number(m.bets_close_at) <= now) || m.status === 'locked';
+  if (!waiting) return '';
+  const ref = mkRef(m);
+  const src = (ref && MK_SRC_NAME[ref.src]) || 'the source named below';
+  const at = Number(m.resolve_after);
+  const d = new Date(at * 1000);
+  const hhmm = String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
+  const r = mkRules(m);
+  const hours = r.challenge_secs ? Math.round(Number(r.challenge_secs) / 3600) : 48;
+  const event = ref && (ref.src === 'ps' || ref.src === 'fd' || ref.src === 'espn') ? 'The match is being played.'
+    : 'The outcome is not known yet.';
+  const due = at > now
+    ? `The result is read from ${mktEsc(src)} at ${hhmm}, in <b class="mk-cd" data-until="${at}">${fmtCountdown(at - now)}</b>.`
+    : `The result is due from ${mktEsc(src)} now and appears here as soon as it is posted on chain.`;
+  return `<section class="mk2-now" style="--c:${catRgb(m.category)}">
+    <i class="dot"></i>
+    <div><b>Predictions are closed. ${event}</b>
+      <p>${due} After that anyone can challenge it for ${hours} hours, then winners collect.</p></div>
+  </section>`;
+}
+
 /** Две крупные стороны закрытого рынка с множителем выплаты. */
 function mkSidesClosed(m, pct) {
   const side = (isYes) => {
@@ -1052,14 +1080,15 @@ async function renderMarkets(resolved) {
     const nowS = Date.now() / 1000;
     const promos = resolved ? [] : list.filter((m) => m.promoted
       && m.status === 'open' && Number(m.bets_close_at) > nowS);
-    const feats = promos.length ? promos : list.slice(0, 1);
+    // Витрина во всю ширину - только для продвинутых рынков. Обычные идут
+    // сеткой: раньше первый рынок всегда растягивался на всю ширину, и до
+    // остальных нужно было листать.
+    const feats = promos;
     const rest = list.filter((m) => !feats.includes(m));
     if (!resolved) rest.sort((a, b) => Number(!!b.promoted) - Number(!!a.promoted));
     const featHtml = feats.length ? mkFeatured(feats) : '';
-    const grid = rest.length
-      ? `<div class="mk-grid"><div>${featHtml}</div>`
-        + `<div class="mk-list">${rest.map(marketCard).join('')}</div></div>`
-      : featHtml;
+    const grid = featHtml
+      + (rest.length ? `<div class="mk-list mk2-cards">${rest.map(marketCard).join('')}</div>` : '');
     host.innerHTML = TEST_BANNER + (list.length
       ? grid
       : (mkFilter.q || mkFilter.group !== 'all')
@@ -1289,9 +1318,16 @@ async function openProphecyMarket(id) {
   mkListChrome(false);
   const host = document.getElementById('markets-list');
   if (!host) return;
-  host.innerHTML = '<div class="mk-loading">Loading…</div>';
-  const main = document.querySelector('.main');
-  if (main) main.scrollTop = 0;
+  // Тот же рынок уже на экране - это обновление, а не открытие: экран не
+  // очищается и не прокручивается наверх. Раньше рынок, у которого приём
+  // закрыт, а исход ещё не записан, каждые 20 секунд перерисовывался через
+  // "Loading…" - страница мигала всё время матча.
+  const same = host.dataset.mid === String(id) && !!host.querySelector('.mk2-hero');
+  if (!same) {
+    host.innerHTML = '<div class="mk-loading">Loading…</div>';
+    const main = document.querySelector('.main');
+    if (main) main.scrollTop = 0;
+  }
 
   let m, pos = null, tip = null;
   await loadProphecyConfig();
@@ -1301,9 +1337,11 @@ async function openProphecyMarket(id) {
       pos = await prophecyQuery({ position: { market_id: id, address: mkWallet() } });
     }
   } catch (e) {
-    host.innerHTML = emptyPanel('Chain unavailable', 'Could not load this market.');
+    // При обновлении узел мог не ответить один раз - оставляем то, что есть.
+    if (!same) host.innerHTML = emptyPanel('Chain unavailable', 'Could not load this market.');
     return;
   }
+  if (openMarketId !== id) return;   // пока грузили, человек ушёл с этого рынка
   try { tip = await chainTip(); } catch (e) { /* дата необязательна */ }
   window._prophecyMarket = m;
   loadProphecyMarkets().then(renderMarketStats).catch(() => {});
@@ -1312,6 +1350,12 @@ async function openProphecyMarket(id) {
   const yes = Number(m.pot_yes), no = Number(m.pot_no);
   const total = yes + no;
   const pct = total ? Math.round((yes / total) * 100) : 50;
+
+  // Ничего не изменилось - не перерисовываем: ни вспышки, ни сброса полей.
+  const sig = JSON.stringify([m, pos, !!open, mkWallet() || '']);
+  if (same && host.dataset.sig === sig) return;
+  host.dataset.mid = String(id);
+  host.dataset.sig = sig;
 
   host.innerHTML = `
     <div class="mk-back" onclick="mkBackToList(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
@@ -1326,6 +1370,7 @@ async function openProphecyMarket(id) {
       ${bonusChip(m)}
       ${mkPhaseTrack(m)}
     </section>
+    ${mkNowBanner(m)}
     <div class="mk2-body">
       ${mkPositionPanel(m, pos)}
       <section class="mkc mk-detail mk2-panel mk2-forecast">
