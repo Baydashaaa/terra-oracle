@@ -130,3 +130,7 @@
   color:#C9D3EA;background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.18)}
 #page-markets .mk-pay-row button[aria-pressed="true"]{color:#fff;background:#6E56F8;border-color:#6E56F8}
 #page-markets .mk-betbox .mk-chips[hidden]{display:none}
+#page-markets .mk-cas{margin:4px 0 12px}
+#page-markets .mk-cas-q{margin:0;font-size:12.5px;line-height:1.5;color:#A9B6D3}
+#page-markets .mk-cas-q:empty{display:none}
+#page-markets .mk-cas-q b{color:#3BE38A}

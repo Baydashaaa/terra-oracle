@@ -11,6 +11,9 @@
  * меньше - прогноз не проходит, и вся транзакция откатывается целиком:
  * токены остаются у человека. Дал больше - разница остаётся на кошельке.
  *
+ * Обратно - "Collect as": выплату из рынка можно сразу получить в токене
+ * из того же списка (claim + обмен одной транзакцией).
+ *
  * Только mainnet: на тестнете этих токенов нет. Прогноз в LUNC идёт старым
  * путём, этот модуль его не трогает.
  * Загружать ПОСЛЕ markets.js и contract-exec.js.
@@ -187,6 +190,7 @@
     box.innerHTML = head + `
       <div class="row"><span>Predicted ${side}</span><b>${fmt(predLunc)} LUNC</b></div>
       <div class="row"><span>If ${side} wins</span><b class="y">${fmt(payout)} LUNC</b></div>
+      <div class="row muted"><span>Payout</span><b>in LUNC, or back in ${esc(t.symbol)} with "Collect as"</b></div>
       <div class="row muted"><span>Kept aside for price move and tax</span><b>${fmt(outLunc - predLunc)} LUNC, stays in your wallet</b></div>
       ${quote.impact_bps > 300 ? `<div class="row muted"><span>Thin pool: the swap costs</span><b>${(quote.impact_bps / 100).toFixed(1)}%</b></div>` : ''}`;
     if (btn && !btn.disabled) btn.textContent = `Swap & predict ${side} · ${fmt(predLunc)} LUNC →`;
@@ -244,11 +248,120 @@
     }
   };
 
+  // ── выплата в токене: "Collect as" ────────────────────────────────────────
+  // Пул рынка весь в LUNC, и выплата из контракта - в LUNC. Выбран токен -
+  // одной транзакцией: claim, затем обмен полученных LUNC на токен. Сумма
+  // выплаты известна заранее (позиция в контракте), поэтому обмен считается
+  // точно. Защита - belief_price + max_spread 1%: дал пул меньше - вся
+  // транзакция откатывается, и выплата остаётся в контракте до следующей
+  // попытки.
+  let collectAs = 'LUNC';
+  let cquote = null;
+
+  /** Сколько LUNC уйдёт в обмен: выплата за вычетом налога сети с запасом. */
+  function swapIn(payoutU) {
+    const tax = typeof mkTaxRate === 'function' ? mkTaxRate() : 0.005;
+    return BigInt(Math.floor(Number(payoutU) * Math.max(0, 1 - tax - 0.002)));
+  }
+
+  /** belief_price = сколько uluna за одну единицу токена, Decimal с 18 знаками. */
+  function belief(offerU, retRaw) {
+    const v = (BigInt(offerU) * 10n ** 18n) / BigInt(retRaw);
+    const str = v.toString().padStart(19, '0');
+    return (str.slice(0, -18) + '.' + str.slice(-18)).replace(/\.?0+$/, '');
+  }
+
+  async function myPayout() {
+    const m = window._prophecyMarket;
+    if (!m || !mkWallet()) return null;
+    try {
+      const pos = await prophecyQuery({ position: { market_id: m.id, address: mkWallet() } });
+      return pos && !pos.claimed && Number(pos.payout) > 0 ? String(pos.payout) : null;
+    } catch (e) { return null; }
+  }
+
+  function injectCollect() {
+    const btn = document.querySelector('#markets-list button[onclick="submitClaim()"]');
+    if (!btn || btn.previousElementSibling && btn.previousElementSibling.classList.contains('mk-pay')) return;
+    const chips = ['LUNC', ...tokens.map((t) => t.symbol)]
+      .map((s) => `<button type="button" data-cas="${esc(s)}" aria-pressed="${s === collectAs}">${esc(s)}</button>`).join('');
+    btn.insertAdjacentHTML('beforebegin', `<div class="mk-pay mk-cas"><span>Collect as</span><div class="mk-pay-row">${chips}</div><p class="mk-cas-q"></p></div>`);
+    const row = btn.previousElementSibling;
+    row.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-cas]');
+      if (!b) return;
+      collectAs = b.dataset.cas;
+      cquote = null;
+      row.querySelectorAll('button[data-cas]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.cas === collectAs)));
+      paintCollect(row, btn);
+    });
+    paintCollect(row, btn);
+  }
+
+  async function paintCollect(row, btn) {
+    const q = row.querySelector('.mk-cas-q');
+    const label = btn.dataset.label || (btn.dataset.label = btn.textContent.trim());
+    if (collectAs === 'LUNC') { q.textContent = ''; btn.textContent = label; return; }
+    const t = tok2(collectAs);
+    q.textContent = `Getting a ${collectAs} quote…`;
+    const payout = await myPayout();
+    if (!payout || !t) { q.textContent = 'Nothing to collect yet.'; return; }
+    const offer = swapIn(payout);
+    try {
+      const r = await fetch(`${PROXY}/route?token=${encodeURIComponent(t.symbol)}&amount=${offer}&dir=from_lunc`, { signal: AbortSignal.timeout(10000) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'no route');
+      if (collectAs !== t.symbol) return;
+      cquote = { ...j, offer: offer.toString(), payout };
+      const out = Number(j.return_amount) / 10 ** t.decimals;
+      q.innerHTML = `Payout ${fmt(Number(payout) / 1e6)} LUNC. After the network tax, ${fmt(Number(offer) / 1e6)} LUNC is swapped on ${esc(j.dex)}: you receive <b>≈ ${fmt(out, out < 100 ? 4 : 2)} ${esc(t.symbol)}</b>. If the price moves more than 1% before the block, nothing happens and you can try again.`;
+      btn.textContent = `Collect as ${t.symbol} →`;
+    } catch (e) {
+      cquote = null;
+      q.textContent = `No ${collectAs} route right now (${e.message}). Collect in LUNC or try again.`;
+      btn.textContent = label;
+    }
+  }
+
+  const tok2 = (sym) => (tokens || []).find((t) => t.symbol === sym);
+
+  const origClaim = window.submitClaim;
+  window.submitClaim = async function () {
+    if (collectAs === 'LUNC') return origClaim.apply(this, arguments);
+    const m = window._prophecyMarket;
+    if (!m || !mkWallet()) return;
+    if (!cquote || Date.now() / 1000 - cquote.at > 30) {
+      const row = document.querySelector('#markets-list .mk-cas');
+      const btn = document.querySelector('#markets-list button[onclick="submitClaim()"]');
+      if (row && btn) await paintCollect(row, btn);
+      mkToast('The price was refreshed. Check the amount and press Collect again.', 'info');
+      return;
+    }
+    const claim = { contract: PROPHECY_CONTRACT, msg: { claim: { market_id: m.id } }, funds: [] };
+    const swap = {
+      contract: cquote.pool,
+      msg: { swap: { offer_asset: { info: { native_token: { denom: 'uluna' } }, amount: cquote.offer },
+        belief_price: belief(cquote.offer, cquote.return_amount), max_spread: '0.01' } },
+      funds: [{ denom: 'uluna', amount: cquote.offer }],
+    };
+    try {
+      const hash = await window.sendExecuteMany(mkWallet(), [claim, swap],
+        `oracle-prophecy: claim ${m.id} as ${collectAs}`, PROPHECY_CHAIN, 1300000);
+      await mkTrack(hash, `Payout in ${collectAs}`, (r) => {
+        cquote = null;
+        openProphecyMarket(m.id);
+        if (r.status === 'failed') mkToast('Nothing changed: the price moved more than 1%, so the payout stayed in the market. Try again or collect in LUNC.', 'err');
+      });
+    } catch (e) {
+      mkToast(e.message || 'Transaction failed', 'err');
+    }
+  };
+
   // ── связка ────────────────────────────────────────────────────────────────
   function start() {
-    loadTokens().then(inject);
+    loadTokens().then(() => { inject(); injectCollect(); });
     const list = document.getElementById('markets-list');
-    if (list) new MutationObserver(() => { if (tokens) inject(); }).observe(list, { childList: true, subtree: true });
+    if (list) new MutationObserver(() => { if (tokens) { inject(); injectCollect(); } }).observe(list, { childList: true, subtree: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
