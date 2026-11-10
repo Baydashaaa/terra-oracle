@@ -144,14 +144,19 @@
       : false;
     if (!_keplr && !_isWC) throw new Error('No wallet connected.');
 
-    var msgAny = makeMsgAny(
-      '/cosmwasm.wasm.v1.MsgExecuteContract',
-      encodeMsgExecuteContract(fromAddr, contract, msgJson, funds)
-    );
-    var txBodyBytes = concat(
-      encodeField(1, 2, msgAny),
-      encodeField(2, 2, enc.encode(memo || ''))
-    );
+    // `contract` может быть списком { contract, msg, funds } - тогда это одна
+    // транзакция из нескольких сообщений, выполняемых по порядку и целиком:
+    // если любое падает, откатываются все (обмен + прогноз одной подписью).
+    // Старые вызовы с одним контрактом работают как раньше.
+    var list = Array.isArray(contract) ? contract : [{ contract: contract, msg: msgJson, funds: funds }];
+    var bodyParts = list.map(function (m) {
+      return encodeField(1, 2, makeMsgAny(
+        '/cosmwasm.wasm.v1.MsgExecuteContract',
+        encodeMsgExecuteContract(fromAddr, m.contract, m.msg, m.funds)
+      ));
+    });
+    bodyParts.push(encodeField(2, 2, enc.encode(memo || '')));
+    var txBodyBytes = concat.apply(null, bodyParts);
 
     // account_number / sequence
     var accountNumber, sequence;
@@ -329,4 +334,8 @@
 
 
   window.sendExecuteContract = sendExecuteContract;
+  /** Несколько сообщений одной транзакцией: msgs = [{ contract, msg, funds }]. */
+  window.sendExecuteMany = function (fromAddr, msgs, memo, chainId, gasLimit) {
+    return sendExecuteContract(fromAddr, msgs, null, null, memo, chainId, gasLimit);
+  };
 })();

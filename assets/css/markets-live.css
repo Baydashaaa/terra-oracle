@@ -120,3 +120,13 @@
 /* Суммы сторон и низ карточки - выровнены по базовой линии. */
 :is(#page-markets,#home-markets) .mk2-gauge-sub{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
 :is(#page-markets,#home-markets) .mk2-foot{align-items:center}
+
+/* ---- прогноз любым токеном: строка "Pay with" ---- */
+#page-markets .mk-pay{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+#page-markets .mk-pay > span{font-size:12.5px;color:#9AA6C4}
+#page-markets .mk-pay-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#page-markets .mk-pay-row::-webkit-scrollbar{display:none}
+#page-markets .mk-pay-row button{flex:none;height:32px;padding:0 12px;border-radius:9px;cursor:pointer;font:600 12.5px/1 inherit;white-space:nowrap;
+  color:#C9D3EA;background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.18)}
+#page-markets .mk-pay-row button[aria-pressed="true"]{color:#fff;background:#6E56F8;border-color:#6E56F8}
+#page-markets .mk-betbox .mk-chips[hidden]{display:none}

@@ -42,6 +42,10 @@ state, read-only contract proxy, price history), `api.binance.com` and
 where Binance is blocked), plus `lcd.luncblaze.com` (rebel-2 testnet node, the
 testnet mode of Markets).
 
+9 November 2026: added `orbitwire-proxy` to `connect-src`: the Markets
+prediction box quotes a swap to LUNC through it (`/tokens`, `/route`) when a
+prediction is paid with another token.
+
 ---
 
 ## terraoracle.io
@@ -65,6 +69,7 @@ connect-src 'self'
             https://oracle-events.vladislav-baydan.workers.dev
             https://oracle-rounds-keeper.vladislav-baydan.workers.dev
             https://oracle-rounds-keeper-main.vladislav-baydan.workers.dev
+            https://orbitwire-proxy.vladislav-baydan.workers.dev
             https://s.terraoracle.io
             https://draw.terraoracle.io
             https://baydashaaa.github.io
