@@ -13,7 +13,12 @@ function showPage(name, e, skipHistory) {
   if (name === 'vote') { applyStoredVotes(); applyVoteStates(); renderVotes(); loadVotesFromWorker(); }
   if (name === 'chat') renderChatPage();
   if (name === 'bag')  renderOracleBag();
-  if (name === 'markets') renderMarkets(false);
+  if (name === 'markets') {
+    // Из меню - всегда список; открытая форма создания или рынок не
+    // перекрывают его (рынок с главной откроется поверх через mkPendingOpen).
+    if (typeof mkHideCreate === 'function') mkHideCreate();
+    renderMarkets(false);
+  }
   // Live markets на главной: свежие суммы при каждом заходе, а не через минуту.
   if (name === 'home' && typeof renderHomeMarkets === 'function') renderHomeMarkets();
   // Mobile chat: hide footer, expand messages area

@@ -830,6 +830,31 @@ function mkPublic() {
 }
 
 let mkPendingOpen = null;
+
+// ── адреса экранов раздела ─────────────────────────────────────────────────
+// У Markets три экрана: список (/markets), рынок (/markets/6) и форма
+// создания (/markets/create). Раньше адрес всегда был /markets: "Назад" в
+// браузере уходил из раздела, ссылкой на рынок нельзя было поделиться, а
+// открытая форма создания оставалась поверх рынка, открытого с главной.
+let mkUrlMode = 'push';   // push | replace | none - для следующего mkUrl
+function mkUrl(path) {
+  const mode = mkUrlMode;
+  mkUrlMode = 'push';
+  if (mode === 'none' || !history.pushState || location.pathname === path) return;
+  history[mode === 'replace' ? 'replaceState' : 'pushState']({ page: 'markets' }, '', path);
+}
+/** Спрятать форму создания, не трогая адрес: экран рынка или списка главнее. */
+function mkHideCreate() {
+  const c = document.getElementById('mk-create');
+  const b = document.getElementById('mk-browse');
+  if (c && c.style.display !== 'none') { c.style.display = 'none'; if (b) b.style.display = ''; }
+}
+/** "← All markets" на экране рынка. */
+function mkBackToList(resolved) {
+  renderMarkets(resolved);
+  mkUrl('/markets');
+}
+
 /** С главной: перейти в раздел и открыть рынок, когда список отрисуется. */
 function mkOpenFromHome(id) {
   mkPendingOpen = id || null;
@@ -1049,6 +1074,9 @@ async function renderMarkets(resolved) {
     if (mkPendingOpen) {
       const id = mkPendingOpen;
       mkPendingOpen = null;
+      // Раздел уже записал /markets в историю - заменить, а не добавить.
+      // Переход по истории (popstate) адрес уже выставил - не трогать.
+      if (mkUrlMode !== 'none') mkUrlMode = 'replace';
       openProphecyMarket(id);
     }
   } catch (e) {
@@ -1254,6 +1282,8 @@ function evidenceBlock(m) {
 
 async function openProphecyMarket(id) {
   openMarketId = id;
+  mkHideCreate();
+  mkUrl('/markets/' + id);
   // Экран рынка - про один рынок. Баннер раздела, статистика и вкладки
   // списка здесь только отодвигали ставку за край экрана.
   mkListChrome(false);
@@ -1284,7 +1314,7 @@ async function openProphecyMarket(id) {
   const pct = total ? Math.round((yes / total) * 100) : 50;
 
   host.innerHTML = `
-    <div class="mk-back" onclick="renderMarkets(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
+    <div class="mk-back" onclick="mkBackToList(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
     <section class="mk2-hero${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}">
       <div class="mk2-head">
         ${mkOrb(m, true)}
@@ -2026,3 +2056,54 @@ function mkTaxRate() {
 function taxPct() {
   return String(+(mkTaxRate() * 100).toFixed(2));
 }
+
+
+// ── навигация раздела: форма создания, история, прямые ссылки ──────────────
+// Форма создания объявлена в markets-catalog.js, он грузится позже - обёртки
+// ставятся после загрузки всех скриптов.
+document.addEventListener('DOMContentLoaded', () => {
+  const open = window.openMarketCreate, close = window.closeMarketCreate;
+  if (typeof open === 'function') {
+    window.openMarketCreate = function () {
+      openMarketId = null;
+      const r = open.apply(this, arguments);
+      mkUrl('/markets/create');
+      return r;
+    };
+  }
+  if (typeof close === 'function') {
+    window.closeMarketCreate = function () {
+      const r = close.apply(this, arguments);
+      if (location.pathname === '/markets/create') mkUrl('/markets');
+      return r;
+    };
+  }
+  // Прямая ссылка /markets/6 или /markets/create (через 404.html или
+  // перезагрузку): открыть нужный экран, когда раздел покажется.
+  let sub = null;
+  try { sub = sessionStorage.getItem('mkDeep'); sessionStorage.removeItem('mkDeep'); } catch (e) { /* без хранилища */ }
+  const m = location.pathname.match(/^\/markets\/(\d+|create)$/);
+  if (m) sub = m[1];
+  if (sub && /^\d+$/.test(sub)) mkPendingOpen = Number(sub);
+  if (sub === 'create') setTimeout(() => { mkUrlMode = 'replace'; if (typeof window.openMarketCreate === 'function') window.openMarketCreate(); }, 300);
+});
+
+// "Назад" и "Вперёд" между экранами раздела. nav.js уже показывает страницу
+// Markets со списком; здесь - какой из трёх экранов.
+window.addEventListener('popstate', () => {
+  const m = location.pathname.match(/^\/markets(?:\/(\d+|create))?$/);
+  if (!m) return;
+  if (m[1] === 'create') {
+    // После showPage из nav.js, который при входе в раздел прячет форму.
+    setTimeout(() => { mkUrlMode = 'none'; if (typeof window.openMarketCreate === 'function') window.openMarketCreate(); }, 0);
+    return;
+  }
+  mkHideCreate();
+  if (m[1]) {
+    // Список рисуется заново (showPage), рынок откроется после него.
+    mkPendingOpen = Number(m[1]);
+    mkUrlMode = 'none';
+  } else {
+    openMarketId = null;
+  }
+});

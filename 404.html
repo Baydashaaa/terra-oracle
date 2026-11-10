@@ -9,7 +9,7 @@
 
     var validPages = [
       'home', 'board', 'ask', 'chat', 'vote', 'about',
-      'bag', 'treasury', 'reputation', 'profile'
+      'bag', 'treasury', 'reputation', 'profile', 'markets'
     ];
 
     var page = validPages.includes(parts[0]) ? parts[0] : 'home';
@@ -17,6 +17,11 @@
     // reputation/leaderboard, reputation/stats, reputation/profile etc.
     if (page === 'reputation' && parts[1]) {
       page = page + ':' + parts[1];
+    }
+
+    // markets/6 и markets/create: экран раздела открывает markets.js
+    if (page === 'markets' && /^(\d+|create)$/.test(parts[1] || '')) {
+      try { sessionStorage.setItem('mkDeep', parts[1]); } catch(e) {}
     }
 
     try { sessionStorage.setItem('currentPage', page); } catch(e) {}
