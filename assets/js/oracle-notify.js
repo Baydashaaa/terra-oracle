@@ -1,5 +1,5 @@
 /* ============================================================================
- * oracle-notify.js  ·  v1.2.1
+ * oracle-notify.js  ·  v1.3.0
  * Terra Oracle / Oracle Draw - unified notification system (phase 1)
  * ----------------------------------------------------------------------------
  * WHAT IT DOES
@@ -137,7 +137,18 @@
     } catch (e) {}
     return { init: false, items: [], seen: [] };   // init=false → first run for this wallet
   }
+  // Что показывать: без истёкших напоминаний и без записей старше 45 дней.
+  // Из seen они не уходят, поэтому не вернутся при следующем опросе.
+  var MAX_AGE = 45 * 86400;
+  function alive(i) {
+    var now = Math.floor(Date.now() / 1000);
+    if (i.exp && i.exp < now) return false;
+    // Напоминания, сохранённые до поля exp, - по старому правилу (час).
+    if (!i.exp && /^draw:.*:soon$/.test(i.id || '') && (i.ts || 0) < now - 3600) return false;
+    return (i.ts || now) > now - MAX_AGE;
+  }
   function saveStore(wallet, store) {
+    if (store && Array.isArray(store.items)) store.items = store.items.filter(alive);
     try {
       store.items = store.items.slice(0, Math.max(CFG.maxItems, 30));
       // seen усекается отдельно и с большим запасом: это память о показанном,
@@ -295,6 +306,43 @@
       '.onf-toast{width:auto;}',
       '.onf-bell{width:34px;height:34px;}',
       '}',
+
+      /* ── v1.3: окно без квадратных иконок ──
+         Раздел - цветной подписью над заголовком, цвет полосы слева - тот же.
+         Группы New / Earlier, счётчик новых в шапке. */
+      '.onf-panel{width:360px;border-radius:14px;background:linear-gradient(180deg,#141b33,#0d1326);',
+      'border:1px solid rgba(160,175,220,.16);box-shadow:0 24px 60px -20px rgba(0,0,0,.85);}',
+      '.onf-head{padding:14px 16px 12px;gap:10px;}',
+      '.onf-head b{font-size:10px;letter-spacing:.2em;color:#9AA6C4;}',
+      '.onf-count{margin-right:auto;padding:2px 8px;border-radius:999px;font:700 10.5px/1.4 "Exo 2",sans-serif;',
+      'color:#fff;background:#6E56F8;}',
+      '.onf-count:empty{display:none;}',
+      '.onf-mark[hidden]{display:none;}',
+      '.onf-grp{padding:10px 16px 6px;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#6F7B99;}',
+      '.onf-item{--k:#7C5CFF;gap:12px;padding:11px 16px 12px 18px;border-bottom:1px solid rgba(160,175,220,.07);align-items:flex-start;}',
+      '.onf-item::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;',
+      'background:var(--k);opacity:.35;box-shadow:none;}',
+      '.onf-item.unread::before{opacity:1;box-shadow:0 0 10px var(--k);top:10px;bottom:10px;width:3px;}',
+      '.onf-item.unread{background:linear-gradient(90deg,rgba(123,92,255,.08),transparent 70%);}',
+      '.onf-item:hover{background:rgba(123,92,255,.09);}',
+      '.onf-item .onf-ic,.onf-item .onf-dot{display:none;}',
+      '.onf-sec{display:block;margin-bottom:3px;font:700 9.5px/1.2 "Exo 2",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--k);}',
+      '.onf-ext{opacity:.7;letter-spacing:0;}',
+      '.onf-t{font-size:12.5px;line-height:1.35;color:#E8EEFF;}',
+      '.onf-item:not(.unread) .onf-t{color:#B9C4DE;font-weight:600;}',
+      '.onf-b{font-size:11.5px;color:#8F9BBB;margin-top:3px;}',
+      '.onf-time{flex:none;margin-top:1px;font-size:11px;color:#6F7B99;}',
+      '.onf-item.unread .onf-time{color:#C8B8FF;}',
+      '.k-win{--k:#F2D45C;}.k-claim{--k:#F2D45C;}',
+      '.k-ans{--k:#60A5FA;}.k-rep{--k:#A98BFF;}.k-acc{--k:#3BE38A;}',
+      '.k-chat{--k:#00D4FF;}.k-draw{--k:#66FFAA;}.k-circ{--k:#38D9D0;}',
+      '.onf-empty{padding:34px 22px;font-size:11.5px;line-height:1.55;letter-spacing:0;color:#8F9BBB;}',
+      '.onf-empty b{display:block;margin-bottom:6px;font-size:13px;color:#E8EEFF;letter-spacing:0;}',
+      /* тост - тот же вид */
+      '.onf-toast{--k:#7C5CFF;padding:12px 12px 12px 16px;border-color:rgba(160,175,220,.2);}',
+      '.onf-toast .onf-sec{color:#A98BFF;}',
+      '.onf-toast.win .onf-sec{color:#F2D45C;}',
+      '@media (max-width:560px){.onf-panel{width:auto;}}',
     ].join('');
     (document.head || document.documentElement).appendChild(st);
   }
@@ -318,7 +366,7 @@
              SVG_BELL + '<span class="onf-badge" id="onf-badge">0</span>' +
            '</button>' +
            '<div class="onf-panel" id="onf-panel">' +
-             '<div class="onf-head"><b>Notifications</b>' +
+             '<div class="onf-head"><b>Notifications</b><span class="onf-count"></span>' +
              '<button class="onf-mark" id="onf-mark">Mark all read</button></div>' +
              '<div class="onf-list" id="onf-list"></div>' +
            '</div>';
@@ -420,7 +468,7 @@
 
   // ── Render ────────────────────────────────────────────────────────────────
   function unreadCount() {
-    return store.items.filter(function (i) { return !i.read; }).length;
+    return store.items.filter(function (i) { return !i.read && alive(i); }).length;
   }
   function refreshBadge() {
     if (!elBell) return;
@@ -428,29 +476,49 @@
     elBell.classList.toggle('has-unread', n > 0);
     elBadge.textContent = n > 99 ? '99+' : String(n);
   }
+  // Раздел уведомления - короткой подписью вместо иконки.
+  var SECTION = { win: 'Win', ans: 'Answer', rep: 'Reply', acc: 'Accepted', chat: 'Chat',
+                  draw: 'Oracle Draw', circ: 'Circuit', claim: 'Circuit', round: 'Rounds', market: 'Markets' };
+  function section(i) {
+    if (/^round:/.test(i.id || '')) return 'Rounds';
+    if (/\/markets/.test(i.link || '')) return 'Markets';
+    return SECTION[i.kind] || 'Terra Oracle';
+  }
+  function itemHtml(i) {
+    var ext = /^https?:/.test(i.link || '') && (i.link || '').indexOf(location.origin + '/') !== 0;
+    return '<a class="onf-item k-' + esc(i.kind) + (i.read ? '' : ' unread') + '" data-id="' + esc(i.id) + '" href="' +
+             (ext ? esc(i.link) + '" target="_blank" rel="noopener' : 'javascript:void(0)') + '">' +
+             '<span class="onf-tx">' +
+               '<span class="onf-sec">' + esc(section(i)) + (ext ? ' <span class="onf-ext">↗</span>' : '') + '</span>' +
+               '<span class="onf-t">' + esc(i.title) + '</span>' +
+               (i.body ? '<span class="onf-b">' + esc(i.body) + '</span>' : '') +
+             '</span>' +
+             '<span class="onf-time">' + ago(i.ts) + '</span>' +
+           '</a>';
+  }
   function render() {
     if (!elList) return;
-    var items = store.items.slice(0, CFG.maxItems);
+    var items = store.items.filter(alive).slice(0, CFG.maxItems);
+    var fresh = items.filter(function (i) { return !i.read; });
+    var old = items.filter(function (i) { return i.read; });
+    var head = elPanel && elPanel.querySelector('.onf-count');
+    if (head) head.textContent = fresh.length ? fresh.length + ' new' : '';
+    var mark = elPanel && elPanel.querySelector('#onf-mark');
+    if (mark) mark.hidden = !fresh.length;
     if (!items.length) {
-      elList.innerHTML = '<div class="onf-empty">' +
-        (wallet ? 'No notifications yet' : 'Connect your wallet to see notifications') + '</div>';
+      elList.innerHTML = '<div class="onf-empty"><b>You are all caught up</b>' +
+        (wallet ? 'Wins, answers, chat replies and results of your rounds show up here.' : 'Connect a wallet to see your notifications.') + '</div>';
     } else {
-      elList.innerHTML = items.map(function (i) {
-        return '<a class="onf-item ' + (i.read ? '' : 'unread') + '" data-id="' + esc(i.id) + '"' +
-               (i.link ? ' href="' + esc(i.link) + '"' + (/^https?:/.test(i.link) ? ' target="_blank" rel="noopener"' : '') : ' href="javascript:void(0)"') + '>' +
-                 '<span class="onf-ic ' + esc(i.kind) + '">' + (ICONS[i.kind] || ICONS.ans) + '</span>' +
-                 '<span class="onf-tx"><span class="onf-t">' + esc(i.title) + '</span>' +
-                 (i.body ? '<span class="onf-b">' + esc(i.body) + '</span>' : '') + '</span>' +
-                 '<span class="onf-meta"><span class="onf-time">' + ago(i.ts) + '</span>' +
-                 (i.read ? '' : '<span class="onf-dot"></span>') + '</span>' +
-               '</a>';
-      }).join('');
+      elList.innerHTML =
+        (fresh.length ? '<div class="onf-grp">New</div>' + fresh.map(itemHtml).join('') : '') +
+        (old.length ? '<div class="onf-grp">Earlier</div>' + old.map(itemHtml).join('') : '');
       Array.prototype.forEach.call(elList.querySelectorAll('.onf-item'), function (el) {
         el.addEventListener('click', function (ev) {
           var id = el.getAttribute('data-id');
           var it = store.items.find(function (x) { return x.id === id; });
           markRead(id);
-          if (it && !it.link) { ev.preventDefault(); navigate(it); }   // in-app target
+          // Внешняя ссылка открывается сама (target=_blank), остальное - здесь.
+          if (it && !(el.getAttribute('target') === '_blank')) { ev.preventDefault(); navigate(it); }
           if (elPanel) elPanel.classList.remove('open');
         });
       });
@@ -460,21 +528,37 @@
   // Follow a notification: either an external URL, or an in-app target. On
   // Terra Oracle the Board is an SPA page (showPage), from Oracle Draw we hop
   // over to the main site.
+  // Страница этого сайта, если она есть: на Terra Oracle розыгрыш, рынки,
+  // доска и чат - страницы внутри сайта (showPage), а не другой адрес.
+  function inApp(name) {
+    if (typeof window.showPage !== 'function' || !document.getElementById('page-' + name)) return false;
+    try { window.showPage(name); return true; } catch (e) { return false; }
+  }
   function navigate(item) {
     if (!item) return;
-    if (item.link) {
-      if (/^https?:/.test(item.link)) window.open(item.link, '_blank', 'noopener');
-      else location.href = item.link;
+    var link = item.link || '';
+    // Ссылка на транзакцию или чужой сайт - новая вкладка.
+    if (/^https?:/.test(link) && link.indexOf(location.origin + '/') !== 0) { window.open(link, '_blank', 'noopener'); return; }
+    // Свой адрес (/markets, /markets/6) - переход внутри сайта, без перезагрузки.
+    if (link) {
+      var path = link.replace(location.origin, '');
+      var m = path.match(/^\/markets\/(\d+)$/);
+      if (m && typeof window.mkOpenFromHome === 'function') { window.mkOpenFromHome(Number(m[1])); return; }
+      var page = (path.match(/^\/([a-z-]+)/) || [])[1];
+      if (page && inApp(page)) return;
+      location.href = link;
       return;
     }
-    if (item.go === 'board' || item.go === 'chat') {
-      if (typeof window.showPage === 'function') { try { window.showPage(item.go); return; } catch (e) {} }
-      window.open('https://terraoracle.io', '_blank', 'noopener');
+    if (item.go === 'board' || item.go === 'chat' || item.go === 'markets') {
+      if (inApp(item.go)) return;
+      window.open('https://terraoracle.io/' + item.go, '_blank', 'noopener');
       return;
     }
     if (item.go === 'draw') {
-      // On the Draw site switch tabs in place; from Terra Oracle hop across.
+      // Сайт Draw - вкладка на месте; Terra Oracle - его страница Oracle Draw.
+      // Раньше Terra Oracle открывал отдельный draw.terraoracle.io.
       if (typeof window.showTab === 'function') { try { window.showTab('draw'); return; } catch (e) {} }
+      if (inApp('draw')) return;
       window.open('https://draw.terraoracle.io', '_blank', 'noopener');
     }
   }
@@ -532,8 +616,7 @@
 
     var t = document.createElement('div');
     t.className = 'onf-toast' + (item.kind === 'win' ? ' win' : '');
-    t.innerHTML = '<span class="onf-ic ' + esc(item.kind) + '">' + (ICONS[item.kind] || ICONS.ans) + '</span>' +
-                  '<span class="onf-tx"><span class="onf-t">' + esc(item.title) + '</span>' +
+    t.innerHTML = '<span class="onf-tx"><span class="onf-sec">' + esc(section(item)) + '</span><span class="onf-t">' + esc(item.title) + '</span>' +
                   (item.body ? '<span class="onf-b">' + esc(item.body) + '</span>' : '') + '</span>' +
                   '<button class="onf-x" aria-label="Dismiss">&times;</button>';
     elToasts.appendChild(t);
@@ -760,7 +843,7 @@
         ts:    toSec(d.generatedAt || d.publishedAt) || Math.floor(Date.now() / 1000),
         title: 'Circuit rewards ready to claim',
         body:  lunc(mine.amount) + ' TCO allocated in total',
-        link:  CFG.drawSite,
+        go:    'draw',
       }];
     });
   }
@@ -799,6 +882,9 @@
           id:    'draw:' + info.roundId + ':soon',
           kind:  'draw',
           ts:    Math.floor(Date.now() / 1000),
+          // Напоминание "через N минут" после розыгрыша - неправда. Уходит
+          // из ленты, как только раунд закрылся.
+          exp:   Math.floor(info.endsAt / 1000),
           title: label + ' draw in ' + (minsLeft < 1 ? 'less than a minute' : minsLeft + ' min'),
           body:  myEntries
                    ? ('You have ' + myEntries + ' ' + (myEntries === 1 ? 'entry' : 'entries') + ' · ' +
@@ -818,6 +904,8 @@
     return Promise.all(pools.map(function (pool) {
       return getJSON(CFG.drawWorker + '/last-draw?pool=' + pool).then(function (d) {
         if (!d || !d.roundId || !d.winners || !d.winners.length) return [];
+        // Итог давнего розыгрыша - не новость: "84d" в ленте только мешал.
+        if (toSec(d.completedAt) < Math.floor(Date.now() / 1000) - 7 * 86400) return [];
         if (d.winners.some(function (x) { return x.wallet === w; })) return []; // covered by /my-wins
         var first = d.winners.slice().sort(function (a, b) { return (a.place || 9) - (b.place || 9); })[0];
         var prize = lunc(first.amountUluna);
