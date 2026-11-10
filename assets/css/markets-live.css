@@ -143,3 +143,30 @@
 /* логотипы команд киберспорта: квадратные картинки - мягкая подложка */
 :is(#page-markets,#home-markets) .mk2-orb.mk2-crests.es img{border-radius:12px;padding:3px;box-sizing:border-box;
   background:rgba(14,18,36,.85);box-shadow:0 4px 12px -4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(200,184,255,.14)}
+
+/* ---- окно кошелька: адрес и балансы ---- */
+#wallet-connected-panel{min-width:290px}
+#wallet-connected-panel .wallet-connected-info{display:flex;align-items:center;gap:8px;padding:10px 10px 12px;font:600 12.5px/1 'Exo 2',sans-serif;color:#E8F0FF;word-break:normal}
+#wallet-connected-panel .wa-dot{width:8px;height:8px;border-radius:50%;background:#3BE38A;box-shadow:0 0 8px #3BE38A;flex:none}
+#wallet-connected-panel .wa-t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+#wallet-connected-panel .wa-c{margin-left:auto;height:24px;padding:0 10px;border-radius:7px;cursor:pointer;font:600 11px/1 inherit;
+  color:#C8B8FF;background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.35)}
+#wallet-connected-panel .wb{padding:4px 6px 8px;border-bottom:1px solid var(--border, rgba(160,175,220,.14));margin-bottom:6px}
+#wallet-connected-panel .wb-h{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px;
+  font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted, #8A96B4)}
+#wallet-connected-panel .wb-r{width:24px;height:24px;border-radius:7px;cursor:pointer;border:1px solid rgba(160,175,220,.18);background:none;color:#A9B6D3;font-size:13px;line-height:1}
+#wallet-connected-panel .wb-list{display:flex;flex-direction:column;gap:2px;max-height:320px;overflow-y:auto}
+#wallet-connected-panel .wb-row{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:10px;padding:7px 6px;border-radius:8px}
+#wallet-connected-panel .wb-row:hover{background:rgba(123,92,255,.07)}
+#wallet-connected-panel .wb-row img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.06)}
+#wallet-connected-panel .wb-row b{font:700 12.5px/1 'Exo 2',sans-serif;color:#E8F0FF}
+#wallet-connected-panel .wb-row em{font:600 12.5px/1 'Exo 2',sans-serif;font-style:normal;color:#E8F0FF;font-variant-numeric:tabular-nums}
+#wallet-connected-panel .wb-row.zero b,#wallet-connected-panel .wb-row.zero em{color:#6F7B99}
+#wallet-connected-panel .wb-row.zero img{opacity:.5}
+#wallet-connected-panel .wb-row.sk i,#wallet-connected-panel .wb-row.sk b,#wallet-connected-panel .wb-row.sk em{display:block;height:12px;border-radius:6px;
+  background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:200% 100%;animation:rdSk 1.3s ease-in-out infinite}
+#wallet-connected-panel .wb-row.sk i{width:22px;height:22px;border-radius:50%}
+#wallet-connected-panel .wb-row.sk b{width:60px}
+#wallet-connected-panel .wb-row.sk em{width:48px}
+#wallet-connected-panel .wb-none{margin:6px 4px;font-size:11.5px;color:var(--muted, #8A96B4)}
+@keyframes rdSk{from{background-position:100% 0}to{background-position:-100% 0}}
