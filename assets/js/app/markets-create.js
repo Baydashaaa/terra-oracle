@@ -1021,7 +1021,8 @@
           return;
         }
         closeCreate();
-        if (typeof renderMarkets === 'function') renderMarkets(false);
+        if (typeof window.mkOpenCreated === 'function') window.mkOpenCreated(hash);
+        else if (typeof renderMarkets === 'function') renderMarkets(false);
       });
     }).catch(function (e) {
       mkToast(e.message || 'Transaction failed', 'err');

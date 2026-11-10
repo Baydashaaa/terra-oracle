@@ -312,7 +312,8 @@
         if (r.status === 'failed') { paintSummary(); return; }
         C.asset = null; C.th = '';
         closeMarketCreate();
-        if (typeof renderMarkets === 'function') renderMarkets(false);
+        if (typeof window.mkOpenCreated === 'function') window.mkOpenCreated(hash);
+        else if (typeof renderMarkets === 'function') renderMarkets(false);
       });
     }).catch(function (e) {
       C.busy = false;
@@ -681,7 +682,8 @@
         if (r.status === 'failed') { fPaintSummary(); return; }
         F.match = null; F.tpl = null;
         closeMarketCreate();
-        if (typeof renderMarkets === 'function') renderMarkets(false);
+        if (typeof window.mkOpenCreated === 'function') window.mkOpenCreated(hash);
+        else if (typeof renderMarkets === 'function') renderMarkets(false);
       });
     }).catch(function (e) {
       F.busy = false;
@@ -974,7 +976,8 @@
           st.busy = false;
           if (r.status === 'failed') { paintGeneric(st, f); return; }
           closeMarketCreate();
-          if (typeof renderMarkets === 'function') renderMarkets(false);
+          if (typeof window.mkOpenCreated === 'function') window.mkOpenCreated(hash);
+        else if (typeof renderMarkets === 'function') renderMarkets(false);
         });
       }).catch(function (e) {
         st.busy = false;

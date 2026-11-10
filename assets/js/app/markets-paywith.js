@@ -18,6 +18,38 @@
 (function () {
   'use strict';
 
+  /**
+   * После публикации - сразу открыть новый рынок создателя. Номер рынка
+   * берётся из событий транзакции создания (атрибут market_id), а не
+   * угадывается: так первый прогноз точно уходит в его рынок.
+   * Работает и на тестнете; выбор токена ниже - только mainnet.
+   */
+  window.mkOpenCreated = async function (hash) {
+    let id = null;
+    for (const base of PROPHECY_LCD) {
+      try {
+        const r = await fetch(`${base}/cosmos/tx/v1beta1/txs/${hash}`, { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) continue;
+        const j = await r.json();
+        for (const ev of (j.tx_response && j.tx_response.events) || []) {
+          if (ev.type !== 'wasm') continue;
+          // Узлы старых версий отдают атрибуты в base64.
+          const list = ev.attributes || [];
+          const plain = list.some((a) => a.key === 'action' || a.key === '_contract_address');
+          const dec = (x) => { if (plain || typeof x !== 'string') return x; try { return atob(x); } catch (e) { return x; } };
+          const at = {};
+          list.forEach((a) => { at[dec(a.key)] = dec(a.value); });
+          if (at._contract_address === PROPHECY_CONTRACT && at.action === 'create' && at.market_id) id = Number(at.market_id);
+        }
+        if (id) break;
+      } catch (e) { /* следующий узел */ }
+    }
+    if (!id) { if (typeof renderMarkets === 'function') renderMarkets(false); return; }
+    await openProphecyMarket(id);
+    const tokensHint = PROPHECY_TESTNET ? '' : ' Pay with LUNC or with USTC, TERRA, JURIS and other tokens.';
+    if (typeof mkToast === 'function') mkToast(`Your market is live. Make the first prediction so the next player has a rival.${tokensHint}`, 'ok');
+  };
+
   if (typeof PROPHECY_TESTNET !== 'undefined' && PROPHECY_TESTNET) return;
 
   const PROXY = 'https://orbitwire-proxy.vladislav-baydan.workers.dev';
