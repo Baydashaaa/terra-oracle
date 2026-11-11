@@ -655,7 +655,9 @@ function mkPhaseChip(m) {
   else if (m.status === 'disputed') { cls = 'court'; txt = 'In court'; }
   else if (m.status === 'proposed') {
     const ends = Number(m.proposed_at || 0) + Number(mkRules(m).challenge_secs || 0);
-    txt = ends > now ? `Verifying · ${timeLeft(ends)} left` : 'Verifying';
+    // Результат уже есть - говорим его и когда выплаты, а не "Verifying".
+    cls = m.outcome ? 'yes' : 'no';
+    txt = ends > now ? `${m.outcome ? 'YES' : 'NO'} · payouts in ${timeLeft(ends)}` : `${m.outcome ? 'YES' : 'NO'} · finalizing`;
   } else if (Number(m.bets_close_at) > now) {
     cls = 'open'; txt = `Closes in ${timeLeft(m.bets_close_at)}`;
   } else {
@@ -749,10 +751,80 @@ function mkNowBanner(m) {
   const due = at > now
     ? `The result is read from ${mktEsc(src)} at ${hhmm}, in <b class="mk-cd" data-until="${at}">${fmtCountdown(at - now)}</b>.`
     : `The result is due from ${mktEsc(src)} now and appears here as soon as it is posted on chain.`;
-  return `<section class="mk2-now" style="--c:${catRgb(m.category)}">
+  // Киберспорт: счёт и трансляция идущего матча подставит mkFillLive из
+  // каталога событий (раздел live), когда тот загрузится.
+  const live = ref && ref.src === 'ps' && ref.m ? ` data-ps="${mktEsc(ref.g || '')}:${mktEsc(ref.m)}"` : '';
+  return `<section class="mk2-now" style="--c:${catRgb(m.category)}"${live}>
     <i class="dot"></i>
-    <div><b>Predictions are closed. ${event}</b>
+    <div class="mk2-now-tx"><b>Predictions are closed. ${event}</b>
+      <span class="mk2-now-score" hidden></span>
       <p>${due} After that anyone can challenge it for ${hours} hours, then winners collect.</p></div>
+    <a class="mk2-watch" target="_blank" rel="noopener" hidden><i></i>Watch live</a>
+  </section>`;
+}
+
+/** Счёт и трансляция идущего матча PandaScore - из каталога событий. */
+function mkFillLive() {
+  const box = document.querySelector('#markets-list .mk2-now[data-ps]');
+  if (!box || typeof window.mkCatalogLoad !== 'function') return;
+  const [g, id] = box.dataset.ps.split(':');
+  window.mkCatalogLoad().then((cat) => {
+    const live = cat && cat.esports && cat.esports.live;
+    const x = live && (live[g] || []).find((q) => String(q.id) === String(id));
+    if (!x || !document.body.contains(box)) return;
+    const sc = box.querySelector('.mk2-now-score');
+    if (x.score && x.score.every((v) => v != null)) {
+      sc.textContent = `${x.home.name} ${x.score[0]} : ${x.score[1]} ${x.away.name}${x.bo ? ` · best of ${x.bo}` : ''}`;
+      sc.hidden = false;
+    }
+    const a = box.querySelector('.mk2-watch');
+    if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
+    const head = box.querySelector('b');
+    if (head) head.textContent = 'Predictions are closed. The match is live now.';
+  }).catch(() => {});
+}
+
+/** Запись резолвера человеческим языком. PandaScore пишет "winner NAVI
+ *  Junior, series 2-0; t1 yes" - это служебная строка, а не текст для людей. */
+function mkReadingText(m) {
+  const r = String(m.reading || '');
+  const ps = r.match(/winner\s+([^,;]+?),\s*series\s+(\d+\s*-\s*\d+)/i);
+  if (ps) return `${ps[1].trim()} won the series ${ps[2].replace(/\s+/g, '')}`;
+  return r.replace(/;\s*t\d+\s+(yes|no)\s*$/i, '').replace(/^PandaScore match \d+:\s*/i, '').trim();
+}
+
+/**
+ * Итог рынка, когда результат уже записан: что случилось, какой исход и
+ * когда выплаты. Раньше это была жёлтая плашка "Verifying · expected YES" с
+ * технической строкой резолвера, и было непонятно, закончился рынок или нет.
+ */
+function mkResultCard(m) {
+  if (m.status !== 'proposed' && m.status !== 'settled') return '';
+  const yes = !!m.outcome;
+  const final = m.status === 'settled';
+  const what = mkReadingText(m);
+  const ref = mkRef(m);
+  const src = (ref && MK_SRC_NAME[ref.src]) || '';
+  const r = mkRules(m);
+  const ends = Number(m.proposed_at) + Number(r.challenge_secs || 0);
+  const now = Math.floor(Date.now() / 1000);
+  const hours = r.challenge_secs ? Math.round(Number(r.challenge_secs) / 3600) : 48;
+  const steps = [
+    ['Result posted', 'done'],
+    [final ? 'Not disputed' : ends > now ? `Dispute window · ${cd(ends)} left` : 'Dispute window closing', final ? 'done' : 'now'],
+    [final ? 'Winners collect' : 'Payouts open', final ? 'done' : ''],
+  ];
+  return `<section class="mk2-result ${yes ? 'y' : 'n'}${final ? ' final' : ''}" style="--c:${catRgb(m.category)}">
+    <div class="mk2-result-top">
+      <span class="mk2-result-tag">${final ? 'Final result' : 'Result posted'}</span>
+      <span class="mk2-result-out">${yes ? 'YES' : 'NO'}</span>
+    </div>
+    ${what ? `<h2>${mktEsc(what)}</h2>` : ''}
+    <div class="mk2-result-steps">${steps.map(([t, st]) => `<span class="${st}"><i></i>${t}</span>`).join('')}</div>
+    <p>${final
+      ? 'The result is final. Everyone who called it right can collect their payout below.'
+      : `Payouts open when the window closes. Until then anyone who thinks the result is wrong can dispute it with a bond; if nobody does within ${hours} hours, ${yes ? 'YES' : 'NO'} is final.`}
+      ${src ? `<span class="src">Source: ${mktEsc(src)}${ref && ref.m ? ` · match ${mktEsc(ref.m)}` : ''}</span>` : ''}</p>
   </section>`;
 }
 
@@ -781,6 +853,20 @@ function mkPositionPanel(m, pos) {
   const line = [yes ? `<span><b>${fmtLunc(yes)}</b> LUNC on <em class="y">YES</em></span>` : '',
     no ? `<span><b>${fmtLunc(no)}</b> LUNC on <em class="n">NO</em></span>` : ''].filter(Boolean).join('');
   let outcomes = '';
+  // Исход записан: вместо "если YES / если NO" - что выходит по этому исходу.
+  if (m.status === 'proposed') {
+    const mine = Number(m.outcome ? pos.yes : pos.no);
+    const ends = Number(m.proposed_at) + Number(mkRules(m).challenge_secs || 0);
+    outcomes = mine
+      ? `<div class="mk2-pos-verdict y">You called it right. <b>${fmtLunc(pos.payout || 0)} LUNC</b> is yours, about ${netLunc(pos.payout || 0)} after the ${taxPct()}% network tax.</div>`
+      : `<div class="mk2-pos-verdict n">This result means no payout for your ${m.outcome ? 'NO' : 'YES'} call.</div>`;
+    const btnWait = mine ? `<div class="mk2-pos-wait">Collect opens in ${cd(ends)}</div>` : '';
+    return `<section class="mk2-pos">
+      <span class="lbl">Your position</span>
+      <div class="mk2-pos-line">${line}</div>
+      ${outcomes}${btnWait}
+    </section>`;
+  }
   if (m.status !== 'settled' && m.status !== 'void') {
     const my = payoutMultiplier(m, true) || 0, mn = payoutMultiplier(m, false) || 0;
     const ifYes = yes * my, ifNo = no * mn, staked = yes + no;
@@ -1371,6 +1457,7 @@ async function openProphecyMarket(id) {
       ${mkPhaseTrack(m)}
     </section>
     ${mkNowBanner(m)}
+    ${mkResultCard(m)}
     <div class="mk2-body">
       ${mkPositionPanel(m, pos)}
       <section class="mkc mk-detail mk2-panel mk2-forecast">
@@ -1393,6 +1480,7 @@ async function openProphecyMarket(id) {
       </section>
     </div>`;
   if (open) updateBetCalc();
+  mkFillLive();
   if (window.renderDispute) window.renderDispute(m);
   if (window.renderActivity) window.renderActivity(m);
 }
@@ -1491,6 +1579,7 @@ function closedSplit(m, pct) {
 
 /** Итог рынка сразу под карточкой: объявление, доказательство или void. */
 function resultBlock(m) {
+  if (m.status === 'proposed' && typeof mkResultCard === 'function') return '';   // всё уже в карточке результата
   if (m.status === 'proposed') {
     const left = challengeLeft(m);
     return `<div class="mk-banner warn">

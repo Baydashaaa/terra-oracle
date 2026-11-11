@@ -93,9 +93,13 @@
       ? 'You posted this outcome, so you cannot dispute it.'
       : '';
 
+    // Свёрнуто: форма залога на 200,000 LUNC посреди экрана выглядела как
+    // главное действие, хотя нужна она редко.
     return `
+    <details class="mk-court-wrap">
+    <summary><b>Think the result is wrong?</b><span>You can dispute it for another ${cd(ends)}</span></summary>
     <section class="card mk-court">
-      <h3>Think the outcome is wrong?</h3>
+      <h3>Dispute the result</h3>
       <p class="mk-lead-sm">Anyone can dispute it for the next <b>${cd(ends)}</b>. Attach a bond of
         <b>${bond} LUNC</b> and say what the chain actually shows. The court decides.</p>
       <div class="mk-court-rules">
@@ -112,7 +116,8 @@
            </label>
            <button class="ask-go mk-place" id="ch-go" onclick="submitChallenge()">
              Dispute · ${bond} LUNC &rarr;</button>`}
-    </section>`;
+    </section>
+    </details>`;
   }
 
   window.submitChallenge = async function () {

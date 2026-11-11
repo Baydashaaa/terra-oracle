@@ -251,3 +251,55 @@
 #page-markets .mk2-toolbar,#page-markets .mkl-tape,#page-markets #mk-browse .rd{margin:0}
 /* BETA - внутри #markets-list, шаг контейнера на неё не действует. */
 #page-markets #markets-list .mk2-beta{margin:0 2px 12px}
+
+/* ---- экран рынка: итог ---- */
+#page-markets .mk2-result{--o:#3BE38A;margin:0 0 18px;padding:22px 26px;border-radius:20px;
+  background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--o) 14%,transparent),transparent 60%),linear-gradient(180deg,#151A33,#10142A);
+  border:1px solid color-mix(in srgb,var(--o) 38%,transparent)}
+#page-markets .mk2-result.n{--o:#F37BAA}
+#page-markets .mk2-result-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+#page-markets .mk2-result-tag{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#9AA6C4}
+#page-markets .mk2-result-out{padding:4px 12px;border-radius:999px;font:800 14px/1 Rajdhani,sans-serif;letter-spacing:.08em;
+  color:#0B1020;background:var(--o);box-shadow:0 0 18px -4px var(--o)}
+#page-markets .mk2-result h2{margin:0 0 16px;font:700 clamp(22px,2.2vw,30px)/1.15 Rajdhani,sans-serif;color:#F2F5FF}
+#page-markets .mk2-result-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+#page-markets .mk2-result-steps span{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:600;
+  color:#7F8BAA;background:rgba(255,255,255,.03);border:1px solid rgba(160,175,220,.12)}
+#page-markets .mk2-result-steps i{flex:none;width:9px;height:9px;border-radius:50%;background:rgba(160,175,220,.35)}
+#page-markets .mk2-result-steps .done{color:#C9D3EA}
+#page-markets .mk2-result-steps .done i{background:var(--o)}
+#page-markets .mk2-result-steps .now{color:#F2D45C;border-color:rgba(242,212,92,.35);background:rgba(242,212,92,.06)}
+#page-markets .mk2-result-steps .now i{background:#F2D45C;box-shadow:0 0 8px #F2D45C;animation:mk2pulse 1.6s ease-in-out infinite}
+#page-markets .mk2-result-steps .mk-cd{font-variant-numeric:tabular-nums}
+#page-markets .mk2-result p{margin:0;font-size:13.5px;line-height:1.6;color:#B9C4DE}
+#page-markets .mk2-result .src{display:block;margin-top:6px;font-size:12px;color:#7F8BAA}
+
+/* позиция при известном исходе */
+#page-markets .mk2-pos-verdict{margin:12px 0 4px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+#page-markets .mk2-pos-verdict.y{color:#C9F7DD;background:rgba(59,227,138,.08);border:1px solid rgba(59,227,138,.3)}
+#page-markets .mk2-pos-verdict.y b{color:#3BE38A}
+#page-markets .mk2-pos-verdict.n{color:#F8C9DA;background:rgba(243,123,170,.07);border:1px solid rgba(243,123,170,.28)}
+#page-markets .mk2-pos-wait .mk-cd{color:#F2D45C;font-variant-numeric:tabular-nums}
+
+/* оспаривание - свёрнуто */
+#page-markets .mk-court-wrap{border-radius:16px;border:1px solid rgba(160,175,220,.14);background:rgba(16,20,42,.6)}
+#page-markets .mk-court-wrap > summary{display:flex;align-items:baseline;gap:12px;padding:14px 20px;cursor:pointer;list-style:none;font-size:13.5px;color:#A9B6D3}
+#page-markets .mk-court-wrap > summary::-webkit-details-marker{display:none}
+#page-markets .mk-court-wrap > summary b{color:#E8F0FF}
+#page-markets .mk-court-wrap > summary::after{content:"+";margin-left:auto;font-size:18px;color:#7F8BAA}
+#page-markets .mk-court-wrap[open] > summary::after{content:"−"}
+#page-markets .mk-court-wrap > .mk-court{margin:0;border:0;border-top:1px solid rgba(160,175,220,.1);border-radius:0 0 16px 16px}
+@media (max-width:700px){#page-markets .mk2-result-steps{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#page-markets .mk2-result-steps .now i{animation:none}}
+
+/* идущий матч: счёт и трансляция в плашке "Predictions are closed" */
+#page-markets .mk2-now{align-items:center}
+#page-markets .mk2-now-tx{flex:1;min-width:0}
+#page-markets .mk2-now-score{display:block;margin-top:6px;font:700 18px/1.2 Rajdhani,sans-serif;color:#F2F5FF;font-variant-numeric:tabular-nums}
+#page-markets .mk2-now-score[hidden]{display:none}
+#page-markets .mk2-watch{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:11px;
+  font:700 13.5px/1 inherit;color:#fff;text-decoration:none;background:#9146FF;box-shadow:0 8px 20px -10px #9146FF}
+#page-markets .mk2-watch[hidden]{display:none}
+#page-markets .mk2-watch i{width:8px;height:8px;border-radius:50%;background:#FF4D4D;box-shadow:0 0 8px #FF4D4D;animation:mk2pulse 1.4s ease-in-out infinite}
+#page-markets .mk2-watch:hover{filter:brightness(1.1)}
+@media (max-width:640px){#page-markets .mk2-now{flex-wrap:wrap}#page-markets .mk2-watch{width:100%;justify-content:center}}
