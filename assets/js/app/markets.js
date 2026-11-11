@@ -561,10 +561,10 @@ function mkEsLearn(cat) {
     [].concat(Object.values(games || {}), Object.values(live || {})).forEach((list) => (list || []).forEach((x) => {
       [x.home, x.away].forEach((t) => { if (t && t.id != null && mkEsOk(t.logo)) MK_ES_LOGOS[String(t.id)] = t.logo; });
     }));
-    const keys = Object.keys(MK_ES_LOGOS);
-    keys.slice(0, Math.max(0, keys.length - 600)).forEach((k) => delete MK_ES_LOGOS[k]);
-    try { localStorage.setItem('mkEsLogos', JSON.stringify(MK_ES_LOGOS)); } catch (e) { /* приватный режим */ }
   }
+  const keys = Object.keys(MK_ES_LOGOS);
+  keys.slice(0, Math.max(0, keys.length - 600)).forEach((k) => delete MK_ES_LOGOS[k]);
+  try { localStorage.setItem('mkEsLogos', JSON.stringify(MK_ES_LOGOS)); } catch (e) { /* приватный режим */ }
   document.querySelectorAll('.mk2-result-teams .ph[data-team]').forEach((el) => {
     const u = MK_ES_LOGOS[el.dataset.team];
     if (mkEsOk(u)) el.outerHTML = `<img src="${u}" alt="" width="56" height="56" loading="lazy">`;
@@ -577,13 +577,44 @@ function mkEsLearn(cat) {
 }
 window.mkEsLearn = mkEsLearn;
 
+// Логотипы команд, которых нет в каталоге (матч уже сыгран, а на этом
+// устройстве сайт открыт впервые): одним запросом к oracle-events /teams,
+// который хранит их в KV. Номера, что уже спрашивали, второй раз не идут.
+const MK_EVENTS = 'https://oracle-events.vladislav-baydan.workers.dev';
+const mkEsAskedIds = new Set();   // уже спрошенные номера
+const mkEsQueue = new Set();      // ждут отправки
+let mkEsTimer = null;
+function mkEsWant(...ids) {
+  ids.forEach((id) => {
+    if (!id || MK_ES_LOGOS[id] || mkEsAskedIds.has(id)) return;
+    mkEsAskedIds.add(id);
+    mkEsQueue.add(id);
+  });
+  // Номера со всех карточек страницы собираются в один запрос.
+  if (!mkEsQueue.size || mkEsTimer) return;
+  mkEsTimer = setTimeout(async () => {
+    const ids2 = [...mkEsQueue].slice(0, 50);
+    mkEsQueue.clear();
+    mkEsTimer = null;
+    try {
+      const r = await fetch(`${MK_EVENTS}/teams?ids=${ids2.join(',')}`, { signal: AbortSignal.timeout(8000) });
+      const j = await r.json();
+      const teams = (j && j.teams) || {};
+      Object.entries(teams).forEach(([id, logo]) => { if (mkEsOk(logo)) MK_ES_LOGOS[id] = logo; });
+      mkEsLearn(null);
+    } catch (e) { /* остаётся иконка категории */ }
+  }, 50);
+}
+
 function mkOrb(m, big) {
   const ref = mkRef(m);
   // Киберспорт: логотипы обеих команд внахлёст, как гербы в футболе.
   if (ref && ref.src === 'ps' && /^\d+$/.test(ref.t1 || '') && /^\d+$/.test(ref.t2 || '')) {
     const html = mkEsCrests(ref.t1, ref.t2, big);
     if (html) return html;
-    // Логотипов ещё нет - один раз подтянуть каталог; иконка заменится сама.
+    // Логотипов ещё нет - спросить по номерам и подтянуть каталог; иконка
+    // заменится сама, когда придёт любой из ответов.
+    mkEsWant(ref.t1, ref.t2);
     if (!mkEsAsked && typeof window.mkCatalogLoad === 'function') {
       mkEsAsked = true;
       setTimeout(() => window.mkCatalogLoad().then(mkEsLearn).catch(() => {}), 0);
@@ -813,6 +844,7 @@ function mkResultTeams(m, ref) {
   const n1 = q ? q[1] : 'Team 1', n2 = q ? q[2] : 'Team 2';
   const hi = Number(w[2]), lo = Number(w[3]);
   const s1 = t1won ? hi : lo, s2 = t1won ? lo : hi;
+  mkEsWant(ref.t1, ref.t2);
   const img = (id) => (mkEsOk(MK_ES_LOGOS[id]) ? `<img src="${MK_ES_LOGOS[id]}" alt="" width="56" height="56" loading="lazy">` : `<i class="ph" data-team="${mktEsc(id)}"></i>`);
   return `<div class="mk2-result-teams">
     <div class="tm${t1won ? ' won' : ''}">${img(ref.t1)}<b>${mktEsc(n1)}</b>${t1won ? '<em>Winner</em>' : ''}</div>
