@@ -303,3 +303,62 @@
 #page-markets .mk2-watch i{width:8px;height:8px;border-radius:50%;background:#FF4D4D;box-shadow:0 0 8px #FF4D4D;animation:mk2pulse 1.4s ease-in-out infinite}
 #page-markets .mk2-watch:hover{filter:brightness(1.1)}
 @media (max-width:640px){#page-markets .mk2-now{flex-wrap:wrap}#page-markets .mk2-watch{width:100%;justify-content:center}}
+
+/* ---- команды: счёт идущего матча и итог ---- */
+#page-markets .mk2-now-score{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;margin:10px 0 2px;font:700 17px/1.2 Rajdhani,sans-serif}
+#page-markets .mk2-now-score .t{display:inline-flex;align-items:center;gap:8px;color:#F2F5FF}
+#page-markets .mk2-now-score img{width:28px;height:28px;object-fit:contain;border-radius:8px;padding:2px;background:rgba(14,18,36,.85);box-shadow:inset 0 0 0 1px rgba(200,184,255,.14)}
+#page-markets .mk2-now-score .s{padding:3px 10px;border-radius:8px;color:#F2D45C;background:rgba(242,212,92,.1);font-variant-numeric:tabular-nums}
+#page-markets .mk2-now-score em{font:500 12px/1 inherit;font-style:normal;color:#9AA6C4}
+#page-markets .mk2-result-teams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;margin:4px 0 18px}
+#page-markets .mk2-result-teams .tm{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center;opacity:.55}
+#page-markets .mk2-result-teams .tm.won{opacity:1}
+#page-markets .mk2-result-teams .tm img,#page-markets .mk2-result-teams .tm .ph{width:56px;height:56px;object-fit:contain;border-radius:14px;padding:4px;
+  background:rgba(14,18,36,.85);box-shadow:inset 0 0 0 1px rgba(200,184,255,.16)}
+#page-markets .mk2-result-teams .tm.won img{box-shadow:inset 0 0 0 1px var(--o),0 0 22px -6px var(--o)}
+#page-markets .mk2-result-teams .tm b{font:700 17px/1.2 Rajdhani,sans-serif;color:#F2F5FF;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#page-markets .mk2-result-teams .tm em{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--o)}
+#page-markets .mk2-result-teams .sc{display:flex;align-items:center;gap:8px;font:800 40px/1 Rajdhani,sans-serif;color:#F2F5FF;font-variant-numeric:tabular-nums}
+#page-markets .mk2-result-teams .sc i{font-style:normal;color:#6F7B99}
+
+/* ===== телефоны ===== */
+@media (max-width:640px){
+  /* экран рынка */
+  #page-markets .mk2-hero{padding:16px}
+  #page-markets .mk2-hero h1{font-size:20px;line-height:1.2}
+  #page-markets .mk2-head{gap:12px}
+  #page-markets .mk2-hero .mk2-orb.big{width:52px;height:52px}
+  #page-markets .mk2-phases,#page-markets .mk2-track{overflow-x:auto;scrollbar-width:none}
+  #page-markets .mk2-now{padding:14px 16px;gap:10px}
+  #page-markets .mk2-now b{font-size:14px}
+  #page-markets .mk2-now p{font-size:12.5px}
+  #page-markets .mk2-now-score{font-size:15px;gap:8px 10px}
+  #page-markets .mk2-now-score img{width:24px;height:24px}
+  #page-markets .mk2-result{padding:16px;border-radius:16px}
+  #page-markets .mk2-result-teams{gap:10px}
+  #page-markets .mk2-result-teams .tm img,#page-markets .mk2-result-teams .tm .ph{width:44px;height:44px}
+  #page-markets .mk2-result-teams .tm b{font-size:14px}
+  #page-markets .mk2-result-teams .sc{font-size:30px}
+  #page-markets .mk2-result-steps span{padding:8px 10px;font-size:12.5px}
+  #page-markets .mk2-pos,#page-markets .mk2-panel{padding:16px}
+  #page-markets .mk2-pos-verdict{font-size:13px}
+  #page-markets .mk2-sides{grid-template-columns:1fr 1fr;gap:8px}
+  #page-markets .mk-court-wrap > summary{flex-wrap:wrap;padding:12px 14px;font-size:12.5px}
+  /* прогноз: токены, ползунок */
+  #page-markets .mk-pay-row button{height:32px;padding:0 10px 0 7px;font-size:12px}
+  #page-markets .mk-pct{gap:4px}
+  #page-markets .mk-pct button{font-size:12px}
+  /* список: сетка в одну колонку без выхода за край */
+  #page-markets .mk-list.mk2-cards{grid-template-columns:minmax(0,1fr)}
+  #page-markets .mk-hero-stats{font-size:12px;gap:4px 12px}
+  #page-markets .mk-hero-stats span + span{padding-left:12px}
+  #page-markets .mk-hero .copy .btns .btn{flex:1;justify-content:center}
+}
+/* сетка карточек: колонка не шире экрана на узких телефонах */
+#page-markets .mk-list.mk2-cards{grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
+
+/* окно кошелька не шире экрана */
+@media (max-width:480px){
+  #wallet-connected-panel{min-width:0}
+  .wallet-dropdown{max-width:calc(100vw - 24px)}
+}

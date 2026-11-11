@@ -556,14 +556,19 @@ function mkEsCrests(t1, t2, big) {
 }
 function mkEsLearn(cat) {
   const games = cat && cat.esports && cat.esports.games;
-  if (games) {
-    Object.values(games).forEach((list) => (list || []).forEach((x) => {
+  const live = cat && cat.esports && cat.esports.live;
+  if (games || live) {
+    [].concat(Object.values(games || {}), Object.values(live || {})).forEach((list) => (list || []).forEach((x) => {
       [x.home, x.away].forEach((t) => { if (t && t.id != null && mkEsOk(t.logo)) MK_ES_LOGOS[String(t.id)] = t.logo; });
     }));
     const keys = Object.keys(MK_ES_LOGOS);
     keys.slice(0, Math.max(0, keys.length - 600)).forEach((k) => delete MK_ES_LOGOS[k]);
     try { localStorage.setItem('mkEsLogos', JSON.stringify(MK_ES_LOGOS)); } catch (e) { /* приватный режим */ }
   }
+  document.querySelectorAll('.mk2-result-teams .ph[data-team]').forEach((el) => {
+    const u = MK_ES_LOGOS[el.dataset.team];
+    if (mkEsOk(u)) el.outerHTML = `<img src="${u}" alt="" width="56" height="56" loading="lazy">`;
+  });
   document.querySelectorAll('.mk2-orb[data-es]').forEach((el) => {
     const [t1, t2] = el.dataset.es.split(',');
     const html = mkEsCrests(t1, t2, el.classList.contains('big'));
@@ -773,10 +778,13 @@ function mkFillLive() {
     const x = live && (live[g] || []).find((q) => String(q.id) === String(id));
     if (!x || !document.body.contains(box)) return;
     const sc = box.querySelector('.mk2-now-score');
-    if (x.score && x.score.every((v) => v != null)) {
-      sc.textContent = `${x.home.name} ${x.score[0]} : ${x.score[1]} ${x.away.name}${x.bo ? ` · best of ${x.bo}` : ''}`;
-      sc.hidden = false;
-    }
+    const logo = (t) => (mkEsOk(t.logo) ? `<img src="${t.logo}" alt="" width="28" height="28" loading="lazy">` : '');
+    const has = x.score && x.score.every((v) => v != null);
+    sc.innerHTML = `<span class="t h">${logo(x.home)}<b>${mktEsc(x.home.name)}</b></span>`
+      + `<span class="s">${has ? `${x.score[0]} : ${x.score[1]}` : 'vs'}</span>`
+      + `<span class="t a"><b>${mktEsc(x.away.name)}</b>${logo(x.away)}</span>`
+      + (x.bo ? `<em>best of ${x.bo}</em>` : '');
+    sc.hidden = false;
     const a = box.querySelector('.mk2-watch');
     if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
     const head = box.querySelector('b');
@@ -791,6 +799,26 @@ function mkReadingText(m) {
   const ps = r.match(/winner\s+([^,;]+?),\s*series\s+(\d+\s*-\s*\d+)/i);
   if (ps) return `${ps[1].trim()} won the series ${ps[2].replace(/\s+/g, '')}`;
   return r.replace(/;\s*t\d+\s+(yes|no)\s*$/i, '').replace(/^PandaScore match \d+:\s*/i, '').trim();
+}
+
+/** Киберспорт: обе команды с логотипами, победитель выделен, счёт серии. */
+function mkResultTeams(m, ref) {
+  if (!ref || ref.src !== 'ps' || !ref.t1 || !ref.t2) return '';
+  const r = String(m.reading || '');
+  const w = r.match(/winner\s+([^,;]+?),\s*series\s+(\d+)\s*-\s*(\d+)/i);
+  const t1won = /;\s*t1\s+(yes|no)/i.test(r) ? true : /;\s*t2\s+(yes|no)/i.test(r) ? false : null;
+  if (!w || t1won === null) return '';
+  // Названия команд - из вопроса рынка ("Will A beat B? ...").
+  const q = String(m.question || '').match(/^Will\s+(.+?)\s+beat\s+(.+?)\?/i);
+  const n1 = q ? q[1] : 'Team 1', n2 = q ? q[2] : 'Team 2';
+  const hi = Number(w[2]), lo = Number(w[3]);
+  const s1 = t1won ? hi : lo, s2 = t1won ? lo : hi;
+  const img = (id) => (mkEsOk(MK_ES_LOGOS[id]) ? `<img src="${MK_ES_LOGOS[id]}" alt="" width="56" height="56" loading="lazy">` : `<i class="ph" data-team="${mktEsc(id)}"></i>`);
+  return `<div class="mk2-result-teams">
+    <div class="tm${t1won ? ' won' : ''}">${img(ref.t1)}<b>${mktEsc(n1)}</b>${t1won ? '<em>Winner</em>' : ''}</div>
+    <div class="sc"><span>${s1}</span><i>:</i><span>${s2}</span></div>
+    <div class="tm${t1won ? '' : ' won'}">${img(ref.t2)}<b>${mktEsc(n2)}</b>${t1won ? '' : '<em>Winner</em>'}</div>
+  </div>`;
 }
 
 /**
@@ -819,7 +847,7 @@ function mkResultCard(m) {
       <span class="mk2-result-tag">${final ? 'Final result' : 'Result posted'}</span>
       <span class="mk2-result-out">${yes ? 'YES' : 'NO'}</span>
     </div>
-    ${what ? `<h2>${mktEsc(what)}</h2>` : ''}
+    ${mkResultTeams(m, ref) || (what ? `<h2>${mktEsc(what)}</h2>` : '')}
     <div class="mk2-result-steps">${steps.map(([t, st]) => `<span class="${st}"><i></i>${t}</span>`).join('')}</div>
     <p>${final
       ? 'The result is final. Everyone who called it right can collect their payout below.'

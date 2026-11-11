@@ -382,3 +382,22 @@
 #page-markets .rd-toggle{height:30px;padding:0 14px;border-radius:9px;cursor:pointer;font:600 12.5px/1 inherit;color:#C8B8FF;
   background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.4)}
 #page-markets .rd:not(.open) .rd-main,#page-markets .rd:not(.open) .rd-bottom{display:none}
+
+/* ---- телефоны: карточки раундов листаются вбок, экран раунда в колонку ---- */
+@media (max-width:640px){
+  .rd-cards{display:grid;grid-auto-flow:column;grid-auto-columns:82%;grid-template-columns:none;overflow-x:auto;
+    scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:2px}
+  .rd-cards::-webkit-scrollbar{display:none}
+  .rd-cards .rdc{scroll-snap-align:start}
+  #page-markets .rd-box{padding:14px}
+  #page-markets .rd-head h3{font-size:15px}
+  #page-markets .rd-figs{gap:12px}
+  #page-markets .rd-figs b{font-size:21px}
+  #page-markets .rd-clock .u{min-width:52px;padding:8px 6px 6px}
+  #page-markets .rd-clock .u b{font-size:24px}
+  #page-markets .rd-chips{grid-template-columns:repeat(2,1fr)}
+  #page-markets .rd-tabs button{padding:0 10px;font-size:12px}
+  #page-markets .rd-bottom .rd-hist-t .tr{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}
+  #page-markets .rd-bottom .rd-hist-t .tr .k{grid-column:1 / -1;grid-row:2}
+  #page-markets .rd-bottom .rd-hist-t .tr.th{display:none}
+}
