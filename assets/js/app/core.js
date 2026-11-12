@@ -237,6 +237,7 @@ async function restoreWalletSession() {
   if (!saved) return;
   // Only Keplr supports silent session restore here. For Galaxy/Station we skip
   // auto-restore (user reconnects via the header) to avoid popping the wrong wallet.
+  if (getActiveProvider() === 'frontier') return restoreFrontierSession(saved);
   if (getActiveProvider() !== 'keplr') return;
   let attempts = 0;
   while (!window.keplr && attempts < 30) {
@@ -275,6 +276,25 @@ async function restoreWalletSession() {
     }
   }
 }
+// Frontier: status() never opens a window, so a reload only reconnects when the
+// extension is unlocked and this site is already approved.
+async function restoreFrontierSession(saved) {
+  for (let i = 0; i < 30 && !window.frontier; i++) await new Promise(r => setTimeout(r, 100));
+  if (!window.frontier || typeof window.frontier.status !== 'function') return;
+  try {
+    const st = await window.frontier.status();
+    if (!st || !st.connected || !st.address) return; // locked: keep the session, reconnect on click
+    if (st.address !== saved) console.log('[wallet] Frontier account changed:', saved, '→', st.address);
+    window.__oaRestoring = true;
+    setWalletConnected(st.address);
+    window.__oaRestoring = false;
+    saveWalletSession(st.address);
+  } catch (e) { console.log('[wallet] Frontier restore failed:', e && e.message); }
+}
+window.addEventListener('frontier_locked', function () {
+  if (typeof getActiveProvider === 'function' && getActiveProvider() !== 'frontier') return;
+  if (typeof clearVoteSession === 'function') clearVoteSession();
+});
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', restoreWalletSession);
 } else {

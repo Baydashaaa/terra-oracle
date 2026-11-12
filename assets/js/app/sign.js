@@ -15,6 +15,7 @@ function getActiveProvider() {
 function getActiveKeplr() {
   const p = getActiveProvider();
   if (p === 'luncdash') return null; // view-only: address entered manually, no signer available
+  if (p === 'frontier') return window.frontier || null; // Frontier browser extension (Delfos Hub)
   if (p === 'galaxy') { const g = window.galaxyStation; if (g) return g.keplr || g; }
   if (p === 'station') { const s = window.station || window.galaxyStation; if (s) return s.keplr || s; }
   return window.keplr;

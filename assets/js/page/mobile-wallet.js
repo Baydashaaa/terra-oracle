@@ -7,7 +7,10 @@ function updateMobileExtSection() {
   const hasKeplr   = !!(window.keplr || window.getOfflineSigner);
   const hasGalaxy  = !!(window.galaxyStation || window.station);
   const hasStation = !!window.station;
-  section.style.display = (hasKeplr || hasGalaxy || hasStation) ? 'block' : 'none';
+  const hasFrontier = !!window.frontier;
+  section.style.display = (hasFrontier || hasKeplr || hasGalaxy || hasStation) ? 'block' : 'none';
+  const frontierBtn = document.getElementById('mob-frontier-ext-btn');
+  if (frontierBtn) frontierBtn.style.display = hasFrontier ? 'flex' : 'none';
   const keplrBtn   = document.getElementById('mob-keplr-ext-btn');
   const galaxyBtn  = document.getElementById('mob-galaxy-ext-btn');
   const stationBtn = document.getElementById('mob-station-ext-btn');

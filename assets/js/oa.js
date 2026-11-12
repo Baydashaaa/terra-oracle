@@ -347,7 +347,7 @@
       probe = probe.parentElement;
     }
 
-    var hasExt = !!(window.keplr || window.station || window.galaxyStation);
+    var hasExt = !!(window.frontier || window.keplr || window.station || window.galaxyStation);
     track('connect_click', { w: provider || 'unknown', k: hasExt ? 1 : 0 });
 
     // The biggest hole in the funnel is between pressing Connect and a wallet

@@ -48,6 +48,25 @@ document.addEventListener('click', function(e) {
 });
 
 window.connectWallet = async function(type) {
+  if (type === 'frontier') {
+    // Frontier extension injects window.frontier a moment after the page starts
+    for (let i = 0; i < 20 && !window.frontier; i++) await new Promise(r => setTimeout(r, 100));
+    if (!window.frontier) {
+      if (confirm('Frontier extension not found. Open @Frontier_WalletBot in Telegram instead?')) window.open('https://t.me/Frontier_WalletBot', '_blank');
+      return;
+    }
+    try {
+      document.getElementById('wallet-btn-label').textContent = 'Connecting...';
+      await window.frontier.enable('columbus-5');
+      const accounts = await window.frontier.getOfflineSigner('columbus-5').getAccounts();
+      setActiveProvider('frontier');
+      setWalletConnected(accounts[0].address);
+    } catch(e) {
+      document.getElementById('wallet-btn-label').textContent = 'Connect';
+      if (!/rejected/i.test(e.message || '')) alert('Frontier connection failed: ' + (e.message || e));
+    }
+    return;
+  }
   if (type === 'keplr-ext') {
     if (!window.keplr) {
       if (confirm('Keplr extension not found. Install Keplr?')) window.open('https://www.keplr.app/download', '_blank');

@@ -206,6 +206,7 @@
       }
     } catch (e) {}
     var g = window.galaxyStation, st = window.station;
+    add('frontier', 'Frontier', window.frontier);
     add('keplr', 'Keplr', window.keplr);
     add('galaxy', 'Galaxy Station', g && (g.keplr || g));
     add('station', 'Terra Station', st && (st.keplr || st));
