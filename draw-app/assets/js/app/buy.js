@@ -210,7 +210,7 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
     // The wallet will replace authInfoBytes.pubkey in the signed result
     pubkeyBytes = new Uint8Array(33);
   } else {
-    const directSigner = _keplr.getOfflineSigner(chainId);
+    const directSigner = _keplr.getOfflineSigner(chainId, { preferNoSetFee: true, preferNoSetMemo: true });
     const accounts     = await directSigner.getAccounts();
     pubkeyBytes        = accounts[0].pubkey;
   }
@@ -333,11 +333,15 @@ async function sendLuncDirect(fromAddr, toAddr, amountUluna, memo, chainId) {
     // Не давать кошельку переписывать комиссию. Иначе он подпишет свою
     // версию authInfo с урезанным gas, и отправить нашу уже не выйдет -
     // подпись её не покрывает. Держит gas этот флаг, а не подмена байтов.
-    _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
-      sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
-        { preferNoSetFee: true, preferNoSetMemo: true }),
-    });
-    const directSigner = _keplr.getOfflineSigner(chainId);
+    // Keplr с ноября 2026 отдаёт неизменяемый объект: запись бросала
+    // "object is not extensible". Флаг идёт параметром getOfflineSigner.
+    try {
+      _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
+        sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
+          { preferNoSetFee: true, preferNoSetMemo: true }),
+      });
+    } catch (e) { /* заморожен */ }
+    const directSigner = _keplr.getOfflineSigner(chainId, { preferNoSetFee: true, preferNoSetMemo: true });
     const { signed, signature } = await directSigner.signDirect(fromAddr, {
       bodyBytes:     txBodyBytes,
       authInfoBytes: authInfoBytes,

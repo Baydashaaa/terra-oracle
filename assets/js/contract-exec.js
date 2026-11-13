@@ -220,16 +220,22 @@
       }
       txBase64 = await _wcSignAndBroadcast(fromAddr, txBodyBytes, authInfoBytes, accountNumber, chainId);
     } else {
-      var signer = _keplr.getOfflineSigner(chainId);
       try { await _keplr.experimentalSuggestChain(TERRA_CHAIN_CONFIG); } catch (e) {}
       await _keplr.enable(chainId);
       // Не давать кошельку переписывать комиссию. Иначе он подпишет свою
       // версию authInfo с урезанным gas, и отправить нашу уже не выйдет -
       // подпись её не покрывает. Держит gas этот флаг, а не подмена байтов.
-      _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
-        sign: Object.assign({}, (_keplr.defaultOptions || {}).sign,
-          { preferNoSetFee: true, preferNoSetMemo: true }),
-      });
+      // Флаг передаётся параметром подписанта (штатный способ Keplr). Запись
+      // в _keplr.defaultOptions - запасной путь для кошельков без параметра:
+      // с ноября 2026 Keplr отдаёт неизменяемый объект, и запись в него
+      // бросала "object is not extensible" - падала любая транзакция.
+      var signOpts = { preferNoSetFee: true, preferNoSetMemo: true };
+      try {
+        _keplr.defaultOptions = Object.assign({}, _keplr.defaultOptions, {
+          sign: Object.assign({}, (_keplr.defaultOptions || {}).sign, signOpts),
+        });
+      } catch (e) { /* объект кошелька заморожен - хватит параметра ниже */ }
+      var signer = _keplr.getOfflineSigner(chainId, signOpts);
       var res = await signer.signDirect(fromAddr, {
         bodyBytes: txBodyBytes,
         authInfoBytes: authInfoBytes,
