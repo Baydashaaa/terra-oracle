@@ -25,8 +25,8 @@
   'use strict';
 
   var DEFAULTS = {
-    version: '1.0',
-    effectiveDate: '1 October 2026',
+    version: '1.1',
+    effectiveDate: '13 November 2026',
     chainId: 'columbus-5',
     storageKey: 'oracle-terms',
     minAge: 18,
@@ -82,7 +82,7 @@
       { id: 'markets', title: 'Markets (predictions)', items: [
         'A prediction is a stake of LUNC on the outcome of an event. If your outcome loses, you lose your stake.',
         'Anyone can create a market by locking a 200,000 LUNC bond. A market with an unclear question, a duplicate of another market or a result nobody can check can be voided.',
-        'In one market a wallet can predict from 1,000 to 1,000,000 LUNC.',
+        'In one market a wallet can predict from 1,000 to 10,000,000 LUNC on each side, and may back both sides. The limits shown on a market are the ones that apply to it.',
         'After the event a result is proposed. For 48 hours anyone can challenge it by posting a bond equal to the creation bond. A challenge goes to the council court, which votes for 48 hours. The court\u2019s decision is final.',
         'If an event is cancelled, postponed or cannot be resolved, the market is voided and stakes are returned. Network fees are not.',
         'Results of real-world events come from the source named in the market. Sources can be late or wrong; the challenge window exists to catch that.',
@@ -90,10 +90,10 @@
       ]},
       { id: 'draw', title: 'Oracle Draw and Circuit', items: [
         'Minting an Oracle Mask NFT is your entry into a draw. It is a purchase, not a deposit, and it is not refunded.',
-        'Winners are chosen from the hash of the first block at or after the deadline, by a published rule. Anyone can check the result.',
+        'Daily and Weekly winners are chosen by the pool contract from a secret committed before the round opened. Circuit winners come from the hash of the first block at or after the deadline. Both follow a published rule, and anyone can check the result.',
         'A round that does not reach its minimum number of entries rolls over, as described in the docs. No round guarantees a win.',
         'In Circuit, each extra zone you claim in a round costs more than the one before, and your NFT tier limits how many zones you can hold.',
-        'Payouts are sent by an automated job and can be delayed.'
+        'Daily and Weekly prizes are paid by the pool contract when the round is settled; Circuit payouts are sent by an automated job. Either can be delayed.'
       ]},
       { id: 'posts', title: 'Q&A, chat and what you post', items: [
         'Questions, answers, chat messages and votes are public and may be stored on the blockchain forever. Do not post anything private.',
