@@ -41,10 +41,12 @@
     docs: 'https://docs.terraoracle.io',
     getSigner: null,
     onAccepted: null,
-    demo: false
+    demo: false,
+    trigger: 'connect'   // 'connect' = gate when a wallet connects, 'load' = gate on page load
   };
 
   var cfg, termsHash, root, els = {};
+  var readyP = null, pendingAddr = null, viewOnly = false;
   var state = { readPct: 0, reachedEnd: false, read: {}, signing: false };
 
   /* ---------------------------------------------------------------- text */
@@ -472,7 +474,7 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
           '<div class="ot-actions">' +
             '<button type="button" class="ot-sign" disabled>Sign with wallet</button>' +
             '<span class="ot-note">Free. A signature, not a transaction.</span>' +
-            '<button type="button" class="ot-decline">Decline and leave</button>' +
+            '<button type="button" class="ot-decline">' + (cfg.trigger === 'connect' ? 'Decline' : 'Decline and leave') + '</button>' +
           '</div>' +
           '<div class="ot-pick" hidden></div>' +
           '<div class="ot-msg" role="status" aria-live="polite"></div>' +
@@ -554,6 +556,12 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
     els.checks.forEach(function (c) { c.addEventListener('change', render); });
     els.sign.addEventListener('click', doSign);
     root.querySelector('.ot-decline').addEventListener('click', function () {
+      if (viewOnly) { closeGate(); return; }
+      if (cfg.trigger === 'connect') {
+        closeGate();
+        if (typeof window.disconnectWallet === 'function') window.disconnectWallet();
+        return;
+      }
       if (cfg.leaveUrl) location.href = cfg.leaveUrl;
     });
 
@@ -657,6 +665,9 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
     try {
       var getSigner = cfg.demo ? demoSigner : (cfg.getSigner || defaultSigner);
       var signer = await getSigner();
+      if (cfg.trigger === 'connect' && pendingAddr && signer.address !== pendingAddr) {
+        throw new Error('Sign with the connected wallet ' + pendingAddr.slice(0, 12) + '...' + pendingAddr.slice(-6) + '.');
+      }
       var ts = new Date().toISOString();
       var message = signMessage(signer.address, ts);
       var sig = await signer.sign(message);
@@ -693,17 +704,58 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
     setTimeout(function () {
       root.classList.add('ot-out');
       lockPage(false);
-      setTimeout(function () { root.remove(); var s = document.getElementById('ot-style'); if (s) s.remove(); }, 900);
+      var r = root; root = null; pendingAddr = null;
+      state = { readPct: 0, reachedEnd: false, read: {}, signing: false };
+      setTimeout(function () { r.remove(); var s = document.getElementById('ot-style'); if (s) s.remove(); }, 900);
       window.dispatchEvent(new CustomEvent('oracle-terms:accepted', { detail: rec }));
     }, 1100);
   }
 
   /* ---------------------------------------------------------------- public */
 
+  function closeGate() {
+    if (!root) return;
+    lockPage(false);
+    root.remove(); root = null; pendingAddr = null; viewOnly = false;
+    var s = document.getElementById('ot-style'); if (s) s.remove();
+    state = { readPct: 0, reachedEnd: false, read: {}, signing: false };
+  }
+
+  // Connect mode: the site emits 'oracle:wallet' on connect, restore and disconnect.
+  async function onWallet(e) {
+    var addr = e && e.detail && e.detail.address;
+    if (readyP) await readyP;
+    if (!cfg || cfg.trigger !== 'connect') return;
+    if (!addr) { if (!viewOnly) closeGate(); return; }
+    if (validRecord(loadRecords()[addr])) { if (!viewOnly) closeGate(); return; }
+    if (root && pendingAddr === addr) return;
+    closeGate();
+    pendingAddr = addr;
+    els = {};
+    mount(sectionsHtml(cfg));
+  }
+  window.addEventListener('oracle:wallet', onWallet);
+
+  // Read-only copy for anyone (footer link): no checkboxes, no signature.
+  function openReadOnly() {
+    function go() {
+      if (root || !cfg) return;
+      viewOnly = true; els = {};
+      mount(sectionsHtml(cfg));
+      ['.ot-stages', '.ot-locked', '.ot-checks', '.ot-sign', '.ot-note'].forEach(function (q) {
+        var n = root.querySelector(q); if (n) n.style.display = 'none';
+      });
+      root.querySelector('.ot-decline').textContent = 'Close';
+      root.querySelector('.ot-sub').textContent = 'Read-only copy. You sign these terms when you connect a wallet.';
+    }
+    if (readyP) readyP.then(go); else go();
+  }
+
   async function init(opts) {
     if (root) return null;
     cfg = Object.assign({}, DEFAULTS, opts || {});
     termsHash = await sha256Hex(cfg.version + '\n' + sectionsHtml(cfg) + '\n' + checks(cfg).join('\n'));
+    if (cfg.trigger === 'connect') { dropPreBlur(); return null; }
 
     var all = loadRecords();
     var last = all._last && all[all._last];
@@ -718,6 +770,7 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
 
   window.OracleTerms = {
     init: init,
+    open: openReadOnly,
     record: function () { var a = loadRecords(); return a._last ? a[a._last] : null; },
     hasAccepted: function (address) { return validRecord(loadRecords()[address]); },
     reset: function () { try { localStorage.removeItem((cfg || DEFAULTS).storageKey); } catch (e) {} },
@@ -730,6 +783,7 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
   (function preBlur() {
     var c = window.ORACLE_TERMS_CONFIG || {};
     if (c === false) return;
+    if ((c.trigger || DEFAULTS.trigger) === 'connect') return;
     var key = c.storageKey || DEFAULTS.storageKey, ver = c.version || DEFAULTS.version, ok = false;
     try { var a = JSON.parse(localStorage.getItem(key) || '{}'); ok = !!(a._last && a[a._last] && a[a._last].version === ver); } catch (e) {}
     if (ok) return;
@@ -743,7 +797,7 @@ font:700 16px/1 "Rajdhani",sans-serif;letter-spacing:.03em;color:#fff;background
   function auto() {
     var c = window.ORACLE_TERMS_CONFIG;
     if (c === false) return;
-    init(c || {});
+    readyP = init(c || {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto);
   else auto();
