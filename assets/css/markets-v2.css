@@ -333,6 +333,9 @@
 #page-markets .mk2-col{display:flex;flex-direction:column;gap:22px;min-width:0}
 #page-markets .mk2-col > .mk2-hero,#page-markets .mk2-col > .mk2-now,#page-markets .mk2-col > .mk2-result{margin:0}
 #page-markets .mk2-ticket{display:flex;flex-direction:column;gap:16px;min-width:0;position:sticky;top:12px}
+/* Билет прокручивается сам, если выше окна: блоки внутри не должны
+   сжиматься, иначе блок прогноза обрезался, а позиция налезала на него. */
+#page-markets .mk2-ticket > *{flex:none}
 #page-markets .mk2-ticket .mk2-pos,#page-markets .mk2-ticket .mk2-panel{padding:20px}
 /* Колонка билета узкая: значок "YOUR PICK" в углу налезал на YES/NO -
    сажаем его на верхнюю рамку карточки, по центру. */
@@ -410,3 +413,31 @@
 #page-markets .mk-calc .mk-win.none{background:rgba(255,255,255,.04);border-color:rgba(200,184,255,.2)}
 #page-markets .mk-calc .mk-win.none span{color:#EEF1FF;font-weight:600}
 #page-markets .mk-calc .mk-win.none em{color:#B4BCE4;line-height:1.45}
+
+/* ---- YES / NO в билете: тёмная карточка, цвет стороны - акцентом ----
+   Было: полупрозрачная заливка цветом стороны, а невыбранная сторона
+   гасла до 42% и обесцвечивалась - всё выглядело мутным, текст терялся.
+   Стало: одна тёмная подложка для обеих, цвет только у метки, у множителя
+   и у рамки выбранной; проценты белые, подписи читаемые. */
+#page-markets .mk2-ticket .yes,#page-markets .mk2-ticket .mk2-side.y{--sc:59,227,138}
+#page-markets .mk2-ticket .no,#page-markets .mk2-ticket .mk2-side.n{--sc:255,127,176}
+#page-markets .mk2-ticket #bet-side-row button,
+#page-markets .mk2-ticket .mk2-side{
+  background:#0E1330;border:1px solid rgba(200,184,255,.16);box-shadow:none;color:#EEF1FF;
+  opacity:1;filter:none;border-radius:14px;transition:border-color .15s,background .15s,box-shadow .15s}
+#page-markets .mk2-ticket #bet-side-row button{padding:16px 12px 14px}
+#page-markets .mk2-ticket #bet-side-row button[aria-pressed="false"]:not([disabled]){opacity:1;filter:none}
+#page-markets .mk2-ticket #bet-side-row button[aria-pressed="false"]:not([disabled]):hover{opacity:1;border-color:rgba(var(--sc),.55);background:#111739}
+#page-markets .mk2-ticket #bet-side-row button[aria-pressed="true"]:not([disabled]){
+  background:linear-gradient(180deg,rgba(var(--sc),.12),rgba(var(--sc),.04));
+  box-shadow:inset 0 0 0 2px rgb(var(--sc)),0 0 24px -12px rgb(var(--sc))}
+#page-markets .mk2-ticket #bet-side-row button[aria-pressed="true"]:not([disabled])::after{background:rgb(var(--sc));color:#06111F}
+#page-markets .mk2-ticket #bet-side-row .k,#page-markets .mk2-ticket .mk2-side .k{color:rgb(var(--sc));font-size:12px;font-weight:700;letter-spacing:.14em}
+#page-markets .mk2-ticket #bet-side-row .p,#page-markets .mk2-ticket .mk2-side .p{color:#F4F6FF}
+#page-markets .mk2-ticket .mk2-side .p small{color:#B4BCE4}
+#page-markets .mk2-ticket #bet-side-row .m{opacity:1;color:rgb(var(--sc));font-size:13px;font-weight:600}
+#page-markets .mk2-ticket #bet-side-row .m.hot{color:#F5C451}
+#page-markets .mk2-ticket #bet-side-row .s,#page-markets .mk2-ticket .mk2-side .s{opacity:1;color:#AEB8DA;font-size:12px}
+#page-markets .mk2-ticket .mk2-side{padding:16px}
+#page-markets .mk2-ticket .mk2-side.won{border-color:#F2D45C;box-shadow:0 0 24px -12px rgba(242,212,92,.7)}
+#page-markets .mk2-ticket .mk2-side.lost{opacity:.6}

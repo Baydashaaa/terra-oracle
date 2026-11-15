@@ -835,21 +835,19 @@ function mkNowBanner(m) {
 }
 
 /**
- * Счёт матча PandaScore из каталога событий: идущего (esports.live) - со
- * счётом и трансляцией, и уже сыгранного (esports.recent) - с победителем.
- * Итог на цепи появляется только в resolve_after, а матч обычно кончается
- * раньше: без recent экран до этого момента молчал, кто выиграл.
- * recent[g]: [{ id, home, away, score: [h, a], winner: 'home'|'away'|null }].
+ * Счёт матча PandaScore: идущего - со счётом и трансляцией, сыгранного - с
+ * победителем. Итог на цепи появляется только в resolve_after, а матч
+ * обычно кончается раньше, и без этого экран до того момента молчал.
+ * Источники по порядку: каталог (esports.live, esports.recent), а если там
+ * матча нет - сам матч по номеру (oracle-events /esmatch): список "past"
+ * у PandaScore для CS2 отдавал не все сыгранные матчи (15.11.2026).
+ * Матч: { id, status, home, away, score: [h, a], winner: 'home'|'away'|null, bo, stream }.
  */
 function mkFillLive() {
   const box = document.querySelector('#markets-list .mk2-now[data-ps]');
   if (!box || typeof window.mkCatalogLoad !== 'function') return;
   const [g, id] = box.dataset.ps.split(':');
-  window.mkCatalogLoad().then((cat) => {
-    const es = (cat && cat.esports) || {};
-    const pick = (list) => list && (list[g] || []).find((q) => String(q.id) === String(id));
-    let x = pick(es.live);
-    const done = !x && !!(x = pick(es.recent));
+  const paint = (x, done) => {
     if (!x || !x.home || !x.away || !document.body.contains(box)) return;
     const sc = box.querySelector('.mk2-now-score');
     const logo = (t) => (mkEsOk(t.logo) ? `<img src="${t.logo}" alt="" width="28" height="28" loading="lazy">` : '');
@@ -868,12 +866,26 @@ function mkFillLive() {
       const w = x.winner === 'home' ? x.home : x.winner === 'away' ? x.away : null;
       const score = has ? ` ${Math.max(x.score[0], x.score[1])}:${Math.min(x.score[0], x.score[1])}` : '';
       if (head) head.textContent = w
-        ? `Predictions are closed. Match over: ${w.name} won${score}.`
+        ? `Predictions are closed. Match over: ${w.full || w.name} won${score}.`
         : 'Predictions are closed. The match is over.';
       return;
     }
     if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
     if (head) head.textContent = 'Predictions are closed. The match is live now.';
+  };
+  window.mkCatalogLoad().then(async (cat) => {
+    const es = (cat && cat.esports) || {};
+    const pick = (list) => list && (list[g] || []).find((q) => String(q.id) === String(id));
+    const live = pick(es.live);
+    if (live) return paint(live, false);
+    const rec = pick(es.recent);
+    if (rec) return paint(rec, true);
+    if (!/^\d{1,9}$/.test(id)) return;
+    const r = await fetch(`${MK_EVENTS}/esmatch?id=${id}`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return;
+    const x = await r.json();
+    if (x.status === 'running') paint(x, false);
+    else if (x.status === 'finished') paint(x, true);
   }).catch(() => {});
 }
 
