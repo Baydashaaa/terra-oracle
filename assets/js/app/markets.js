@@ -1652,8 +1652,11 @@ function setBetAmount(n) {
   const el = document.getElementById('bet-amount');
   if (!el) return;
   el.value = String(n);
-  // Как ввод руками: ползунок встаёт на свою долю, выбор процента снимается
-  // (markets-paywith), сумма пересчитывается (oninput поля).
+  // Выбран пресет - процент гаснет сразу, до пересчёта: иначе markBetChips
+  // видел бы ещё нажатый процент и не зажигал пресет.
+  document.querySelectorAll('#markets-list .mk-pct button').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+  // Как ввод руками: ползунок встаёт на свою долю (markets-paywith), сумма
+  // пересчитывается (oninput поля).
   el.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
@@ -1737,7 +1740,9 @@ function updateBetCalc() {
   const raw = (document.getElementById('bet-amount') || {}).value || '';
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
   const side = betSide ? 'YES' : 'NO';
-  markBetChips(lunc);
+  // После всех обработчиков ввода: ползунок (markets-paywith) снимает выбор
+  // процента позже oninput поля, и проверять нужно итоговое состояние.
+  queueMicrotask(() => markBetChips(lunc));
   if (!m || !box) return;
   // В кнопке видно, на что уходят деньги: сумма и сторона.
   if (btn && !btn.disabled) {
