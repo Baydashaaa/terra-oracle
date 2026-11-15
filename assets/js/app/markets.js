@@ -1780,7 +1780,11 @@ function updateBetCalc() {
       : `Choose an amount to predict ${side}`;
   }
   if (!lunc) {
-    box.textContent = 'Pick an amount to see what a correct call pays.';
+    // Пример выигрыша ещё до ввода суммы: "pays ×7.65" само по себе ни о чём
+    // не говорило, и сколько можно выиграть, видно было только после ввода.
+    const min0 = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
+    const ex = Math.max(10000, min0);
+    box.innerHTML = mkWinBox(side, ex, Math.floor(ex * payoutMultiplier(m, betSide, ex * 1e6)), true);
     return;
   }
   const min = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
@@ -1797,10 +1801,30 @@ function updateBetCalc() {
   // считает по коэффициенту, которого уже не будет.
   const mult = payoutMultiplier(m, betSide, lunc * 1e6);
   const payout = Math.floor(lunc * mult);
-  box.innerHTML = `<div class="row"><span>You put in</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
-    <div class="row"><span>If ${side} wins</span><b class="y">${payout.toLocaleString('en-US')} LUNC</b></div>
-    <div class="row"><span>Profit</span><b class="y">+${(payout - lunc).toLocaleString('en-US')} LUNC</b></div>
-    <div class="row muted"><span>If it does not</span><b>you lose it</b></div>`;
+  box.innerHTML = mkWinBox(side, lunc, payout, false)
+    + `<div class="row"><span>You put in</span><b>${lunc.toLocaleString('en-US')} LUNC</b></div>
+    <div class="row muted"><span>If ${side === 'YES' ? 'NO' : 'YES'} wins</span><b>you lose it</b></div>`;
+}
+
+/**
+ * Главная цифра билета: сколько придёт, если исход угадан. Крупно, цветом
+ * стороны; прибыль и множитель - под ней. example - сумма ещё не введена,
+ * показываем пример. Общая для прогноза в LUNC и токеном (markets-paywith).
+ */
+function mkWinBox(side, stake, payout, example) {
+  const f = (n) => Math.floor(n).toLocaleString('en-US');
+  const cls = side === 'YES' ? 'y' : 'n';
+  if (!(payout > stake)) {
+    const other = side === 'YES' ? 'NO' : 'YES';
+    return `<div class="mk-win ${cls} none"><span>Nothing to win yet</span>
+      <em>No one has predicted ${other}. If ${side} wins now, you get back what you put in. Every ${other} prediction adds to your win.</em></div>`;
+  }
+  const mult = (payout / stake).toFixed(2);
+  return example
+    ? `<div class="mk-win ${cls} ex"><span>${f(stake)} LUNC on ${side} → if ${side} wins</span><b>≈ ${f(payout)} LUNC</b>
+        <em>+${f(payout - stake)} profit · ×${mult} · enter your amount above</em></div>`
+    : `<div class="mk-win ${cls}"><span>If ${side} wins you get</span><b>≈ ${f(payout)} LUNC</b>
+        <em>+${f(payout - stake)} profit · ×${mult}</em></div>`;
 }
 
 async function submitBet() {

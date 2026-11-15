@@ -363,7 +363,10 @@
     const amt = amountInput();
     if (!m || !box) return;
     if (!amt) {
-      box.textContent = `Enter an amount of ${t.symbol}. It is swapped to LUNC and predicted in the same transaction.`;
+      const min0 = prophecyCfg ? Number(prophecyCfg.min_bet) / 1e6 : 0;
+      const ex = Math.max(10000, min0);
+      box.innerHTML = (typeof mkWinBox === 'function' ? mkWinBox(side, ex, Math.floor(ex * payoutMultiplier(m, betSide, ex * 1e6)), true) : '')
+        + `<div class="row muted"><span>Enter an amount of ${esc(t.symbol)}</span><b>swapped to LUNC and predicted in one transaction</b></div>`;
       if (btn && !btn.disabled) btn.textContent = `Choose an amount to predict ${side}`;
       return;
     }
@@ -405,9 +408,8 @@
     }
     const mult = payoutMultiplier(m, betSide, Number(pred));
     const payout = Math.floor(predLunc * mult);
-    box.innerHTML = head + `
+    box.innerHTML = (typeof mkWinBox === 'function' ? mkWinBox(side, predLunc, payout, false) : '') + head + `
       <div class="row"><span>Predicted ${side}</span><b>${fmt(predLunc)} LUNC</b></div>
-      <div class="row"><span>If ${side} wins</span><b class="y">${fmt(payout)} LUNC</b></div>
       <div class="row muted"><span>Payout</span><b>in LUNC, or back in ${esc(t.symbol)} with "Collect as"</b></div>
       <div class="row muted"><span>Kept aside for price move and tax</span><b>${fmt(outLunc - predLunc)} LUNC, stays in your wallet</b></div>
       ${quote.impact_bps > 300 ? `<div class="row muted"><span>Thin pool: the swap costs</span><b>${(quote.impact_bps / 100).toFixed(1)}%</b></div>` : ''}`;

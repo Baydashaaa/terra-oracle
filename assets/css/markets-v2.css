@@ -396,3 +396,17 @@
 #page-markets .mk2-now-score .t:not(.won){opacity:.75}
 #page-markets .mk2-now.over .mk2-now-score .t.won b{color:#3BE38A}
 #page-markets .mk2-now:not(.over) .mk2-now-score .t{opacity:1}
+
+/* ---- Выигрыш в билете: главная цифра, цветом стороны ---- */
+#page-markets .mk-calc .mk-win{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;padding:12px 14px;border-radius:10px;
+  background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.38)}
+#page-markets .mk-calc .mk-win:only-child{margin-bottom:0}
+#page-markets .mk-calc .mk-win.n{background:rgba(209,96,143,.12);border-color:rgba(209,96,143,.42)}
+#page-markets .mk-calc .mk-win span{font-size:12.5px;color:#B4BCE4}
+#page-markets .mk-calc .mk-win b{font-family:var(--dis);font-size:26px;line-height:1.15;font-weight:700;color:#3BE38A}
+#page-markets .mk-calc .mk-win.n b{color:#F0A5C4}
+#page-markets .mk-calc .mk-win em{font-style:normal;font-size:12.5px;color:#D6DBF5}
+#page-markets .mk-calc .mk-win.ex b{font-size:22px}
+#page-markets .mk-calc .mk-win.none{background:rgba(255,255,255,.04);border-color:rgba(200,184,255,.2)}
+#page-markets .mk-calc .mk-win.none span{color:#EEF1FF;font-weight:600}
+#page-markets .mk-calc .mk-win.none em{color:#B4BCE4;line-height:1.45}
