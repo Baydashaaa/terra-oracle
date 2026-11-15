@@ -187,6 +187,14 @@
   background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.16)}
 #page-markets .mk-pct button:hover{border-color:#7B5CFF}
 #page-markets .mk-pct button[aria-pressed="true"]{color:#fff;background:rgba(123,92,255,.3);border-color:#7B5CFF}
+/* Пресеты 10K-500K - тот же вид и то же выбранное состояние, что у 25%-Max:
+   одна сетка, те же углы, фон, наведение и заливка. */
+#page-markets .mk-betbox .mk-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+#page-markets .mk-betbox .mk-chips[hidden]{display:none}
+#page-markets .mk-betbox .mk-chips button{height:30px;padding:0;border-radius:8px;cursor:pointer;font:600 12.5px/1 inherit;color:#C9D3EA;
+  background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.16)}
+#page-markets .mk-betbox .mk-chips button:hover{color:#C9D3EA;border-color:#7B5CFF}
+#page-markets .mk-betbox .mk-chips button[aria-pressed="true"]{color:#fff;background:rgba(123,92,255,.3);border-color:#7B5CFF}
 
 /* ---- экран рынка: что происходит сейчас ---- */
 #page-markets .mk2-now{display:flex;align-items:flex-start;gap:14px;margin:0 0 18px;padding:16px 20px;border-radius:18px;
@@ -346,8 +354,8 @@
   #page-markets .mk-court-wrap > summary{flex-wrap:wrap;padding:12px 14px;font-size:12.5px}
   /* прогноз: токены, ползунок */
   #page-markets .mk-pay-row button{height:32px;padding:0 10px 0 7px;font-size:12px}
-  #page-markets .mk-pct{gap:4px}
-  #page-markets .mk-pct button{font-size:12px}
+  #page-markets .mk-pct,#page-markets .mk-betbox .mk-chips{gap:4px}
+  #page-markets .mk-pct button,#page-markets .mk-betbox .mk-chips button{font-size:12px}
   /* список: сетка в одну колонку без выхода за край */
   #page-markets .mk-list.mk2-cards{grid-template-columns:minmax(0,1fr)}
   #page-markets .mk-hero-stats{font-size:12px;gap:4px 12px}

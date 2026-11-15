@@ -29,6 +29,8 @@
 :is(#page-markets,#home-markets) .mk2-orb::before{content:"";position:absolute;inset:-6px;border-radius:50%;
   background:radial-gradient(circle,rgba(var(--c),.38) 0%,rgba(var(--c),.10) 45%,transparent 70%);filter:blur(4px)}
 :is(#page-markets,#home-markets) .mk2-orb img{position:relative;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+/* Логотип монеты (CoinGecko) плоский и круглый - чуть меньше объёмных иконок разделов. */
+:is(#page-markets,#home-markets) .mk2-orb.mk2-coin img{width:78%;height:78%;border-radius:50%}
 :is(#page-markets,#home-markets) .mk2-orb.big{width:84px;height:84px}
 :is(#page-markets,#home-markets) .mkc.mk2c:hover .mk2-orb img{transform:translateY(-2px) scale(1.04);transition:transform .3s}
 

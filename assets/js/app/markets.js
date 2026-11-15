@@ -606,8 +606,43 @@ function mkEsWant(...ids) {
   }, 50);
 }
 
+// Логотипы монет для крипторынков (CoinGecko). Как с командами киберспорта:
+// адрес картинки берётся из каталога oracle-events (crypto.assets[].image) и
+// запоминается в браузере; до загрузки каталога стоит иконка категории, потом
+// она заменяется на месте (mkCgLearn). LUNC - своя картинка сайта.
+const MK_CG_LOGOS = (() => { try { return JSON.parse(localStorage.getItem('mkCgLogos') || '{}') || {}; } catch (e) { return {}; } })();
+const mkCgOk = (u) => typeof u === 'string' && /^https:\/\/coin-images\.coingecko\.com\//.test(u);
+const MK_CG_LOCAL = { 'terra-luna': 'assets/img/lunc.webp' };
+let mkCgAsked = false;
+function mkCgSrc(id) { return mkOwn(MK_CG_LOCAL, id) || (mkCgOk(MK_CG_LOGOS[id]) ? MK_CG_LOGOS[id] : null); }
+function mkCgCoin(id, big) {
+  const src = mkCgSrc(id);
+  return src ? `<span class="mk2-orb mk2-coin${big ? ' big' : ''}" aria-hidden="true"><img src="${src}" alt="" loading="lazy"></span>` : null;
+}
+function mkCgLearn(cat) {
+  const assets = cat && cat.crypto && cat.crypto.assets;
+  if (Array.isArray(assets)) {
+    assets.forEach((x) => { if (x && x.id && mkCgOk(x.image)) MK_CG_LOGOS[String(x.id)] = x.image; });
+    try { localStorage.setItem('mkCgLogos', JSON.stringify(MK_CG_LOGOS)); } catch (e) { /* приватный режим */ }
+  }
+  document.querySelectorAll('.mk2-orb[data-cg]').forEach((el) => {
+    const html = mkCgCoin(el.dataset.cg, el.classList.contains('big'));
+    if (html) el.outerHTML = html;
+  });
+}
+
 function mkOrb(m, big) {
   const ref = mkRef(m);
+  // Крипта: логотип выбранной монеты, а не общая иконка раздела.
+  if (ref && ref.src === 'cg' && /^[a-z0-9-]{2,64}$/.test(ref.asset || '')) {
+    const html = mkCgCoin(ref.asset, big);
+    if (html) return html;
+    if (!mkCgAsked && typeof window.mkCatalogLoad === 'function') {
+      mkCgAsked = true;
+      setTimeout(() => window.mkCatalogLoad().then(mkCgLearn).catch(() => {}), 0);
+    }
+    return `<span class="mk2-orb${big ? ' big' : ''}" data-cg="${ref.asset}" aria-hidden="true"><img src="assets/img/icons/cat-crypto.webp" alt="" loading="lazy"></span>`;
+  }
   // Киберспорт: логотипы обеих команд внахлёст, как гербы в футболе.
   if (ref && ref.src === 'ps' && /^\d+$/.test(ref.t1 || '') && /^\d+$/.test(ref.t2 || '')) {
     const html = mkEsCrests(ref.t1, ref.t2, big);
@@ -1605,7 +1640,7 @@ function betPanel(m) {
         <em>LUNC</em>
       </label>
       <div class="mk-chips">${chips.map((n) =>
-        `<button type="button" onclick="setBetAmount(${n})">${chipText(n)}</button>`).join('')}</div>
+        `<button type="button" data-amt="${n}" aria-pressed="false" onclick="setBetAmount(${n})">${chipText(n)}</button>`).join('')}</div>
       <div id="bet-calc" class="mk-calc"></div>
       <button onclick="submitBet()" id="bet-go" class="ask-go mk-place" type="button">Bet</button>
       <div class="mk-plain">Terra Classic taxes every transfer, so a payout arrives about ${taxPct()}%
@@ -1617,7 +1652,18 @@ function setBetAmount(n) {
   const el = document.getElementById('bet-amount');
   if (!el) return;
   el.value = String(n);
-  updateBetCalc();
+  // Как ввод руками: ползунок встаёт на свою долю, выбор процента снимается
+  // (markets-paywith), сумма пересчитывается (oninput поля).
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// Один выбор на два ряда (25%-Max и 10K-500K): нажат процент - пресеты
+// не горят; иначе горит пресет, равный сумме в поле.
+function markBetChips(lunc) {
+  const pctOn = !!document.querySelector('#markets-list .mk-pct button[aria-pressed="true"]');
+  document.querySelectorAll('#markets-list .mk-chips button[data-amt]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(!pctOn && Number(b.dataset.amt) === lunc));
+  });
 }
 
 /** Закрытый рынок: прогноз уже история, а не действие - тонкая полоса. */
@@ -1691,6 +1737,7 @@ function updateBetCalc() {
   const raw = (document.getElementById('bet-amount') || {}).value || '';
   const lunc = Number(String(raw).replace(/[^0-9]/g, ''));
   const side = betSide ? 'YES' : 'NO';
+  markBetChips(lunc);
   if (!m || !box) return;
   // В кнопке видно, на что уходят деньги: сумма и сторона.
   if (btn && !btn.disabled) {
