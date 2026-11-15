@@ -810,7 +810,6 @@ function mkStatusLine(m, tip) {
   const now = Math.floor(Date.now() / 1000);
   const accepting = m.status === 'open' && Number(m.bets_close_at) > now;
   const ref = mkRef(m);
-  const src = ref && MK_SRC_NAME[ref.src];
   const at = Number(m.resolve_after);
   const d = new Date(at * 1000);
   const when = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
@@ -827,7 +826,7 @@ function mkStatusLine(m, tip) {
   else if (m.status === 'void') { k = 'void'; txt = 'Voided · everyone gets their LUNC back'; }
   else { k = 'wait'; txt = mktEsc(m.status); }
   const resolves = accepting || m.status === 'open' || m.status === 'locked'
-    ? `<span class="mk2-chip">Result ${when}${src ? ' from ' + mktEsc(src) : ''}</span>` : '';
+    ? `<span class="mk2-chip">Result ${when}</span>` : '';
   return `<div class="mk2-status"><span class="mk2-chip st ${k}"><i></i>${txt}</span>${resolves}</div>`;
 }
 
@@ -841,7 +840,6 @@ function mkNowBanner(m) {
   const waiting = (m.status === 'open' && Number(m.bets_close_at) <= now) || m.status === 'locked';
   if (!waiting) return '';
   const ref = mkRef(m);
-  const src = (ref && MK_SRC_NAME[ref.src]) || 'the source named below';
   const at = Number(m.resolve_after);
   const d = new Date(at * 1000);
   const hhmm = String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
@@ -850,8 +848,8 @@ function mkNowBanner(m) {
   const event = ref && (ref.src === 'ps' || ref.src === 'fd' || ref.src === 'espn') ? 'The match is being played.'
     : 'The outcome is not known yet.';
   const due = at > now
-    ? `The result is read from ${mktEsc(src)} at ${hhmm}, in <b class="mk-cd" data-until="${at}">${fmtCountdown(at - now)}</b>.`
-    : `The result is due from ${mktEsc(src)} now and appears here as soon as it is posted on chain.`;
+    ? `The result is posted at ${hhmm}, in <b class="mk-cd" data-until="${at}">${fmtCountdown(at - now)}</b>.`
+    : 'The result is due now and appears here as soon as it is posted on chain.';
   // Киберспорт: счёт и трансляция идущего матча подставит mkFillLive из
   // каталога событий (раздел live), когда тот загрузится.
   // Какая команда - YES: шаблон t1/t2 из спецификации рынка.

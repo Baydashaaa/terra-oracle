@@ -468,7 +468,9 @@
 #page-markets .mk2-how .mk2-track{margin:6px 0 4px}
 
 /* ---- Activity: 5 строк, остальное по кнопке; полоска - размер прогноза ---- */
-#page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) 120px auto auto;align-items:center}
+/* Колонки фиксированной ширины: сумма разной длины сдвигала полоску */
+#page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) 120px 190px 72px;align-items:center}
+#page-markets .mk-feed .r > b{text-align:right;white-space:nowrap}
 #page-markets .mk-feed .r[hidden]{display:none}
 #page-markets .mk-feed .bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
 #page-markets .mk-feed .bar i{display:block;height:100%;border-radius:3px}
