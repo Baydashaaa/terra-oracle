@@ -1094,6 +1094,45 @@ async function notifyCouncil(now) {
   }
 }
 
+/**
+ * Объявленный исход - совету, один раз на рынок. С 16.11.2026 окно
+ * оспаривания 6 часов вместо 48: ошибку источника или керпера надо успеть
+ * заметить, пока окно открыто, а не наткнуться на неё случайно. В сообщении
+ * - исход, что прочитал керпер, сколько осталось и ссылка на рынок.
+ */
+async function notifyPosted(now) {
+  if (!DRY && (!WORKER_URL || !ACTIONS_SECRET)) return;
+  let proposed, pcfg;
+  try {
+    proposed = await listMarkets('proposed');
+    if (!proposed.length) return;
+    pcfg = await smart(PROPHECY, { config: {} });
+  } catch (e) {
+    log('· posted notify: could not read markets:', e.message);
+    return;
+  }
+  const net = CHAIN_ID === 'columbus-5' ? 'mainnet' : CHAIN_ID;
+  for (const m of proposed) {
+    try {
+      const r = m.rules || pcfg;
+      const endsAt = Number(m.proposed_at) + Number(r.challenge_secs || 0);
+      if (now >= endsAt) continue;
+      const posted = m.outcome === true ? 'YES' : m.outcome === false ? 'NO' : 'none';
+      await councilOnce(`posted:${PROPHECY.slice(-8)}:${m.id}`,
+        `📣 *MARKETS - outcome posted*\n`
+        + `Market #${m.id} · ${net}\n\n`
+        + `${md(m.question)}\n\n`
+        + `Outcome: *${posted}*${m.reading ? `\nRead: ${md(m.reading)}` : ''}\n`
+        + `Pots: YES ${lunc(m.pot_yes)} · NO ${lunc(m.pot_no)}\n\n`
+        + `⏳ Challenge window ends *${utc(endsAt)}* (${hours(endsAt - now)} left). `
+        + `If the outcome is wrong, challenge it on the market page before then.\n`
+        + `${SITE_URL}/markets/${m.id}`);
+    } catch (e) {
+      log('   posted notify FAILED', `#${m.id}`, e.message);
+    }
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 /** KEEPER_SELFTEST=1: читает все шесть метрик на недавней высоте обоими
@@ -1188,6 +1227,7 @@ async function main() {
   await grantCreatorRep(tip.time);
   // Уведомления тоже не роняют прогон.
   await notifyCouncil(tip.time);
+  await notifyPosted(tip.time);
   log(`done: ${done}, failed: ${failed}`);
   if (failed) process.exitCode = 1;
 }

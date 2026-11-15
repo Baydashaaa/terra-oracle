@@ -12,6 +12,14 @@
  *
  * Подключать после markets.js и markets-create.js.
  */
+
+/** Окно оспаривания из конфига контракта (было вписано "48 hours"). */
+function disputeText() {
+  var secs = (typeof prophecyCfg !== 'undefined' && prophecyCfg && Number(prophecyCfg.challenge_secs)) || 0;
+  if (!secs) return 'disputable after the result, like every market';
+  var h = Math.round(secs / 3600);
+  return 'disputable for ' + h + (h === 1 ? ' hour' : ' hours') + ', like every market';
+}
 (function () {
   'use strict';
 
@@ -290,7 +298,7 @@
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
       + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
-      + '<div><span>Resolved from</span><b>CoinGecko</b><em>disputable for 48 hours, like every market</em></div>'
+      + '<div><span>Resolved from</span><b>CoinGecko</b><em>' + disputeText() + '</em></div>'
       + '</div>'
       + (C.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
       + (errs.length && !C.dup ? '<ul class="mkf-errs">' + errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '')
@@ -659,7 +667,7 @@
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
       + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
-      + '<div><span>Resolved from</span><b>' + esc(SPORTS[F.sport].source) + '</b><em>disputable for 48 hours, like every market</em></div>'
+      + '<div><span>Resolved from</span><b>' + esc(SPORTS[F.sport].source) + '</b><em>' + disputeText() + '</em></div>'
       + '</div>'
       + (F.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
       + (errs.length && !F.dup ? '<ul class="mkf-errs">' + errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '')
@@ -961,7 +969,7 @@
       + '<div class="mkx-terms">'
       + '<div><span>Bond</span><b>' + (bond / 1e6).toLocaleString('en-US') + ' LUNC</b><em>comes back when the market settles</em></div>'
       + '<div><span>You earn</span><b>3%</b><em>of the losing side, plus REP when it settles</em></div>'
-      + '<div><span>Resolved from</span><b>' + esc(f.source) + '</b><em>disputable for 48 hours, like every market</em></div>'
+      + '<div><span>Resolved from</span><b>' + esc(f.source) + '</b><em>' + disputeText() + '</em></div>'
       + '</div>'
       + (st.dup ? '<div class="mkx-dup">This exact market is already open. <button type="button" id="mkx-join">Open it &rarr;</button></div>' : '')
       + (errs.length && !st.dup ? '<ul class="mkf-errs">' + errs.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '')
