@@ -97,7 +97,11 @@ function updatePoolDisplay() {
 
   // Update stats
   // My Entries This Round - entries for connected wallet in current lottery
-  const _myAddr = connectedWalletAddress || lotteryAddress;
+  // Карточка "Next draw" на главной грузит этот файл без wallet.js: там нет
+  // ни connectedWalletAddress, ни lotteryAddress, и строка падала с
+  // ReferenceError, обрывая обновление карточки.
+  const _myAddr = (typeof connectedWalletAddress !== 'undefined' && connectedWalletAddress)
+    || (typeof lotteryAddress !== 'undefined' && lotteryAddress) || null;
   const _curTickets = currentLottery === 'daily' ? dailyTickets : weeklyTickets;
   const _myNFTEntries = _myAddr ? _curTickets.filter(t => t.address === _myAddr).length : 0;
   const _myFreeEntries = (currentLottery === 'weekly' && _myAddr) ? (getFreeEntries(_myAddr).total || 0) : 0;
