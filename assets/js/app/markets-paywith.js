@@ -138,10 +138,9 @@
   function inject() {
     const box = document.querySelector('#markets-list .mk-betbox');
     if (!box || box.querySelector('.mk-pay') || !tokens || !tokens.length) return;
-    const chips = ['LUNC', ...tokens.map((t) => t.symbol)].map((s) => chip('data-pay', s, s === pay)).join('');
-    box.insertAdjacentHTML('afterbegin', `<div class="mk-pay"><span>Pay with</span><div class="mk-pay-row">${chips}</div></div>`);
     const amountRow = box.querySelector('.mk-amount');
-    if (amountRow) {
+    if (!amountRow) return;
+    {
       amountRow.insertAdjacentHTML('afterend', `<div class="mk-slide">
         <div class="mk-slide-top"><span class="mk-bal">Balance: …</span></div>
         <input type="range" class="mk-range" min="0" max="100" step="1" value="0" aria-label="Share of your balance">
@@ -158,9 +157,66 @@
       const inp = document.getElementById('bet-amount');
       if (inp) inp.addEventListener('input', followInput);
     }
-    box.querySelector('.mk-pay').addEventListener('click', (e) => {
+
+    // Выбор токена - кнопка в самом поле суммы и список под ним (с поиском и
+    // балансами), как в обменниках. Ряд из 12 кнопок в узкой колонке билета
+    // не помещался: видно было 4 токена, остальные уезжали вбок.
+    const syms = ['LUNC', ...tokens.map((t) => t.symbol)];
+    const opt = (sym) => `<button type="button" role="option" data-pay="${esc(sym)}" aria-selected="${sym === pay}">`
+      + `<img src="${logo(sym)}" alt="" width="22" height="22" loading="lazy" onerror="this.style.visibility='hidden'">`
+      + `<span>${esc(sym)}</span><em data-bal="${esc(sym)}"></em></button>`;
+    amountRow.insertAdjacentHTML('beforeend', `<button type="button" class="mk-paysel" aria-haspopup="listbox" aria-expanded="false" aria-label="Pay with ${esc(pay)} - change token">`
+      + `<img src="${logo(pay)}" alt="" width="20" height="20" onerror="this.style.visibility='hidden'"><b>${esc(pay)}</b>`
+      + '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>');
+    amountRow.insertAdjacentHTML('afterend', `<div class="mk-pay" role="listbox" aria-label="Pay with" hidden>`
+      + `<input type="search" class="mk-payq" placeholder="Search token" aria-label="Search token" autocomplete="off">`
+      + syms.map(opt).join('') + '<p class="mk-payempty" hidden>No token found</p></div>');
+    const sel = amountRow.querySelector('.mk-paysel');
+    const list = box.querySelector('.mk-pay[role="listbox"]');
+    const q = list.querySelector('.mk-payq');
+    const setOpen = (open) => {
+      list.hidden = !open;
+      sel.setAttribute('aria-expanded', String(open));
+      if (!open) return;
+      q.value = ''; filter('');
+      paintListBalances();
+      q.focus({ preventScroll: true });
+    };
+    const filter = (text) => {
+      const t = text.trim().toLowerCase();
+      let shown = 0;
+      list.querySelectorAll('button[data-pay]').forEach((b) => {
+        const on = !t || b.dataset.pay.toLowerCase().includes(t);
+        b.hidden = !on; if (on) shown++;
+      });
+      list.querySelector('.mk-payempty').hidden = shown > 0;
+    };
+    sel.addEventListener('click', (e) => { e.preventDefault(); setOpen(list.hidden); });
+    q.addEventListener('input', () => filter(q.value));
+    list.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { setOpen(false); sel.focus(); }
+      if (e.key === 'Enter' && e.target === q) {
+        const first = list.querySelector('button[data-pay]:not([hidden])');
+        if (first) { e.preventDefault(); first.click(); }
+      }
+    });
+    // Клик мимо списка закрывает его. Обработчик один на страницу: блок
+    // прогноза перерисовывается, а слушатель ищет актуальный список.
+    if (!window._mkPayOutside) {
+      window._mkPayOutside = true;
+      document.addEventListener('click', (e) => {
+        const l = document.querySelector('#markets-list .mk-pay[role="listbox"]');
+        if (!l || l.hidden || e.target.closest('.mk-pay, .mk-paysel')) return;
+        l.hidden = true;
+        const b = document.querySelector('#markets-list .mk-paysel');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    list.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-pay]');
       if (!b) return;
+      setOpen(false);
+      if (b.dataset.pay === pay) return;
       pay = b.dataset.pay;
       quote = null; quoteKey = '';
       const inp = document.getElementById('bet-amount');
@@ -171,6 +227,26 @@
     });
     sync();
     paintBalance();
+  }
+
+  /** Балансы в открытом списке: ненулевые сверху, как в окне кошелька. */
+  async function paintListBalances() {
+    const list = document.querySelector('#markets-list .mk-pay[role="listbox"]');
+    if (!list || !mkWallet() || !window.walletBalances) return;
+    let rows;
+    try { rows = await window.walletBalances.get(false); } catch (e) { return; }
+    if (!rows || list.hidden) return;
+    const have = [];
+    list.querySelectorAll('button[data-pay]').forEach((b) => {
+      const r = rows.find((x) => x.symbol === b.dataset.pay);
+      const v = r && r.raw !== null ? Number(r.raw) / 10 ** r.decimals : null;
+      const em = b.querySelector('em');
+      em.textContent = v === null ? '' : fmt(v, v && v < 1 ? 4 : 2);
+      if (v) have.push(b);
+    });
+    // LUNC первым всегда, дальше - токены, которые есть на кошельке.
+    const lunc = list.querySelector('button[data-pay="LUNC"]');
+    have.filter((b) => b !== lunc).reverse().forEach((b) => lunc.after(b));
   }
 
   // ── ползунок: доля баланса ─────────────────────────────────────────────────
@@ -257,7 +333,15 @@
   function sync() {
     const box = document.querySelector('#markets-list .mk-betbox');
     if (!box) return;
-    box.querySelectorAll('.mk-pay button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pay === pay)));
+    box.querySelectorAll('.mk-pay button[data-pay]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pay === pay)));
+    const sel = box.querySelector('.mk-paysel');
+    if (sel) {
+      sel.querySelector('b').textContent = pay;
+      const img = sel.querySelector('img');
+      img.style.visibility = '';
+      img.src = logo(pay);
+      sel.setAttribute('aria-label', `Pay with ${pay} - change token`);
+    }
     const em = box.querySelector('.mk-amount em');
     if (em) em.textContent = pay;
     const inp = document.getElementById('bet-amount');

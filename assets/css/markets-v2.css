@@ -363,3 +363,36 @@
   .app:has(#page-markets.active .mk2-layout) > .topbar{grid-column:1 / -1}
   #page-markets .mk2-layout,#page-markets .mk2-ticket{gap:12px}
 }
+
+/* ---- Выбор токена в поле суммы: кнопка справа и список под полем ---- */
+#page-markets .mk-amount:has(.mk-paysel){padding-right:6px}
+#page-markets .mk-amount:has(.mk-paysel) em{display:none}
+#page-markets .mk-paysel{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 8px;border-radius:10px;cursor:pointer;
+  border:1px solid rgba(200,184,255,.22);background:rgba(255,255,255,.05);color:#fff;font:600 14px/1 inherit}
+#page-markets .mk-paysel:hover{border-color:#7B5CFF}
+#page-markets .mk-paysel[aria-expanded="true"]{border-color:#7B5CFF;background:rgba(123,92,255,.22)}
+#page-markets .mk-paysel img{width:20px;height:20px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.06)}
+#page-markets .mk-paysel svg{color:#B4BCE4;transition:transform .15s}
+#page-markets .mk-paysel[aria-expanded="true"] svg{transform:rotate(180deg)}
+#page-markets .mk-pay[role="listbox"]{display:flex;flex-direction:column;gap:2px;margin:8px 0 4px;padding:8px;border-radius:14px;
+  background:#11173A;border:1px solid rgba(123,92,255,.45);max-height:330px;overflow-y:auto;scrollbar-width:thin}
+#page-markets .mk-pay[role="listbox"][hidden]{display:none}
+#page-markets .mk-pay[role="listbox"] input.mk-payq{-webkit-appearance:none;appearance:none;flex:none;min-height:40px;height:40px;width:100%;box-sizing:border-box;margin-bottom:4px;padding:0 12px;border-radius:10px;border:1px solid rgba(110,135,235,.25);
+  background:#05070F;color:#EEF1FF;font:500 14px/1 inherit;outline:none}
+#page-markets .mk-pay[role="listbox"] input.mk-payq:focus{border-color:#7B5CFF}
+#page-markets .mk-pay[role="listbox"] button[data-pay]{display:flex;align-items:center;gap:10px;min-height:44px;flex:none;padding:0 10px;border:0;border-radius:10px;
+  background:transparent;color:#EEF1FF;font:600 14px/1 inherit;cursor:pointer;text-align:left}
+#page-markets .mk-pay[role="listbox"] button[data-pay][hidden]{display:none}
+#page-markets .mk-pay[role="listbox"] button[data-pay]:hover,#page-markets .mk-pay[role="listbox"] button[data-pay]:focus-visible{background:rgba(255,255,255,.06);outline:none}
+#page-markets .mk-pay[role="listbox"] button[data-pay][aria-selected="true"]{background:rgba(123,92,255,.24)}
+#page-markets .mk-pay[role="listbox"] button[data-pay] img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.06)}
+#page-markets .mk-pay[role="listbox"] button[data-pay] span{flex:1 1 auto}
+#page-markets .mk-pay[role="listbox"] button[data-pay] em{font-style:normal;font-weight:500;font-size:13px;color:#9AA6C4}
+#page-markets .mk-payempty{margin:6px 10px;font-size:13px;color:#9AA6C4}
+/* "Collect as" в узкой колонке билета: все токены видны, ряд переносится */
+#page-markets .mk2-ticket .mk-cas .mk-pay-row{flex-wrap:wrap;overflow:visible}
+/* Матч сыгран, итог на цепи ещё не записан: победитель выделен, точка не мигает */
+#page-markets .mk2-now.over .dot{animation:none;background:#3BE38A}
+#page-markets .mk2-now-score .t:not(.won){opacity:.75}
+#page-markets .mk2-now.over .mk2-now-score .t.won b{color:#3BE38A}
+#page-markets .mk2-now:not(.over) .mk2-now-score .t{opacity:1}

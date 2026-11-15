@@ -834,26 +834,45 @@ function mkNowBanner(m) {
   </section>`;
 }
 
-/** Счёт и трансляция идущего матча PandaScore - из каталога событий. */
+/**
+ * Счёт матча PandaScore из каталога событий: идущего (esports.live) - со
+ * счётом и трансляцией, и уже сыгранного (esports.recent) - с победителем.
+ * Итог на цепи появляется только в resolve_after, а матч обычно кончается
+ * раньше: без recent экран до этого момента молчал, кто выиграл.
+ * recent[g]: [{ id, home, away, score: [h, a], winner: 'home'|'away'|null }].
+ */
 function mkFillLive() {
   const box = document.querySelector('#markets-list .mk2-now[data-ps]');
   if (!box || typeof window.mkCatalogLoad !== 'function') return;
   const [g, id] = box.dataset.ps.split(':');
   window.mkCatalogLoad().then((cat) => {
-    const live = cat && cat.esports && cat.esports.live;
-    const x = live && (live[g] || []).find((q) => String(q.id) === String(id));
-    if (!x || !document.body.contains(box)) return;
+    const es = (cat && cat.esports) || {};
+    const pick = (list) => list && (list[g] || []).find((q) => String(q.id) === String(id));
+    let x = pick(es.live);
+    const done = !x && !!(x = pick(es.recent));
+    if (!x || !x.home || !x.away || !document.body.contains(box)) return;
     const sc = box.querySelector('.mk2-now-score');
     const logo = (t) => (mkEsOk(t.logo) ? `<img src="${t.logo}" alt="" width="28" height="28" loading="lazy">` : '');
-    const has = x.score && x.score.every((v) => v != null);
-    sc.innerHTML = `<span class="t h">${logo(x.home)}<b>${mktEsc(x.home.name)}</b></span>`
-      + `<span class="s">${has ? `${x.score[0]} : ${x.score[1]}` : 'vs'}</span>`
-      + `<span class="t a"><b>${mktEsc(x.away.name)}</b>${logo(x.away)}</span>`
-      + (x.bo ? `<em>best of ${x.bo}</em>` : '');
+    const has = Array.isArray(x.score) && x.score.length === 2 && x.score.every((v) => v != null);
+    const won = (side) => (done && x.winner === side ? ' won' : '');
+    sc.innerHTML = `<span class="t h${won('home')}">${logo(x.home)}<b>${mktEsc(x.home.name)}</b></span>`
+      + `<span class="s">${has ? `${Number(x.score[0])} : ${Number(x.score[1])}` : 'vs'}</span>`
+      + `<span class="t a${won('away')}"><b>${mktEsc(x.away.name)}</b>${logo(x.away)}</span>`
+      + (x.bo ? `<em>best of ${Number(x.bo)}</em>` : '');
     sc.hidden = false;
     const a = box.querySelector('.mk2-watch');
-    if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
     const head = box.querySelector('b');
+    if (done) {
+      a.hidden = true;
+      box.classList.add('over');
+      const w = x.winner === 'home' ? x.home : x.winner === 'away' ? x.away : null;
+      const score = has ? ` ${Math.max(x.score[0], x.score[1])}:${Math.min(x.score[0], x.score[1])}` : '';
+      if (head) head.textContent = w
+        ? `Predictions are closed. Match over: ${w.name} won${score}.`
+        : 'Predictions are closed. The match is over.';
+      return;
+    }
+    if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
     if (head) head.textContent = 'Predictions are closed. The match is live now.';
   }).catch(() => {});
 }
