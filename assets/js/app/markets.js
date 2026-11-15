@@ -944,13 +944,23 @@ function mkReadingText(m) {
 function mkResultTeams(m, ref) {
   if (!ref || ref.src !== 'ps' || !ref.t1 || !ref.t2) return '';
   const r = String(m.reading || '');
+  // Запись керпера: "winner <имя>, series 1-2; t2 yes". Хвост - это шаблон
+  // рынка (какая команда - YES) и исход: "t2 yes" - t2 выиграла, "t2 no" -
+  // t2 не выиграла. Раньше любое "t1 ..." читалось как "t1 выиграла".
   const w = r.match(/winner\s+([^,;]+?),\s*series\s+(\d+)\s*-\s*(\d+)/i);
-  const t1won = /;\s*t1\s+(yes|no)/i.test(r) ? true : /;\s*t2\s+(yes|no)/i.test(r) ? false : null;
-  if (!w || t1won === null) return '';
-  // Названия команд - из вопроса рынка ("Will A beat B? ...").
+  const tail = r.match(/;\s*(t1|t2)\s+(yes|no)\s*$/i);
+  if (!w || !tail) return '';
+  const yesIsT1 = tail[1].toLowerCase() === 't1';
+  const t1won = yesIsT1 === (tail[2].toLowerCase() === 'yes');
+  // В вопросе ("Will A beat B?") первой стоит команда YES, а логотипы идут
+  // в порядке t1/t2 (хозяева, гости). Если YES - гости (t2), имена надо
+  // поменять местами: иначе под логотипом WW стояло "G2 Ares".
   const q = String(m.question || '').match(/^Will\s+(.+?)\s+beat\s+(.+?)\?/i);
-  const n1 = q ? q[1] : 'Team 1', n2 = q ? q[2] : 'Team 2';
-  const hi = Number(w[2]), lo = Number(w[3]);
+  const yesName = q ? q[1] : 'YES team', noName = q ? q[2] : 'NO team';
+  const n1 = yesIsT1 ? yesName : noName, n2 = yesIsT1 ? noName : yesName;
+  // Счёт серии в записи - в порядке результатов PandaScore, который не
+  // обязан совпадать с t1/t2. Победителю - большее число.
+  const hi = Math.max(Number(w[2]), Number(w[3])), lo = Math.min(Number(w[2]), Number(w[3]));
   const s1 = t1won ? hi : lo, s2 = t1won ? lo : hi;
   mkEsWant(ref.t1, ref.t2);
   const img = (id) => (mkEsOk(MK_ES_LOGOS[id]) ? `<img src="${MK_ES_LOGOS[id]}" alt="" width="56" height="56" loading="lazy">` : `<i class="ph" data-team="${mktEsc(id)}"></i>`);
