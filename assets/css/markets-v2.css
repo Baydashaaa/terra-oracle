@@ -323,3 +323,43 @@
 .acts .tx .act-sub{display:block;font-style:normal;font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 #page-markets .mk2-beta .txt{flex:1 1 auto;min-width:0}
+
+/* ---- Экран рынка: две колонки. Слева - о рынке (заголовок, график,
+   активность, правила), справа - билет прогноза и позиция; билет прилипает
+   при прокрутке, так что кнопка всегда на виду. Правая колонка сайта
+   (розыгрыш, репутация, лидерборд) на экране рынка уступает место билету -
+   через :has(), без состояния в JS: вернулись к списку, и она на месте. ---- */
+#page-markets .mk2-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,400px);gap:22px;align-items:start}
+#page-markets .mk2-col{display:flex;flex-direction:column;gap:22px;min-width:0}
+#page-markets .mk2-col > .mk2-hero,#page-markets .mk2-col > .mk2-now,#page-markets .mk2-col > .mk2-result{margin:0}
+#page-markets .mk2-ticket{display:flex;flex-direction:column;gap:16px;min-width:0;position:sticky;top:12px}
+#page-markets .mk2-ticket .mk2-pos,#page-markets .mk2-ticket .mk2-panel{padding:20px}
+/* Колонка билета узкая: значок "YOUR PICK" в углу налезал на YES/NO -
+   сажаем его на верхнюю рамку карточки, по центру. */
+#page-markets .mk2-ticket #bet-side-row{padding-top:8px}
+#page-markets .mk2-ticket #bet-side-row button{overflow:visible}
+#page-markets .mk2-ticket #bet-side-row button[aria-pressed="true"]:not([disabled])::after{top:-9px;right:auto;left:50%;transform:translateX(-50%);white-space:nowrap}
+@media (min-width:1181px){
+  /* центр сайта - сам прокручиваемый блок: билет не выше окна, иначе низ не достать */
+  #page-markets .mk2-ticket{top:0;max-height:calc(100dvh - 130px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:2px}
+}
+.app:has(#page-markets.active .mk2-layout){grid-template-columns:240px minmax(0,1fr)}
+.app:has(#page-markets.active .mk2-layout) > .topbar{grid-column:2 / 3}
+.app:has(#page-markets.active .mk2-layout) > .side{display:none}
+@media (max-width:1180px){
+  .app:has(#page-markets.active .mk2-layout){grid-template-columns:220px minmax(0,1fr)}
+}
+@media (max-width:1100px){
+  /* одна колонка: билет сразу под заголовком и баннером матча, как раньше */
+  #page-markets .mk2-layout{display:flex;flex-direction:column;align-items:stretch;gap:22px}
+  #page-markets .mk2-col{display:contents}
+  #page-markets .mk2-col > *{order:3}
+  #page-markets .mk2-col > .mk2-hero{order:1}
+  #page-markets .mk2-col > .mk2-now,#page-markets .mk2-col > .mk2-result{order:2}
+  #page-markets .mk2-ticket{order:2;position:static;max-height:none;overflow:visible}
+}
+@media (max-width:860px){
+  .app:has(#page-markets.active .mk2-layout){grid-template-columns:minmax(0,1fr)}
+  .app:has(#page-markets.active .mk2-layout) > .topbar{grid-column:1 / -1}
+  #page-markets .mk2-layout,#page-markets .mk2-ticket{gap:12px}
+}

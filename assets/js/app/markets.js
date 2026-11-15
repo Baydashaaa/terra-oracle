@@ -1538,8 +1538,13 @@ async function openProphecyMarket(id) {
   host.dataset.mid = String(id);
   host.dataset.sig = sig;
 
+  // Две колонки: слева - о рынке, справа - билет (.mk2-ticket). На открытом
+  // рынке сначала прогноз, позиция под ним; после закрытия главное действие -
+  // Collect в позиции, поэтому она сверху.
   host.innerHTML = `
     <div class="mk-back" onclick="mkBackToList(${m.status === 'open' || m.status === 'locked' ? 'false' : 'true'})">&larr; All markets</div>
+    <div class="mk2-layout">
+    <div class="mk2-col">
     <section class="mk2-hero${m.promoted ? ' promo' : ''}" style="--c:${catRgb(m.category)}">
       <div class="mk2-head">
         ${mkOrb(m, true)}
@@ -1554,14 +1559,6 @@ async function openProphecyMarket(id) {
     ${mkNowBanner(m)}
     ${mkResultCard(m)}
     <div class="mk2-body">
-      ${mkPositionPanel(m, pos)}
-      <section class="mkc mk-detail mk2-panel mk2-forecast">
-        <div class="mk2-panel-cap">
-          <span>${open ? 'Make your call' : oddsCaption(m) || 'Forecast at close'}</span>
-          <span>${fmtLunc(total + Number(m.boost || 0))} LUNC pool · ${playersText(m.bettors_yes + m.bettors_no)}</span>
-        </div>
-        ${open ? openSides(m, pct) + betPanel(m) : mkSidesClosed(m, pct) + mkGauge(m, pct, true)}
-      </section>
       ${resultBlock(m)}
       <div id="mk-dispute"></div>
       <div id="mk-activity"></div>
@@ -1573,6 +1570,19 @@ async function openProphecyMarket(id) {
           ${verifyBlock(m)}
         </details>
       </section>
+    </div>
+    </div>
+    <aside class="mk2-ticket" aria-label="${open ? 'Make your call' : 'Your position and forecast'}">
+      ${open ? '' : mkPositionPanel(m, pos)}
+      <section class="mkc mk-detail mk2-panel mk2-forecast">
+        <div class="mk2-panel-cap">
+          <span>${open ? 'Make your call' : oddsCaption(m) || 'Forecast at close'}</span>
+          <span>${fmtLunc(total + Number(m.boost || 0))} LUNC pool · ${playersText(m.bettors_yes + m.bettors_no)}</span>
+        </div>
+        ${open ? openSides(m, pct) + betPanel(m) : mkSidesClosed(m, pct) + mkGauge(m, pct, true)}
+      </section>
+      ${open ? mkPositionPanel(m, pos) : ''}
+    </aside>
     </div>`;
   if (open) updateBetCalc();
   mkFillLive();
