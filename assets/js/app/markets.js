@@ -1998,13 +1998,26 @@ function mkToast(msg, kind) {
   if (raw) text = raw[1];
   if (/rejected by the user|Request rejected/i.test(text)) text = 'Cancelled in the wallet.';
   if (/insufficient funds/i.test(text)) text = 'Not enough LUNC to cover this and the network fee.';
+  // Расширение кошелька обновилось или перезапустилось, а вкладка открыта
+  // раньше: его скрипт на странице отрезан ("Extension context invalidated").
+  // Чинится только перезагрузкой страницы - говорим это прямо и даём кнопку.
+  const stale = /context invalidated/i.test(text);
+  if (stale) text = 'Your wallet extension was updated or restarted. Reload the page and try again.';
   el.textContent = text.length > 220 ? text.slice(0, 217) + '…' : text;
+  if (stale) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = 'Reload';
+    b.style.cssText = 'margin-left:12px;padding:4px 12px;border-radius:8px;border:1px solid #7B5CFF;background:rgba(123,92,255,.3);color:#fff;font:inherit;font-weight:600;cursor:pointer';
+    b.addEventListener('click', () => location.reload());
+    el.appendChild(b);
+  }
   box.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
     el.classList.remove('show');
     setTimeout(() => el.remove(), 300);
-  }, kind === 'err' ? 8000 : 5000);
+  }, stale ? 20000 : kind === 'err' ? 8000 : 5000);
 }
 
 
