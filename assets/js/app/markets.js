@@ -802,6 +802,36 @@ function mkPhaseTrack(m) {
 }
 
 /**
+ * Одна строка статуса под вопросом: где рынок сейчас и когда следующий шаг,
+ * и откуда берётся исход. Полоса из пяти этапов занимала полэкрана над
+ * графиком; она переехала вниз, в "How this resolves".
+ */
+function mkStatusLine(m, tip) {
+  const now = Math.floor(Date.now() / 1000);
+  const accepting = m.status === 'open' && Number(m.bets_close_at) > now;
+  const ref = mkRef(m);
+  const src = ref && MK_SRC_NAME[ref.src];
+  const at = Number(m.resolve_after);
+  const d = new Date(at * 1000);
+  const when = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+    + ', ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
+  let k, txt;
+  if (accepting) { k = 'open'; txt = `Open · closes in ${cd(m.bets_close_at)}`; }
+  else if (m.status === 'open' || m.status === 'locked') {
+    k = 'wait'; txt = at > now ? `Predictions closed · result in ${cd(at)}` : 'Predictions closed · result due now';
+  } else if (m.status === 'proposed') {
+    const left = challengeLeft(m);
+    k = 'posted'; txt = `Outcome posted: ${m.outcome ? 'YES' : 'NO'}${left ? ` · challenge window ${left} left` : ''}`;
+  } else if (m.status === 'disputed') { k = 'court'; txt = 'Disputed · the council decides'; }
+  else if (m.status === 'settled') { k = 'done'; txt = `Settled · ${m.outcome ? 'YES' : 'NO'} won, winners collect`; }
+  else if (m.status === 'void') { k = 'void'; txt = 'Voided · everyone gets their LUNC back'; }
+  else { k = 'wait'; txt = mktEsc(m.status); }
+  const resolves = accepting || m.status === 'open' || m.status === 'locked'
+    ? `<span class="mk2-chip">Result ${when}${src ? ' from ' + mktEsc(src) : ''}</span>` : '';
+  return `<div class="mk2-status"><span class="mk2-chip st ${k}"><i></i>${txt}</span>${resolves}</div>`;
+}
+
+/**
  * Что происходит с рынком прямо сейчас и чего ждать. Полоса этапов говорила
  * об этом одной мелкой строкой ("now · waiting for the block"), и было
  * непонятно, почему рынок закрыт и когда будет результат.
@@ -824,7 +854,10 @@ function mkNowBanner(m) {
     : `The result is due from ${mktEsc(src)} now and appears here as soon as it is posted on chain.`;
   // Киберспорт: счёт и трансляция идущего матча подставит mkFillLive из
   // каталога событий (раздел live), когда тот загрузится.
-  const live = ref && ref.src === 'ps' && ref.m ? ` data-ps="${mktEsc(ref.g || '')}:${mktEsc(ref.m)}"` : '';
+  // Какая команда - YES: шаблон t1/t2 из спецификации рынка.
+  const yesTeam = ref && (ref.tpl === 't1' || ref.tpl === 't2') ? ref[ref.tpl] : '';
+  const live = ref && ref.src === 'ps' && ref.m
+    ? ` data-ps="${mktEsc(ref.g || '')}:${mktEsc(ref.m)}"${yesTeam ? ` data-yes="${mktEsc(yesTeam)}"` : ''}` : '';
   return `<section class="mk2-now" style="--c:${catRgb(m.category)}"${live}>
     <i class="dot"></i>
     <div class="mk2-now-tx"><b>Predictions are closed. ${event}</b>
@@ -852,10 +885,16 @@ function mkFillLive() {
     const sc = box.querySelector('.mk2-now-score');
     const logo = (t) => (mkEsOk(t.logo) ? `<img src="${t.logo}" alt="" width="28" height="28" loading="lazy">` : '');
     const has = Array.isArray(x.score) && x.score.length === 2 && x.score.every((v) => v != null);
-    const won = (side) => (done && x.winner === side ? ' won' : '');
-    sc.innerHTML = `<span class="t h${won('home')}">${logo(x.home)}<b>${mktEsc(x.home.name)}</b></span>`
+    const yesId = box.dataset.yes || '';
+    const sideOf = (t) => (yesId && t.id != null ? (String(t.id) === yesId ? 'YES' : 'NO') : '');
+    const tag = (t) => (sideOf(t) ? `<i class="sd ${sideOf(t) === 'YES' ? 'y' : 'n'}">${sideOf(t)}</i>` : '');
+    // Сыгран: победитель - в плашке "Winner", проигравший бледнее. Одного
+    // зелёного цвета у имени было мало, чтобы сразу понять, кто выиграл.
+    const st = (side) => (done && x.winner ? (x.winner === side ? ' won' : ' lost') : '');
+    const badge = (side) => (done && x.winner === side ? '<span class="win">Winner</span>' : '');
+    sc.innerHTML = `<span class="t h${st('home')}">${logo(x.home)}<b>${mktEsc(x.home.name)}</b>${tag(x.home)}${badge('home')}</span>`
       + `<span class="s">${has ? `${Number(x.score[0])} : ${Number(x.score[1])}` : 'vs'}</span>`
-      + `<span class="t a${won('away')}"><b>${mktEsc(x.away.name)}</b>${logo(x.away)}</span>`
+      + `<span class="t a${st('away')}">${badge('away')}${tag(x.away)}<b>${mktEsc(x.away.name)}</b>${logo(x.away)}</span>`
       + (x.bo ? `<em>best of ${Number(x.bo)}</em>` : '');
     sc.hidden = false;
     const a = box.querySelector('.mk2-watch');
@@ -865,9 +904,14 @@ function mkFillLive() {
       box.classList.add('over');
       const w = x.winner === 'home' ? x.home : x.winner === 'away' ? x.away : null;
       const score = has ? ` ${Math.max(x.score[0], x.score[1])}:${Math.min(x.score[0], x.score[1])}` : '';
-      if (head) head.textContent = w
-        ? `Predictions are closed. Match over: ${w.full || w.name} won${score}.`
-        : 'Predictions are closed. The match is over.';
+      const side = w ? sideOf(w) : '';
+      if (head) {
+        head.innerHTML = w
+          ? `Match over: ${mktEsc(w.full || w.name)} won${score}.`
+            + (x.forfeit ? ' Decided by forfeit: the market is expected to be voided.'
+              : side ? ` Expected result: <span class="exp ${side === 'YES' ? 'y' : 'n'}">${side}</span>` : '')
+          : 'Predictions are closed. The match is over.';
+      }
       return;
     }
     if (x.stream && /^https:\/\//.test(x.stream)) { a.href = x.stream; a.hidden = false; }
@@ -1584,8 +1628,8 @@ async function openProphecyMarket(id) {
           <h1>${mktEsc(m.question)}</h1>
         </div>
       </div>
+      ${mkStatusLine(m, tip)}
       ${bonusChip(m)}
-      ${mkPhaseTrack(m)}
     </section>
     ${mkNowBanner(m)}
     ${mkResultCard(m)}
@@ -1596,6 +1640,7 @@ async function openProphecyMarket(id) {
       <section class="mk2-panel mk2-how">
         <span class="lbl">How this resolves</span>
         <p class="mk-lead">${plainSpec(m, tip)}</p>
+        ${mkPhaseTrack(m)}
         <details class="mk-verify">
           <summary>Check it on the chain yourself</summary>
           ${verifyBlock(m)}
@@ -1616,9 +1661,34 @@ async function openProphecyMarket(id) {
     </aside>
     </div>`;
   if (open) updateBetCalc();
+  mkFitTicket();
   mkFillLive();
   if (window.renderDispute) window.renderDispute(m);
   if (window.renderActivity) window.renderActivity(m);
+}
+
+/**
+ * Билет выше окна прокручивался внутри себя, и его низ (позиция) было не
+ * достать, не прокрутив сначала центр. Теперь он едет вместе со страницей,
+ * пока не покажется его низ, и только потом прилипает: top = окно минус
+ * высота билета (отрицательный, если билет выше окна). Пересчёт - при
+ * изменении размера окна и самого билета (открыли список токенов и т. п.).
+ */
+let mkTicketRO = null;
+function mkFitTicket() {
+  const t = document.querySelector('#markets-list .mk2-ticket');
+  if (!t) return;
+  const fit = () => {
+    if (!document.body.contains(t)) return;
+    const main = document.querySelector('.main');
+    const scrolls = main && /(auto|scroll)/.test(getComputedStyle(main).overflowY);
+    const view = scrolls ? main.clientHeight : window.innerHeight;
+    t.style.top = Math.min(12, view - t.offsetHeight - 16) + 'px';
+  };
+  fit();
+  if (mkTicketRO) mkTicketRO.disconnect();
+  if (window.ResizeObserver) { mkTicketRO = new ResizeObserver(fit); mkTicketRO.observe(t); }
+  if (!window._mkFitBound) { window._mkFitBound = true; window.addEventListener('resize', () => mkFitTicket()); }
 }
 
 /** Баннер, статистика и вкладки нужны списку, а не экрану одного рынка. */

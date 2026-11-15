@@ -342,10 +342,7 @@
 #page-markets .mk2-ticket #bet-side-row{padding-top:8px}
 #page-markets .mk2-ticket #bet-side-row button{overflow:visible}
 #page-markets .mk2-ticket #bet-side-row button[aria-pressed="true"]:not([disabled])::after{top:-9px;right:auto;left:50%;transform:translateX(-50%);white-space:nowrap}
-@media (min-width:1181px){
-  /* центр сайта - сам прокручиваемый блок: билет не выше окна, иначе низ не достать */
-  #page-markets .mk2-ticket{top:0;max-height:calc(100dvh - 130px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:2px}
-}
+/* top задаёт mkFitTicket: билет выше окна едет со страницей до своего низа */
 .app:has(#page-markets.active .mk2-layout){grid-template-columns:240px minmax(0,1fr)}
 .app:has(#page-markets.active .mk2-layout) > .topbar{grid-column:2 / 3}
 .app:has(#page-markets.active .mk2-layout) > .side{display:none}
@@ -396,9 +393,20 @@
 #page-markets .mk2-ticket .mk-cas .mk-pay-row{flex-wrap:wrap;overflow:visible}
 /* Матч сыгран, итог на цепи ещё не записан: победитель выделен, точка не мигает */
 #page-markets .mk2-now.over .dot{animation:none;background:#3BE38A}
-#page-markets .mk2-now-score .t:not(.won){opacity:.75}
-#page-markets .mk2-now.over .mk2-now-score .t.won b{color:#3BE38A}
-#page-markets .mk2-now:not(.over) .mk2-now-score .t{opacity:1}
+/* Победитель: плашка "Winner" и рамка, проигравший бледнее; метки YES/NO у команд */
+#page-markets .mk2-now-score .t{gap:8px}
+#page-markets .mk2-now-score .t.won{padding:4px 10px 4px 6px;border-radius:12px;background:rgba(59,227,138,.14);box-shadow:inset 0 0 0 1.5px #3BE38A}
+#page-markets .mk2-now-score .t.a.won{padding:4px 6px 4px 10px}
+#page-markets .mk2-now-score .t.won b{color:#fff}
+#page-markets .mk2-now-score .t.lost{opacity:.5}
+#page-markets .mk2-now-score .t.lost b{text-decoration:line-through;text-decoration-thickness:1.5px}
+#page-markets .mk2-now-score .win{padding:3px 8px;border-radius:999px;background:#3BE38A;color:#06111F;font:800 10.5px/1 'Space Grotesk',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+#page-markets .mk2-now-score .sd{padding:2px 6px;border-radius:6px;font:700 10.5px/1.2 'Space Grotesk',sans-serif;font-style:normal;letter-spacing:.08em}
+#page-markets .mk2-now-score .sd.y{color:#3BE38A;background:rgba(59,227,138,.12)}
+#page-markets .mk2-now-score .sd.n{color:#FF7FB0;background:rgba(255,127,176,.12)}
+#page-markets .mk2-now .exp{display:inline-block;margin-left:4px;padding:1px 9px;border-radius:999px;font-weight:800;letter-spacing:.06em}
+#page-markets .mk2-now .exp.y{background:#3BE38A;color:#06111F}
+#page-markets .mk2-now .exp.n{background:#FF7FB0;color:#1A0610}
 
 /* ---- Выигрыш в билете: главная цифра, цветом стороны ---- */
 #page-markets .mk-calc .mk-win{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;padding:12px 14px;border-radius:10px;
@@ -441,3 +449,35 @@
 #page-markets .mk2-ticket .mk2-side{padding:16px}
 #page-markets .mk2-ticket .mk2-side.won{border-color:#F2D45C;box-shadow:0 0 24px -12px rgba(242,212,92,.7)}
 #page-markets .mk2-ticket .mk2-side.lost{opacity:.6}
+
+/* ---- Строка статуса под вопросом (этапы - внизу, в How this resolves) ---- */
+#page-markets .mk2-status{display:flex;flex-wrap:wrap;gap:8px}
+#page-markets .mk2-chip{display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 12px;border-radius:999px;
+  font-size:13px;color:#C9D3EA;background:rgba(255,255,255,.04);border:1px solid rgba(200,184,255,.18)}
+#page-markets .mk2-chip.st{font-weight:600;color:#EEF1FF}
+#page-markets .mk2-chip.st i{width:8px;height:8px;border-radius:50%;background:#9AA6C4;flex:none}
+#page-markets .mk2-chip.st.open{background:rgba(59,227,138,.12);border-color:rgba(59,227,138,.45);color:#B7F5D2}
+#page-markets .mk2-chip.st.open i{background:#3BE38A;box-shadow:0 0 8px #3BE38A}
+#page-markets .mk2-chip.st.wait{background:rgba(245,196,81,.12);border-color:rgba(245,196,81,.45);color:#FCE3A6}
+#page-markets .mk2-chip.st.wait i{background:#F5C451}
+#page-markets .mk2-chip.st.posted,#page-markets .mk2-chip.st.court{background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.5);color:#E4D4FF}
+#page-markets .mk2-chip.st.posted i,#page-markets .mk2-chip.st.court i{background:#C084FC}
+#page-markets .mk2-chip.st.done i{background:#3BE38A}
+#page-markets .mk2-chip .mk-cd{font-variant-numeric:tabular-nums}
+#page-markets .mk2-hero{gap:16px}
+#page-markets .mk2-how .mk2-track{margin:6px 0 4px}
+
+/* ---- Activity: 5 строк, остальное по кнопке; полоска - размер прогноза ---- */
+#page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) 120px auto auto;align-items:center}
+#page-markets .mk-feed .r[hidden]{display:none}
+#page-markets .mk-feed .bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+#page-markets .mk-feed .bar i{display:block;height:100%;border-radius:3px}
+#page-markets .mk-feed .bar i.y{background:#3BE38A}
+#page-markets .mk-feed .bar i.n{background:#FF7FB0}
+#page-markets .mk-feed-more{margin-top:10px;height:40px;padding:0 16px;border-radius:10px;cursor:pointer;
+  border:1px solid rgba(200,184,255,.22);background:transparent;color:#C9D3EA;font:600 13px/1 inherit}
+#page-markets .mk-feed-more:hover{border-color:#7B5CFF;color:#fff}
+@media (max-width:640px){
+  #page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) auto}
+  #page-markets .mk-feed .bar{display:none}
+}

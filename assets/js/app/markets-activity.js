@@ -162,17 +162,31 @@
 
   // ── лента ─────────────────────────────────────────────────────────────────
 
-  function feedHtml(bets, fresh) {
+  // Лента - последние 5 прогнозов, остальные по кнопке. Полоска у суммы -
+  // её размер относительно крупнейшего прогноза: крупные видно сразу.
+  const FEED_SHORT = 5;
+  const feedAll = {};
+  function feedHtml(bets, fresh, mid) {
     const me = typeof mkWallet === 'function' ? mkWallet() : null;
-    const rows = bets.slice().reverse().slice(0, 10).map((b, i) => `
-      <div class="r${i < (fresh || 0) ? ' new' : ''}">
+    const top = Math.max(1, ...bets.map((b) => Number(b.amount) || 0));
+    const all = !!feedAll[mid];
+    const rows = bets.slice().reverse().map((b, i) => `
+      <div class="r${i < (fresh || 0) ? ' new' : ''}${i >= FEED_SHORT ? ' more' : ''}"${i >= FEED_SHORT && !all ? ' hidden' : ''}>
         <span class="who${b.who === me ? ' me' : ''}">${b.who === me ? 'You' : mktEsc(shortAddr(b.who))}</span>
+        <i class="bar" aria-hidden="true"><i class="${b.yes ? 'y' : 'n'}" style="width:${Math.max(3, Math.round(Math.sqrt((Number(b.amount) || 0) / top) * 100))}%"></i></i>
         <b class="${b.yes ? 'y' : 'n'}">${fmtLunc(b.amount)} LUNC on ${b.yes ? 'YES' : 'NO'}</b>
         <span class="ago">${agoText(b.t)}</span>
       </div>`).join('');
-    const more = bets.length > 10 ? `<div class="mk-plain">and ${bets.length - 10} earlier</div>` : '';
-    return `<div class="mk-feed">${rows}</div>${more}`;
+    const btn = bets.length > FEED_SHORT
+      ? `<button type="button" class="mk-feed-more" onclick="mkFeedToggle(this, ${Number(mid)})">${all ? 'Show fewer' : `Show all ${bets.length}`}</button>` : '';
+    return `<div class="mk-feed">${rows}</div>${btn}`;
   }
+  window.mkFeedToggle = function (btn, mid) {
+    feedAll[mid] = !feedAll[mid];
+    const feed = btn.previousElementSibling;
+    feed.querySelectorAll('.r.more').forEach((r) => { r.hidden = !feedAll[mid]; });
+    btn.textContent = feedAll[mid] ? 'Show fewer' : `Show all ${feed.querySelectorAll('.r').length}`;
+  };
 
   // ── точка входа ───────────────────────────────────────────────────────────
 
@@ -216,7 +230,7 @@
       <section class="card mk-activity">
         <h3>How the forecast moved</h3>
         ${bets.length
-          ? chartHtml(bets, m) + feedHtml(bets, fresh)
+          ? chartHtml(bets, m) + feedHtml(bets, fresh, m.id)
           : '<p class="mk-lead-sm">No predictions yet. The first one shows up here.</p>'}
       </section>`;
   };
