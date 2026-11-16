@@ -294,7 +294,7 @@
       '<span class="cm-st">' + esc(p.status) + '</span></header>' +
       (p.description && p.description !== p.title ? '<p class="cm-desc">' + esc(p.description) + '</p>' : '') +
       p.msgs.map(function (m) { return '<div class="cm-msg">' + describe(m) + '</div>'; }).join('') +
-      '<footer>' + tally + '<span class="cm-exp">' + esc(expiresText(p)) + ' &middot; by ' + short(p.proposer) + '</span>' +
+      '<footer>' + tally + '<span class="cm-exp">' + (p.status === 'open' ? esc(expiresText(p)) + ' &middot; ' : '') + 'by ' + short(p.proposer) + '</span>' +
       '<span class="cm-act">' + actions + '</span></footer></article>';
   }
 
