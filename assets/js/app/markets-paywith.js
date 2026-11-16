@@ -137,7 +137,9 @@
   // ── строка выбора ──────────────────────────────────────────────────────────
   function inject() {
     const box = document.querySelector('#markets-list .mk-betbox');
-    if (!box || box.querySelector('.mk-pay') || !tokens || !tokens.length) return;
+    // Признак, что уже вставлено, - кнопка токена: она всегда в билете, а
+    // список на телефоне на время уходит в body (шторка).
+    if (!box || box.querySelector('.mk-paysel, .mk-slide') || !tokens || !tokens.length) return;
     const amountRow = box.querySelector('.mk-amount');
     if (!amountRow) return;
     {
@@ -168,20 +170,57 @@
     amountRow.insertAdjacentHTML('beforeend', `<button type="button" class="mk-paysel" aria-haspopup="listbox" aria-expanded="false" aria-label="Pay with ${esc(pay)} - change token">`
       + `<img src="${logo(pay)}" alt="" width="20" height="20" onerror="this.style.visibility='hidden'"><b>${esc(pay)}</b>`
       + '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>');
+    // Остаток шторки от прошлой отрисовки билета (если билет перерисовали,
+    // пока она была открыта).
+    document.querySelectorAll('body > .mk-pay[role="listbox"], body > .mk-pay-back').forEach((n) => n.remove());
+    document.documentElement.classList.remove('mk-sheet-open');
     amountRow.insertAdjacentHTML('afterend', `<div class="mk-pay" role="listbox" aria-label="Pay with" hidden>`
+      + '<div class="mk-pay-head"><b>Pay with</b><button type="button" class="mk-pay-x" aria-label="Close">'
+      + '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>'
       + `<input type="search" class="mk-payq" placeholder="Search token" aria-label="Search token" autocomplete="off">`
       + syms.map(opt).join('') + '<p class="mk-payempty" hidden>No token found</p></div>');
     const sel = amountRow.querySelector('.mk-paysel');
     const list = box.querySelector('.mk-pay[role="listbox"]');
     const q = list.querySelector('.mk-payq');
+    const home = { parent: list.parentNode, next: list.nextSibling };
+    // На телефоне - нижняя шторка поверх страницы, как в кошельках. Список
+    // внутри билета толкал страницу, а фокус на поиске сразу открывал
+    // клавиатуру. Шторка уходит в body: у предков билета есть transform и
+    // backdrop-filter, внутри них position:fixed не держится за экран.
+    const phone = () => window.matchMedia('(max-width: 640px)').matches;
+    let back = null;
     const setOpen = (open) => {
-      list.hidden = !open;
       sel.setAttribute('aria-expanded', String(open));
-      if (!open) return;
+      if (!open) {
+        list.hidden = true;
+        if (list.classList.contains('sheet')) {
+          list.classList.remove('sheet', 'in');
+          if (back) { back.remove(); back = null; }
+          document.documentElement.classList.remove('mk-sheet-open');
+          if (home.parent && document.body.contains(home.parent)) home.parent.insertBefore(list, home.next);
+          else list.remove();
+        }
+        return;
+      }
       q.value = ''; filter('');
+      if (phone()) {
+        back = document.createElement('div');
+        back.className = 'mk-pay-back';
+        back.addEventListener('click', () => setOpen(false));
+        document.body.appendChild(back);
+        document.body.appendChild(list);
+        list.classList.add('sheet');
+        document.documentElement.classList.add('mk-sheet-open');
+        list.hidden = false;
+        list.scrollTop = 0;
+        requestAnimationFrame(() => requestAnimationFrame(() => { list.classList.add('in'); back.classList.add('in'); }));
+      } else {
+        list.hidden = false;
+        q.focus({ preventScroll: true });
+      }
       paintListBalances();
-      q.focus({ preventScroll: true });
     };
+    list.querySelector('.mk-pay-x').addEventListener('click', (e) => { e.stopPropagation(); setOpen(false); sel.focus({ preventScroll: true }); });
     const filter = (text) => {
       const t = text.trim().toLowerCase();
       let shown = 0;
@@ -206,7 +245,8 @@
       window._mkPayOutside = true;
       document.addEventListener('click', (e) => {
         const l = document.querySelector('#markets-list .mk-pay[role="listbox"]');
-        if (!l || l.hidden || e.target.closest('.mk-pay, .mk-paysel')) return;
+        // Шторку на телефоне закрывает её фон, здесь - только выпадающий список.
+        if (!l || l.hidden || l.classList.contains('sheet') || e.target.closest('.mk-pay, .mk-paysel')) return;
         l.hidden = true;
         const b = document.querySelector('#markets-list .mk-paysel');
         if (b) b.setAttribute('aria-expanded', 'false');
@@ -231,7 +271,7 @@
 
   /** Балансы в открытом списке: ненулевые сверху, как в окне кошелька. */
   async function paintListBalances() {
-    const list = document.querySelector('#markets-list .mk-pay[role="listbox"]');
+    const list = document.querySelector('.mk-pay[role="listbox"].sheet') || document.querySelector('#markets-list .mk-pay[role="listbox"]');
     if (!list || !mkWallet() || !window.walletBalances) return;
     let rows;
     try { rows = await window.walletBalances.get(false); } catch (e) { return; }

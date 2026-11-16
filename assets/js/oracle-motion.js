@@ -159,6 +159,7 @@
     // Без разделителей в исходной строке (например, номер блока) не
     // добавляем их и при анимации.
     if (digits.indexOf(',') < 0 && to >= 1000) { el._last = to; return; }
+    el._counted = true;
     tween(el, from, to, m[1], m[3], dec);
   }
 
@@ -170,8 +171,17 @@
       if (es[0].isIntersecting && !seen) { seen = true; obs.disconnect(); countFrom(el); }
     }) : null;
     if (obs) obs.observe(el); else countFrom(el);
-    new MutationObserver(function () { if (seen && !el._tw) countFrom(el); })
-      .observe(el, { childList: true, characterData: true, subtree: true });
+    el._counted = false;
+    // Цифры шапки Markets приходят в несколько приёмов (7 -> 10, 3.58M ->
+    // 4.98M): каждый повторный отсчёт снова менял ширину строки, и на
+    // телефоне шапка дрожала 2-3 секунды. Им - один отсчёт, дальше число
+    // просто меняется.
+    var once = /^mk-stat-/.test(el.id || '');
+    new MutationObserver(function () {
+      if (!seen || el._tw) return;
+      if (once && el._counted) { var m = NUM_RE.exec((el.textContent || '').trim()); if (m) el._last = Number(m[2].replace(/,/g, '')); return; }
+      countFrom(el);
+    }).observe(el, { childList: true, characterData: true, subtree: true });
   }
 
   function scanCount(root) {

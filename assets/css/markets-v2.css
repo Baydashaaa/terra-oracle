@@ -483,3 +483,47 @@
   #page-markets .mk-feed .r{grid-template-columns:minmax(0,1fr) auto}
   #page-markets .mk-feed .bar{display:none}
 }
+
+/* ---- Шапка Markets на телефоне: цифры в сетке 2x2 с постоянной шириной.
+   Строка с переносом при меняющейся ширине чисел прыгала с одной строки на
+   две и обратно. Список рынков держит высоту, пока грузится, - иначе на миг
+   в экран выскакивал подвал. ---- */
+#page-markets .mk-hero-stats b{display:inline-block;min-width:1.2ch}
+@media (max-width:640px){
+  #page-markets .mk-hero-stats{display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+  #page-markets .mk-hero-stats span + span{padding-left:0;border-left:0}
+  #page-markets .mk-hero-stats span:nth-child(even){padding-left:12px;border-left:1px solid rgba(200,184,255,.18)}
+  #page-markets .mk-hero-stats #mk-stat-vol{min-width:9ch}
+}
+#page-markets.active{min-height:calc(100dvh - 90px)}
+.mk-pay[role="listbox"] input.mk-payq::placeholder{color:#8F99C8;opacity:1}
+
+/* ---- Выбор токена на телефоне: нижняя шторка ---- */
+.mk-pay-head{display:none}
+.mk-pay-back{position:fixed;inset:0;z-index:9998;background:rgba(3,5,14,.6);backdrop-filter:blur(2px);opacity:0;transition:opacity .2s}
+.mk-pay-back.in{opacity:1}
+.mk-pay[role="listbox"].sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;margin:0;max-height:76dvh;
+  display:flex;flex-direction:column;gap:2px;padding:0 12px calc(16px + env(safe-area-inset-bottom));
+  border-radius:20px 20px 0 0;border:1px solid rgba(123,92,255,.45);border-bottom:0;background:#11173A;
+  overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -20px 50px rgba(0,0,0,.6);
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  font-family:'Space Grotesk',system-ui,sans-serif}
+.mk-pay[role="listbox"].sheet.in{transform:none}
+.mk-pay[role="listbox"].sheet .mk-pay-head{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;
+  margin:0 -12px 4px;padding:18px 8px 8px 20px;background:#11173A}
+.mk-pay[role="listbox"].sheet .mk-pay-head::before{content:"";position:absolute;top:7px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:rgba(180,188,228,.35)}
+.mk-pay[role="listbox"].sheet .mk-pay-head b{font:700 18px/1 'Space Grotesk',sans-serif;color:#EEF1FF}
+.mk-pay[role="listbox"].sheet .mk-pay-x{width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:transparent;color:#B4BCE4;cursor:pointer}
+.mk-pay[role="listbox"].sheet input.mk-payq{-webkit-appearance:none;appearance:none;flex:none;height:44px;width:100%;box-sizing:border-box;margin:0 0 6px;padding:0 14px;
+  border-radius:12px;border:1px solid rgba(110,135,235,.25);background:#05070F;color:#EEF1FF;font:500 16px/1 inherit;outline:none}
+.mk-pay[role="listbox"].sheet input.mk-payq:focus{border-color:#7B5CFF}
+.mk-pay[role="listbox"].sheet button[data-pay]{display:flex;align-items:center;gap:12px;min-height:52px;flex:none;padding:0 12px;border:0;border-radius:12px;
+  background:transparent;color:#EEF1FF;font:600 16px/1 inherit;cursor:pointer;text-align:left}
+.mk-pay[role="listbox"].sheet button[data-pay][hidden]{display:none}
+.mk-pay[role="listbox"].sheet button[data-pay][aria-selected="true"]{background:rgba(123,92,255,.24)}
+.mk-pay[role="listbox"].sheet button[data-pay] img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.06)}
+.mk-pay[role="listbox"].sheet button[data-pay] span{flex:1 1 auto}
+.mk-pay[role="listbox"].sheet button[data-pay] em{font-style:normal;font-weight:500;font-size:14px;color:#9AA6C4}
+.mk-pay[role="listbox"].sheet .mk-payempty{margin:10px 12px;font-size:14px;color:#9AA6C4}
+html.mk-sheet-open,html.mk-sheet-open body{overflow:hidden}
+@media (prefers-reduced-motion:reduce){.mk-pay[role="listbox"].sheet,.mk-pay-back{transition:none}}
