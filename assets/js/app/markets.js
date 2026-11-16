@@ -941,34 +941,117 @@ function mkReadingText(m) {
 }
 
 /** Киберспорт: обе команды с логотипами, победитель выделен, счёт серии. */
+/**
+ * Кто с кем и кто победил - карточкой для любого спорта, а не строкой
+ * керпера ("ESPN NBA event ...: LAL at PHX, final 123-131 ..."). Данные - из
+ * записи керпера (m.reading) и ссылки рынка (spec.param), поэтому работает и
+ * для уже рассчитанных рынков. Нечего разобрать - пусто, и карточка покажет
+ * строку керпера, как раньше.
+ * Возвращает { l, r, win: 'l'|'r'|null, center, note }; l и r - { name, logo, score }.
+ */
+function mkResultMatch(m, ref) {
+  if (!ref) return null;
+  const rd = String(m.reading || '');
+  const tail = rd.match(/;\s*([a-z0-9_]+)\s+(yes|no)\s*$/i);
+  const q = String(m.question || '');
+  const byScore = (x, y) => (x > y ? 'l' : y > x ? 'r' : null);
+
+  // Киберспорт (PandaScore): слева t1, справа t2.
+  if (ref.src === 'ps' && ref.t1 && ref.t2) {
+    const w = rd.match(/winner\s+([^,;]+?),\s*series\s+(\d+)\s*-\s*(\d+)/i);
+    if (!w || !tail || !/^t[12]$/i.test(tail[1])) return null;
+    const yesIsT1 = tail[1].toLowerCase() === 't1';
+    const t1won = yesIsT1 === (tail[2].toLowerCase() === 'yes');
+    // В вопросе первой стоит команда YES, логотипы - в порядке t1/t2.
+    const qq = q.match(/^Will\s+(.+?)\s+beat\s+(.+?)\?/i);
+    const yesName = qq ? qq[1] : 'YES team', noName = qq ? qq[2] : 'NO team';
+    // Счёт серии в записи - в порядке PandaScore; победителю - большее число.
+    const hi = Math.max(Number(w[2]), Number(w[3])), lo = Math.min(Number(w[2]), Number(w[3]));
+    mkEsWant(ref.t1, ref.t2);
+    const logo = (id) => (mkEsOk(MK_ES_LOGOS[id]) ? MK_ES_LOGOS[id] : '');
+    return {
+      l: { name: yesIsT1 ? yesName : noName, logo: logo(ref.t1), score: t1won ? hi : lo, team: ref.t1 },
+      r: { name: yesIsT1 ? noName : yesName, logo: logo(ref.t2), score: t1won ? lo : hi, team: ref.t2 },
+      win: t1won ? 'l' : 'r',
+    };
+  }
+
+  // NBA, NHL (ESPN): "AWAY at HOME, final H-A, winner X" или "regulation H-A".
+  // Слева гости, справа хозяева - как пишут "LAL at PHX".
+  if (ref.src === 'espn' && ref.lg !== 'ufc' && mkOwn(MK_ESPN_PATH, ref.lg)) {
+    const x = rd.match(/:\s*([A-Za-z0-9]+)\s+at\s+([A-Za-z0-9]+),\s*(final|regulation)\s+(\d+)\s*-\s*(\d+)/i);
+    if (!x) return null;
+    const hs = Number(x[4]), as = Number(x[5]);
+    // Полные названия - из вопроса, если он в одной из привычных форм.
+    let aw = x[1].toUpperCase(), hm = x[2].toUpperCase();
+    let qq = q.match(/^Will (?:the )?(.+?) win at (?:the )?(.+?)(?:,| in regulation)?\?/i);
+    if (qq) { aw = qq[1]; hm = qq[2]; }
+    else if ((qq = q.match(/^Will (?:the )?(.+?) beat (?:the )?(.+?)(?:,| in regulation)?\?/i))) { hm = qq[1]; aw = qq[2]; }
+    else if ((qq = q.match(/^Will (.+?) at (.+?) (?:score|have) over/i))) { aw = qq[1]; hm = qq[2]; }
+    const lg = ref.lg;
+    const lg2 = (ab) => (/^[a-z]{2,4}$/.test(ab || '') ? `https://a.espncdn.com/i/teamlogos/${lg}/500/${ab}.png` : '');
+    const total = rd.match(/(\d+)\s+(?:goals\s+)?vs line\s+([\d.]+)/i);
+    const reg = /regulation/i.test(x[3]);
+    return {
+      l: { name: aw, logo: lg2(ref.a), score: as },
+      r: { name: hm, logo: lg2(ref.h), score: hs },
+      win: byScore(as, hs),
+      center: reg && hs === as ? 'Tied after regulation' : '',
+      note: (reg ? 'Regulation time' : 'Final score') + (total ? ` · total ${total[1]} vs line ${total[2]}` : ''),
+    };
+  }
+
+  // Футбол (football-data.org): "HOME h-a AWAY in regular time".
+  if (ref.src === 'fd') {
+    const x = rd.match(/:\s*(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+?)\s+in regular time/i);
+    if (!x) return null;
+    const hs = Number(x[2]), as = Number(x[3]);
+    const cr = (id) => (/^\d+$/.test(id || '') ? `https://crests.football-data.org/${id}.png` : '');
+    const goals = rd.match(/(\d+)\s+goals vs line\s+([\d.]+)/i);
+    return {
+      l: { name: x[1], logo: cr(ref.h), score: hs },
+      r: { name: x[4], logo: cr(ref.a), score: as },
+      win: byScore(hs, as),
+      center: hs === as ? 'Draw' : '',
+      note: 'Regular time, 90 minutes' + (goals ? ` · ${goals[1]} goals vs line ${goals[2]}` : ''),
+    };
+  }
+
+  // UFC (ESPN): "winner <имя>; home_win yes". Бойцы - из вопроса "Will A beat B?",
+  // A - тот, на кого рынок (a1 при home_win, a2 при away_win).
+  if (ref.src === 'espn' && ref.lg === 'ufc') {
+    const w = rd.match(/winner\s+([^;]+?)\s*;/i);
+    const qq = q.match(/^Will\s+(.+?)\s+beat\s+(.+?)\?/i);
+    if (!w || !qq || !tail) return null;
+    const yesIsA1 = tail[1] === 'home_win';
+    const n1 = yesIsA1 ? qq[1] : qq[2], n2 = yesIsA1 ? qq[2] : qq[1];
+    const yesWon = tail[2].toLowerCase() === 'yes';
+    const a1won = yesIsA1 === yesWon;
+    const shot = (id) => (/^\d+$/.test(id || '') ? `https://a.espncdn.com/i/headshots/ufc/players/full/${id}.png` : '');
+    return {
+      l: { name: n1, logo: shot(ref.a1), score: null },
+      r: { name: n2, logo: shot(ref.a2), score: null },
+      win: a1won ? 'l' : 'r',
+      center: 'vs',
+    };
+  }
+  return null;
+}
+
 function mkResultTeams(m, ref) {
-  if (!ref || ref.src !== 'ps' || !ref.t1 || !ref.t2) return '';
-  const r = String(m.reading || '');
-  // Запись керпера: "winner <имя>, series 1-2; t2 yes". Хвост - это шаблон
-  // рынка (какая команда - YES) и исход: "t2 yes" - t2 выиграла, "t2 no" -
-  // t2 не выиграла. Раньше любое "t1 ..." читалось как "t1 выиграла".
-  const w = r.match(/winner\s+([^,;]+?),\s*series\s+(\d+)\s*-\s*(\d+)/i);
-  const tail = r.match(/;\s*(t1|t2)\s+(yes|no)\s*$/i);
-  if (!w || !tail) return '';
-  const yesIsT1 = tail[1].toLowerCase() === 't1';
-  const t1won = yesIsT1 === (tail[2].toLowerCase() === 'yes');
-  // В вопросе ("Will A beat B?") первой стоит команда YES, а логотипы идут
-  // в порядке t1/t2 (хозяева, гости). Если YES - гости (t2), имена надо
-  // поменять местами: иначе под логотипом WW стояло "G2 Ares".
-  const q = String(m.question || '').match(/^Will\s+(.+?)\s+beat\s+(.+?)\?/i);
-  const yesName = q ? q[1] : 'YES team', noName = q ? q[2] : 'NO team';
-  const n1 = yesIsT1 ? yesName : noName, n2 = yesIsT1 ? noName : yesName;
-  // Счёт серии в записи - в порядке результатов PandaScore, который не
-  // обязан совпадать с t1/t2. Победителю - большее число.
-  const hi = Math.max(Number(w[2]), Number(w[3])), lo = Math.min(Number(w[2]), Number(w[3]));
-  const s1 = t1won ? hi : lo, s2 = t1won ? lo : hi;
-  mkEsWant(ref.t1, ref.t2);
-  const img = (id) => (mkEsOk(MK_ES_LOGOS[id]) ? `<img src="${MK_ES_LOGOS[id]}" alt="" width="56" height="56" loading="lazy">` : `<i class="ph" data-team="${mktEsc(id)}"></i>`);
-  return `<div class="mk2-result-teams">
-    <div class="tm${t1won ? ' won' : ''}">${img(ref.t1)}<b>${mktEsc(n1)}</b>${t1won ? '<em>Winner</em>' : ''}</div>
-    <div class="sc"><span>${s1}</span><i>:</i><span>${s2}</span></div>
-    <div class="tm${t1won ? '' : ' won'}">${img(ref.t2)}<b>${mktEsc(n2)}</b>${t1won ? '' : '<em>Winner</em>'}</div>
-  </div>`;
+  const x = mkResultMatch(m, ref);
+  if (!x) return '';
+  const ini = (n) => mktEsc(String(n || '?').replace(/^the\s+/i, '').split(/\s+/).map((w) => w[0]).join('').slice(0, 3).toUpperCase());
+  const img = (t) => (t.logo
+    ? `<img src="${mktEsc(t.logo)}" alt="" width="56" height="56" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'ph',textContent:this.dataset.ini}))" data-ini="${ini(t.name)}">`
+    : `<i class="ph"${t.team ? ` data-team="${mktEsc(t.team)}"` : ''}>${t.team ? '' : ini(t.name)}</i>`);
+  const side = (t, k) => `<div class="tm${x.win === k ? ' won' : x.win ? ' lost' : ''}">${img(t)}<b>${mktEsc(t.name)}</b>${x.win === k ? '<em>Winner</em>' : ''}</div>`;
+  const hasScore = x.l.score != null && x.r.score != null;
+  const mid = hasScore
+    ? `<div class="sc"><span>${Number(x.l.score)}</span><i>:</i><span>${Number(x.r.score)}</span>${x.center ? `<small>${mktEsc(x.center)}</small>` : ''}</div>`
+    : `<div class="sc vs"><span>${mktEsc(x.center || 'vs')}</span></div>`;
+  return `<div class="mk2-result-teams">${side(x.l, 'l')}${mid}${side(x.r, 'r')}</div>`
+    + (x.note ? `<p class="mk2-result-note">${mktEsc(x.note)}</p>` : '');
 }
 
 /**

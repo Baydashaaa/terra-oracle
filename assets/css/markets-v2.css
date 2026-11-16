@@ -527,3 +527,24 @@
 .mk-pay[role="listbox"].sheet .mk-payempty{margin:10px 12px;font-size:14px;color:#9AA6C4}
 html.mk-sheet-open,html.mk-sheet-open body{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.mk-pay[role="listbox"].sheet,.mk-pay-back{transition:none}}
+
+/* ---- Карточка результата: победитель - рамка и плашка, проигравший бледнее.
+   Цвет победителя свой, зелёный: исход рынка (YES/NO) бывает розовым, и
+   "Winner" розовым читался как проигрыш. ---- */
+#page-markets .mk2-result-teams{gap:20px;margin:6px 0 10px}
+#page-markets .mk2-result-teams .tm{justify-self:center;width:min(100%,220px);box-sizing:border-box;padding:14px 10px 12px;border-radius:16px;border:1px solid transparent;opacity:1;transition:opacity .2s}
+#page-markets .mk2-result-teams .tm.won{background:rgba(59,227,138,.08);border-color:rgba(59,227,138,.55);box-shadow:0 0 30px -14px #3BE38A}
+#page-markets .mk2-result-teams .tm.won img,#page-markets .mk2-result-teams .tm.won .ph{box-shadow:inset 0 0 0 1.5px #3BE38A}
+#page-markets .mk2-result-teams .tm.lost{opacity:.45;filter:grayscale(.6)}
+#page-markets .mk2-result .mk2-result-teams .tm em{order:-1;padding:4px 10px 3px;border-radius:999px;background:#3BE38A;color:#06111F;font-size:10.5px;line-height:1;letter-spacing:.14em}
+#page-markets .mk2-result-teams .tm:not(.won)::before{content:"";display:block;height:19px}
+#page-markets .mk2-result-teams .tm .ph{display:grid;place-items:center;font:700 16px/1 Rajdhani,sans-serif;color:#C9D3EA;font-style:normal;background:rgba(255,255,255,.05)}
+#page-markets .mk2-result-teams .sc{flex-wrap:wrap;justify-content:center;max-width:180px}
+#page-markets .mk2-result-teams .sc small{flex-basis:100%;text-align:center;font:600 12px/1.3 'Space Grotesk',sans-serif;color:#F5C451;letter-spacing:.04em}
+#page-markets .mk2-result-teams .sc.vs span{font-size:22px;color:#8F99C8;text-transform:uppercase}
+#page-markets .mk2-result-note{margin:0 0 14px;text-align:center;font-size:12.5px;color:#9AA6C4}
+@media (max-width:640px){
+  #page-markets .mk2-result-teams{gap:8px}
+  #page-markets .mk2-result-teams .tm{padding:10px 4px}
+  #page-markets .mk2-result-teams .sc{font-size:32px}
+}
