@@ -15,7 +15,10 @@
 (function () {
   'use strict';
 
-  var MULTISIG = 'terra1vvwccg3ey00fg3xhux2cfgx2z5l47uuv0lzm72dtntctdqmf3wuqmdnm06';
+  // Мультисиг совета после ротации ключей (предложение #4, 25.10.2026): он
+  // админ контрактов рынков и суда. Прежний terra1vvwcc...mdnm06 ничем не
+  // управляет - предложение, созданное на нём, исполняется с Unauthorized.
+  var MULTISIG = 'terra1u5awyahn8xp5kzjf02vsnjnjqzasem4k04tu2yuhj0tsjtqx6pzs8h0rvx';
   var CHAIN = 'columbus-5';
   var TREASURY = 'terra1cjpwx84jj2u822wmzuylfzsf99rr3gdn2sqesw';
   var LCD = ['https://terra-classic-lcd.publicnode.com', 'https://lcd.terra-classic.hexxagon.io'];
