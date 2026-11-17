@@ -189,16 +189,18 @@
   var TIER_ORDER = ['legendary', 'epic', 'rare', 'common'];
   var TIER_TONE  = { common: 'var(--ink-2)', rare: 'var(--cyan)', epic: '#b18cff', legendary: 'var(--amber)' };
 
-  function avatarCore(w) {
+  function avatarCore(w, rep) {
     var src = '';
     try { if (typeof getProfileAvatar === 'function') src = getProfileAvatar(w) || ''; } catch (e) {}
     if (src) return '<img class="wp-ava" src="' + esc(src) + '" alt="">';
+    // no picture of their own: the rank symbol, as on the profile page
+    try { if (typeof rankSymbolHTML === 'function' && typeof getRank === 'function') return '<span class="wp-ava">' + rankSymbolHTML(getRank(rep || 0).name) + '</span>'; } catch (e) {}
     try { if (typeof walletAvatar === 'function') { var a = walletAvatar(w); if (a) return '<span class="wp-ava">' + a + '</span>'; } } catch (e) {}
     return '<span class="wp-ava wp-ava-empty"></span>';
   }
   // The same rank frame as in chat: animated from ADEPT up, a coloured ring below.
   function avatarHTML(w, rep) {
-    var core = avatarCore(w);
+    var core = avatarCore(w, rep);
     var fr = null, ring = null;
     try { if (typeof rankFrame === 'function') fr = rankFrame(rep || 0); } catch (e) {}
     if (fr) {

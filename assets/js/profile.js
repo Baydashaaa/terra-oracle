@@ -321,6 +321,15 @@ function rankFrame(score) {
 }
 window.rankFrame = rankFrame;
 
+// Rank symbol as an avatar: the rank's own icon on a dark disc lit in the rank
+// colour. Used where a user has no picture of their own.
+function rankSymbolHTML(name) {
+  const r = RANKS.find(x => x.name === name) || RANKS[0];
+  return '<span class="rank-sym" style="--rc:' + r.color + '">' +
+    '<img src="assets/img/icons/r-' + r.name.toLowerCase() + '.webp" alt="' + r.name + '" width="96" height="96"></span>';
+}
+window.rankSymbolHTML = rankSymbolHTML;
+
 // What each rank's frame looks like, in words, for the showcase and the
 // "next frame" teaser. Kept next to RANK_FRAME_FX so the two never drift.
 const RANK_FRAME_TEXT = {
@@ -940,10 +949,11 @@ function renderProfilePage() {
   const walletShortEl = document.getElementById('profile-wallet-short');
   if (walletShortEl) walletShortEl.textContent = address;
 
-  // Generative avatar (stable per address)
+  // Avatar = the rank symbol (the same icons as Oracle ascension). Starts as
+  // INITIATE and is swapped for the real rank once REP has loaded.
   const avaEl = document.getElementById('profile-avatar');
   if (avaEl && avaEl.dataset.addr !== address) {
-    avaEl.innerHTML = walletAvatar(address);
+    avaEl.innerHTML = rankSymbolHTML('INITIATE');
     avaEl.dataset.addr = address;
   }
 
@@ -1008,6 +1018,11 @@ function renderProfilePage() {
     if (ringEl) {
       ringEl.style.borderColor = rank.color;
       ringEl.style.boxShadow = '0 0 22px ' + rank.glow;
+    }
+    const avaRank = document.getElementById('profile-avatar');
+    if (avaRank && avaRank.dataset.rank !== rank.name) {
+      avaRank.innerHTML = rankSymbolHTML(rank.name);
+      avaRank.dataset.rank = rank.name;
     }
     // Animated rank frame around the profile avatar (ADEPT and up), the same
     // one the chat draws, scaled to the orb.

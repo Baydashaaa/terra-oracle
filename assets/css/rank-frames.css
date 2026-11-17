@@ -179,3 +179,8 @@
 .wp-ava-fr .wp-frame{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;transform:scale(1.22);z-index:0;pointer-events:none}
 .wp-ava-fr .wp-ava{position:relative;z-index:1;box-shadow:0 0 0 2px var(--rc),var(--rs)}
 .wp-ava-fr.framed .wp-ava{box-shadow:0 0 0 2px rgba(5,7,20,.9)}
+
+/* rank symbol as avatar */
+.rank-sym{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--rc) 22%,transparent),transparent 62%),radial-gradient(circle,#11143a,#070918 75%)}
+.rank-sym img{width:66%;height:66%;object-fit:contain;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--rc) 70%,transparent))}
