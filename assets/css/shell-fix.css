@@ -444,6 +444,18 @@
    поэтому геометрический центр смотрится смещённым - сдвигаем оптически */
 #page-chat .chat-send svg{display:block;transform:translate(-1px,1px)}
 #page-chat .chat-ring-svg{flex:none;opacity:.9}
+/* Строка ввода: подсветка фокуса на всей строке, а не только на textarea.
+   Раньше рамка фокуса обводила одно поле, и цена с кнопкой оказывались
+   снаружи рамки; поле и кнопки выравниваются по центру строки. */
+#page-chat #chat-page-form div:has(> #chat-page-input){align-items:center !important;transition:box-shadow .15s ease}
+#page-chat #chat-page-form div:has(> #chat-page-input):focus-within{box-shadow:inset 0 0 0 1px rgba(139,92,246,.55),inset 0 0 18px -8px rgba(139,92,246,.6)}
+#page-chat #chat-page-input,
+#page-chat #chat-page-input:focus,
+#page-chat #chat-page-input:focus-visible{border:0 !important;outline:none !important;box-shadow:none !important;background:transparent !important}
+/* одна строка по умолчанию; дальше поле растёт по тексту (inline height из oninput) */
+#page-chat #chat-page-input{height:58px;padding-top:18px !important;padding-bottom:18px !important}
+#page-chat .chat-send-row{margin-top:0 !important}
+@media (min-width:761px){#page-chat .chat-send-row{align-self:center;padding:8px 14px 8px 0 !important}}
 
 /* ==================================================================
    11. Ask Oracle
