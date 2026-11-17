@@ -242,3 +242,24 @@
 .wallet-btn.via-frontier svg{display:none}
 .wallet-btn.via-frontier::before{content:'';flex:none;width:22px;height:22px;border-radius:6px;
   background:url('/assets/img/wallets/frontier.png?v=2') center/cover no-repeat;box-shadow:0 0 10px -2px rgba(124,92,255,.8)}
+
+/* Phones: the three groups share the width exactly, nothing runs off the right
+   edge. The dock keeps its size, the wallet well takes the rest, the avatar
+   sits flush right. */
+@media (max-width:860px){
+  .topbar{gap:6px !important;padding:6px !important;justify-content:space-between}
+  .topbar .spacer{display:none}
+  .topbar .tb-dock{flex:none;padding:0 3px}
+  .tb-dock > button,.tb-dock > .onf-wrap > button.onf-bell{width:34px !important;height:34px !important}
+  .tb-dock > .onf-wrap{width:34px;height:34px}
+  .tb-dock #oe-nav{width:40px !important}
+  .topbar .tb-acct{flex:1 1 auto;min-width:0;width:auto}
+  .tb-acct .wallet-btn-wrap,.tb-acct .wallet-btn{width:100% !important;min-width:0}
+  .tb-acct .wallet-btn{height:34px;padding:0 10px !important;font-size:13px !important}
+  .topbar .tb-me{flex:none;width:42px;height:42px}
+  .tb-me .round.avatar,.tb-me .round.avatar .me-ico{width:34px !important;height:34px !important}
+}
+@media (max-width:360px){.tb-acct .wallet-btn #wallet-btn-label{display:none}}
+/* the logo slot on the left of the phone bar pointed at a wrong path (resolved
+   from the css folder), so it showed as an empty gap */
+@media (max-width:860px){.topbar::before{background-image:url("../img/tco.webp") !important;filter:drop-shadow(0 0 8px rgba(124,58,237,.6))}}
