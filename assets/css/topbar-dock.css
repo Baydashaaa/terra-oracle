@@ -133,3 +133,85 @@
   .rail .socials a:hover{background:rgba(255,255,255,.05);transform:none}
   .rail .socials a img{width:26px;height:26px}
 }
+
+/* ── Menu tags: NEW is holographic, SOON is "under construction" ── */
+.rail .nav:not(.is-soon) .tag:not(.dot){
+  position:relative;overflow:hidden;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.14em;border-radius:6px;padding:4px 8px;
+  background:linear-gradient(110deg,#6d28d9,#c084fc 30%,#22d3ee 50%,#a855f7 70%,#6d28d9) 0 0/250% 100%;
+  box-shadow:0 0 12px -2px rgba(168,85,247,.85),inset 0 1px 0 rgba(255,255,255,.35);
+  text-shadow:0 1px 2px rgba(30,0,60,.55);animation:tag-holo 4s linear infinite}
+.rail .nav:not(.is-soon) .tag:not(.dot)::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-20deg);animation:tag-sweep 3.2s ease-in-out infinite}
+@keyframes tag-holo{to{background-position:250% 0}}
+@keyframes tag-sweep{0%,55%{left:-60%}85%,100%{left:130%}}
+.rail .nav.is-soon .tag{
+  color:#c9cff5 !important;font-size:9px;font-weight:700;letter-spacing:.16em;border-radius:6px;padding:4px 8px;
+  background:repeating-linear-gradient(-45deg,rgba(150,160,240,.16) 0 5px,rgba(150,160,240,.05) 5px 10px) 0 0/28px 28px,rgba(6,8,22,.7) !important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,160,240,.25);animation:tag-build 1.6s linear infinite}
+@keyframes tag-build{to{background-position:28px 0,0 0}}
+@media (prefers-reduced-motion:reduce){.rail .nav .tag,.rail .nav .tag::after{animation:none !important}}
+
+/* ── Right column in the console style ──
+   Cards are lit glass like the bar and the rail; inside, tabs, timer cells,
+   bars and buttons are recessed wells and raised keys. Between the cards two
+   energy lines run down the column with pulses travelling along them, so the
+   panels read as modules plugged into one system. The lines are painted on
+   the column itself (background-attachment: local), so they span the whole
+   scrolled length and show only in the gaps between cards. */
+@media (min-width:861px){
+  .side{
+    background:
+      repeating-linear-gradient(180deg,transparent 0 90px,rgba(225,215,255,.95) 90px 104px,transparent 104px 220px) 30px 0/2px 220px repeat-y local,
+      repeating-linear-gradient(180deg,transparent 0 150px,rgba(165,243,252,.95) 150px 164px,transparent 164px 220px) calc(100% - 36px) 0/2px 220px repeat-y local,
+      linear-gradient(180deg,rgba(170,150,255,.85),rgba(34,211,238,.75)) 30px 0/2px 100% no-repeat local,
+      linear-gradient(180deg,rgba(34,211,238,.75),rgba(170,150,255,.85)) calc(100% - 36px) 0/2px 100% no-repeat local,
+      linear-gradient(90deg,transparent,rgba(150,130,255,.4),transparent) 25px 0/12px 100% no-repeat local,
+      linear-gradient(90deg,transparent,rgba(34,211,238,.35),transparent) calc(100% - 31px) 0/12px 100% no-repeat local;
+    animation:side-pulse 3.2s linear infinite;
+  }
+  @keyframes side-pulse{to{background-position:30px 220px,calc(100% - 36px) -220px,30px 0,calc(100% - 36px) 0,25px 0,calc(100% - 31px) 0}}
+  .side > .card{position:relative;z-index:1}
+}
+.side > .card{
+  background:linear-gradient(180deg,rgba(30,28,76,.92),rgba(11,13,34,.97)) padding-box,
+             linear-gradient(180deg,rgba(175,155,255,.42),rgba(120,110,230,.08) 60%,rgba(120,110,230,.2)) border-box !important;
+  border:1px solid transparent !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -26px rgba(0,0,0,.95) !important;
+}
+.side > .card.repcard{
+  background:linear-gradient(180deg,rgba(52,32,110,.92),rgba(16,12,44,.97)) padding-box,
+             linear-gradient(180deg,rgba(196,170,255,.85),rgba(139,92,246,.35) 60%,rgba(34,211,238,.45)) border-box !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 40px -16px rgba(139,92,246,.85),0 20px 44px -26px rgba(0,0,0,.95) !important;
+}
+/* header: a lit hairline under the title */
+.side > .card h3{position:relative;padding-bottom:12px}
+.side > .card h3::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,rgba(170,150,255,.5),rgba(34,211,238,.25) 60%,transparent)}
+/* recessed wells */
+.side .seg,
+.side .clock div,
+.side .repbar .bar{
+  background:linear-gradient(180deg,rgba(3,5,14,.75),rgba(8,10,26,.62)) !important;border:0 !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 1px rgba(140,150,240,.11),0 1px 0 rgba(255,255,255,.04) !important}
+.side .seg{padding:4px;border-radius:12px}
+.side .seg button[aria-selected="true"]{
+  background:linear-gradient(180deg,rgba(124,92,255,.55),rgba(90,60,210,.35)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.25),0 6px 14px -8px rgba(124,92,255,.95),0 0 0 1px rgba(170,150,255,.5)}
+.side .seg button:not([aria-selected="true"]):hover{background:rgba(255,255,255,.04)}
+.side .clock b{text-shadow:0 0 14px rgba(139,92,246,.55),0 2px 0 rgba(0,0,0,.4);font-variant-numeric:tabular-nums}
+.side .repbar .bar{height:9px;border-radius:5px}
+.side .repbar .bar i{border-radius:5px;box-shadow:0 0 12px rgba(34,211,238,.8)}
+/* raised keys */
+.side .wide{
+  background:linear-gradient(180deg,rgba(56,48,130,.55),rgba(24,22,64,.7)) !important;border:0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -2px 0 rgba(0,0,0,.3),0 0 0 1px rgba(150,140,255,.28),0 8px 18px -12px rgba(0,0,0,.9) !important;
+  transition:transform .15s,box-shadow .15s,background .15s}
+.side .wide:hover{background:linear-gradient(180deg,rgba(90,72,190,.6),rgba(40,30,100,.75)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.3),0 0 0 1px rgba(180,160,255,.55),0 0 22px -8px rgba(139,92,246,.9) !important}
+.side .wide:active{transform:translateY(1px)}
+/* lists: hairline rows */
+.side .lb{gap:0}
+.side .lb li{padding:8px 4px;position:relative}
+.side .lb li + li::before,
+.side .acts li + li::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(150,160,240,.18),transparent)}
+.side .acts li{border-bottom:0 !important;position:relative}
+.side .lb li:nth-child(-n+3) .pos{box-shadow:0 0 12px -2px currentColor}
