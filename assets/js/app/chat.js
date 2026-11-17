@@ -334,8 +334,10 @@ function renderChatMessages(msgs) {
     // ADEPT and up: animated frame around the avatar, more of it each rank
     const frame = (m.fullAddr && window._walletScores && typeof rankFrame === 'function')
       ? rankFrame(window._walletScores[m.fullAddr] || 0) : null;
-    const frameOpen = frame ? `<div class="${frame.cls}" style="width:38px;height:38px;">` : '';
-    const frameClose = frame ? frame.fx + '</div>' : '';
+    // Every avatar sits in the same wide column, framed or not, so names line
+    // up and the effects of the top ranks have room without touching the text.
+    const frameOpen = '<div class="rf-col">' + (frame ? `<div class="${frame.cls}">` : '');
+    const frameClose = (frame ? frame.fx + '</div>' : '') + '</div>';
 
     return `
     <div class="chat-page-msg" id="msg-${m.txHash}" style="padding:14px 0;border-bottom:1px solid rgba(30,51,88,0.35);">

@@ -116,6 +116,20 @@
   .rf-fl{opacity:.6}
 }
 
+/* ── Chat: a fixed avatar column, wide enough for every frame ──
+   The frame's effects reach up to ~36px from the avatar centre, so the column
+   is 72px for everyone: names stay aligned and nothing burns over the text.
+   Top-rank effects are also kept inside it (waves, orbits, flames). */
+#page-chat .chat-page-msg > div > div.rf-col:first-child{width:72px !important;height:auto !important;flex:none;display:flex;justify-content:center;padding-top:2px;margin-left:-6px}
+/* room above the first message, so a top-rank frame is not cut by the list edge */
+#page-chat #chat-page-messages{padding-top:18px !important}
+#page-chat .rf-col > .rframe,
+#page-chat .rf-col > .rf-av{width:46px !important;height:46px !important}
+#page-chat .rf-col .rf-av{box-sizing:border-box}
+#page-chat .rf-ascended .rf-wave{animation-name:rf-wave-chat}
+@keyframes rf-wave-chat{0%{transform:scale(1);opacity:.85}70%,100%{transform:scale(1.38);opacity:0}}
+#page-chat .rf-ascended .rf-atom{inset:-12px}
+
 /* ── Frame previews (rankFramePreview): the 46px frame scaled to any size ── */
 .rfp{display:inline-grid;place-items:center;flex:none;position:relative}
 .rfp-s{display:block;width:46px;height:46px;transform-origin:50% 50%}
