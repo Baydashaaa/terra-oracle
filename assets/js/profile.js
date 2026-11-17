@@ -273,28 +273,40 @@ window.renderOnChainPanel = renderOnChainPanel;
 const RANK_FRAME_FX = {
   ADEPT:    {},
   ANALYST:  { sparks: 1 },
-  ORACLE:   { bolts: 4 },
-  ARCHON:   { flames: 18, embers: 3 },
+  ORACLE:   { zap: 1 },
+  ARCHON:   { fire: 40, embers: 3 },
   ASCENDED: { orbit: 1, sparks: 3 },
 };
+// Jagged copy of the ring contour for the ORACLE discharge. Seeded, so every
+// avatar draws the same bolt shapes and nothing jumps between re-renders.
+function zapPath(seed, r) {
+  let x = seed * 9301 + 49297, d = '';
+  const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  for (let deg = 0; deg <= 360; deg += 7) {
+    const a = deg * Math.PI / 180, rr = r + (rnd() - 0.5) * 6;
+    d += (deg ? 'L' : 'M') + (32 + rr * Math.sin(a)).toFixed(1) + ' ' + (32 - rr * Math.cos(a)).toFixed(1);
+  }
+  return d;
+}
+const ZAP_SVG = '<i class="rf-zap"><svg viewBox="0 0 64 64" aria-hidden="true">' +
+  [1, 2, 3].map((k) => '<path class="zm z' + k + '" pathLength="100" d="' + zapPath(k, 24.2) + '"/>').join('') +
+  [1, 2].map((k) => '<path class="zb z' + k + '" pathLength="100" d="' + zapPath(k + 7, 24.6) + '"/>').join('') +
+  '</svg></i>';
 function rankFrame(score) {
   const rank = (score === undefined || score === null) ? null : getRank(score);
   const fx = rank && RANK_FRAME_FX[rank.name];
   if (!fx) return null;
   let h = '<i class="rf-halo"></i>';
-  // flames sit behind the ring, so they come first
-  for (let i = 0; i < (fx.flames || 0); i++) {
-    // uneven tongues: size, angle and rhythm vary, taller ones at the top like real fire
-    const a = i * 360 / fx.flames + ((i * 37) % 13) - 6;
-    const top = Math.cos(a * Math.PI / 180);
-    const hgt = Math.round(14 + ((i * 7) % 9) + Math.max(0, top) * 9);
-    h += '<i class="rf-f" style="--a:' + a.toFixed(0) + 'deg;--h:' + hgt + 'px;--w:' + (7 + (i % 3) * 2) + 'px;--d:-' +
-      ((i * 0.43) % 1.3).toFixed(2) + 's;--t:' + (0.8 + ((i * 5) % 4) * 0.15).toFixed(2) + 's"></i>';
+  // fire particles first: they burn behind the ring and the avatar
+  for (let i = 0; i < (fx.fire || 0); i++) {
+    const deg = i * 360 / fx.fire + ((i * 53) % 11) - 5, a = deg * Math.PI / 180;
+    const up = (1 + Math.cos(a)) / 2;                 // 1 at the top, 0 at the bottom
+    const R = 23;
+    h += '<i class="rf-fl" style="left:calc(50% + ' + (R * Math.sin(a)).toFixed(1) + 'px);top:calc(50% - ' + (R * Math.cos(a)).toFixed(1) + 'px);' +
+      '--s:' + Math.round(11 + up * 8 + (i % 3) * 2) + 'px;--dy:-' + Math.round(8 + up * 18 + (i % 4) * 2) + 'px;--dx:' + (((i * 7) % 7) - 3 - Math.sin(a) * 3).toFixed(1) + 'px;' +
+      '--t:' + (0.75 + ((i * 3) % 5) * 0.1).toFixed(2) + 's;--d:-' + ((i * 0.37) % 1.2).toFixed(2) + 's"></i>';
   }
-  h += '<i class="rf-ring"></i>' + (fx.orbit ? '<i class="rf-orbit"></i>' : '');
-  for (let i = 0; i < (fx.bolts || 0); i++) {
-    h += '<i class="rf-bolt" style="--a:' + (i * 90 + 25) + 'deg;--d:-' + (i * 0.71).toFixed(2) + 's;--t:' + (1.9 + i * 0.3).toFixed(2) + 's"></i>';
-  }
+  h += '<i class="rf-ring"></i>' + (fx.orbit ? '<i class="rf-orbit"></i>' : '') + (fx.zap ? ZAP_SVG : '');
   for (let i = 0; i < (fx.embers || 0); i++) {
     h += '<i class="rf-p" style="--x:' + [-14, 9, -2][i] + 'px;--d:-' + [0.7, 1.5, 0.2][i] + 's;--t:' + [2.4, 2, 2.6][i] + 's"></i>';
   }
