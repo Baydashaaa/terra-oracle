@@ -265,3 +265,10 @@
 /* the logo slot on the left of the phone bar pointed at a wrong path (resolved
    from the css folder), so it showed as an empty gap */
 @media (max-width:860px){.topbar::before{background-image:url("../img/tco.webp") !important;background-size:90% !important;border-radius:0 !important;filter:drop-shadow(0 0 8px rgba(124,58,237,.6))}}
+
+/* Oracle Eye sits in the dock at the scale of its neighbours: the drawing is
+   44 units wide, shown at 34px and centred in the same 38px cell */
+.tb-dock #oe-nav{width:42px !important;height:38px !important;border-radius:10px !important}
+.tb-dock #oe-nav svg{width:36px !important;height:36px !important;margin-top:1px}
+.tb-dock #oe-nav:hover,.tb-dock #oe-nav.open{transform:none !important;background:rgba(255,255,255,.06) !important}
+@media (max-width:860px){.tb-dock #oe-nav{width:38px !important;height:34px !important}.tb-dock #oe-nav svg{width:32px !important;height:32px !important}}
