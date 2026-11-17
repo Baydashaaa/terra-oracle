@@ -118,6 +118,7 @@
     var d = e.data;
     if (!d || d.type !== 'oracle-draw:stats') return;
     stats = d.games || {};
+    window.oracleDrawStats = stats;   // read by mod-live.js for the module cards
     // Пустую посылку не принимаем: рамка могла прислать статистику
     // раньше, чем посчитался need, и строка мигнула бы на пустоту.
     if (d.need) need = d.need;
