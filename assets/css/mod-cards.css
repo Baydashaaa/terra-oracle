@@ -43,3 +43,16 @@
 @keyframes mod-ping{0%{box-shadow:0 0 0 0 rgba(var(--tone-rgb),.7)}100%{box-shadow:0 0 0 8px rgba(var(--tone-rgb),0)}}
 @media (prefers-reduced-motion:reduce){.mod-live i,.mods > .mod .go::after{animation:none}.mods > .mod:hover > img{transform:none}}
 @media (max-width:760px){.mod-live{top:8px;left:8px;font-size:10px;padding:4px 8px 4px 6px}}
+
+/* Hover: the card and its text stay still, only the picture moves - it zooms
+   in and drifts gently against the cursor, like looking through a window.
+   The card tilt from oracle-motion.js is switched off here (it moved the text
+   too); the cursor position it still writes (--gx/--gy) drives the drift. */
+.mods > .mod,
+.motion-on .mods > .mod,
+.mods > .mod:hover{transform:none !important}
+.mods > .mod > img{transform-origin:50% 40%;transition:transform 1.1s cubic-bezier(.16,.8,.2,1),filter .5s}
+.mods > .mod:hover > img{
+  transform:scale(1.16) translate(calc((var(--gx,50%) - 50%) * -.07),calc((var(--gy,50%) - 50%) * -.07)) !important;
+  transition:transform .9s cubic-bezier(.16,.8,.2,1),filter .5s}
+@media (prefers-reduced-motion:reduce){.mods > .mod:hover > img{transform:scale(1.05) !important}}
