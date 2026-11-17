@@ -1,6 +1,6 @@
 // Top bar as one console: the prices sit in one market strip, the tool buttons
-// (Oracle Eye, sound, notifications) in one dock, wallet and avatar in one
-// account pill. The buttons are created by different scripts at different
+// (Oracle Eye, sound, notifications) in one dock, the wallet and the avatar
+// in wells of their own. The buttons are created by different scripts at different
 // times (oracle-eye.js, oracle-sound.js, notify), so this keeps regrouping
 // them whenever the bar changes. Elements are moved, not copied: their ids,
 // listeners and dropdowns stay as they are.
@@ -10,7 +10,7 @@
     var bar = document.querySelector('header.topbar');
     if (!bar) return;
     function box(cls) { var d = document.createElement('div'); d.className = cls; return d; }
-    var dock = box('tb-dock'), acct = box('tb-acct');
+    var dock = box('tb-dock'), acct = box('tb-acct'), me = box('tb-me');
     var busy = false;
     function place() {
       if (busy) return;
@@ -28,9 +28,12 @@
           if (!ok) want.forEach(function (el) { host.appendChild(el); });
         }
         arrange(dock, [eye, sound, bell].filter(Boolean));
-        arrange(acct, [wallet, avatar].filter(Boolean));
+        arrange(acct, [wallet].filter(Boolean));
+        arrange(me, [avatar].filter(Boolean));
         if (dock.parentNode !== bar || dock.nextElementSibling !== acct) bar.appendChild(dock);
-        if (acct.parentNode !== bar || bar.lastElementChild !== acct) bar.appendChild(acct);
+        if (acct.parentNode !== bar || acct.nextElementSibling !== me) bar.appendChild(acct);
+        if (me.parentNode !== bar || bar.lastElementChild !== me) bar.appendChild(me);
+        me.classList.toggle('empty', !me.children.length);
         dock.classList.toggle('empty', !dock.children.length);
       } finally { busy = false; }
     }
