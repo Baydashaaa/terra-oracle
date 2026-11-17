@@ -264,4 +264,4 @@
 @media (max-width:360px){.tb-acct .wallet-btn #wallet-btn-label{display:none}}
 /* the logo slot on the left of the phone bar pointed at a wrong path (resolved
    from the css folder), so it showed as an empty gap */
-@media (max-width:860px){.topbar::before{background-image:url("../img/tco.webp") !important;filter:drop-shadow(0 0 8px rgba(124,58,237,.6))}}
+@media (max-width:860px){.topbar::before{background-image:url("../img/tco.webp") !important;background-size:90% !important;border-radius:0 !important;filter:drop-shadow(0 0 8px rgba(124,58,237,.6))}}
