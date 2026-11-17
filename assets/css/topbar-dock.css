@@ -100,7 +100,29 @@
     background:linear-gradient(180deg,rgba(124,92,255,.42),rgba(80,60,200,.22));
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.25),0 8px 18px -10px rgba(124,92,255,.95),0 0 0 1px rgba(160,140,255,.45);
   }
-  .rail .nav.nav-sub{padding-left:52px}
+  /* Board hangs off Ask Oracle like a branch: a line drops from under the Ask
+     Oracle icon and turns into Board, ending in a node. The Board key starts
+     after the branch, its text lines up with the other labels. Hovering or
+     opening either one lights the branch and the other item. */
+  .rail .nav.nav-sub{margin:0 0 0 44px;padding:7px 10px 7px 8px;position:relative;overflow:visible;
+    border-left:0 !important;border-radius:10px;font-size:13px;color:var(--ink-3,#8f99c8)}
+  .rail .nav.nav-sub::before{content:'';position:absolute;left:-19px;top:-12px;width:14px;height:calc(50% + 12px);
+    border-left:2px solid rgba(150,130,255,.38);border-bottom:2px solid rgba(150,130,255,.38);border-bottom-left-radius:9px;
+    pointer-events:none;transition:border-color .15s,filter .15s}
+  .rail .nav.nav-sub::after{content:'';position:absolute;left:-6px;top:50%;width:6px;height:6px;margin-top:-2px;border-radius:50%;
+    background:rgba(150,130,255,.55);pointer-events:none;transition:background .15s,box-shadow .15s}
+  .rail .nav.nav-sub:hover::before,
+  .rail .nav.nav-sub[aria-current="page"]::before,
+  .rail .nav[data-view="ask"][aria-current="page"] + .nav.nav-sub::before,
+  .rail .nav[data-view="ask"]:hover + .nav.nav-sub::before{border-color:#a78bfa;filter:drop-shadow(0 0 4px rgba(167,139,250,.8))}
+  .rail .nav.nav-sub:hover::after,
+  .rail .nav.nav-sub[aria-current="page"]::after,
+  .rail .nav[data-view="ask"][aria-current="page"] + .nav.nav-sub::after,
+  .rail .nav[data-view="ask"]:hover + .nav.nav-sub::after{background:#c4b5fd;box-shadow:0 0 8px #a78bfa}
+  .rail .nav.nav-sub[aria-current="page"],.rail .nav.nav-sub:hover{color:#fff}
+  .rail .group:has(.nav.nav-sub:hover) .nav[data-view="ask"]:not([aria-current="page"]){background:rgba(255,255,255,.03);color:var(--ink,#fff)}
+  .rail .group:has(.nav.nav-sub[aria-current="page"]) .nav[data-view="ask"]:not([aria-current="page"]){color:var(--ink,#fff)}
+  .rail .group:has(.nav.nav-sub[aria-current="page"]) .nav[data-view="ask"] .ico img{opacity:1}
   .rail .socials{
     border-top:0;padding:4px;margin-top:auto;gap:0;border-radius:14px;justify-content:space-between;
     background:linear-gradient(180deg,rgba(3,5,14,.62),rgba(8,10,26,.5));
