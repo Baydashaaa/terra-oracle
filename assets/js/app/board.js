@@ -124,6 +124,14 @@ const BOARD_CAT_COLORS = {
   'Partnership / Collaboration': '244,114,182', 'Fraud / Manipulation': '251,146,60', 'Other': '148,163,184',
 };
 
+// Category of a question as one of the Board categories. Old questions may
+// carry an emoji prefix ("⚙️ Validator Issue") or a retired name: those map to
+// the clean name or to Other.
+function boardCatOf(raw) {
+  const c = String(raw || '').replace(/^[^A-Za-z]+/, '').trim();
+  return BOARD_CAT_COLORS[c] ? c : 'Other';
+}
+
 function boardCategories() {
   return Array.from(document.querySelectorAll('#page-ask [data-cat]'))
     .map(b => b.getAttribute('data-cat'))
@@ -403,7 +411,9 @@ function _qCardHTML(q, qi, realQi, mode) {
     ? q.answers.map((a, ai) => [a, ai]).sort((x, y) => (y[0].id === q.chosenAnswerId) - (x[0].id === q.chosenAnswerId))
     : q.answers.map((a, ai) => [a, ai]);
   return `
-    <div class="q-card qc2${isPinned(q) ? ' q-card--pinned' : ''}${(q.open || inModal) ? ' is-open' : ''}${inModal ? ' qc2-modal' : ''}" id="${inModal ? 'qmodal-card' : 'qcard-' + qi}" data-qi="${realQi}">
+    <div class="q-card qc2 qc2-cat${isPinned(q) ? ' q-card--pinned' : ''}${(q.open || inModal) ? ' is-open' : ''}${inModal ? ' qc2-modal' : ''}" id="${inModal ? 'qmodal-card' : 'qcard-' + qi}" data-qi="${realQi}" style="--qc:${BOARD_CAT_COLORS[boardCatOf(q.category)]}">
+      <!-- the category, written large behind the card, in its colour -->
+      <span class="qc2-wm" aria-hidden="true">${escHtml(boardCatOf(q.category).split(' / ')[0])}</span>
 
       <!-- Левый столбец: голос. Стрелка одна - в модели вопроса только
            счётчик votes и флаг voted, минуса нет. Рисовать неработающую

@@ -1,0 +1,36 @@
+/* Board: each question card wears its category colour (the same colours as
+   the category chips on the right): a tinted glow from the left, an accent
+   edge, a filled category chip and the category name written large and
+   faint behind the card. Hover brightens all of it. */
+#page-board .q-card.qc2.qc2-cat{
+  position:relative;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(120% 140% at 0% 0%,rgba(var(--qc),.16),transparent 55%),
+    linear-gradient(180deg,rgba(18,19,46,.96),rgba(9,11,28,.98)) !important;
+  border:1px solid rgba(var(--qc),.28) !important;
+  box-shadow:inset 3px 0 0 rgba(var(--qc),.85),inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px -28px rgba(0,0,0,.95);
+  transition:border-color .18s,box-shadow .18s,transform .18s}
+#page-board .q-card.qc2.qc2-cat:hover{
+  border-color:rgba(var(--qc),.55) !important;transform:none;
+  box-shadow:inset 3px 0 0 rgb(var(--qc)),inset 0 1px 0 rgba(255,255,255,.06),0 0 34px -14px rgba(var(--qc),.75),0 18px 40px -28px rgba(0,0,0,.95)}
+#page-board .q-card.qc2.qc2-cat.is-open{border-color:rgba(var(--qc),.6) !important;box-shadow:inset 3px 0 0 rgb(var(--qc)),0 0 0 1px rgba(var(--qc),.25),0 10px 30px rgba(var(--qc),.16)}
+
+/* category name written large behind the content */
+#page-board .qc2 > .qc2-wm{
+  position:absolute;right:66px;bottom:-12px;z-index:0;pointer-events:none;user-select:none;
+  font-family:var(--dis,'Chakra Petch',sans-serif);font-weight:800;font-size:54px;line-height:1;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+  color:transparent;-webkit-text-stroke:1px rgba(var(--qc),.17);
+  background:linear-gradient(90deg,rgba(var(--qc),0),rgba(var(--qc),.07));-webkit-background-clip:text;background-clip:text;
+  transition:-webkit-text-stroke-color .18s}
+#page-board .qc2:hover > .qc2-wm{-webkit-text-stroke-color:rgba(var(--qc),.3)}
+#page-board .qc2.qc2-cat > :not(.qc2-wm){position:relative;z-index:1}
+
+/* the category chip filled in its colour */
+#page-board .qc2-cat .qc2-chips .q-category{
+  color:color-mix(in srgb,rgb(var(--qc)) 55%,#fff) !important;
+  background:rgba(var(--qc),.16) !important;border:1px solid rgba(var(--qc),.55) !important;
+  box-shadow:0 0 12px -4px rgba(var(--qc),.7)}
+/* the upvote and open buttons pick up the colour on hover */
+#page-board .qc2-cat .qc2-open:hover,#page-board .qc2-cat .qc2-up:hover{border-color:rgba(var(--qc),.7) !important;color:#fff;box-shadow:0 0 14px -4px rgba(var(--qc),.8)}
+
+@media (max-width:760px){#page-board .qc2 > .qc2-wm{font-size:42px;right:12px;bottom:-8px}}
