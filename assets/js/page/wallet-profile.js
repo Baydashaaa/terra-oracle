@@ -189,12 +189,24 @@
   var TIER_ORDER = ['legendary', 'epic', 'rare', 'common'];
   var TIER_TONE  = { common: 'var(--ink-2)', rare: 'var(--cyan)', epic: '#b18cff', legendary: 'var(--amber)' };
 
-  function avatarHTML(w) {
+  function avatarCore(w) {
     var src = '';
     try { if (typeof getProfileAvatar === 'function') src = getProfileAvatar(w) || ''; } catch (e) {}
     if (src) return '<img class="wp-ava" src="' + esc(src) + '" alt="">';
     try { if (typeof walletAvatar === 'function') { var a = walletAvatar(w); if (a) return '<span class="wp-ava">' + a + '</span>'; } } catch (e) {}
     return '<span class="wp-ava wp-ava-empty"></span>';
+  }
+  // The same rank frame as in chat: animated from ADEPT up, a coloured ring below.
+  function avatarHTML(w, rep) {
+    var core = avatarCore(w);
+    var fr = null, ring = null;
+    try { if (typeof rankFrame === 'function') fr = rankFrame(rep || 0); } catch (e) {}
+    if (fr) {
+      return '<span class="wp-ava-fr framed"><span class="wp-frame" aria-hidden="true"><span class="' + fr.cls + '" style="display:block;width:46px;height:46px">' +
+        fr.fx + '</span></span>' + core + '</span>';
+    }
+    try { if (typeof getRankRingCSS === 'function') ring = getRankRingCSS(rep || 0); } catch (e) {}
+    return '<span class="wp-ava-fr" style="--rc:' + ((ring && ring.border) || 'rgba(124,58,237,.5)') + ';--rs:' + ((ring && ring.shadow) || 'none') + '">' + core + '</span>';
   }
 
   function nameOf(w, alias) {
@@ -224,7 +236,7 @@
     }).join('') : '<li><span class="tx"><b>No activity yet</b><span>&nbsp;</span></span></li>';
 
     return '' +
-      '<div class="wp-top">' + avatarHTML(w) +
+      '<div class="wp-top">' + avatarHTML(w, st.rep) +
         '<div class="wp-id"><b>' + esc(nameOf(w, st.alias)) + '</b>' +
           '<button type="button" class="wp-addr" data-copy="' + esc(w) + '" title="Copy address">' + esc(short(w)) + ' <span>copy</span></button>' +
         '</div>' +
