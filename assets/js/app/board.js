@@ -462,9 +462,9 @@ function _qCardHTML(q, qi, realQi, mode) {
           <span class="qc2-dot">\u00b7</span><span class="qc2-time">${escHtml(q.time)}</span>
           <span class="qc2-id">${escHtml(q.id)}</span>
 
-          <${inModal ? 'span' : 'button type="button" onclick="toggleAnswers(' + realQi + ')"'} class="qc2-answers" title="${inModal ? q.answers.length + ' answers' : 'Show answers here'}">
+          <${inModal ? 'span' : 'button type="button" onclick="toggleAnswers(' + realQi + ')"'} class="qc2-answers${q.answers.length ? ' has' : ''}" title="${inModal ? q.answers.length + ' answers' : 'Show answers here'}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"/></svg>
-            ${q.answers.length}
+            <b>${q.answers.length}</b><span class="qc2-ans-l">${q.answers.length === 1 ? 'answer' : 'answers'}</span>
           </${inModal ? 'span' : 'button'}>
         </div>
 
