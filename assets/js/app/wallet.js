@@ -149,6 +149,10 @@ function setWalletConnected(address) {
   const short = address.slice(0,8) + '...' + address.slice(-4);
   document.getElementById('wallet-btn-label').textContent = short;
   document.getElementById('wallet-main-btn').classList.add('connected');
+  // Connected through Frontier (our own wallet): its logo replaces the generic
+  // wallet icon in the button. Other wallets keep the generic icon.
+  document.getElementById('wallet-main-btn').classList.toggle('via-frontier',
+    typeof getActiveProvider === 'function' && getActiveProvider() === 'frontier');
   document.getElementById('wallet-connected-addr').textContent = address;
   document.getElementById('wallet-not-connected').style.display = 'none';
   document.getElementById('wallet-connected-panel').style.display = 'block';
@@ -237,7 +241,7 @@ window.disconnectWallet = function() {
   window._activeWalletProvider = null;
   try { localStorage.removeItem('wallet_provider'); } catch(e) {}
   document.getElementById('wallet-btn-label').textContent = 'Connect';
-  document.getElementById('wallet-main-btn').classList.remove('connected');
+  document.getElementById('wallet-main-btn').classList.remove('connected', 'via-frontier');
   document.getElementById('wallet-not-connected').style.display = 'block';
   document.getElementById('wallet-connected-panel').style.display = 'none';
   document.getElementById('wallet-dropdown').classList.remove('open');
