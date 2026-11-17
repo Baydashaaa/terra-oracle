@@ -321,6 +321,39 @@ function rankFrame(score) {
 }
 window.rankFrame = rankFrame;
 
+// What each rank's frame looks like, in words, for the showcase and the
+// "next frame" teaser. Kept next to RANK_FRAME_FX so the two never drift.
+const RANK_FRAME_TEXT = {
+  INITIATE: 'Plain ring',
+  SEEKER:   'Glowing ring',
+  ADEPT:    'A light arc circles the ring',
+  ANALYST:  'Twin arcs, breathing glow, a spark in orbit',
+  ORACLE:   'An electric discharge runs along the ring',
+  ARCHON:   'The frame burns with rising flame',
+  ASCENDED: 'Aurora, prismatic ring, orbiting stars and energy waves',
+};
+window.RANK_FRAME_TEXT = RANK_FRAME_TEXT;
+
+// A frame preview with the rank icon inside: the same frame the chat draws,
+// at any size (the frame is built at 46px and scaled, so effects keep their
+// proportions). Plain ring for INITIATE and SEEKER, like in the chat.
+function rankFramePreview(rank, size, extraCls) {
+  if (!rank) return '';
+  size = size || 46;
+  const fr = rankFrame(rank.minScore);
+  const plain = !fr;
+  const border = plain ? (rank.name === 'INITIATE' ? rank.color + '44' : rank.color) : 'rgba(5,7,20,0.9)';
+  const glow = plain && rank.name !== 'INITIATE' ? 'box-shadow:0 0 10px ' + rank.glow + ';' : '';
+  const inner = '<div class="rf-av" style="width:46px;height:46px;box-sizing:border-box;border-radius:50%;background:#0c1030;' +
+    'border:2px solid ' + border + ';' + glow + 'display:grid;place-items:center;overflow:hidden">' +
+    '<img src="assets/img/icons/r-' + rank.name.toLowerCase() + '.webp" alt="" width="26" height="26" ' +
+    'style="width:26px;height:26px;object-fit:contain" onerror="this.remove()"></div>';
+  const body = fr ? '<div class="' + fr.cls + '" style="width:46px;height:46px">' + inner + fr.fx + '</div>' : inner;
+  return '<span class="rfp' + (extraCls ? ' ' + extraCls : '') + '" style="width:' + size + 'px;height:' + size + 'px" aria-hidden="true">' +
+    '<span class="rfp-s" style="transform:scale(' + (size / 46).toFixed(3) + ')">' + body + '</span></span>';
+}
+window.rankFramePreview = rankFramePreview;
+
 function getRankRingCSS(score) {
   const rank = (score === undefined || score === null) ? null : getRank(score);
   if (!rank) return { border: 'rgba(84,147,247,0.2)', shadow: 'none' };
@@ -926,6 +959,16 @@ function renderProfilePage() {
       ringEl.style.borderColor = rank.color;
       ringEl.style.boxShadow = '0 0 22px ' + rank.glow;
     }
+    // Animated rank frame around the profile avatar (ADEPT and up), the same
+    // one the chat draws, scaled to the orb.
+    const orbEl = document.querySelector('#page-profile .idcard .orb') || document.querySelector('.idcard .orb');
+    if (orbEl) {
+      let fl = orbEl.querySelector('.pf-frame');
+      if (!fl) { fl = document.createElement('div'); fl.className = 'pf-frame'; fl.setAttribute('aria-hidden', 'true'); orbEl.insertBefore(fl, orbEl.firstChild); }
+      const fr = rankFrame(reputation);
+      fl.innerHTML = fr ? '<div class="' + fr.cls + '" style="width:46px;height:46px">' + fr.fx + '</div>' : '';
+      orbEl.classList.toggle('has-frame', !!fr);
+    }
     // Big REP number in the header
     const repBigEl = document.getElementById('profile-rep-big');
     if (repBigEl) repBigEl.textContent = reputation.toLocaleString();
@@ -1009,7 +1052,19 @@ function renderReputationBlock(reputation, rank, nextRank) {
                 : 'Top rank') +
       '</span><span>' + pct + '%</span></div>' +
     '<div class="brow" style="margin-top:5px"><span></span><span class="gold">' +
-      (nextRank ? n(nextRank.minScore - reputation) + ' REP to go' : '') + '</span></div>';
+      (nextRank ? n(nextRank.minScore - reputation) + ' REP to go' : '') + '</span></div>' +
+    // Frame teaser: what you wear now and what the next rank puts on your avatar.
+    '<div class="rf-next">' +
+      '<div class="rf-next-it">' + rankFramePreview(rank, 56) +
+        '<div><div class="rf-next-k">Your frame</div><div class="rf-next-v" style="color:' + rank.color + '">' + rank.name + '</div>' +
+        '<div class="rf-next-d">' + RANK_FRAME_TEXT[rank.name] + '</div></div></div>' +
+      (nextRank
+        ? '<span class="rf-next-arrow" aria-hidden="true">&rarr;</span>' +
+          '<div class="rf-next-it">' + rankFramePreview(nextRank, 56, 'locked') +
+          '<div><div class="rf-next-k">Unlocks at ' + n(nextRank.minScore) + ' REP</div><div class="rf-next-v" style="color:' + nextRank.color + '">' + nextRank.name + '</div>' +
+          '<div class="rf-next-d">' + RANK_FRAME_TEXT[nextRank.name] + '</div></div></div>'
+        : '<div class="rf-next-d" style="align-self:center">Highest frame unlocked</div>') +
+    '</div>';
 
   // Малая шкала в карточке личности идёт от того же числа.
   const mini = document.getElementById('profile-rep-mini');

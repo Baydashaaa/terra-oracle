@@ -960,6 +960,13 @@ function renderHowItWorksHTML() {
     '<div class="mu">&times;' + Number(r.multiplier).toFixed(1) + '</div>' +
     '<div class="di">' + (r.discount ? r.discount + '% off questions' : 'no discount') + '</div></div>').join('');
 
+  // Витрина рамок: все семь по порядку, у каждой то, что она делает.
+  const frames = (typeof rankFramePreview === 'function') ? ranks.map(r =>
+    '<div class="rfs-it" style="--c:' + hexToRgbTriple(r.color) + '">' + rankFramePreview(r, 64) +
+    '<div class="rfs-nm" style="color:' + r.color + '">' + r.name + '</div>' +
+    '<div class="rfs-at">' + (r.minScore ? Number(r.minScore).toLocaleString('en-US') + ' REP' : 'Start') + '</div>' +
+    '<div class="rfs-d">' + ((window.RANK_FRAME_TEXT || {})[r.name] || '') + '</div></div>').join('') : '';
+
   return `
     <section class="card">
       <h3 class="sec inline">What is Oracle Reputation</h3>
@@ -988,6 +995,11 @@ function renderHowItWorksHTML() {
       <h3 class="sec inline">Oracle ascension <span>Each rank unlocks a fee discount and a reward multiplier</span></h3>
       <div class="asc-line">${asc}</div>
     </section>
+
+    ${frames ? `<section class="card">
+      <h3 class="sec inline">Rank frames <span>Your avatar frame in chat and on your profile grows with your rank</span></h3>
+      <div class="rfs-row">${frames}</div>
+    </section>` : ''}
 
     <section class="card">
       <h3 class="sec inline">Weekly rewards pool</h3>
