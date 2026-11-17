@@ -271,22 +271,35 @@ window.renderOnChainPanel = renderOnChainPanel;
 // Animated frame for ADEPT and up (rank-frames.css). INITIATE and SEEKER keep
 // the plain ring; every rank above adds a layer: arc, glow, sparks, fire, orbit.
 const RANK_FRAME_FX = {
-  ADEPT:    { orbit: 0, sparks: 0 },
-  ANALYST:  { orbit: 0, sparks: 1 },
-  ORACLE:   { orbit: 0, sparks: 2 },
-  ARCHON:   { orbit: 0, sparks: 3 },
+  ADEPT:    {},
+  ANALYST:  { sparks: 1 },
+  ORACLE:   { bolts: 4 },
+  ARCHON:   { flames: 18, embers: 3 },
   ASCENDED: { orbit: 1, sparks: 3 },
 };
 function rankFrame(score) {
   const rank = (score === undefined || score === null) ? null : getRank(score);
   const fx = rank && RANK_FRAME_FX[rank.name];
   if (!fx) return null;
-  return {
-    cls: 'rframe rf-' + rank.name.toLowerCase(),
-    fx: '<i class="rf-halo"></i><i class="rf-ring"></i>' +
-      (fx.orbit ? '<i class="rf-orbit"></i>' : '') +
-      '<i class="rf-p"></i>'.repeat(fx.sparks),
-  };
+  let h = '<i class="rf-halo"></i>';
+  // flames sit behind the ring, so they come first
+  for (let i = 0; i < (fx.flames || 0); i++) {
+    // uneven tongues: size, angle and rhythm vary, taller ones at the top like real fire
+    const a = i * 360 / fx.flames + ((i * 37) % 13) - 6;
+    const top = Math.cos(a * Math.PI / 180);
+    const hgt = Math.round(14 + ((i * 7) % 9) + Math.max(0, top) * 9);
+    h += '<i class="rf-f" style="--a:' + a.toFixed(0) + 'deg;--h:' + hgt + 'px;--w:' + (7 + (i % 3) * 2) + 'px;--d:-' +
+      ((i * 0.43) % 1.3).toFixed(2) + 's;--t:' + (0.8 + ((i * 5) % 4) * 0.15).toFixed(2) + 's"></i>';
+  }
+  h += '<i class="rf-ring"></i>' + (fx.orbit ? '<i class="rf-orbit"></i>' : '');
+  for (let i = 0; i < (fx.bolts || 0); i++) {
+    h += '<i class="rf-bolt" style="--a:' + (i * 90 + 25) + 'deg;--d:-' + (i * 0.71).toFixed(2) + 's;--t:' + (1.9 + i * 0.3).toFixed(2) + 's"></i>';
+  }
+  for (let i = 0; i < (fx.embers || 0); i++) {
+    h += '<i class="rf-p" style="--x:' + [-14, 9, -2][i] + 'px;--d:-' + [0.7, 1.5, 0.2][i] + 's;--t:' + [2.4, 2, 2.6][i] + 's"></i>';
+  }
+  h += '<i class="rf-p"></i>'.repeat(fx.sparks || 0);
+  return { cls: 'rframe rf-' + rank.name.toLowerCase(), fx: h };
 }
 window.rankFrame = rankFrame;
 
