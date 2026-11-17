@@ -275,7 +275,7 @@ const RANK_FRAME_FX = {
   ANALYST:  { sparks: 1 },
   ORACLE:   { zap: 1 },
   ARCHON:   { fire: 40, embers: 3 },
-  ASCENDED: { orbit: 1, sparks: 3 },
+  ASCENDED: { asc: 1, sparks: 1 },
 };
 // Jagged copy of the ring contour for the ORACLE discharge. Seeded, so every
 // avatar draws the same bolt shapes and nothing jumps between re-renders.
@@ -306,7 +306,13 @@ function rankFrame(score) {
       '--s:' + Math.round(11 + up * 8 + (i % 3) * 2) + 'px;--dy:-' + Math.round(8 + up * 18 + (i % 4) * 2) + 'px;--dx:' + (((i * 7) % 7) - 3 - Math.sin(a) * 3).toFixed(1) + 'px;' +
       '--t:' + (0.75 + ((i * 3) % 5) * 0.1).toFixed(2) + 's;--d:-' + ((i * 0.37) % 1.2).toFixed(2) + 's"></i>';
   }
-  h += '<i class="rf-ring"></i>' + (fx.orbit ? '<i class="rf-orbit"></i>' : '') + (fx.zap ? ZAP_SVG : '');
+  if (fx.asc) h += '<i class="rf-aura"></i>';
+  h += '<i class="rf-ring"></i>' + (fx.zap ? ZAP_SVG : '');
+  if (fx.asc) {
+    h += '<i class="rf-wave"></i><i class="rf-wave" style="--d:-1.3s"></i>' +
+      '<i class="rf-atom" style="--z:32deg"><b style="--t:2.6s"></b></i>' +
+      '<i class="rf-atom" style="--z:-38deg"><b style="--t:3.4s;animation-direction:reverse"></b></i>';
+  }
   for (let i = 0; i < (fx.embers || 0); i++) {
     h += '<i class="rf-p" style="--x:' + [-14, 9, -2][i] + 'px;--d:-' + [0.7, 1.5, 0.2][i] + 's;--t:' + [2.4, 2, 2.6][i] + 's"></i>';
   }
