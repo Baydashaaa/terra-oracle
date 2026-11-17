@@ -319,12 +319,19 @@ function renderChatMessages(msgs) {
     }
 
     // Avatar: profile image or colored initials
+    // No picture of their own: the rank symbol, the same as on the profile.
+    const _rk = (m.fullAddr && window._walletScores && typeof getRank === 'function')
+      ? getRank(window._walletScores[m.fullAddr] || 0) : null;
     const avatarHtml = avatar
       ? `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-      : `<span style="font-size:12px;font-weight:700;color:var(--accent);">${initials}</span>`;
+      : (_rk && typeof rankSymbolHTML === 'function')
+        ? rankSymbolHTML(_rk.name)
+        : `<span style="font-size:12px;font-weight:700;color:var(--accent);">${initials}</span>`;
 
-    const rankBadge = m.fullAddr && window._walletScores && typeof getRankBadgeHTML === 'function'
-      ? getRankBadgeHTML(window._walletScores[m.fullAddr] || 0) : '';
+    // Next to the name only the rank name, in its colour: the symbol is
+    // already in the avatar, a second icon in a pill would repeat it.
+    const rankBadge = _rk
+      ? `<span class="chat-rank" style="color:${_rk.color};text-shadow:0 0 10px ${_rk.glow}">${_rk.name}</span>` : '';
 
     // Avatar ring in the rank colour - the same signal as the badge, readable
     // at a glance while scrolling.
