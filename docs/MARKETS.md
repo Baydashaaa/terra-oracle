@@ -69,7 +69,7 @@ grace 86400 с, залоги по 10 LUNC. Тестовые мнемоники `
 
 | | |
 |---|---|
-| **oracle-prophecy 0.2.4, code 11684** (с 30.09, до этого 0.2.3 code 11680) | `terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2` |
+| **oracle-prophecy 0.2.5, code 11710** (с 03.10, миграция предложением совета #2, tx `BC6D7D5D65E7A3D49695A23DC03A41DEC30CFE2BFE1F1D873E6E891930183BE1`; до этого 0.2.4 code 11684 с 30.09, 0.2.3 code 11680) | `terra1rz70ljfnfpppeg9tksszca23x8w97qrdql0z7yqn4ewf6aftc45qsrgge2` |
 | **oracle-court 0.1.1, code 11685** (с 30.09, до этого 0.1.0 code 11681) | `terra1u3feuz2ugl884z3yakurm2ndynz6f83zsfsr0auzdnjztnrngshqycnqz2` |
 | **мультисиг совета** cw3_fixed_multisig v1.1.2, code 11686, 2 из 3, предложение живёт 7 дней | `terra1u5awyahn8xp5kzjf02vsnjnjqzasem4k04tu2yuhj0tsjtqx6pzs8h0rvx` (с 25.10; прежний terra1vvwcc... ничем не управляет) |
 | админ рынка и суда (в конфиге), админ миграции рынка, суда и самого мультисига | мультисиг (с 30.09). `pool-admin-2` больше ничего не может в этих контрактах |
@@ -103,7 +103,8 @@ instantiate ~200k, update_config ~130k.
 | oracle-prophecy 0.2.2 | `97f96daa6eede248806fe20376c8154f9f7048c0d0b70324867398c42e81ac96` | rebel-2 code 2458, до миграции |
 | oracle-prophecy **0.2.3** | `277c930f1de4038113922f55de942959043976fbed95b73bb484728facec203e` | rebel-2 code **2459**, mainnet code **11680** |
 | oracle-court 0.1.0 | `20ea2e6037916cd0e92be54fc0c777d422119127e344a98ca9c52d589be0b228` | rebel-2 code 2454, mainnet code 11681 |
-| oracle-prophecy **0.2.4** | `78dbec9a0589420d9bfdc68d4504547526cb2f1049a3043fc6e6ebf6ed771862` | mainnet code **11684** |
+| oracle-prophecy 0.2.4 | `78dbec9a0589420d9bfdc68d4504547526cb2f1049a3043fc6e6ebf6ed771862` | mainnet code 11684, до миграции |
+| oracle-prophecy **0.2.5** | `7f8703298213ebca643b9961dfbe4eaaa8366e241cb0039fc02b1c804e5eaed3` | mainnet code **11710** (03.10, tx `BC6D7D5D65E7A3D49695A23DC03A41DEC30CFE2BFE1F1D873E6E891930183BE1`) |
 | oracle-court **0.1.1** | `1bd84618c786483804607c00f6944c7c183bc3981bf4eccf8378a722751cf2b4` | mainnet code **11685** |
 | cw3_fixed_multisig v1.1.2 (релиз cw-plus) | `32a4c5dc3b475bad22daf0950dd0837f186f4ab9c79d8cb95b65ba8dbf74971e` | mainnet code **11686**, rebel-2 code 2453 |
 
