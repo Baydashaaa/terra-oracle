@@ -1,0 +1,70 @@
+/* Top bar as one console (topbar-dock.js groups the parts).
+   The bar is one lit glass panel; everything inside is set INTO it rather
+   than stuck on top: the search, the market strip, the tool dock and the
+   account pill are recessed wells with an inner shadow, items inside them
+   are separated by hairlines instead of each having its own box. */
+
+.topbar{
+  gap:10px !important;padding:8px !important;align-items:center;
+  background:linear-gradient(180deg,rgba(30,28,76,.55),rgba(11,13,34,.82)) padding-box,
+             linear-gradient(180deg,rgba(175,155,255,.38),rgba(120,110,230,.08) 60%,rgba(120,110,230,.16)) border-box !important;
+  border:1px solid transparent !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -26px rgba(0,0,0,.95) !important;
+}
+/* the recessed well every group sits in */
+.topbar .search,
+.topbar .tb-market,
+.topbar .tb-dock,
+.topbar .tb-acct{
+  height:46px;box-sizing:border-box;border-radius:14px;
+  background:linear-gradient(180deg,rgba(3,5,14,.72),rgba(8,10,26,.6)) !important;
+  border:0 !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 1px rgba(140,150,240,.11),0 1px 0 rgba(255,255,255,.05) !important;
+}
+.topbar .search{padding:0 14px !important}
+
+/* market strip: three prices, one panel, hairline separators */
+.tb-market{display:flex;align-items:stretch;padding:0 4px;flex:none}
+.tb-market .ticker{
+  background:none !important;border:0 !important;box-shadow:none !important;border-radius:10px !important;
+  height:100%;padding:0 14px !important;margin:0 !important;position:relative;gap:8px;transition:background .15s}
+.tb-market .ticker + .ticker::before{content:'';position:absolute;left:0;top:11px;bottom:11px;width:1px;background:linear-gradient(180deg,transparent,rgba(150,160,240,.28),transparent)}
+.tb-market .ticker:hover{background:rgba(255,255,255,.035) !important}
+.tb-market .ticker .pr{font-variant-numeric:tabular-nums}
+
+/* tool dock: Oracle Eye, sound, notifications */
+.tb-dock{display:flex;align-items:center;gap:2px;padding:0 4px}
+.tb-dock.empty{display:none}
+.tb-dock > *{position:relative;flex:none}
+.tb-dock > * + *::before{content:'';position:absolute;left:-1px;top:9px;bottom:9px;width:1px;background:rgba(150,160,240,.2);pointer-events:none}
+.tb-dock > button,
+.tb-dock > .onf-wrap > button.onf-bell{
+  width:38px !important;height:38px !important;border-radius:10px !important;
+  background:none !important;border:0 !important;box-shadow:none !important;
+  display:grid !important;place-items:center;transition:background .15s,color .15s}
+.tb-dock > button:hover,
+.tb-dock > .onf-wrap > button.onf-bell:hover{background:rgba(255,255,255,.06) !important}
+.tb-dock > .onf-wrap{width:38px;height:38px}
+.tb-dock #oe-nav{width:44px !important}
+
+/* account pill: wallet button and avatar as one control */
+.tb-acct{display:flex;align-items:center;gap:6px;padding:4px 4px 4px 4px}
+/* Fixed sizes in every wallet state (Connect, Connecting..., connected), so
+   the button and the avatar never move when the state changes. */
+.tb-acct{width:196px;flex:none}
+.tb-acct .wallet-btn-wrap{min-width:0 !important;width:148px;flex:none}
+.tb-acct .wallet-btn{width:148px;justify-content:center;white-space:nowrap;overflow:hidden;
+  height:38px;padding:0 12px !important;border-radius:10px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(0,0,0,.25),0 6px 16px -8px var(--violet,#8b5cf6) !important}
+.tb-acct .wallet-btn #wallet-btn-label{overflow:hidden;text-overflow:ellipsis}
+/* connected: the label is hidden by the old styles; say it in the same place */
+.tb-acct .wallet-btn.connected{padding:0 12px !important}
+.tb-acct .wallet-btn.connected::after{content:'Connected';font-size:13px;font-weight:600;color:#bbf7d0;order:2}
+.tb-acct .wallet-btn.connected .wallet-dot{order:1}
+.tb-acct .round.avatar{width:38px !important;height:38px !important;flex:none}
+
+@media (max-width:860px){
+  .tb-market{display:none}
+  .topbar .tb-dock,.topbar .tb-acct{height:42px}
+  .tb-acct{width:auto}
+}
