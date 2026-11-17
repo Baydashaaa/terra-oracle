@@ -1,0 +1,37 @@
+/* Readability pass.
+   The main text is what people come for, so it gets the most contrast:
+   body copy near-white, secondary text clearly readable (not decoration),
+   the smallest labels no smaller than 11px, and coloured values lifted
+   towards white so violet/blue/pink on a dark panel still read.
+   Loaded last; only colour, size and weight. */
+
+:root{
+  --ink:#f3f5ff;
+  --ink-2:#cdd3f2;   /* body/secondary: was #b4bce4 */
+  --ink-3:#a7b0dc;   /* small labels: was #8f99c8, contrast 6.8 -> 8.9 */
+  --muted:#b6bfe6;
+  --text:#f3f5ff;
+}
+/* sections that redefine the muted tokens locally */
+#page-ask,#page-markets,#page-profile,#page-reputation,#page-treasury,#page-chat{--ink-3:#a7b0dc;--muted:#b6bfe6}
+
+/* body copy in the content area: near-white, it is what people read */
+.page p,.page li,.rep-p,.rep-list{color:#dde2f7}
+.page p b,.page li b,.page p strong{color:#fff}
+
+/* descriptions on cards were 11px in the secondary colour: lift both */
+.earn .h{font-size:12.5px !important;line-height:1.5 !important;color:var(--ink-2) !important}
+.earn .k{font-size:13.5px !important;color:#fff}
+/* coloured values: keep the hue, move it towards white */
+.earn .v,.asc .di,.asc .at{color:color-mix(in srgb,rgb(var(--c)) 62%,#fff) !important}
+.mod .go{color:color-mix(in srgb,rgb(var(--tone-rgb)) 55%,#fff) !important}
+.mod .body p{color:#d9def6 !important}
+
+/* the smallest labels: timer units, eyebrows, sublabels */
+.clock span,.side .lbl,.poolrow .lbl,.repnext,.side small,.tre-eyebrow,.side .acts span{font-size:11px !important;color:var(--ink-3) !important}
+.poolneed{color:var(--ink-3) !important;font-size:11.5px !important}
+.side .lb .nm,.side .lb .sc{color:#e3e7fb}
+
+/* treasury, ask, profile: helper lines under big numbers */
+#page-treasury [class*="sub"],#page-treasury [class*="usd"],#page-treasury small{color:var(--ink-3)}
+#page-ask .feat p,#page-ask [class*="feat"] small,#page-ask [class*="feat"] span{color:var(--ink-2)}
