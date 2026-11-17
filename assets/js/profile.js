@@ -787,6 +787,51 @@ async function fetchStreakData(address) {
   }
 }
 
+// ─── STREAK FIRE (streak-fire.css) ───────────────────────────
+// Level from the current streak: 0 no streak, 1 for 1-2 days, then one level
+// per milestone (3, 5, 7, 14, 30 days).
+const STREAK_FIRE = [
+  { name: 'Ember',     color: '#c2551c', n: 5,  s: [8, 12],  rise: 12, t: 1.6, o: .8 },
+  { name: 'Spark',     color: '#ffad3a', n: 9,  s: [9, 13],  rise: 24, t: 1.0 },
+  { name: 'Flame',     color: '#ffb53a', n: 13, s: [11, 17], rise: 32, t: 0.95 },
+  { name: 'Blaze',     color: '#ff8a1a', n: 17, s: [13, 21], rise: 40, t: 0.9 },
+  { name: 'Inferno',   color: '#ffe27a', n: 21, s: [15, 25], rise: 50, t: 0.85 },
+  { name: 'Blue fire', color: '#7cc8ff', n: 24, s: [15, 26], rise: 54, t: 0.85, cold: 9 },
+  { name: 'Eternal',   color: '#d8a4ff', n: 26, s: [16, 28], rise: 60, t: 0.8,  cold: 8, sparks: 5 },
+];
+function streakLevel(days) {
+  if (days >= 30) return 6; if (days >= 14) return 5; if (days >= 7) return 4;
+  if (days >= 5) return 3;  if (days >= 3) return 2;  if (days >= 1) return 1;
+  return 0;
+}
+function streakFlame(level, mini) {
+  const L = STREAK_FIRE[level];
+  let x = level * 7919 + 13;
+  const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  // size and height scale separately: big blobs that overlap read as one fire,
+  // small far-flying ones read as dots
+  const k  = mini ? 0.9 : 1.75;
+  const kr = mini ? 0.5 : 1.05;
+  const spread = (mini ? 5 : 10) * (0.7 + level * 0.07);
+  const n = Math.round(L.n * (mini ? 1 : 1.5));
+  let h = '<b></b>';
+  for (let i = 0; i < n; i++) {
+    const cold = L.cold && i < Math.round(L.cold * n / L.n);   // blue base: short, wide, low
+    const xo = (rnd() - 0.5) * 2 * spread * (cold ? 1.1 : 1);
+    const centre = 1 - Math.abs(xo) / (spread + 1);          // taller in the middle
+    const size = (L.s[0] + rnd() * (L.s[1] - L.s[0])) * k * (cold ? 0.85 : 1);
+    const rise = L.rise * kr * (cold ? 0.35 : (0.5 + centre * 0.65));
+    h += '<i' + (cold ? ' class="cold"' : '') + ' style="--x:' + xo.toFixed(1) + 'px;--s:' + size.toFixed(1) + 'px;--rise:' + rise.toFixed(0) +
+      'px;--dx:' + ((rnd() - 0.5) * 6 * k).toFixed(1) + 'px;--t:' + (L.t * (0.8 + rnd() * 0.45)).toFixed(2) + 's;--d:-' + (rnd() * 1.2).toFixed(2) + 's' +
+      (L.o ? ';--o:' + L.o : '') + '"></i>';
+  }
+  for (let i = 0; i < (mini ? 0 : (L.sparks || 0)); i++) {
+    h += '<em style="--x:' + ((rnd() - 0.5) * 30).toFixed(0) + 'px;--dx:' + ((rnd() - 0.5) * 20).toFixed(0) + 'px;--t:' + (1.6 + rnd()).toFixed(2) + 's;--d:-' + (rnd() * 2).toFixed(2) + 's"></em>';
+  }
+  return '<span class="sfl l' + level + (mini ? ' mini' : '') + '" aria-hidden="true">' + h + '</span>';
+}
+window.streakFlame = streakFlame;
+
 // ─── STREAK BLOCK RENDERER ────────────────────────────────────
 function renderStreakBlock(streakData) {
   const el = document.getElementById('streak-block');
@@ -808,19 +853,24 @@ function renderStreakBlock(streakData) {
     { d: 30, r: 'x2.0 REP<br>+1 Draw entry' }
   ];
   const next = MS.find(m => days < m.d);
+  const lvl  = streakLevel(days);
 
   el.innerHTML =
     '<h3><img src="assets/img/icons/p-streak.webp" alt=""> Daily streak' +
       '<span class="pill-warn">' + (done ? 'Today complete' : 'Today not completed') + '</span></h3>' +
-    '<div class="streak-top"><div class="days"><span>' + days + '</span>' +
-      '<small>' + (days === 1 ? 'day in a row' : 'days in a row') + '</small></div></div>' +
+    '<div class="streak-top has-fire">' + streakFlame(lvl) +
+      '<div class="days"><span>' + days + '</span>' +
+      '<small>' + (days === 1 ? 'day in a row' : 'days in a row') + '</small></div>' +
+      '<div class="sfl-lvl" style="--sfc:' + STREAK_FIRE[lvl].color + '">Fire level<b>' + STREAK_FIRE[lvl].name + '</b></div></div>' +
     '<div class="brow" style="margin-top:12px">' +
       '<span>Next milestone: <b>' + (next ? next.d + ' days' : 'all reached') + '</b></span>' +
       '<span>Multiplier <b>x' + (s.multiplier || 1) + '</b></span></div>' +
     '<div class="days7">' + MS.map(function (m) {
       // Только по ТЕКУЩЕЙ серии. Поле milestones из воркера - это вехи,
       // взятые когда-либо, и по нему при нуле дней горели 3, 5 и 7.
-      return '<div class="day' + (days >= m.d ? ' on' : '') + '">' +
+      // Each milestone shows the fire it lights: dim until reached.
+      return '<div class="day' + (days >= m.d ? ' on' : ' off') + (next && next.d === m.d ? ' next' : '') + '">' +
+             streakFlame(streakLevel(m.d), true) +
              '<b>' + m.d + ' days</b><em>' + m.r + '</em></div>';
     }).join('') + '</div>';
 }
