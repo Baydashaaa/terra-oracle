@@ -268,9 +268,33 @@ function renderOnChainPanel(chain, streakMultiplier, pendingCount) {
 }
 window.renderOnChainPanel = renderOnChainPanel;
 
+// Animated frame for ADEPT and up (rank-frames.css). INITIATE and SEEKER keep
+// the plain ring; every rank above adds a layer: arc, glow, sparks, fire, orbit.
+const RANK_FRAME_FX = {
+  ADEPT:    { orbit: 0, sparks: 0 },
+  ANALYST:  { orbit: 0, sparks: 1 },
+  ORACLE:   { orbit: 0, sparks: 2 },
+  ARCHON:   { orbit: 0, sparks: 3 },
+  ASCENDED: { orbit: 1, sparks: 3 },
+};
+function rankFrame(score) {
+  const rank = (score === undefined || score === null) ? null : getRank(score);
+  const fx = rank && RANK_FRAME_FX[rank.name];
+  if (!fx) return null;
+  return {
+    cls: 'rframe rf-' + rank.name.toLowerCase(),
+    fx: '<i class="rf-halo"></i><i class="rf-ring"></i>' +
+      (fx.orbit ? '<i class="rf-orbit"></i>' : '') +
+      '<i class="rf-p"></i>'.repeat(fx.sparks),
+  };
+}
+window.rankFrame = rankFrame;
+
 function getRankRingCSS(score) {
   const rank = (score === undefined || score === null) ? null : getRank(score);
   if (!rank) return { border: 'rgba(84,147,247,0.2)', shadow: 'none' };
+  // the animated frame draws the ring itself; the avatar keeps a dark gap
+  if (RANK_FRAME_FX[rank.name]) return { border: 'rgba(5,7,20,0.9)', shadow: 'none' };
   const isInitiate = rank.name === 'INITIATE';
   return {
     border: isInitiate ? `${rank.color}44` : rank.color,

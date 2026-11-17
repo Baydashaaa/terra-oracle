@@ -1,0 +1,72 @@
+/* Rank frames around avatars.
+   INITIATE and SEEKER: a plain ring, no motion. From ADEPT up every rank adds
+   a layer, so the rank reads at a glance while scrolling:
+     ADEPT     - a light arc slowly circles the ring
+     ANALYST   - two arcs, breathing glow, one spark in orbit
+     ORACLE    - gold ring with a bright sweep, pulsing halo, two sparks
+     ARCHON    - burning ring that flickers, fire aura, embers rising
+     ASCENDED  - prismatic ring, a second orbit turning the other way,
+                 three stars, wide pulsing halo
+   Built by rankFrameHTML() in profile.js. Only transform/opacity animate, so
+   a long chat stays cheap; reduced-motion users get the still frame. */
+
+.rframe{position:relative;display:inline-grid;place-items:center;flex-shrink:0;isolation:isolate;border-radius:50%}
+.rframe > .rf-av{width:100% !important;height:100% !important;position:relative;z-index:1}
+.rframe > i{position:absolute;pointer-events:none;font-style:normal}
+
+/* ring layer: a conic gradient cut to a 3px band just outside the avatar */
+.rf-ring{inset:-4px;border-radius:50%;z-index:2;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px))}
+.rf-halo{inset:-10px;border-radius:50%;z-index:0}
+.rf-orbit{inset:-9px;border-radius:50%;z-index:2}
+/* sparks: start in the centre, rotate, then step out by --r */
+.rf-p{left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;z-index:3;background:#fff;
+  animation:rf-orbit var(--t,5s) linear infinite;animation-delay:var(--d,0s)}
+@keyframes rf-orbit{from{transform:rotate(0deg) translateX(var(--r,29px))}to{transform:rotate(360deg) translateX(var(--r,29px))}}
+@keyframes rf-spin{to{transform:rotate(360deg)}}
+@keyframes rf-spin-back{to{transform:rotate(-360deg)}}
+@keyframes rf-breathe{0%,100%{opacity:.35;transform:scale(.92)}50%{opacity:.85;transform:scale(1.04)}}
+
+/* ADEPT - blue arc circling */
+.rf-adept .rf-ring{background:conic-gradient(from 0deg,#5493f7 0deg,#cfe3ff 40deg,rgba(84,147,247,.35) 110deg,rgba(84,147,247,.35) 360deg);animation:rf-spin 6s linear infinite}
+.rf-adept .rf-halo{background:radial-gradient(closest-side,rgba(84,147,247,.28),transparent 75%)}
+
+/* ANALYST - two arcs, breathing glow, one spark */
+.rf-analyst .rf-ring{background:conic-gradient(from 0deg,#a855f7 0deg,#f0dcff 35deg,rgba(168,85,247,.3) 100deg,rgba(168,85,247,.3) 180deg,#a855f7 180deg,#f0dcff 215deg,rgba(168,85,247,.3) 280deg);animation:rf-spin 4.5s linear infinite}
+.rf-analyst .rf-halo{background:radial-gradient(closest-side,rgba(168,85,247,.55),transparent 72%);animation:rf-breathe 3.2s ease-in-out infinite}
+.rf-analyst .rf-p{--t:5s;--r:29px;background:#f3e8ff;box-shadow:0 0 6px 2px rgba(192,132,252,.9)}
+
+/* ORACLE - gold, bright sweep, pulsing halo, two sparks */
+.rf-oracle .rf-ring{background:conic-gradient(from 0deg,#b8860b 0deg,#ffd700 60deg,#fffbe0 90deg,#ffd700 120deg,#b8860b 200deg,#f5c518 300deg,#b8860b 360deg);animation:rf-spin 3.2s linear infinite;filter:drop-shadow(0 0 3px rgba(255,215,0,.8))}
+.rf-oracle .rf-halo{inset:-12px;background:radial-gradient(closest-side,rgba(245,197,24,.6),rgba(245,197,24,.12) 60%,transparent 75%);animation:rf-breathe 2.6s ease-in-out infinite}
+.rf-oracle .rf-p{--t:4s;--r:30px;width:4px;height:4px;margin:-2px 0 0 -2px;background:#fff8d0;box-shadow:0 0 6px 2px rgba(255,215,0,.95)}
+.rf-oracle .rf-p + .rf-p{--d:-2s;--t:4s}
+
+/* ARCHON - burning ring, flickering fire aura, embers */
+.rf-archon .rf-ring{inset:-5px;background:conic-gradient(from 0deg,#ff3d00,#ffb347 50deg,#ff6600 100deg,#ffd27a 150deg,#ff3d00 200deg,#ff8c1a 260deg,#ffe0a0 310deg,#ff3d00);animation:rf-spin 2.4s linear infinite,rf-flicker 1.3s steps(2) infinite;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 4px));filter:drop-shadow(0 0 4px rgba(255,102,0,.9))}
+.rf-archon .rf-halo{inset:-14px;background:radial-gradient(closest-side,rgba(255,120,0,.65),rgba(255,61,0,.2) 55%,transparent 75%);animation:rf-fire 1.6s ease-in-out infinite}
+.rf-archon .rf-p{--r:0px;width:4px;height:4px;margin:0;left:calc(50% + var(--x,0px));top:auto;bottom:4px;background:#ffd27a;box-shadow:0 0 6px 2px rgba(255,102,0,.95);animation:rf-ember var(--t,2.2s) ease-in infinite;animation-delay:var(--d,0s)}
+.rf-archon .rf-p:nth-of-type(3){--x:-14px;--d:-.7s;--t:2.4s}
+.rf-archon .rf-p:nth-of-type(4){--x:9px;--d:-1.5s;--t:2s}
+.rf-archon .rf-p:nth-of-type(5){--x:-2px;--d:-.2s;--t:2.6s}
+@keyframes rf-flicker{0%{opacity:1}50%{opacity:.82}100%{opacity:1}}
+@keyframes rf-fire{0%,100%{opacity:.7;transform:scale(.95) translateY(1px)}35%{opacity:1;transform:scale(1.06) translateY(-2px)}70%{opacity:.8;transform:scale(1) translateY(0)}}
+@keyframes rf-ember{0%{transform:translateY(0) scale(1);opacity:0}15%{opacity:1}100%{transform:translateY(-58px) scale(.3);opacity:0}}
+
+/* ASCENDED - prismatic ring, counter-rotating outer orbit, three stars, wide halo */
+.rf-ascended .rf-ring{inset:-5px;background:conic-gradient(from 0deg,#00ffff,#7b5cff 60deg,#ffffff 100deg,#00d4ff 160deg,#c084fc 220deg,#a5f3fc 280deg,#00ffff);animation:rf-spin 2.6s linear infinite;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4.5px),#000 calc(100% - 4px));filter:drop-shadow(0 0 5px rgba(0,212,255,.95))}
+.rf-ascended .rf-orbit{border:1px dashed rgba(165,243,252,.7);animation:rf-spin-back 9s linear infinite}
+.rf-ascended .rf-halo{inset:-18px;background:radial-gradient(closest-side,rgba(0,212,255,.55),rgba(123,92,255,.22) 55%,transparent 75%);animation:rf-breathe 2.2s ease-in-out infinite}
+.rf-ascended .rf-p{background:#fff;box-shadow:0 0 8px 2px rgba(0,255,255,.95)}
+.rf-ascended .rf-p:nth-of-type(4){--t:3.6s;--r:31px}
+.rf-ascended .rf-p:nth-of-type(5){--t:3.6s;--r:31px;--d:-1.8s;width:3px;height:3px;margin:-1.5px 0 0 -1.5px}
+.rf-ascended .rf-p:nth-of-type(6){--t:6s;--r:36px;--d:-1s;width:4px;height:4px;margin:-2px 0 0 -2px;background:#e9d5ff;box-shadow:0 0 8px 2px rgba(192,132,252,.95);animation-name:rf-orbit-back}
+@keyframes rf-orbit-back{from{transform:rotate(360deg) translateX(var(--r))}to{transform:rotate(0deg) translateX(var(--r))}}
+
+@media (prefers-reduced-motion:reduce){
+  .rframe > i{animation:none !important}
+  .rf-archon .rf-p{display:none}
+}
