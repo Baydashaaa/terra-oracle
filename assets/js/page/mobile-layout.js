@@ -46,6 +46,14 @@
       ci.setAttribute('placeholder', window.innerWidth <= 760 ? 'Write a message...' : ci.dataset.ph);
     }
 
+    // the price is already next to the send button: on a phone the header
+    // keeps one short line, so the messages get the room
+    var sub = document.querySelector('#page-chat .chat-head p');
+    if (sub) {
+      if (!sub.dataset.full) sub.dataset.full = sub.textContent;
+      sub.textContent = window.innerWidth <= 760 ? 'Stored on Terra Classic forever' : sub.dataset.full;
+    }
+
     var chat = document.getElementById('page-chat');
       if (chat && chat.classList.contains('active')) measure();
     }, 800);

@@ -2425,3 +2425,8 @@
   .page#page-chat.active > .chat{flex:1 1 auto !important;min-height:0 !important}
   #page-chat .chat-shell-head p,#page-chat .chat-head p{font-size:12.5px !important;line-height:1.4 !important}
 }
+
+@media (max-width:760px){
+  #page-chat .chat-head{padding-top:12px !important;padding-bottom:12px !important}
+  #page-chat .chat-head p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
