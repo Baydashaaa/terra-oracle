@@ -2407,3 +2407,21 @@
 @media (prefers-reduced-motion:reduce){#page-markets .mkf-status.checking i{animation:none}}
 #page-markets .mkf-when{margin-top:4px}
 #page-markets .mkf-adv{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+
+/* Phones: the composer is one row - text, price, send - so the message list
+   keeps the height; the header subtitle is smaller so it takes two lines */
+@media (max-width:760px){
+  #page-chat #chat-page-form div:has(> #chat-page-input){flex-wrap:nowrap !important;flex-direction:row !important;align-items:center !important;gap:6px}
+  #page-chat #chat-page-input{flex:1 1 auto !important;min-width:0 !important;height:46px !important;min-height:46px !important;padding:12px 4px 12px 14px !important;font-size:16px !important;line-height:1.35 !important}
+  #page-chat .chat-send-row{flex:none !important;gap:8px !important;padding:0 6px 0 0 !important;margin:0 !important}
+  #page-chat .chat-send-row .chat-ring-svg,#page-chat #chat-page-count{display:none !important}
+  #page-chat .chat-cost{font-size:12px !important;gap:5px !important;white-space:nowrap}
+  #page-chat .chat-cost img{width:16px !important;height:16px !important}
+  #page-chat #chat-page-send-btn{width:40px !important;height:40px !important;min-width:40px !important;border-radius:12px !important;display:grid !important;place-items:center;padding:0 !important}
+  #page-chat #chat-page-send-btn svg{width:18px !important;height:18px !important}
+  #page-chat #chat-input-bar{padding-bottom:10px !important}
+  /* the chat card fills the page down to the bottom menu (the page is sized
+     to that, the card used to stop at its content height) */
+  .page#page-chat.active > .chat{flex:1 1 auto !important;min-height:0 !important}
+  #page-chat .chat-shell-head p,#page-chat .chat-head p{font-size:12.5px !important;line-height:1.4 !important}
+}

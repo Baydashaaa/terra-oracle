@@ -39,7 +39,14 @@
     // Шапка и нижнее меню могут поменять высоту (шрифты, поворот), а чат
     // растягивается ровно между ними - пока чат открыт, сверяемся.
     setInterval(function () {
-      var chat = document.getElementById('page-chat');
+      // the full chat placeholder wraps to two lines on a phone
+    var ci = document.getElementById('chat-page-input');
+    if (ci) {
+      if (!ci.dataset.ph) ci.dataset.ph = ci.getAttribute('placeholder') || '';
+      ci.setAttribute('placeholder', window.innerWidth <= 760 ? 'Write a message...' : ci.dataset.ph);
+    }
+
+    var chat = document.getElementById('page-chat');
       if (chat && chat.classList.contains('active')) measure();
     }, 800);
   }
@@ -71,6 +78,13 @@
 
     // Страница чата в потоке (position:static), поэтому ей нужна точная
     // высота: от её верха в документе до нижнего меню, с зазором 8 px.
+    // the full chat placeholder wraps to two lines on a phone
+    var ci = document.getElementById('chat-page-input');
+    if (ci) {
+      if (!ci.dataset.ph) ci.dataset.ph = ci.getAttribute('placeholder') || '';
+      ci.setAttribute('placeholder', window.innerWidth <= 760 ? 'Write a message...' : ci.dataset.ph);
+    }
+
     var chat = document.getElementById('page-chat');
     if (chat && chat.classList.contains('active')) {
       var docTop = chat.getBoundingClientRect().top + window.scrollY;

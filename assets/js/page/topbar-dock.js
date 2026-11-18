@@ -39,6 +39,19 @@
     }
     place();
     new MutationObserver(function () { place(); }).observe(bar, { childList: true, subtree: true });
+    // The bar settles to its final height only after the buttons are grouped
+    // (they arrive from other scripts). Pages sized against it, like the chat
+    // on phones, re-measure on resize, so tell them when its height changes.
+    if (window.ResizeObserver) {
+      var lastH = 0, raf = 0;
+      new ResizeObserver(function () {
+        var h = Math.round(bar.getBoundingClientRect().height);
+        if (h === lastH) return;
+        lastH = h;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); });
+      }).observe(bar);
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
