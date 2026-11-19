@@ -1205,6 +1205,23 @@ function mkPublic() {
 }
 
 let mkPendingOpen = null;
+// Each list render and each market open takes a number; a list render that
+// finishes after a newer render or a market open drops its result instead of
+// painting the list over the market.
+let mkRenderSeq = 0;
+
+// Direct link /markets/10 (through 404.html or a reload). Read while the
+// script is parsed, before any DOMContentLoaded handler: the page restore in
+// board.js opens Markets on DOMContentLoaded, and when the market data was
+// already in hand its list render finished before this file's own handler
+// had a chance to say which market to open - the link landed on the list.
+let mkDeepSub = null;
+try { mkDeepSub = sessionStorage.getItem('mkDeep'); sessionStorage.removeItem('mkDeep'); } catch (e) { /* без хранилища */ }
+{
+  const m = location.pathname.match(/^\/markets\/(\d+|create)$/);
+  if (m) mkDeepSub = m[1];
+  if (mkDeepSub && /^\d+$/.test(mkDeepSub)) mkPendingOpen = Number(mkDeepSub);
+}
 
 // ── адреса экранов раздела ─────────────────────────────────────────────────
 // У Markets три экрана: список (/markets), рынок (/markets/6) и форма
@@ -1384,6 +1401,7 @@ async function renderMarkets(resolved) {
   const host = document.getElementById('markets-list');
   if (!host) return;
   openMarketId = null;
+  const seq = ++mkRenderSeq;
 
   if (!PROPHECY_CONTRACT) {
     host.innerHTML = emptyPanel('Opening soon',
@@ -1410,6 +1428,7 @@ async function renderMarkets(resolved) {
     await loadProphecyConfig();
     const all = await loadProphecyMarkets();
     renderMarketStats(all);
+    if (seq !== mkRenderSeq) return;   // a newer render or a market open took over
     const live = ['open', 'locked', 'proposed', 'disputed'];
     const list = all.filter((m) => (resolved ? !live.includes(m.status) : live.includes(m.status)))
       .filter(mkMatchesFilter);
@@ -1456,6 +1475,7 @@ async function renderMarkets(resolved) {
       openProphecyMarket(id);
     }
   } catch (e) {
+    if (seq !== mkRenderSeq) return;
     host.innerHTML = emptyPanel('Chain unavailable',
       'Could not read the markets contract. This is a node problem, not a market problem - try again shortly.');
   }
@@ -1658,6 +1678,7 @@ function evidenceBlock(m) {
 
 async function openProphecyMarket(id) {
   openMarketId = id;
+  mkRenderSeq++;   // any list render still loading must not paint over this market
   mkHideCreate();
   mkUrl('/markets/' + id);
   // Экран рынка - про один рынок. Баннер раздела, статистика и вкладки
@@ -2565,11 +2586,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Прямая ссылка /markets/6 или /markets/create (через 404.html или
   // перезагрузку): открыть нужный экран, когда раздел покажется.
-  let sub = null;
-  try { sub = sessionStorage.getItem('mkDeep'); sessionStorage.removeItem('mkDeep'); } catch (e) { /* без хранилища */ }
-  const m = location.pathname.match(/^\/markets\/(\d+|create)$/);
-  if (m) sub = m[1];
-  if (sub && /^\d+$/.test(sub)) mkPendingOpen = Number(sub);
+  // The market number was taken while the file was parsed (see mkDeepSub).
+  const sub = mkDeepSub;
   if (sub === 'create') setTimeout(() => { mkUrlMode = 'replace'; if (typeof window.openMarketCreate === 'function') window.openMarketCreate(); }, 300);
 });
 
