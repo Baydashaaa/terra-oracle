@@ -749,3 +749,32 @@ html.is-embedded #modal-inner .modal-foot{position:relative;z-index:2;padding-bo
   html.is-embedded #modal-title{font-size:21px !important}
   html.is-embedded #modal-sub{margin-bottom:10px !important}
 }
+
+/* Verify & proof on phones: code wraps instead of being cut off, the
+   Daily / Weekly halves stack inside the card, the step number sits on the
+   heading line instead of taking a row of its own */
+@media (max-width:700px){
+  html.is-embedded #page-verify > div{padding:22px 12px 50px !important}
+  html.is-embedded #page-verify .vf-card{padding:18px 16px !important;min-width:0}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card{padding-top:18px !important}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::before{left:16px;top:13px;width:32px;height:32px;font-size:16px;border-radius:10px}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-h{padding-left:44px;min-height:32px;display:flex;align-items:center;line-height:1.3 !important}
+  html.is-embedded #page-verify .vf-h{font-size:11.5px !important;letter-spacing:.14em !important}
+  html.is-embedded #page-verify .vf-card p,
+  html.is-embedded #page-verify .vf-intro{font-size:13.5px !important;line-height:1.6 !important}
+  html.is-embedded #page-verify .hw-split{grid-template-columns:minmax(0,1fr) !important;gap:10px !important}
+  html.is-embedded #page-verify .hw-half{min-width:0;padding:12px !important}
+  html.is-embedded #page-verify .hw-code,
+  html.is-embedded #page-verify .vf-calc,
+  html.is-embedded #page-verify .vf-repro pre{
+    font-size:10.5px !important;line-height:1.7 !important;padding:10px 10px 10px 13px !important;
+    white-space:pre-wrap !important;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+  html.is-embedded #page-verify .hw-tier{font-size:9.5px !important;padding:7px 9px !important}
+  html.is-embedded #page-verify .section-title{font-size:24px !important}
+}
+@media (max-width:700px){
+  html.is-embedded #verify div:has(> #verify-input){flex-wrap:wrap !important;gap:8px !important}
+  html.is-embedded #verify-input{flex:1 1 100% !important;min-width:0 !important;width:100% !important}
+  html.is-embedded #verify button[onclick^="verifyKeplrAddress"]{flex:1 1 100% !important;width:100% !important}
+  html.is-embedded #verify > div:last-child{padding:16px !important}
+}
