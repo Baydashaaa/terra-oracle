@@ -156,16 +156,21 @@
     return '<span class="cs-chip t-' + m.tier + (fresh ? ' is-new' : '') + (me ? ' is-me' : '') + '">' +
       '<b>' + (me ? 'You' : short(m.addr)) + '</b>' +
       '<em>' + m.tier + ' +' + m.entries + '</em>' +
-      (Date.now() / 1000 - m.time < 8 * 86400 ? '<small>' + ago(m.time) + '</small>' : '') + '</span>';
+      (Date.now() / 1000 - m.time < 8 * 86400 ? '<small data-t="' + m.time + '">' + ago(m.time) + '</small>' : '') + '</span>';
   }
   function feed() {
     var box = $('cs-feed'); if (!box) return;
     var list = mints();
-    var key = lottery() + '|' + list.map(function (m) { return m.key; }).join(',') + '|' + Math.floor(Date.now() / 60000);
-    if (key === feedKey) return;
+    var key = lottery() + '|' + list.map(function (m) { return m.key; }).join(',');
+    var belt = box.querySelector('.cs-feed-belt');
+    if (key === feedKey) {
+      // same mints: only the "12m ago" labels move on, the belt keeps running
+      var stamps = belt.querySelectorAll('small[data-t]');
+      for (var i = 0; i < stamps.length; i++) stamps[i].textContent = ago(+stamps[i].getAttribute('data-t'));
+      return;
+    }
     var lotteryChanged = feedKey.split('|')[0] !== lottery();
     feedKey = key;
-    var belt = box.querySelector('.cs-feed-belt');
     if (!list.length) {
       belt.innerHTML = '<span class="cs-feed-empty">No mints this round yet - the first one owns the whole wheel</span>';
       box.classList.remove('is-moving');
@@ -176,11 +181,16 @@
     var first = seen === null || lotteryChanged;
     var html = list.map(function (m) { return chip(m, !first && !seen[m.key], m.addr === me); }).join('');
     seen = {}; list.forEach(function (m) { seen[m.key] = 1; });
-    // enough chips to scroll: duplicate the set for a seamless loop
-    var moving = list.length >= 4 && !reduced;
-    belt.innerHTML = moving ? html + html : html;
-    box.classList.toggle('is-moving', moving);
-    if (moving) belt.style.setProperty('--dur', (list.length * 4) + 's');
+    if (reduced) { belt.innerHTML = html; box.classList.remove('is-moving'); return; }
+    // repeat the set until it is wider than the track, then twice that for
+    // a seamless loop - so even two mints keep rolling
+    belt.innerHTML = html;
+    var trackW = box.querySelector('.cs-feed-track').clientWidth || 500;
+    var setW = belt.scrollWidth || 1, reps = Math.max(1, Math.ceil(trackW / setW));
+    var one = new Array(reps + 1).join(html);
+    belt.innerHTML = one + one;
+    box.classList.add('is-moving');
+    belt.style.setProperty('--dur', Math.max(16, Math.round(setW * reps / 28)) + 's');
   }
 
   // ---------- live pill above the title ----------
@@ -191,7 +201,12 @@
     p.id = 'cs-live';
     p.className = 'cs-live';
     p.innerHTML = '<i></i><span>Live round</span>';
-    h.insertAdjacentElement('beforebegin', p);
+    var sub = $('hero-sub');
+    var row = document.createElement('div');
+    row.className = 'cs-subrow';
+    h.insertAdjacentElement('afterend', row);
+    row.appendChild(p);
+    if (sub) row.appendChild(sub);
   }
 
   // ---------- money figures: number big, currency small ----------

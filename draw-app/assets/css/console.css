@@ -191,8 +191,8 @@ html.is-embedded .hero h1{
   font-size:clamp(44px,4vw,62px) !important;letter-spacing:.015em !important;line-height:.92 !important;
   margin:0 0 14px !important;padding-bottom:14px;position:relative;
   color:#f6f7ff !important;background:none !important;transform:none !important;filter:none !important;
-  text-shadow:0 1px 0 #cfd4f5,0 2px 0 #a3abda,0 3px 0 #7880b4,0 4px 0 #4d5486,0 5px 0 #2c3160,
-              0 12px 18px rgba(0,0,0,.65) !important;
+  text-shadow:0 2px 0 #7880b4,0 4px 0 #2c3160,0 8px 12px rgba(0,0,0,.45) !important;
+  -webkit-font-smoothing:antialiased;
 }
 html.is-embedded .hero h1::after{
   content:'';position:absolute;left:2px;bottom:0;width:72px;height:3px;border-radius:3px;
@@ -200,13 +200,18 @@ html.is-embedded .hero h1::after{
 html.is-embedded .hero h1 #hero-subtitle{
   background:none !important;-webkit-background-clip:border-box !important;background-clip:border-box !important;
   color:var(--t1) !important;
-  text-shadow:0 1px 0 var(--t2),0 2px 0 var(--t2),0 3px 0 var(--t3),0 4px 0 var(--t3),0 5px 0 var(--t4),
-              0 12px 18px rgba(0,0,0,.65),0 0 34px rgba(var(--acc),.35) !important;
+  text-shadow:0 2px 0 var(--t3),0 4px 0 var(--t4),0 8px 12px rgba(0,0,0,.45) !important;
 }
 html.is-embedded .hero-sub{
   font-size:15px !important;color:#cdd3f2 !important;letter-spacing:.01em !important;margin-bottom:18px !important}
+/* title starts level with the top of the wheel panel; the live pill
+   sits on the line under it, before the lead */
+html.is-embedded .hero{padding-top:0 !important;margin-top:0 !important}
+html.is-embedded .hero h1{margin-top:-4px !important}
+html.is-embedded .cs-subrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+html.is-embedded .cs-subrow .hero-sub{margin:0 !important}
 html.is-embedded .cs-live{
-  display:inline-flex;align-items:center;gap:7px;margin:0 0 10px;padding:4px 10px 4px 8px;border-radius:99px;
+  display:inline-flex;align-items:center;gap:7px;margin:0;flex:none;padding:4px 10px 4px 8px;border-radius:99px;
   font:600 10px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#ffd7d7;
   background:rgba(255,70,90,.1);box-shadow:inset 0 0 0 1px rgba(255,90,110,.32);
 }
@@ -300,9 +305,8 @@ html.is-embedded .cs-feed-track{
   overflow:hidden;border-radius:12px;padding:7px;background:var(--c-well);box-shadow:var(--c-well-sh);
   -webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
 }
-html.is-embedded .cs-feed-belt{display:flex;gap:6px;width:max-content}
+html.is-embedded .cs-feed-belt{display:flex;gap:6px;padding-right:6px;width:max-content;will-change:transform}
 html.is-embedded .cs-feed.is-moving .cs-feed-belt{animation:cs-belt var(--dur,40s) linear infinite}
-html.is-embedded .cs-feed.is-moving .cs-feed-track:hover .cs-feed-belt{animation-play-state:paused}
 @keyframes cs-belt{to{transform:translateX(-50%)}}
 html.is-embedded .cs-chip{
   display:inline-flex;align-items:baseline;gap:7px;padding:6px 10px;border-radius:9px;white-space:nowrap;
