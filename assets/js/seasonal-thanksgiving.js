@@ -37,7 +37,21 @@
     if (root.tagName === 'IMG') swap(root);
     if (root.querySelectorAll) root.querySelectorAll('img').forEach(swap);
   }
+  // Event logo in the side menu, the hero and the phone top bar (not the TCO
+  // coin in the price strip, that one is the token icon).
+  function swapLogo() {
+    document.querySelectorAll('.logo .mark img, .hero .hmark').forEach(function (img) {
+      img.removeAttribute('srcset');
+      img.src = DIR + 'logo-256.webp';
+      img.srcset = DIR + 'logo-256.webp 256w, ' + DIR + 'logo-512.webp 512w';
+      img.sizes = '160px';
+    });
+    var st = document.createElement('style');
+    st.textContent = '@media (max-width:860px){.topbar::before{background-image:url("' + DIR + 'logo-256.webp") !important}}';
+    document.head.appendChild(st);
+  }
   function start() {
+    swapLogo();
     scan(document);
     new MutationObserver(function (list) {
       list.forEach(function (r) {
