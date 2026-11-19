@@ -174,3 +174,150 @@ html.is-embedded .vf-intro{color:#cdd3f2 !important}
 html.is-embedded .vf-h{font-family:'Chakra Petch',sans-serif !important}
 html.is-embedded .wheel-panel-label{color:var(--muted) !important;font-size:11px !important}
 html.is-embedded .wn-stat [class*="lbl"],html.is-embedded .wn-stat div:last-child{color:var(--muted) !important}
+
+/* ==================================================================
+   Game floor (casino.js): bulbs, timer heat, odds, mint feed, titles
+   ================================================================== */
+html.is-embedded{--acc:244,200,92}                      /* daily gold */
+html.is-embedded:has(#hero-subtitle.blue-text){--acc:176,132,255} /* weekly violet */
+
+/* ---- titles ---- */
+html.is-embedded .hero h1{
+  font-family:'Chakra Petch',sans-serif !important;font-weight:700 !important;
+  font-size:clamp(34px,3.3vw,50px) !important;letter-spacing:.03em !important;line-height:.95 !important;
+  background:linear-gradient(180deg,#ffffff 30%,#b9c0ec);-webkit-background-clip:text;background-clip:text;color:transparent !important;
+  text-shadow:none !important;transform:skewX(-7deg);transform-origin:left bottom;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(var(--acc),.18));
+}
+html.is-embedded .hero h1 #hero-subtitle{
+  background:linear-gradient(180deg,rgb(255,246,214) 0%,rgb(var(--acc)) 55%,rgba(var(--acc),.75) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+}
+html.is-embedded .hero-sub{color:var(--muted) !important;letter-spacing:.02em !important}
+html.is-embedded .cs-live{
+  display:inline-flex;align-items:center;gap:7px;margin:0 0 10px;padding:4px 10px 4px 8px;border-radius:99px;
+  font:600 10px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#ffd7d7;
+  background:rgba(255,70,90,.1);box-shadow:inset 0 0 0 1px rgba(255,90,110,.32);
+}
+html.is-embedded .cs-live i{width:7px;height:7px;border-radius:50%;background:#ff4d63;box-shadow:0 0 0 0 rgba(255,77,99,.7);animation:cs-ping 1.6s infinite}
+@keyframes cs-ping{0%{box-shadow:0 0 0 0 rgba(255,77,99,.65)}80%,100%{box-shadow:0 0 0 7px rgba(255,77,99,0)}}
+
+/* pool figure: struck-metal digits */
+html.is-embedded .pool-amount,
+html.is-embedded #weekly-pool-total{
+  font-family:'Chakra Petch',sans-serif !important;font-weight:700 !important;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#ffffff 0%,#e9ecff 45%,#9aa3d8 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+  text-shadow:none !important;filter:drop-shadow(0 0 18px rgba(var(--acc),.22));
+}
+/* small labels: tracked caps with an accent tick */
+html.is-embedded .pool-label,
+html.is-embedded .timer-label,
+html.is-embedded #weekly-pool-summary-card > div:nth-child(2){
+  letter-spacing:.22em !important;font-weight:600;color:#c3c9ee !important;
+}
+html.is-embedded .pool-label::before{
+  content:'';display:inline-block;width:14px;height:2px;margin-right:8px;vertical-align:middle;border-radius:2px;
+  background:rgb(var(--acc));box-shadow:0 0 8px rgba(var(--acc),.8)}
+/* wheel label as a lit sign */
+html.is-embedded .wheel-panel-label{
+  font-family:'Chakra Petch',sans-serif !important;font-weight:600 !important;font-size:12px !important;letter-spacing:.34em !important;
+  color:rgb(var(--acc)) !important;text-shadow:0 0 12px rgba(var(--acc),.55);
+}
+html.is-embedded #wheel-msg{font-family:'Chakra Petch',sans-serif !important;font-weight:600 !important;font-size:17px !important}
+html.is-embedded .section-title{
+  font-size:30px !important;font-weight:700 !important;letter-spacing:.03em !important;
+  background:linear-gradient(180deg,#fff 30%,#b9c0ec);-webkit-background-clip:text;background-clip:text;color:transparent !important;
+}
+
+/* ---- 1. marquee bulbs ---- */
+html.is-embedded .cs-bulbs{position:absolute;inset:0;pointer-events:none;z-index:2;--chase:1.6s}
+html.is-embedded .cs-bulbs i{
+  position:absolute;width:2.3%;height:2.3%;min-width:7px;min-height:7px;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,#fff 0 30%,rgb(255,236,190) 45%,rgba(var(--acc),.0) 72%);
+  box-shadow:0 0 10px 3px rgba(var(--acc),.85),0 0 22px 6px rgba(var(--acc),.35);
+  opacity:.28;animation:cs-chase var(--chase) steps(1,end) infinite;
+  animation-delay:calc(var(--n) * var(--chase) / -4);
+}
+@keyframes cs-chase{0%{opacity:1}25%{opacity:.28}100%{opacity:.28}}
+html.is-embedded[data-heat="hour"] .cs-bulbs{--chase:.8s}
+html.is-embedded[data-heat="final"] .cs-bulbs{--chase:.36s}
+body.oracle-predraw .cs-bulbs i{animation:cs-blink .5s steps(1,end) infinite !important}
+@keyframes cs-blink{0%{opacity:1}50%{opacity:.15}}
+
+/* ---- 2. timer heat + flip ---- */
+html.is-embedded .timer-num.cs-flip{animation:cs-flip .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes cs-flip{0%{transform:perspective(300px) rotateX(-70deg);filter:brightness(1.6)}100%{transform:none;filter:none}}
+html.is-embedded[data-heat="hour"] .timer-num{color:#ffd27a !important;box-shadow:var(--c-well-sh),inset 0 0 18px rgba(255,170,40,.18) !important}
+html.is-embedded[data-heat="hour"] .timer-label{color:#ffd27a !important}
+html.is-embedded[data-heat="final"] .timer-num{color:#ff8a8a !important;animation:cs-hot 1s ease-in-out infinite}
+html.is-embedded[data-heat="final"] .timer-num.cs-flip{animation:cs-flip .42s cubic-bezier(.2,.8,.2,1),cs-hot 1s ease-in-out infinite}
+html.is-embedded[data-heat="final"] .timer-label{color:#ff8a8a !important}
+@keyframes cs-hot{0%,100%{box-shadow:var(--c-well-sh),inset 0 0 14px rgba(255,60,80,.18)}50%{box-shadow:var(--c-well-sh),inset 0 0 22px rgba(255,60,80,.45),0 0 18px -4px rgba(255,60,80,.6)}}
+
+/* ---- Mint button: a light sweep every few seconds ---- */
+html.is-embedded .btn-buy{position:relative;overflow:hidden}
+html.is-embedded .btn-buy::after{
+  content:'';position:absolute;top:0;bottom:0;left:-40%;width:30%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);
+  animation:cs-sweep 4.5s ease-in-out infinite}
+@keyframes cs-sweep{0%,70%{left:-40%}100%{left:130%}}
+
+/* ---- 3. odds ---- */
+html.is-embedded .cs-odds{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;border-radius:14px;
+  background:var(--c-well);box-shadow:var(--c-well-sh);
+}
+html.is-embedded .cs-odds-now{display:flex;flex-direction:column;gap:2px;padding-right:14px;border-right:1px solid rgba(150,160,240,.2)}
+html.is-embedded .cs-odds-lbl,
+html.is-embedded .cs-odds-tiers em{font:600 9.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-style:normal}
+html.is-embedded .cs-odds-val{font:700 22px/1 'Chakra Petch',sans-serif;color:#f3f5ff;font-variant-numeric:tabular-nums}
+html.is-embedded .cs-odds.has-odds .cs-odds-val{color:#86efac;text-shadow:0 0 14px rgba(134,239,172,.45)}
+html.is-embedded .cs-odds-tiers{display:flex;gap:30px;flex:1}
+html.is-embedded .cs-odds-tiers span{display:flex;flex-direction:column;gap:3px}
+html.is-embedded .cs-odds-tiers em::before{content:'+ '}
+html.is-embedded .cs-odds-tiers b{font:700 15px/1 'Chakra Petch',sans-serif;font-variant-numeric:tabular-nums}
+html.is-embedded .cs-odds-tiers [data-t="common"] b{color:#d1d5db}
+html.is-embedded .cs-odds-tiers [data-t="rare"] b{color:#7dd3fc}
+html.is-embedded .cs-odds-tiers [data-t="legendary"] b{color:#fdba74}
+
+/* ---- 4. live mint feed ---- */
+html.is-embedded .cs-feed{width:100%;max-width:520px;margin:0 auto}
+html.is-embedded .cs-feed-h{display:flex;align-items:center;gap:7px;margin:0 0 7px 2px;font:600 9.5px/1 'Space Grotesk',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+html.is-embedded .cs-feed-h i{width:6px;height:6px;border-radius:50%;background:#ff4d63;animation:cs-ping 1.6s infinite}
+html.is-embedded .cs-feed-track{
+  overflow:hidden;border-radius:12px;padding:7px;background:var(--c-well);box-shadow:var(--c-well-sh);
+  -webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+html.is-embedded .cs-feed-belt{display:flex;gap:6px;width:max-content}
+html.is-embedded .cs-feed.is-moving .cs-feed-belt{animation:cs-belt var(--dur,40s) linear infinite}
+html.is-embedded .cs-feed.is-moving .cs-feed-track:hover .cs-feed-belt{animation-play-state:paused}
+@keyframes cs-belt{to{transform:translateX(-50%)}}
+html.is-embedded .cs-chip{
+  display:inline-flex;align-items:baseline;gap:7px;padding:6px 10px;border-radius:9px;white-space:nowrap;
+  background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(150,160,240,.12);font-size:11.5px;color:#dfe3ff}
+html.is-embedded .cs-chip b{font-family:ui-monospace,monospace;font-weight:500;font-size:11px}
+html.is-embedded .cs-chip em{font-style:normal;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+html.is-embedded .cs-chip small{font-size:10px;color:var(--text-weak)}
+html.is-embedded .cs-chip.t-common em{color:#d1d5db}
+html.is-embedded .cs-chip.t-rare em{color:#7dd3fc}
+html.is-embedded .cs-chip.t-legendary em{color:#fdba74}
+html.is-embedded .cs-chip.t-legendary{box-shadow:inset 0 0 0 1px rgba(251,146,60,.35),0 0 14px -6px rgba(251,146,60,.8)}
+html.is-embedded .cs-chip.is-me{box-shadow:inset 0 0 0 1px rgba(134,239,172,.45)}
+html.is-embedded .cs-chip.is-me b{color:#86efac;font-family:'Space Grotesk',sans-serif;font-weight:700}
+html.is-embedded .cs-chip.is-new{animation:cs-new 1.6s ease-out}
+@keyframes cs-new{0%{background:rgba(var(--acc),.45);transform:scale(1.06)}100%{background:rgba(255,255,255,.035);transform:none}}
+html.is-embedded .cs-feed-empty{display:block;padding:4px 6px;font-size:11.5px;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  html.is-embedded .cs-bulbs i,html.is-embedded .btn-buy::after,html.is-embedded .cs-live i,html.is-embedded .cs-feed-h i,
+  html.is-embedded[data-heat="final"] .timer-num{animation:none !important}
+  html.is-embedded .cs-bulbs i{opacity:.7}
+}
+@media (max-width:600px){
+  html.is-embedded .cs-odds-now{border-right:0;padding-right:0}
+  html.is-embedded .cs-odds-tiers{flex-basis:100%}
+}
+
+/* Mint key spans the column, the odds well sits under it at the same width */
+html.is-embedded #btn-buy-main{width:100%;padding:15px !important;display:flex !important;justify-content:center;text-align:center}
