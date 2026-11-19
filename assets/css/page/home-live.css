@@ -1,0 +1,84 @@
+/* Home: live ecosystem stats and the Terra Classic community block.
+   Loaded after readability.css. */
+
+/* ---- stats: every tile is a door ---- */
+.stats{
+  background:linear-gradient(180deg,#14143a,#090b1d) padding-box,
+             linear-gradient(180deg,rgba(175,155,255,.32),rgba(120,110,230,.06) 60%,rgba(120,110,230,.14)) border-box !important;
+  border:1px solid transparent !important;border-radius:18px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -26px rgba(0,0,0,.95) !important;padding:16px !important}
+.stats > h3{font:700 15px/1 'Chakra Petch',sans-serif !important;letter-spacing:.06em !important;text-transform:uppercase;margin-bottom:6px !important}
+.hl-live{display:inline-flex;align-items:center;gap:6px;margin-left:4px;padding:4px 9px;border-radius:99px;
+  font:600 9.5px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#bbf7d0;
+  background:rgba(34,197,94,.1);box-shadow:inset 0 0 0 1px rgba(34,197,94,.35)}
+.hl-live i{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:hl-ping 1.6s infinite}
+@keyframes hl-ping{0%{box-shadow:0 0 0 0 rgba(34,197,94,.7)}80%,100%{box-shadow:0 0 0 7px rgba(34,197,94,0)}}
+
+.stats .stat{
+  position:relative;text-decoration:none;color:inherit;cursor:pointer;overflow:hidden;
+  background:linear-gradient(180deg,rgba(3,5,14,.72),rgba(8,10,26,.6)) !important;border:0 !important;border-radius:14px !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 1px rgba(140,150,240,.11),0 1px 0 rgba(255,255,255,.05) !important;
+  padding:14px 14px 30px !important;transition:transform .18s ease,box-shadow .18s ease}
+.stats .stat:hover{transform:translateY(-3px);
+  box-shadow:inset 0 0 0 1px rgba(168,85,247,.55),0 14px 26px -14px rgba(139,92,246,.9) !important;
+  background:linear-gradient(180deg,rgba(30,22,70,.8),rgba(10,10,30,.7)) !important}
+.stats .stat .ico{transition:transform .25s ease}
+.stats .stat:hover .ico{transform:scale(1.08) rotate(-4deg)}
+.stats .stat .lbl{font:600 10px/1.2 'Space Grotesk',sans-serif !important;letter-spacing:.16em;text-transform:uppercase;color:#aab3e0 !important}
+.stats .stat .num{font:700 24px/1.15 'Chakra Petch',sans-serif !important;color:#f6f7ff;margin:3px 0 2px;font-variant-numeric:tabular-nums}
+.stats .stat .num small{font-size:11px !important;letter-spacing:.1em;color:#c4a5ff !important;margin-left:5px !important;vertical-align:.45em}
+.stats .stat .chg{font-size:11.5px !important}
+.stats .stat .num.hl-bump{animation:hl-bump .9s ease}
+@keyframes hl-bump{0%{color:#c4a5ff;text-shadow:0 0 16px rgba(168,85,247,.9)}100%{color:#f6f7ff;text-shadow:none}}
+/* where the tile leads */
+.hl-go{position:absolute;left:14px;right:14px;bottom:9px;display:flex;justify-content:space-between;align-items:center;
+  font:600 10px/1 'Space Grotesk',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8a93c2;transition:color .18s}
+.hl-go::after{content:'\2192';font-size:13px;letter-spacing:0;transition:transform .18s}
+.stats .stat:hover .hl-go{color:#d9c6ff}
+.stats .stat:hover .hl-go::after{transform:translateX(3px)}
+
+/* chain tile: live block height */
+.stats .chainbox{text-decoration:none;color:inherit;border-radius:14px !important;transition:transform .18s,box-shadow .18s;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 26px -12px rgba(59,130,246,.8)}
+.stats .chainbox:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(96,165,250,.6),0 14px 26px -14px rgba(59,130,246,1)}
+.stats .chainbox img{animation:hl-spin 40s linear infinite}
+@keyframes hl-spin{to{transform:rotate(360deg)}}
+#hlBlock{font:600 12.5px/1.3 'Chakra Petch',sans-serif !important;color:#93c5fd !important;font-variant-numeric:tabular-nums}
+#hlBlock.hl-tick{animation:hl-tick .8s ease}
+@keyframes hl-tick{0%{color:#fff;text-shadow:0 0 12px rgba(147,197,253,1)}100%{color:#93c5fd;text-shadow:none}}
+
+/* ---- Terra Classic community ---- */
+.banner.tc-comm{grid-template-columns:minmax(0,1fr) minmax(0,400px) !important;gap:30px !important;padding:30px 30px !important;
+  border:1px solid transparent !important;border-radius:20px !important;
+  background:#080b20 padding-box,linear-gradient(180deg,rgba(56,189,248,.45),rgba(120,110,230,.08) 60%,rgba(56,189,248,.2)) border-box !important}
+.tc-comm .scrim{background:linear-gradient(90deg,rgba(6,8,22,.95) 0%,rgba(6,8,22,.8) 45%,rgba(6,8,22,.6) 70%,rgba(6,8,22,.85) 100%) !important}
+.tc-eye{display:inline-block;margin-bottom:12px;padding:6px 12px;border-radius:99px;
+  font:600 10.5px/1 'Space Grotesk',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#a5f3fc;
+  background:rgba(34,211,238,.1);box-shadow:inset 0 0 0 1px rgba(34,211,238,.35)}
+.tc-comm h3{font:700 clamp(24px,2.3vw,32px)/1.12 'Chakra Petch',sans-serif !important;letter-spacing:.01em;
+  text-shadow:0 2px 0 #2c3160,0 6px 12px rgba(0,0,0,.5)}
+.tc-comm h3 em{color:#5eead4 !important}
+.tc-comm .tc-copy p{margin:12px 0 0 !important;max-width:560px;font-size:14px !important;line-height:1.65;color:#cdd3f2 !important}
+.tc-links{position:relative;display:flex;flex-direction:column;gap:10px}
+.tc-link{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px 12px 12px 14px;
+  border-radius:14px;text-decoration:none;color:inherit;
+  background:rgba(8,10,26,.72);backdrop-filter:blur(6px);
+  box-shadow:inset 0 0 0 1px rgba(140,150,240,.16),0 10px 22px -16px rgba(0,0,0,.9);transition:transform .18s,box-shadow .18s}
+.tc-link img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+.tc-link b{display:block;font:700 15px/1.2 'Chakra Petch',sans-serif;color:#f6f7ff}
+.tc-link em{display:block;margin-top:3px;font-style:normal;font-size:12.5px;color:#aab3e0}
+.tc-cta{font:700 12px/1 'Chakra Petch',sans-serif;font-style:normal;letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 14px;border-radius:10px;color:#fff;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.tc-link:hover{transform:translateX(-3px)}
+.tc-link.tg{box-shadow:inset 0 0 0 1px rgba(56,189,248,.5),0 0 28px -12px rgba(56,189,248,.9)}
+.tc-link.tg .tc-cta{background:linear-gradient(180deg,#5cc8ff,#229ed9 55%,#1a7fb3);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.2),0 8px 18px -10px rgba(34,158,217,1)}
+.tc-link.web:hover{box-shadow:inset 0 0 0 1px rgba(96,165,250,.55),0 10px 22px -14px rgba(59,130,246,.9)}
+.tc-link.gov:hover{box-shadow:inset 0 0 0 1px rgba(168,85,247,.55),0 10px 22px -14px rgba(139,92,246,.9)}
+
+@media (max-width:1100px){.banner.tc-comm{grid-template-columns:minmax(0,1fr) !important}}
+@media (max-width:600px){
+  .banner.tc-comm{padding:22px 18px !important}
+  .tc-link{grid-template-columns:38px minmax(0,1fr) auto;gap:10px}
+  .tc-link img{width:38px;height:38px}
+}
+@media (prefers-reduced-motion:reduce){.hl-live i,.stats .chainbox img{animation:none}}

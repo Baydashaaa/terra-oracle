@@ -56,6 +56,7 @@
   <link rel="stylesheet" href="assets/css/mod-cards.css?v=202611181100">
   <link rel="stylesheet" href="assets/css/readability.css?v=202611180710">
   <link rel="stylesheet" href="assets/css/page/treasury-v2.css?v=ee48547375">
+  <link rel="stylesheet" href="assets/css/page/home-live.css?v=026171fbf2">
   <script src="assets/js/seasonal.js?v=4e7c2e0048"></script>
   <script src="assets/js/seasonal-thanksgiving.js?v=202611191400"></script>
   <script src="assets/js/page/hero-slider.js?v=95f4a7049f" defer></script>
@@ -358,55 +359,71 @@
 </section>
 
 <section class="stats" aria-label="Ecosystem stats">
-  <h3>Ecosystem stats</h3>
+  <h3>Ecosystem stats <span class="hl-live"><i></i>live</span></h3>
 
-  <div class="stat">
+  <a class="stat" href="?v=treasury" data-view="treasury">
     <img class="ico" src="assets/img/icons/stat-tvl.webp" alt="" width="128" height="128" loading="lazy">
     <div><div class="lbl">Treasury TVL</div><div class="num" id="stTvl">-</div><div class="chg" id="stTvlSub">-</div></div>
-  </div>
+    <span class="hl-go">Treasury</span>
+  </a>
 
-  <div class="stat">
+  <a class="stat" href="?v=reputation" data-view="reputation">
     <img class="ico" src="assets/img/icons/stat-players.webp" alt="" width="128" height="128" loading="lazy">
     <div><div class="lbl">Unique wallets</div><div class="num" id="stPlayers">-</div><div class="chg" id="stPlayersSub">-</div></div>
-  </div>
+    <span class="hl-go">Leaderboard</span>
+  </a>
 
-  <div class="stat">
+  <a class="stat" href="?v=draw" data-view="draw" data-draw-tab="winners">
     <img class="ico" src="assets/img/icons/stat-paid.webp" alt="" width="128" height="128" loading="lazy">
     <div><div class="lbl">Total paid</div><div class="num" id="stPaid">-</div><div class="chg" id="stPaidSub">-</div></div>
-  </div>
+    <span class="hl-go">Winners</span>
+  </a>
 
-  <div class="stat">
+  <a class="stat" href="?v=draw" data-view="draw" data-draw-tab="verify">
     <img class="ico" src="assets/img/icons/stat-markets.webp" alt="" width="128" height="128" loading="lazy">
     <div><div class="lbl">Rounds settled</div><div class="num" id="stRounds">-</div><div class="chg" id="stRoundsSub">-</div></div>
-  </div>
+    <span class="hl-go">Verify</span>
+  </a>
 
-  <div class="chainbox">
+  <a class="chainbox" href="https://finder.terraport.finance/mainnet" target="_blank" rel="noopener" title="Open the Terra Classic explorer">
     <img src="assets/img/globe.webp" alt="" width="160" height="160" loading="lazy">
     <div>
       <div class="nm">Terra Classic</div>
-      <div class="sub">Blockchain</div>
+      <div class="sub" id="hlBlock">columbus-5</div>
     </div>
-    <div class="tags">Decentralized &middot; Secure</div>
-  </div>
+    <div class="tags" id="hlBlockAge">Decentralized &middot; Secure</div>
+  </a>
 </section>
 
-<!-- bottom banner -->
-<section class="banner">
+<!-- Terra Classic community: what the chain is and where its people meet -->
+<section class="banner tc-comm">
   <img class="art" src="assets/img/banner-ecosystem.webp" alt="" loading="lazy" width="1500" height="500">
   <span class="scrim"></span>
-  <div>
-    <h3>Empowering the <em>Terra Classic</em> ecosystem</h3>
-    <p>Together we build, govern and grow.</p>
-    <div class="btns">
-      <a class="btn btn-primary" href="https://terra-classic.io/" target="_blank" rel="noopener">Terra Classic</a>
-      <a class="btn btn-ghost" href="https://t.me/classicluna" target="_blank" rel="noopener">Terra Classic chat</a>
-    </div>
+  <div class="tc-copy">
+    <span class="tc-eye">Community</span>
+    <h3>Join the <em>Terra Classic</em> community</h3>
+    <p>Terra Oracle runs on Terra Classic - the chain behind LUNC and USTC, kept alive by its
+       community since 2022. The main Terra Classic chat on Telegram is where holders, validators
+       and builders meet: ask questions, follow proposals and talk to the people building on the
+       chain, including us.</p>
   </div>
-  <blockquote class="quote">
-    <span class="mk">&ldquo;</span>
-    The Oracle does not predict the future. It reveals the possibilities.
-    <cite>Terra Oracle</cite>
-  </blockquote>
+  <div class="tc-links">
+    <a class="tc-link tg" href="https://t.me/classicluna" target="_blank" rel="noopener">
+      <img src="assets/img/icons/s-tg.webp" alt="" width="96" height="96" loading="lazy">
+      <span><b>Terra Classic chat</b><em>Main community chat on Telegram</em></span>
+      <i class="tc-cta">Join</i>
+    </a>
+    <a class="tc-link web" href="https://terra-classic.io/" target="_blank" rel="noopener">
+      <img src="assets/img/globe.webp" alt="" width="160" height="160" loading="lazy">
+      <span><b>terra-classic.io</b><em>Wallets, explorers and docs for the chain</em></span>
+      <i class="tc-cta">Open</i>
+    </a>
+    <a class="tc-link gov" href="?v=governance" data-view="governance">
+      <img src="assets/img/icons/governance.webp" alt="" width="96" height="96" loading="lazy">
+      <span><b>Governance</b><em>Follow and vote on chain proposals here</em></span>
+      <i class="tc-cta">Vote</i>
+    </a>
+  </div>
 </section>
 
 <!-- ==================== PARTNERS ==================== -->
@@ -1803,6 +1820,7 @@
   <script src="assets/js/treasury.js?v=b51bd954c8"></script>
   <script src="assets/js/treasury-chart.js?v=42499f9bfd"></script>
   <script src="assets/js/page/treasury-vaults.js?v=3aac0d1a36" defer></script>
+  <script src="assets/js/page/home-live.js?v=40f2ed7353" defer></script>
   <script src="assets/js/signAction.js?v=b5b226fdd5"></script>
   <!-- Клиент контракта Oracle Mask: источник списка NFT вместо nft.lunc.tools -->
   <script src="assets/js/oracle-nft-client.js?v=f57710262f"></script>
@@ -1829,7 +1847,7 @@
   <script src="assets/js/app/markets-catalog.js?v=202611160030"></script>
   <script src="assets/js/app/markets-court.js?v=698c05361d"></script>
   <script src="assets/js/app/multisig.js?v=202611162250"></script>
-  <script src="assets/js/oracle-motion.js?v=202611160300"></script>
+  <script src="assets/js/oracle-motion.js?v=62ccaab189"></script>
   <script src="assets/js/app/markets-activity.js?v=202611152000"></script>
   <script src="assets/js/app/markets-live.js?v=d3e60f59d0"></script>
   <script src="assets/js/app/markets-paywith.js?v=202611160300"></script>

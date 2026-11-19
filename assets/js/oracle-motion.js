@@ -132,15 +132,24 @@
   var COUNT = '.stat .num, #mk-stat-open, #mk-stat-vol, #mk-stat-settled, #mk-stat-players, .stat-value, .chart-main-val, #repVal';
   var NUM_RE = /^(\D{0,3}?)([\d][\d,]*(?:\.\d+)?)(.*)$/;
 
+  // The figure may carry markup after the number ("2.07M<small>LUNC</small>").
+  // Count inside the first text node only, so the unit element survives -
+  // writing textContent used to flatten it into "2.07MLUNC".
+  function numNode(el) {
+    for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 && /\d/.test(n.data)) return n;
+    return null;
+  }
   function tween(el, from, to, prefix, suffix, decimals) {
     var t0 = performance.now(), dur = 900;
+    var node = el.children.length ? numNode(el) : null;
     el._tw = true;
     function step(t) {
       var p = Math.min(1, (t - t0) / dur);
       var e = 1 - Math.pow(1 - p, 3);
       var v = from + (to - from) * e;
-      el.textContent = prefix + v.toLocaleString('en-US', {
+      var s = prefix + v.toLocaleString('en-US', {
         minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+      if (node) node.data = s; else el.textContent = s;
       if (p < 1) requestAnimationFrame(step);
       else { el._tw = false; el._last = to; }
     }
@@ -149,7 +158,9 @@
 
   function countFrom(el) {
     if (el._tw) return;
-    var m = NUM_RE.exec((el.textContent || '').trim());
+    var src = el.children.length ? numNode(el) : null;
+    if (el.children.length && !src) return;
+    var m = NUM_RE.exec(((src ? src.data : el.textContent) || '').trim());
     if (!m) return;
     var digits = m[2], to = Number(digits.replace(/,/g, ''));
     if (!isFinite(to)) return;
