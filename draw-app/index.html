@@ -89,6 +89,8 @@
   try {
     if (location.search.indexOf('embed') > -1 || window.top !== window.self) {
       document.documentElement.classList.add('is-embedded');
+      // site console look (fonts, panels, Mint key) - embed only
+      document.write('<link rel="stylesheet" href="assets/css/console.css?v=0fda56edbf">');
     }
   } catch (e) {}
   </script>

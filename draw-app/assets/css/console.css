@@ -1,0 +1,176 @@
+/* Oracle Draw inside Terra Oracle: the site's "console" look.
+   Loaded only in embed mode (embed-early script in index.html), after
+   embed-theme.css. Visual only: no markup or logic changes.
+
+   Vocabulary, same as the site's topbar-dock.css:
+   - panel: lit glass, gradient border, highlight along the top edge
+   - well:  recessed cell with an inner shadow (timer digits, counters)
+   - key:   raised violet button (Mint, active filter)                  */
+
+/* ---- Fonts ----
+   Draw was written for Cinzel and never loaded it, so every title and
+   number fell back to a system serif. Self-hosted faces, and Cinzel is
+   mapped onto Chakra Petch, so the 70+ inline uses switch without
+   touching the markup. */
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/chakra-petch-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/chakra-petch-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/chakra-petch-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700 900;font-display:swap;src:url(../fonts/chakra-petch-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/chakra-petch-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:500 600;font-display:swap;src:url(../fonts/chakra-petch-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:700 900;font-display:swap;src:url(../fonts/chakra-petch-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url(../fonts/space-grotesk-latin-wght-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:300 700;font-display:swap;src:url(../fonts/space-grotesk-latin-wght-normal.woff2) format('woff2')}
+
+html.is-embedded{
+  --c-panel:linear-gradient(180deg,rgba(20,20,52,.55),rgba(8,10,26,.86)) padding-box,
+            linear-gradient(180deg,rgba(175,155,255,.3),rgba(120,110,230,.06) 60%,rgba(120,110,230,.12)) border-box;
+  --c-panel-sh:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -26px rgba(0,0,0,.95);
+  --c-well:linear-gradient(180deg,rgba(3,5,14,.72),rgba(8,10,26,.6));
+  --c-well-sh:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 1px rgba(140,150,240,.11),0 1px 0 rgba(255,255,255,.05);
+  --c-key:linear-gradient(180deg,#9b6bff,#7c3aed 55%,#6a2fd6);
+  --c-key-sh:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(0,0,0,.25),0 10px 26px -12px rgba(139,92,246,.9);
+  /* brighter small text, same tokens as the site's readability.css */
+  --muted:#b7bfe6;
+  --text-weak:#98a2d0;
+  --gold-dim:#c9b06a;
+}
+
+/* ---- Panels ---- */
+html.is-embedded .pool-display,
+html.is-embedded #weekly-pool-summary-card,
+html.is-embedded .wheel-panel,
+html.is-embedded #daily-extra > div,
+html.is-embedded #weekly-extra > div,
+html.is-embedded .vf-card,
+html.is-embedded .wn-card{
+  background:var(--c-panel) !important;
+  border:1px solid transparent !important;
+  box-shadow:var(--c-panel-sh) !important;
+  border-radius:16px !important;
+}
+html.is-embedded .pool-display::before,
+html.is-embedded #weekly-pool-summary-card > div:first-child[style*="radial-gradient"]{display:none !important}
+/* section colour stays as a thin accent line on top of the panel */
+html.is-embedded .pool-display,
+html.is-embedded #daily-extra > div{position:relative}
+html.is-embedded .pool-display::after,
+html.is-embedded #weekly-pool-summary-card::after{
+  content:'';position:absolute;left:18px;right:18px;top:0;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--sec,rgba(244,212,119,.6)),transparent)}
+html.is-embedded #weekly-pool-summary-card{--sec:rgba(168,85,247,.7)}
+
+/* weekly podium: three lit tiles, each keeps its own colour on the rim */
+html.is-embedded .podium-card{
+  background:linear-gradient(180deg,rgba(20,20,52,.55),rgba(8,10,26,.86)) padding-box,
+             linear-gradient(180deg,var(--rim),rgba(120,110,230,.06) 70%) border-box !important;
+  border:1px solid transparent !important;
+  box-shadow:var(--c-panel-sh) !important;
+}
+html.is-embedded .podium-card:nth-child(1){--rim:rgba(251,191,36,.55)}
+html.is-embedded .podium-card:nth-child(2){--rim:rgba(0,212,255,.5)}
+html.is-embedded .podium-card:nth-child(3){--rim:rgba(168,135,255,.55)}
+html.is-embedded .podium-card [style*="font-size:9px"]{font-size:10px !important;opacity:1}
+
+/* ---- Wells ---- */
+html.is-embedded .timer-num{
+  background:var(--c-well) !important;
+  border:0 !important;
+  box-shadow:var(--c-well-sh) !important;
+  border-radius:12px !important;
+  color:#f3f5ff !important;
+  text-shadow:none !important;
+  font-variant-numeric:tabular-nums;
+}
+html.is-embedded .timer-sep{color:rgba(160,170,230,.45) !important}
+
+html.is-embedded .stats-bar{
+  background:var(--c-well) !important;
+  border:0 !important;
+  box-shadow:var(--c-well-sh) !important;
+  border-radius:16px !important;
+  gap:0 !important;
+}
+html.is-embedded .stat-item{background:none !important;position:relative}
+html.is-embedded .stat-item + .stat-item::before{
+  content:'';position:absolute;left:0;top:14px;bottom:14px;width:1px;
+  background:linear-gradient(180deg,transparent,rgba(150,160,240,.28),transparent)}
+html.is-embedded .stat-val{text-shadow:none !important}
+
+/* participants / entries under the wheel */
+html.is-embedded #wheel-participant-count,
+html.is-embedded #wheel-ticket-count{text-shadow:none !important;font-weight:600}
+html.is-embedded #wheel-participant-count{color:#67e8f9 !important}
+html.is-embedded #wheel-ticket-count{color:#c4a5ff !important}
+html.is-embedded div:has(> #wheel-participant-count),
+html.is-embedded div:has(> #wheel-ticket-count){
+  background:var(--c-well) !important;
+  border:0 !important;
+  box-shadow:var(--c-well-sh) !important;
+  border-radius:12px !important;
+  min-width:150px;
+}
+html.is-embedded #wheel-msg{text-shadow:none !important;letter-spacing:.04em !important}
+
+/* winners: summary figures */
+html.is-embedded .wn-stat{
+  background:var(--c-well) !important;
+  border:0 !important;
+  box-shadow:var(--c-well-sh) !important;
+  border-radius:14px !important;
+}
+
+/* ---- Keys ---- */
+/* One Mint button for every game: the violet key used across the site.
+   The section colour no longer paints the whole button red or gold. */
+html.is-embedded .btn-buy,
+html.is-embedded .btn-buy.weekly{
+  background:var(--c-key) !important;
+  border:0 !important;
+  box-shadow:var(--c-key-sh) !important;
+  color:#fff !important;
+  text-shadow:none !important;
+  border-radius:14px !important;
+}
+html.is-embedded .btn-buy:hover,
+html.is-embedded .btn-buy.weekly:hover{
+  filter:brightness(1.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -2px 0 rgba(0,0,0,.25),0 14px 32px -12px rgba(139,92,246,1) !important;
+}
+html.is-embedded .btn-buy .price{opacity:.85 !important;font-family:'Space Grotesk',sans-serif !important}
+
+/* winners filter: recessed segment with a raised active key, like the
+   site's tabs */
+html.is-embedded .wn-wrap .draw-nav{
+  display:inline-flex !important;gap:2px !important;padding:4px !important;
+  background:var(--c-well);box-shadow:var(--c-well-sh);border-radius:12px;
+}
+html.is-embedded .draw-nav-btn{
+  font-family:'Space Grotesk',sans-serif !important;
+  font-size:12px !important;font-weight:600 !important;letter-spacing:.06em !important;
+  background:none !important;border:0 !important;box-shadow:none !important;
+  color:var(--muted) !important;border-radius:9px !important;padding:8px 14px !important;
+}
+html.is-embedded .draw-nav-btn:hover{color:#f3f5ff !important;background:rgba(255,255,255,.05) !important}
+html.is-embedded .draw-nav-btn.active,
+html.is-embedded .draw-nav-btn.weekly.active{
+  background:var(--c-key) !important;box-shadow:var(--c-key-sh) !important;color:#fff !important;
+}
+
+/* ---- Text ---- */
+html.is-embedded .section-title{font-family:'Chakra Petch',sans-serif !important;letter-spacing:.02em}
+html.is-embedded .section-line{background:linear-gradient(90deg,transparent,#a855f7,transparent) !important;opacity:.8 !important}
+html.is-embedded .timer-lbl,
+html.is-embedded .stat-lbl,
+html.is-embedded .wheel-mini-lbl{font-size:10px !important;color:var(--muted) !important}
+html.is-embedded .pool-label,
+html.is-embedded .timer-label{color:var(--muted) !important}
+html.is-embedded .pool-tickets,
+html.is-embedded #weekly-pool-tickets,
+html.is-embedded #weekly-pool-usd{color:var(--muted) !important}
+html.is-embedded #weekly-pool-summary-card [style*="#6B7AA6"]{color:var(--muted) !important}
+html.is-embedded #wheel-submsg{color:var(--muted) !important}
+html.is-embedded .vf-intro{color:#cdd3f2 !important}
+html.is-embedded .vf-h{font-family:'Chakra Petch',sans-serif !important}
+html.is-embedded .wheel-panel-label{color:var(--muted) !important;font-size:11px !important}
+html.is-embedded .wn-stat [class*="lbl"],html.is-embedded .wn-stat div:last-child{color:var(--muted) !important}
