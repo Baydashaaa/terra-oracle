@@ -93,3 +93,26 @@
 .tc-badge.x{background:#000;box-shadow:0 0 0 2px #0a0c1e,inset 0 0 0 1px rgba(255,255,255,.25),0 3px 6px rgba(0,0,0,.6)}
 .tc-link.x:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 10px 22px -14px rgba(255,255,255,.4)}
 .tc-link.x .tc-cta{background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+
+/* ---- phone: four narrow tiles in one row ----
+   The door labels (Treasury / Leaderboard ...) do not fit a ~80px tile:
+   keep only the arrow, centred. Labels keep two lines of fixed height so
+   the figures line up across the row; figures shrink to fit the column. */
+@media (max-width:760px){
+  #page-home > .stats{padding:8px !important;gap:6px !important}
+  #page-home > .stats .stat{
+    display:flex !important;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;
+    padding:10px 4px 24px !important;gap:0 !important;min-width:0}
+  #page-home > .stats .stat + .stat::before{display:none}
+  #page-home > .stats .stat > div{width:100%;min-width:0}
+  #page-home > .stats .stat .ico{width:24px !important;height:24px !important;margin:0 auto 6px !important}
+  #page-home > .stats .stat .lbl{
+    font-size:8.5px !important;letter-spacing:.08em !important;line-height:1.25 !important;
+    min-height:2.5em;display:flex;align-items:center;justify-content:center;overflow-wrap:anywhere}
+  #page-home > .stats .stat .num{font-size:clamp(14px,4.6vw,18px) !important;line-height:1.1 !important;margin:4px 0 0 !important;white-space:nowrap}
+  #page-home > .stats .stat .num small{display:block;margin:2px 0 0 !important;font-size:8.5px !important;letter-spacing:.1em;vertical-align:0}
+  .hl-go{left:0;right:0;bottom:7px;justify-content:center;font-size:0;letter-spacing:0}
+  .hl-go::after{font-size:13px}
+  #page-home > .stats .chainbox{margin-top:0 !important;padding:8px 10px !important}
+  #page-home > .stats .chainbox img{animation:none}
+}
