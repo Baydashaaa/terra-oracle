@@ -27,8 +27,8 @@
   // Десять различимых оттенков. Золотой не входит - он зарезервирован за
   // «твоими», иначе чужая зона иногда выглядела бы своей.
   const PALETTE = [
-    '#38d9d0', '#7ec8ff', '#a78bfa', '#ff8fa3', '#7ee787',
-    '#ffb86b', '#5eead4', '#c4b5fd', '#fca5a5', '#86efac',
+    '#2dd4bf', '#f472b6', '#a3e635', '#3b82f6', '#fb923c',
+    '#a855f7', '#ef4444', '#7dd3fc', '#10b981', '#fda4af',
   ];
   const GREY = '#5b6b78';
 
@@ -64,7 +64,7 @@
   }
 
   function paintCell(c, color, mine) {
-    c.style.background = mine ? 'rgba(244,208,63,.62)' : hexA(color, .48);
+    c.style.background = mine ? 'rgba(244,208,63,.88)' : hexA(color, .82);
     c.style.boxShadow = mine ? '0 0 7px rgba(244,208,63,.6)' : 'none';
     c.style.outline = '1px solid ' + (mine ? GOLD : hexA(color, .85));
     painted.push(c);
@@ -127,7 +127,7 @@
 
   const swatch = (color, mine) =>
     '<i style="display:inline-block;width:11px;height:11px;border-radius:3px;' +
-    'background:' + hexA(color, mine ? .62 : .48) + ';border:1px solid ' +
+    'background:' + hexA(color, mine ? .88 : .82) + ';border:1px solid ' +
     (mine ? GOLD : hexA(color, .85)) + ';vertical-align:-1px;margin-right:6px;"></i>';
 
   const MAX_ROWS = 12;

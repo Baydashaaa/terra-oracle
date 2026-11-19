@@ -456,7 +456,7 @@ html.is-embedded .dg-cir-board i{
 html.is-embedded .dg-cir-board i.t,
 html.is-embedded .dg-cir-board i[style*="background"]{
   transform:translateY(-6px);
-  filter:saturate(1.5) brightness(1.25) drop-shadow(0 6px 3px rgba(0,0,0,.65));
+  filter:saturate(1.1) brightness(1.05) drop-shadow(0 6px 3px rgba(0,0,0,.65));
   outline-offset:-1px;
 }
 html.is-embedded .dg-cir-board i.t:not([style*="background"]){background:rgba(var(--cy),.55)}
