@@ -82,3 +82,14 @@
   .tc-link img{width:38px;height:38px}
 }
 @media (prefers-reduced-motion:reduce){.hl-live i,.stats .chainbox img{animation:none}}
+
+/* community links: Terra Classic logo with a small network badge */
+.tc-ic{position:relative;width:44px;height:44px;flex:none}
+.tc-ic img{width:44px !important;height:44px !important;object-fit:contain}
+.tc-badge{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;box-shadow:0 0 0 2px #0a0c1e,0 3px 6px rgba(0,0,0,.6)}
+.tc-badge svg{width:11px;height:11px}
+.tc-badge.tg{background:#229ed9}
+.tc-badge.x{background:#000;box-shadow:0 0 0 2px #0a0c1e,inset 0 0 0 1px rgba(255,255,255,.25),0 3px 6px rgba(0,0,0,.6)}
+.tc-link.x:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 10px 22px -14px rgba(255,255,255,.4)}
+.tc-link.x .tc-cta{background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
