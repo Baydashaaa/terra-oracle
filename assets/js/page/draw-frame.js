@@ -67,6 +67,14 @@
     var d = e.data;
     if (!d) return;
 
+    // While the mint window is open the page under it does not scroll:
+    // a swipe inside the window chained to the page, the frame moved, the
+    // window was re-centred - the screen shook.
+    if (d.type === 'oracle-draw:lock') {
+      lockPage(!!d.on);
+      return;
+    }
+
     if (d.type === 'oracle-draw:height') {
       var px = Number(d.height);
       if (isFinite(px) && px > 0) setHeight(px);
@@ -91,6 +99,14 @@
 
     var r = f.getBoundingClientRect();
     var vh = window.innerHeight || document.documentElement.clientHeight;
+    // On phones the tab bar is fixed over the bottom of the screen: the
+    // visible part of the frame ends at its top edge, or the mint button
+    // sat underneath it.
+    var bar = document.querySelector('.app nav.tabbar');
+    if (bar) {
+      var br = bar.getBoundingClientRect();
+      if (br.height > 0 && br.top > vh / 2 && getComputedStyle(bar).position === 'fixed') vh = Math.min(vh, br.top);
+    }
 
     // Сколько рамки ушло вверх за край экрана и сколько её видно.
     var top = Math.max(0, -r.top);
@@ -110,8 +126,19 @@
     }, location.origin);
   }
 
+  var locked = false;
+  function lockPage(on) {
+    if (on === locked) return;
+    locked = on;
+    var de = document.documentElement, b = document.body;
+    if (on) sendViewport();                       // one fresh measure, then hold
+    de.style.overflow = b.style.overflow = on ? 'hidden' : '';
+    de.style.overscrollBehavior = b.style.overscrollBehavior = on ? 'none' : '';
+    if (!on) queueViewport();
+  }
+
   function queueViewport() {
-    if (queued) return;
+    if (queued || locked) return;
     queued = true;
     requestAnimationFrame(sendViewport);
   }

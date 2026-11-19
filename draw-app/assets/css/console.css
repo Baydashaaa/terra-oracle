@@ -736,3 +736,16 @@ html.is-embedded .modal-note{font-size:11.5px !important;line-height:1.55 !impor
 @media (max-width:520px){
   html.is-embedded #draw-buy-btn,html.is-embedded #draw-not-connected button{font-size:12.5px !important;letter-spacing:.05em !important;padding:0 12px !important}
 }
+
+/* mint window: the window itself never scrolls - only its middle does
+   (modal-fit.css: head / body / foot as a column). embed-theme.css had
+   made the whole window scroll too, so two scroll areas fought on phones
+   and the Mint button slid out of view under the page's tab bar. */
+html.is-embedded .modal{overflow:hidden !important;overscroll-behavior:contain}
+html.is-embedded #modal-inner .modal-body{overscroll-behavior:contain}
+html.is-embedded #modal-inner .modal-foot{position:relative;z-index:2;padding-bottom:14px !important;border-top-color:rgba(150,160,240,.14) !important}
+@media (max-width:520px){
+  html.is-embedded #modal-inner .modal-note{font-size:10.5px !important;line-height:1.45 !important;margin-bottom:10px !important}
+  html.is-embedded #modal-title{font-size:21px !important}
+  html.is-embedded #modal-sub{margin-bottom:10px !important}
+}

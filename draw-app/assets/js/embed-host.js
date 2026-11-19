@@ -233,9 +233,13 @@
     // Сообщаем только в момент ОТКРЫТИЯ. Наблюдатель ловит любую смену
     // класса, в том числе выбор тира внутри окна - без этой проверки
     // страница подкручивалась на каждый клик.
-    if (!ov) { modalWasOpen = false; return; }
+    if (!ov) {
+      if (modalWasOpen) parent.postMessage({ type: 'oracle-draw:lock', on: false }, location.origin);
+      modalWasOpen = false; return;
+    }
     if (modalWasOpen) return;
     modalWasOpen = true;
+    parent.postMessage({ type: 'oracle-draw:lock', on: true }, location.origin);
     var top = ov.getBoundingClientRect().top + window.scrollY;
     // Окно прижато к верху рамки. Чтобы оно попало в поле зрения,
     // прокручиваем содержимое рамки в начало - внешняя страница при
