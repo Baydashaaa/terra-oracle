@@ -321,3 +321,70 @@ html.is-embedded .cs-feed-empty{display:block;padding:4px 6px;font-size:11.5px;c
 
 /* Mint key spans the column, the odds well sits under it at the same width */
 html.is-embedded #btn-buy-main{width:100%;padding:15px !important;display:flex !important;justify-content:center;text-align:center}
+
+/* ==================================================================
+   Stage banner (casino.js mountStage): the Draw gets a hero banner of
+   the same shape as Markets, NFT, Governance - art, scrim, eyebrow,
+   title - so it reads as one of the site's sections.
+   ================================================================== */
+html.is-embedded .cs-stage{
+  position:relative;overflow:hidden;border-radius:18px;margin:0 0 18px;min-height:190px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  background:#060a20;border:1px solid rgba(var(--acc),.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 44px -26px rgba(0,0,0,.95);
+}
+html.is-embedded .cs-stage-art{position:absolute;inset:0;
+  background:url(../../../assets/img/bg-draw.webp) center 60%/cover no-repeat;opacity:.9}
+html.is-embedded .cs-stage-wheels{position:absolute;top:0;bottom:0;right:3%;width:40%;
+  background:url(../img/stage-wheels.webp) center 30%/auto 118% no-repeat;
+  -webkit-mask:radial-gradient(ellipse 50% 50% at 50% 48%,#000 35%,transparent 78%);
+  mask:radial-gradient(ellipse 50% 50% at 50% 48%,#000 35%,transparent 78%)}
+
+html.is-embedded .cs-stage-scrim{position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(4,7,22,.96) 0%,rgba(4,7,22,.8) 34%,rgba(4,7,22,.15) 66%,transparent 86%),
+             radial-gradient(ellipse at 75% 110%,rgba(var(--acc),.25),transparent 60%)}
+html.is-embedded .cs-stage-copy{position:relative;padding:24px 28px;max-width:620px}
+html.is-embedded .cs-stage-eye{display:flex;align-items:center;gap:8px;margin:0 0 8px;
+  font:600 10.5px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:rgb(var(--acc))}
+html.is-embedded .cs-stage-eye i{width:7px;height:7px;border-radius:50%;background:#ff4d63;animation:cs-ping 1.6s infinite}
+
+/* title: the site's section h2 - Chakra Petch, upright, white, accent word */
+html.is-embedded .cs-stage .hero h1,
+html.is-embedded .cs-stage h1#hero-title{
+  margin:0 !important;font:700 44px/1 'Chakra Petch',sans-serif !important;letter-spacing:.02em !important;
+  color:#f3f5ff !important;background:none !important;-webkit-background-clip:border-box;background-clip:border-box;
+  transform:none !important;filter:none !important;text-shadow:0 2px 18px rgba(0,0,0,.6) !important;
+}
+html.is-embedded .cs-stage h1 #hero-subtitle{
+  background:none !important;color:rgb(var(--acc)) !important;-webkit-background-clip:border-box;background-clip:border-box;
+  text-shadow:0 0 22px rgba(var(--acc),.55),0 0 2px rgba(var(--acc),.9) !important;
+}
+html.is-embedded .cs-stage .hero-sub,
+html.is-embedded .cs-stage #hero-sub{margin:10px 0 0 !important;font-size:14px !important;letter-spacing:.04em !important;color:#dfe3ff !important}
+
+/* facts strip on the right, over the art */
+html.is-embedded .cs-stage-facts{position:relative;display:inline-flex;gap:6px;margin-top:16px;
+  padding:6px;border-radius:14px;background:rgba(3,5,14,.55);box-shadow:inset 0 0 0 1px rgba(140,150,240,.14);backdrop-filter:blur(6px)}
+html.is-embedded .cs-stage-facts span{display:flex;flex-direction:column;gap:3px;padding:6px 12px}
+html.is-embedded .cs-stage-facts span + span{border-left:1px solid rgba(150,160,240,.18)}
+html.is-embedded .cs-stage-facts b{font:700 14px/1 'Chakra Petch',sans-serif;color:#f3f5ff}
+html.is-embedded .cs-stage-facts em{font:500 9.5px/1.2 'Space Grotesk',sans-serif;font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+html.is-embedded .hero{min-height:0 !important}
+
+/* the wheel stands on a lit stage: spotlight from above, floor glow under it */
+html.is-embedded .wheel-panel{position:relative;overflow:hidden}
+html.is-embedded .wheel-panel::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 38% 55% at 50% -8%,rgba(var(--acc),.16),transparent 70%),
+    radial-gradient(ellipse 34% 7% at 50% 62%,rgba(var(--acc),.22),transparent 70%),
+    repeating-linear-gradient(90deg,rgba(140,150,240,.035) 0 1px,transparent 1px 44px);
+}
+html.is-embedded .wheel-panel > *{position:relative;z-index:1}
+
+@media (max-width:900px){
+  html.is-embedded .cs-stage{flex-direction:column;align-items:stretch;min-height:0}
+  html.is-embedded .cs-stage-wheels{width:70%;opacity:.5}
+  html.is-embedded .cs-stage-facts{flex-wrap:wrap}
+  html.is-embedded .cs-stage h1#hero-title{font-size:32px !important}
+}
