@@ -306,7 +306,6 @@ html.is-embedded .cs-feed-track{
   -webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
 }
 html.is-embedded .cs-feed-belt{display:flex;gap:6px;padding-right:6px;width:max-content;will-change:transform}
-html.is-embedded .cs-feed.is-moving .cs-feed-belt{animation:cs-belt var(--dur,40s) linear infinite}
 @keyframes cs-belt{to{transform:translateX(-50%)}}
 html.is-embedded .cs-chip{
   display:inline-flex;align-items:baseline;gap:7px;padding:6px 10px;border-radius:9px;white-space:nowrap;
@@ -526,3 +525,139 @@ html.is-embedded #stage-circuit .cc-amt small{font:600 13px/1 'Space Grotesk',sa
   html.is-embedded .dg-cir-board i[style*="background"]{transform:translateY(-3px)}
 }
 @media (prefers-reduced-motion:reduce){html.is-embedded .dg-cir-board i{transition:none}}
+
+/* ==================================================================
+   VERIFY & PROOF
+   One column that reads as a story: section heads with an eyebrow,
+   the three steps as a numbered timeline, code in recessed wells,
+   the round picker and the entry check as console controls.
+   ================================================================== */
+html.is-embedded #page-verify > div{max-width:980px !important;padding:34px 24px 70px !important}
+html.is-embedded #page-verify .vf-wrap{max-width:none !important;padding:0 0 46px !important}
+html.is-embedded #page-verify #verify{max-width:none !important;padding:0 !important;margin:0 !important}
+
+/* section heads */
+html.is-embedded #page-verify .section-title{
+  font:700 34px/1.05 'Chakra Petch',sans-serif !important;letter-spacing:.02em !important;
+  color:#f6f7ff !important;background:none !important;-webkit-text-fill-color:#f6f7ff;
+  text-shadow:0 2px 0 #7880b4,0 4px 0 #2c3160,0 8px 12px rgba(0,0,0,.45) !important;
+  display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:14px !important}
+html.is-embedded #page-verify .section-title::before{
+  font:600 10.5px/1 'Space Grotesk',sans-serif;letter-spacing:.24em;text-transform:uppercase;
+  color:#c4a5ff;-webkit-text-fill-color:#c4a5ff;text-shadow:none;
+  padding:6px 12px;border-radius:99px;background:rgba(168,85,247,.1);box-shadow:inset 0 0 0 1px rgba(168,85,247,.35)}
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .section-title::before{content:'Provably fair'}
+html.is-embedded #page-verify .vf-wrap:nth-of-type(2) .section-title::before{content:'Replay any round'}
+html.is-embedded #page-verify #verify .section-title::before{content:'Current round'}
+html.is-embedded #page-verify .section-line{width:80px !important;height:3px !important;border-radius:3px;margin:0 auto 22px !important;
+  background:linear-gradient(90deg,transparent,#a855f7,transparent) !important;opacity:1 !important;box-shadow:0 0 12px rgba(168,85,247,.6)}
+html.is-embedded #page-verify .vf-intro{font-size:14px !important;line-height:1.7 !important;color:#cdd3f2 !important}
+html.is-embedded #page-verify .vf-intro em{color:#fff !important}
+
+/* ---- steps as a timeline ---- */
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1){counter-reset:vfstep;padding-left:70px !important;position:relative}
+/* heads and loose paragraphs stay centred on the page, not on the rail column */
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > .section-title,
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > .section-line,
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > p{transform:translateX(-35px)}
+html.is-embedded #page-verify .vf-card{
+  position:relative;counter-increment:vfstep;margin-bottom:22px !important;padding:22px 24px !important;
+  background:var(--c-panel) !important;border:1px solid transparent !important;border-radius:18px !important;
+  box-shadow:var(--c-panel-sh) !important}
+/* number key on the rail */
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::before{
+  content:counter(vfstep);position:absolute;left:-70px;top:14px;width:46px;height:46px;border-radius:14px;
+  display:grid;place-items:center;font:700 22px/1 'Chakra Petch',sans-serif;color:#fff;
+  background:var(--c-key);box-shadow:var(--c-key-sh)}
+/* rail between the keys */
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::after{
+  content:'';position:absolute;left:-48px;top:66px;bottom:-26px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(168,85,247,.7),rgba(168,85,247,.12))}
+/* the 4th card is the note on older rounds: a clock, not a step */
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card:nth-of-type(6)::before{
+  content:'\21BA';font-size:22px;background:var(--c-well);box-shadow:var(--c-well-sh);color:#c4a5ff}
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card:nth-of-type(6)::after{display:none}
+html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card:nth-of-type(5)::after{
+  background:linear-gradient(180deg,rgba(168,85,247,.5),rgba(168,85,247,.08))}
+html.is-embedded #page-verify .vf-h{
+  font:700 13px/1.2 'Chakra Petch',sans-serif !important;letter-spacing:.2em !important;color:#d9c6ff !important;
+  margin-bottom:12px !important;padding-bottom:12px;border-bottom:1px solid rgba(168,85,247,.2)}
+
+/* tiers */
+html.is-embedded #page-verify .hw-tiers{gap:8px !important;margin:4px 0 2px}
+html.is-embedded #page-verify .hw-tier{
+  font:700 11px/1 'Chakra Petch',sans-serif !important;letter-spacing:.12em !important;opacity:1 !important;
+  padding:8px 13px !important;border:0 !important;border-radius:10px !important;
+  background:var(--c-well);box-shadow:var(--c-well-sh),inset 0 -2px 0 currentColor}
+html.is-embedded #page-verify .hw-tier.c{color:#d1d5db !important}
+html.is-embedded #page-verify .hw-tier.r{color:#7dd3fc !important}
+html.is-embedded #page-verify .hw-tier.l{color:#fdba74 !important}
+
+/* code */
+html.is-embedded #page-verify .hw-code,
+html.is-embedded #page-verify .vf-calc,
+html.is-embedded #page-verify .vf-repro pre{
+  font:500 12.5px/1.8 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;color:#e4d8ff !important;
+  background:linear-gradient(180deg,rgba(3,5,14,.85),rgba(8,10,26,.7)) !important;border:0 !important;
+  box-shadow:var(--c-well-sh),inset 3px 0 0 #a855f7 !important;border-radius:12px !important;padding:14px 16px 14px 18px !important}
+html.is-embedded #page-verify .hw-split{gap:16px !important;align-items:start}
+html.is-embedded #page-verify .hw-half{
+  background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh) !important;border-radius:14px !important;padding:16px !important}
+html.is-embedded #page-verify .hw-badge{font:700 12px/1 'Chakra Petch',sans-serif !important;letter-spacing:.16em !important;margin-bottom:12px !important}
+html.is-embedded #page-verify .hw-badge.d{color:#ffd76a !important}
+html.is-embedded #page-verify .hw-badge.w{color:#c4a5ff !important}
+html.is-embedded #page-verify .hw-half .hw-code{box-shadow:inset 0 2px 5px rgba(0,0,0,.65),inset 3px 0 0 currentColor !important}
+
+/* ---- round picker ---- */
+html.is-embedded #page-verify .vf-trigger{
+  min-height:56px;padding:0 18px !important;border:0 !important;border-radius:14px !important;
+  background:var(--c-well) !important;box-shadow:var(--c-well-sh) !important;font-size:14px}
+html.is-embedded #page-verify .vf-trigger:hover,
+html.is-embedded #page-verify .vf-trigger.open{box-shadow:var(--c-well-sh),inset 0 0 0 1px rgba(168,85,247,.55),0 0 22px -8px rgba(168,85,247,.8) !important}
+html.is-embedded #page-verify .vf-trigger::after{border-color:#c4a5ff !important}
+html.is-embedded #page-verify .vf-ph{color:#aab3e0 !important;font-size:14px !important}
+html.is-embedded #page-verify .vf-menu{
+  background:linear-gradient(180deg,#141433,#0a0c1e) !important;border:1px solid rgba(168,85,247,.35) !important;
+  border-radius:14px !important;box-shadow:0 20px 44px -10px rgba(0,0,0,.9) !important;padding:6px !important}
+html.is-embedded #page-verify .vf-opt:hover{background:rgba(168,85,247,.12) !important}
+html.is-embedded #page-verify .vf-opt.active{background:rgba(168,85,247,.2) !important}
+html.is-embedded #page-verify .vf-loading{color:#aab3e0 !important;font-size:13.5px !important}
+
+/* replay result */
+html.is-embedded #page-verify .vf-verdict{border-radius:16px !important}
+html.is-embedded #page-verify .vf-verdict b{font-family:'Chakra Petch',sans-serif !important;font-size:20px !important}
+html.is-embedded #page-verify .vf-kv>div,
+html.is-embedded #page-verify .vf-hash{background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh) !important;border-radius:12px !important}
+html.is-embedded #page-verify .vf-kv b,html.is-embedded #page-verify .vf-step-t,html.is-embedded #page-verify .vf-cnt{font-family:'Chakra Petch',sans-serif !important}
+html.is-embedded #page-verify .vf-row{background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh) !important}
+
+/* ---- verify my entries ---- */
+html.is-embedded #verify > div:last-child{
+  background:var(--c-panel) !important;border:1px solid transparent !important;border-radius:18px !important;
+  box-shadow:var(--c-panel-sh) !important;padding:24px !important}
+html.is-embedded #verify-input{
+  min-height:52px;border:0 !important;border-radius:14px !important;padding:0 18px !important;
+  background:var(--c-well) !important;box-shadow:var(--c-well-sh) !important;
+  font:500 14px/1 'Space Grotesk',sans-serif !important;color:#f3f5ff !important}
+html.is-embedded #verify-input:focus{box-shadow:var(--c-well-sh),inset 0 0 0 1px rgba(168,85,247,.6) !important}
+html.is-embedded #verify-input::placeholder{color:#8a93c2}
+html.is-embedded #verify button[onclick^="verifyKeplrAddress"]{
+  min-height:52px;padding:0 22px !important;border:0 !important;border-radius:14px !important;
+  font:700 13px/1 'Chakra Petch',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;
+  color:#fff !important;background:var(--c-key) !important;box-shadow:var(--c-key-sh) !important}
+html.is-embedded #verify-empty{color:#aab3e0 !important;font-size:13.5px !important}
+html.is-embedded #verify-notfound button{
+  font:700 12px/1 'Chakra Petch',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;
+  color:#fff !important;background:var(--c-key) !important;box-shadow:var(--c-key-sh) !important;border:0 !important;
+  border-radius:12px !important;padding:13px 22px !important}
+
+@media (max-width:700px){
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1){padding-left:0 !important}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > .section-title,
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > .section-line,
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) > p{transform:none !important}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card{padding-top:64px !important}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::before{left:20px;top:14px;width:40px;height:40px;font-size:19px}
+  html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::after{display:none}
+  html.is-embedded #page-verify .section-title{font-size:26px !important}
+}

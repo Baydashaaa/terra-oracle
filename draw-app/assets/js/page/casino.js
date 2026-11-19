@@ -174,6 +174,7 @@
     if (!list.length) {
       belt.innerHTML = '<span class="cs-feed-empty">No mints this round yet - the first one owns the whole wheel</span>';
       box.classList.remove('is-moving');
+      belt.style.transform = '';
       seen = {};
       return;
     }
@@ -181,17 +182,51 @@
     var first = seen === null || lotteryChanged;
     var html = list.map(function (m) { return chip(m, !first && !seen[m.key], m.addr === me); }).join('');
     seen = {}; list.forEach(function (m) { seen[m.key] = 1; });
-    if (reduced) { belt.innerHTML = html; box.classList.remove('is-moving'); return; }
-    // repeat the set until it is wider than the track, then twice that for
-    // a seamless loop - so even two mints keep rolling
     belt.innerHTML = html;
-    var trackW = box.querySelector('.cs-feed-track').clientWidth || 500;
-    var setW = belt.scrollWidth || 1, reps = Math.max(1, Math.ceil(trackW / setW));
-    var one = new Array(reps + 1).join(html);
-    belt.innerHTML = one + one;
+    if (reduced) { box.classList.remove('is-moving'); return; }
+    belt.setAttribute('data-set', html);          // first fill keeps the "new" flash
+    belt.setAttribute('data-filled', '');
     box.classList.add('is-moving');
-    belt.style.setProperty('--dur', Math.max(16, Math.round(setW * reps / 28)) + 's');
+    fillBelt(box);
+    belt.setAttribute('data-set', html.replace(/ is-new/g, ''));
   }
+
+  // The belt is moved from JS at a constant speed instead of a CSS animation:
+  // its duration used to be measured once, and when the frame was still
+  // hidden on load the measure came out as zero - the belt raced for a few
+  // seconds and then stalled. Here the width is checked every frame.
+  var SPEED = 32, beltOffset = 0, lastTs = 0;
+  function fillBelt(box) {
+    var belt = box.querySelector('.cs-feed-belt');
+    var set = belt.getAttribute('data-set') || '';
+    var trackW = box.querySelector('.cs-feed-track').clientWidth;
+    if (!set || !trackW) return false;           // not laid out yet: try next frame
+    belt.innerHTML = set;
+    var setW = belt.scrollWidth;
+    if (!setW) return false;
+    var reps = Math.min(12, Math.max(1, Math.ceil(trackW / setW)));
+    var one = new Array(reps + 1).join(set);
+    belt.innerHTML = one + one;
+    belt.setAttribute('data-filled', trackW);
+    return true;
+  }
+  function beltTick(ts) {
+    var box = $('cs-feed');
+    if (box && box.classList.contains('is-moving')) {
+      var belt = box.querySelector('.cs-feed-belt');
+      var trackW = box.querySelector('.cs-feed-track').clientWidth;
+      if (trackW && +belt.getAttribute('data-filled') !== trackW) fillBelt(box);
+      var half = belt.scrollWidth / 2;
+      var dt = lastTs ? Math.min(64, ts - lastTs) : 0;
+      if (half > 0) {
+        beltOffset = (beltOffset + SPEED * dt / 1000) % half;
+        belt.style.transform = 'translateX(' + (-beltOffset).toFixed(1) + 'px)';
+      }
+    }
+    lastTs = ts;
+    requestAnimationFrame(beltTick);
+  }
+  if (!reduced) requestAnimationFrame(beltTick);
 
   // ---------- live pill above the title ----------
   function mountLive() {
