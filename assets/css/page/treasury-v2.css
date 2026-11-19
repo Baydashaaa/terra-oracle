@@ -1,0 +1,136 @@
+/* Treasury in the site's console language (step 1: style, head, vaults).
+   Loaded after readability.css. Visual only: treasury.js and
+   treasury-chart.js still write every number; treasury-vaults.js only adds
+   a gauge to each pool and splits the currency off the big figures.
+
+   Vocabulary as in topbar-dock.css: lit glass panels, recessed wells,
+   raised keys. Page accent is the treasury amber; each pool keeps the
+   colour of its game (Treasury blue, Daily gold, Weekly violet, Circuit teal). */
+
+#page-treasury{
+  --tv-panel:linear-gradient(180deg,#14143a,#090b1d) padding-box,
+             linear-gradient(180deg,rgba(175,155,255,.32),rgba(120,110,230,.06) 60%,rgba(120,110,230,.14)) border-box;
+  --tv-panel-sh:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -26px rgba(0,0,0,.95);
+  --tv-well:linear-gradient(180deg,rgba(3,5,14,.78),rgba(8,10,26,.62));
+  --tv-well-sh:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 1px rgba(140,150,240,.11),0 1px 0 rgba(255,255,255,.05);
+  --tv-amber:245,197,66;
+}
+
+/* ---- head ---- */
+#page-treasury .tre-head h1{
+  font:700 clamp(36px,3.6vw,54px)/1 'Chakra Petch',sans-serif !important;letter-spacing:.02em;
+  color:#f6f7ff;-webkit-font-smoothing:antialiased;
+  text-shadow:0 2px 0 #7880b4,0 4px 0 #2c3160,0 8px 12px rgba(0,0,0,.5);
+}
+#page-treasury .tre-head h1 span{color:#ffd76a !important;text-shadow:0 2px 0 #a8771f,0 4px 0 #6e4c12,0 8px 12px rgba(0,0,0,.5)}
+#page-treasury .tre-eyebrow{
+  display:inline-block;margin-bottom:12px;padding:6px 12px;border-radius:99px;
+  font:600 10.5px/1 'Space Grotesk',sans-serif !important;letter-spacing:.24em !important;
+  color:#ffd98a !important;background:rgba(var(--tv-amber),.1);box-shadow:inset 0 0 0 1px rgba(var(--tv-amber),.35)}
+#page-treasury .tre-head p{font-size:13.5px !important;color:#cdd3f2 !important;letter-spacing:.02em}
+
+/* TVL row: one lit panel, the figure big, chart in a well */
+#page-treasury .tre-hero{
+  background:linear-gradient(180deg,rgba(20,20,52,.78),rgba(8,10,26,.9)) padding-box,
+             linear-gradient(180deg,rgba(var(--tv-amber),.4),rgba(120,110,230,.08) 60%,rgba(var(--tv-amber),.18)) border-box !important;
+  border:1px solid transparent !important;border-radius:18px !important;
+  box-shadow:var(--tv-panel-sh) !important;backdrop-filter:blur(6px);padding:22px 24px !important;gap:22px}
+#page-treasury .tre-hero > div:first-child > div:first-child{
+  font:600 10.5px/1.2 'Space Grotesk',sans-serif !important;letter-spacing:.22em !important;color:#c3c9ee !important}
+#page-treasury #t-total-tvl{
+  font:700 clamp(40px,3.4vw,56px)/1 'Chakra Petch',sans-serif !important;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#fff6d6 0%,#ffd76a 55%,#d9a63c 100%);-webkit-background-clip:text;background-clip:text;color:transparent !important;
+  filter:drop-shadow(0 0 18px rgba(var(--tv-amber),.3));margin:8px 0 6px}
+#page-treasury #t-total-tvl .tv-u{font-size:.42em;letter-spacing:.12em;vertical-align:.95em;margin-left:-.1em;-webkit-text-fill-color:#ffd76a}
+#page-treasury #t-total-usd{font-size:14px !important;color:#cdd3f2 !important}
+#page-treasury #t-tvl-delta{font:700 13px/1 'Chakra Petch',sans-serif !important;margin-top:10px !important;
+  width:max-content;padding:6px 10px;border-radius:10px;background:var(--tv-well);box-shadow:var(--tv-well-sh)}
+#page-treasury #t-last-updated{font-size:11px !important;color:#aab3e0 !important;margin-bottom:10px !important}
+#page-treasury #t-refresh-btn{
+  min-height:40px;padding:0 18px !important;border:0 !important;border-radius:12px !important;
+  font:700 12px/1 'Chakra Petch',sans-serif !important;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff !important;background:linear-gradient(180deg,#9b6bff,#7c3aed 55%,#6a2fd6) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(0,0,0,.25),0 10px 22px -12px rgba(139,92,246,.9) !important}
+
+/* chart (treasury-chart.js) */
+#page-treasury .tvc{
+  background:var(--tv-well) !important;box-shadow:var(--tv-well-sh);border:0 !important;border-radius:14px !important;padding:14px 16px 12px !important}
+#page-treasury .tvc-title{font:600 10.5px/1 'Space Grotesk',sans-serif !important;letter-spacing:.22em !important;color:#c3c9ee !important}
+#page-treasury .tvc-ranges{display:inline-flex !important;gap:2px !important;padding:3px;border-radius:10px;background:rgba(0,0,0,.35);box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+#page-treasury .tvc-ranges button{border:0 !important;background:none !important;border-radius:8px !important;
+  font:600 11px/1 'Space Grotesk',sans-serif !important;color:#aab3e0 !important;padding:6px 10px !important}
+#page-treasury .tvc-ranges button.on{color:#1b1300 !important;
+  background:linear-gradient(180deg,#ffe28a,#f5c542 55%,#d9a63c) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.2) !important}
+#page-treasury .tvc-foot{font-size:10.5px !important;color:#aab3e0 !important}
+#page-treasury .tvc-empty{font-size:12.5px !important;color:#aab3e0 !important}
+
+/* ---- section tags: amber pill + quiet lead ---- */
+#page-treasury .tre-sec{margin-bottom:30px !important}
+#page-treasury .tre-sec-tag{align-items:center !important;gap:14px !important;margin-bottom:14px !important}
+#page-treasury .tre-sec-tag b{
+  flex:none;padding:6px 12px;border-radius:99px;font:600 10.5px/1 'Space Grotesk',sans-serif !important;
+  letter-spacing:.22em !important;text-transform:uppercase;color:#ffd98a !important;
+  background:rgba(var(--tv-amber),.1);box-shadow:inset 0 0 0 1px rgba(var(--tv-amber),.35)}
+#page-treasury .tre-sec-tag span{font-size:13px !important;color:#b9c1e8 !important}
+
+/* ---- every card: lit glass ---- */
+#page-treasury .tre-card{
+  background:var(--tv-panel) !important;border:1px solid transparent !important;border-radius:18px !important;
+  box-shadow:var(--tv-panel-sh) !important}
+#page-treasury .tre-card:hover{border-color:transparent !important}
+
+/* ---- pools as four vaults ---- */
+#page-treasury .tre-pools{gap:14px !important}
+#page-treasury .tre-pools .tre-card{
+  --tone:84,147,247;position:relative;overflow:hidden;padding:20px 20px 18px !important;
+  grid-template-columns:54px minmax(0,1fr) !important;gap:6px 14px !important;align-content:start !important;
+  background:linear-gradient(180deg,#14143a,#090b1d) padding-box,
+             linear-gradient(180deg,rgba(var(--tone),.65),rgba(var(--tone),.08) 55%,rgba(var(--tone),.22)) border-box !important}
+#page-treasury .tre-pools .tre-card:nth-child(2){--tone:245,197,66}
+#page-treasury .tre-pools .tre-card:nth-child(3){--tone:176,132,255}
+#page-treasury .tre-pools .tre-card:nth-child(4){--tone:56,217,208}
+/* light from the vault's own colour */
+#page-treasury .tre-pools .tre-card::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 0% 0%,rgba(var(--tone),.16),transparent 60%)}
+#page-treasury .tre-pools .tre-card > *{position:relative}
+#page-treasury .tre-pools .tre-ic{width:54px !important;height:54px !important;grid-row:1 / span 3 !important;align-self:start !important;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(var(--tone),.35))}
+#page-treasury .tre-wal-top{flex-direction:column;align-items:flex-start !important;justify-content:flex-start !important;gap:8px;margin-bottom:6px !important}
+#page-treasury .tre-wal-name{font:700 11px/1.25 'Space Grotesk',sans-serif !important;letter-spacing:.16em !important;color:rgb(var(--tone)) !important}
+#page-treasury .tre-wal-pct{
+  font:700 11px/1 'Chakra Petch',sans-serif !important;letter-spacing:.06em;padding:6px 9px !important;border-radius:9px !important;
+  color:rgb(var(--tone)) !important;background:var(--tv-well) !important;box-shadow:var(--tv-well-sh);font-variant-numeric:tabular-nums}
+#page-treasury .tre-wal-bal{
+  font:700 30px/1.05 'Chakra Petch',sans-serif !important;color:#f6f7ff !important;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 18px rgba(var(--tone),.35)}
+#page-treasury .tre-wal-bal .tv-u{font-size:.45em;letter-spacing:.12em;vertical-align:.6em;margin-left:-.12em;color:rgb(var(--tone))}
+#page-treasury .tre-wal-usd{font-size:12.5px !important;color:#b9c1e8 !important}
+#page-treasury .tre-pools .tre-addr{grid-column:1 / -1 !important;margin-top:12px !important;justify-content:space-between;
+  padding:7px 8px 7px 12px;border-radius:10px;background:var(--tv-well);box-shadow:var(--tv-well-sh);
+  font:500 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace !important;color:#cdd3f2 !important}
+#page-treasury .tre-addr button{color:#aab3e0 !important}
+#page-treasury .tre-addr button:hover{color:rgb(var(--tone,var(--tv-amber))) !important}
+
+/* gauge added by treasury-vaults.js */
+#page-treasury .tv-gauge{grid-column:1 / -1;margin-top:14px}
+#page-treasury .tv-gauge-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;
+  font:600 10px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#aab3e0}
+#page-treasury .tv-gauge-top b{font:700 12px/1 'Chakra Petch',sans-serif;letter-spacing:.04em;color:#f3f5ff;text-transform:none}
+#page-treasury .tv-track{height:10px;border-radius:99px;background:var(--tv-well);box-shadow:var(--tv-well-sh);padding:2px;overflow:hidden}
+#page-treasury .tv-track i{display:block;height:100%;width:0;border-radius:99px;transition:width .6s ease;
+  background:linear-gradient(90deg,rgba(var(--tone),.55),rgb(var(--tone)));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 10px rgba(var(--tone),.6)}
+
+/* ---- buyback / escrow / distribution / movement: typography only for now ---- */
+#page-treasury .tre-tco-lbl,#page-treasury .tre-row-name{font:600 10.5px/1.3 'Space Grotesk',sans-serif !important;letter-spacing:.18em !important;color:#c3c9ee !important}
+#page-treasury .tre-tco-val,#page-treasury .tre-row-amt{font-family:'Chakra Petch',sans-serif !important;font-weight:700 !important}
+#page-treasury .tre-tco-val{font-size:28px !important}
+#page-treasury .tre-tco-sub{font-size:12px !important;color:#b9c1e8 !important}
+#page-treasury .tre-curve-track{height:12px !important;border-radius:99px !important;background:var(--tv-well) !important;box-shadow:var(--tv-well-sh);padding:2px;border:0 !important}
+#page-treasury .tre-curve-track i{border-radius:99px !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 10px rgba(56,217,208,.6)}
+
+@media (max-width:700px){
+  #page-treasury .tre-sec-tag{flex-direction:column;align-items:flex-start !important;gap:8px !important}
+  #page-treasury .tre-wal-bal{font-size:26px !important}
+}
