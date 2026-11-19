@@ -38,7 +38,48 @@ window.addEventListener('oracle:wallet', function () {
 });
 
 window.toggleWalletDropdown = function() {
+  // Saved session, wallet not answering yet (locked extension, or a wallet
+  // that cannot reconnect silently): one click wakes that same wallet
+  // instead of opening the picker.
+  const btn = document.getElementById('wallet-main-btn');
+  if (btn && btn.classList.contains('asleep')) { wakeWallet(); return; }
   document.getElementById('wallet-dropdown').classList.toggle('open');
+}
+
+// ─── SAVED SESSION, WALLET NOT CONNECTED ──────────────────────
+// After a reload the session is still on disk, but Frontier may be locked
+// and Galaxy / Station do not reconnect without a popup. The button used to
+// fall back to plain "Connect", which read as "the site logged me out".
+// Now it says "Reconnect" and keeps the address in the tooltip.
+const WAKE_TYPE = { frontier: 'frontier', keplr: 'keplr-ext', galaxy: 'galaxy', station: 'station' };
+function setWalletAsleep(address) {
+  if (globalWalletAddress || !address) return;
+  const btn = document.getElementById('wallet-main-btn');
+  if (!btn) return;
+  btn.classList.add('asleep');
+  btn.title = address + ' - click to reconnect';
+  document.getElementById('wallet-btn-label').textContent = 'Reconnect';
+}
+function clearWalletAsleep() {
+  const btn = document.getElementById('wallet-main-btn');
+  if (!btn) return;
+  btn.classList.remove('asleep');
+  btn.removeAttribute('title');
+}
+window.setWalletAsleep = setWalletAsleep;
+async function wakeWallet() {
+  const saved = loadWalletSession();
+  const type = WAKE_TYPE[typeof getActiveProvider === 'function' ? getActiveProvider() : ''];
+  if (!saved || !type) {
+    // nothing we can wake by itself: show the normal picker
+    clearWalletAsleep();
+    document.getElementById('wallet-btn-label').textContent = 'Connect';
+    document.getElementById('wallet-dropdown').classList.add('open');
+    return;
+  }
+  await window.connectWallet(type);
+  // cancelled or failed: connectWallet put "Connect" back - keep the hint
+  if (!globalWalletAddress) setWalletAsleep(saved);
 }
 
 document.addEventListener('click', function(e) {
@@ -139,6 +180,7 @@ window.connectWallet = async function(type) {
 }
 
 function setWalletConnected(address) {
+  clearWalletAsleep();
   globalWalletAddress = address;
   connectedAddress = address;
   if (window.OracleSound) window.OracleSound.play('connect');
@@ -232,6 +274,7 @@ window.openBagWalletPicker = function() {
 }
 
 window.disconnectWallet = function() {
+  clearWalletAsleep();
   globalWalletAddress = null;
   connectedAddress = null;
   clearWalletSession();

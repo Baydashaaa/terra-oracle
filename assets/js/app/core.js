@@ -235,6 +235,13 @@ let boardSearch = '';
 async function restoreWalletSession() {
   const saved = loadWalletSession();
   if (!saved) return;
+  // Until the wallet answers, the button says "Reconnect", not "Connect".
+  if (typeof setWalletAsleep === 'function') setWalletAsleep(saved);
+  // Luncdash is a watch-only address with nothing to unlock: restore as is.
+  if (getActiveProvider() === 'luncdash') {
+    window.__oaRestoring = true; setWalletConnected(saved); window.__oaRestoring = false;
+    return;
+  }
   // Only Keplr supports silent session restore here. For Galaxy/Station we skip
   // auto-restore (user reconnects via the header) to avoid popping the wrong wallet.
   if (getActiveProvider() === 'frontier') return restoreFrontierSession(saved);

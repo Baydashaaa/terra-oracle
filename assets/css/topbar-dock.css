@@ -289,3 +289,8 @@
   background:linear-gradient(180deg,rgba(var(--tone),.42),rgba(var(--tone),.16));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -2px 0 rgb(var(--tone)),0 8px 20px -10px rgb(var(--tone));
 }
+
+/* saved session, wallet locked or not reconnected yet: amber "Reconnect" */
+.wallet-btn.asleep{color:#fde68a !important}
+.wallet-btn.asleep .wallet-dot{display:block;background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+.tb-acct .wallet-btn.asleep{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.25),0 0 0 1px rgba(245,158,11,.45),0 6px 16px -8px rgba(245,158,11,.8) !important}
