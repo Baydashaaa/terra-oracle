@@ -156,7 +156,7 @@
     return '<span class="cs-chip t-' + m.tier + (fresh ? ' is-new' : '') + (me ? ' is-me' : '') + '">' +
       '<b>' + (me ? 'You' : short(m.addr)) + '</b>' +
       '<em>' + m.tier + ' +' + m.entries + '</em>' +
-      (Date.now() / 1000 - m.time < 8 * 86400 ? '<small>' + ago(m.time) + '</small>' : '') + '</span>';
+      '<small>' + ago(m.time) + '</small></span>';
   }
   function feed() {
     var box = $('cs-feed'); if (!box) return;
@@ -194,40 +194,10 @@
     h.insertAdjacentElement('beforebegin', p);
   }
 
-  // ---------- stage banner ----------
-  // Same shape as the hero banners of the other sections (art, scrim,
-  // eyebrow, title): the title and lead move into it, ids untouched, so
-  // pool-timer.js keeps rewriting them as before.
-  function mountStage() {
-    var split = document.querySelector('#stage-draw .hero-split');
-    var h = $('hero-title'), sub = $('hero-sub');
-    if (!split || !h || $('cs-stage')) return;
-    var st = document.createElement('section');
-    st.id = 'cs-stage';
-    st.className = 'cs-stage';
-    st.innerHTML = '<span class="cs-stage-art"></span><span class="cs-stage-wheels"></span><span class="cs-stage-scrim"></span>' +
-      '<div class="cs-stage-copy"><p class="cs-stage-eye"><i></i><span class="cs-eye-t">Oracle Draw</span></p></div>' +
-      '<div class="cs-stage-facts"><span><b>20:00</b><em>UTC draw</em></span><span><b>1 / 5 / 10</b><em>entries per mask</em></span><span><b>On-chain</b><em>verifiable</em></span></div>';
-    split.parentNode.insertBefore(st, split);
-    var copy = st.querySelector('.cs-stage-copy');
-    copy.appendChild(h);
-    if (sub) copy.appendChild(sub);
-    copy.appendChild(st.querySelector('.cs-stage-facts'));
-    var live = $('cs-live'); if (live) live.remove();
-  }
-  function stage() {
-    var st = $('cs-stage'); if (!st) return;
-    var w = lottery() === 'weekly';
-    st.classList.toggle('is-weekly', w);
-    var eye = st.querySelector('.cs-eye-t');
-    var t = w ? 'Oracle Draw \u00b7 weekly round \u00b7 3 winners' : 'Oracle Draw \u00b7 daily round \u00b7 1 winner';
-    if (eye.textContent !== t) eye.textContent = t;
-  }
-
   function start() {
-    mountBulbs(); mountOdds(); mountFeed(); mountLive(); mountStage(); stage();
+    mountBulbs(); mountOdds(); mountFeed(); mountLive();
     heat(); odds(); feed();
-    setInterval(function () { heat(); odds(); stage(); }, 500);
+    setInterval(function () { heat(); odds(); }, 500);
     setInterval(function () { mountFeed(); feed(); }, 3000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
