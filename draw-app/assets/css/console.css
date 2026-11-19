@@ -182,18 +182,29 @@ html.is-embedded{--acc:244,200,92}                      /* daily gold */
 html.is-embedded:has(#hero-subtitle.blue-text){--acc:176,132,255} /* weekly violet */
 
 /* ---- titles ---- */
+/* Title: an extruded game title. Solid block letters with a stepped
+   3D edge underneath, the game word lit in its colour (gold / violet). */
+html.is-embedded{--t1:#ffe28a;--t2:#d9a63c;--t3:#a8771f;--t4:#6e4c12}
+html.is-embedded:has(#hero-subtitle.blue-text){--t1:#cfb4ff;--t2:#9b74f2;--t3:#7450cf;--t4:#47288f}
 html.is-embedded .hero h1{
   font-family:'Chakra Petch',sans-serif !important;font-weight:700 !important;
-  font-size:clamp(34px,3.3vw,50px) !important;letter-spacing:.03em !important;line-height:.95 !important;
-  background:linear-gradient(180deg,#ffffff 30%,#b9c0ec);-webkit-background-clip:text;background-clip:text;color:transparent !important;
-  text-shadow:none !important;transform:skewX(-7deg);transform-origin:left bottom;
-  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(var(--acc),.18));
+  font-size:clamp(44px,4vw,62px) !important;letter-spacing:.015em !important;line-height:.92 !important;
+  margin:0 0 14px !important;padding-bottom:14px;position:relative;
+  color:#f6f7ff !important;background:none !important;transform:none !important;filter:none !important;
+  text-shadow:0 1px 0 #cfd4f5,0 2px 0 #a3abda,0 3px 0 #7880b4,0 4px 0 #4d5486,0 5px 0 #2c3160,
+              0 12px 18px rgba(0,0,0,.65) !important;
 }
+html.is-embedded .hero h1::after{
+  content:'';position:absolute;left:2px;bottom:0;width:72px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,var(--t1),transparent);box-shadow:0 0 12px var(--t2)}
 html.is-embedded .hero h1 #hero-subtitle{
-  background:linear-gradient(180deg,rgb(255,246,214) 0%,rgb(var(--acc)) 55%,rgba(var(--acc),.75) 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+  background:none !important;-webkit-background-clip:border-box !important;background-clip:border-box !important;
+  color:var(--t1) !important;
+  text-shadow:0 1px 0 var(--t2),0 2px 0 var(--t2),0 3px 0 var(--t3),0 4px 0 var(--t3),0 5px 0 var(--t4),
+              0 12px 18px rgba(0,0,0,.65),0 0 34px rgba(var(--acc),.35) !important;
 }
-html.is-embedded .hero-sub{color:var(--muted) !important;letter-spacing:.02em !important}
+html.is-embedded .hero-sub{
+  font-size:15px !important;color:#cdd3f2 !important;letter-spacing:.01em !important;margin-bottom:18px !important}
 html.is-embedded .cs-live{
   display:inline-flex;align-items:center;gap:7px;margin:0 0 10px;padding:4px 10px 4px 8px;border-radius:99px;
   font:600 10px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#ffd7d7;
@@ -321,3 +332,45 @@ html.is-embedded .cs-feed-empty{display:block;padding:4px 6px;font-size:11.5px;c
 
 /* Mint key spans the column, the odds well sits under it at the same width */
 html.is-embedded #btn-buy-main{width:100%;padding:15px !important;display:flex !important;justify-content:center;text-align:center}
+
+/* ==================================================================
+   Text system: one scale for the whole Draw page
+   overline 10px tracked caps / body 13px / figures Chakra Petch
+   ================================================================== */
+/* currency after a figure: smaller, lifted, in the game colour */
+html.is-embedded .cs-u{font-size:.46em;letter-spacing:.12em;font-weight:600;vertical-align:.62em;margin-left:-.12em;
+  -webkit-text-fill-color:currentColor;color:rgb(var(--acc));opacity:.95}
+html.is-embedded .pool-amount .cs-u,
+html.is-embedded #weekly-pool-total .cs-u{-webkit-text-fill-color:rgb(var(--acc));filter:drop-shadow(0 0 8px rgba(var(--acc),.5))}
+html.is-embedded .stat-val .cs-u,html.is-embedded #last-winner-prize .cs-u{font-size:.55em;vertical-align:.4em}
+html.is-embedded .podium-card .cs-u{font-size:.72em;vertical-align:.12em;margin-left:0}
+html.is-embedded .pool-amount,html.is-embedded #weekly-pool-total{font-size:clamp(40px,3.6vw,56px) !important;line-height:1 !important}
+
+/* overlines: every small caps label on the page */
+html.is-embedded #daily-extra [style*="font-size:9px"],
+html.is-embedded #weekly-extra [style*="font-size:9px"],
+html.is-embedded .podium-card [style*="font-size:9px"],
+html.is-embedded #weekly-pool-summary-card [style*="font-size:11px"],
+html.is-embedded #weekly-pool-summary-card [style*="font-size:10px"],
+html.is-embedded .stat-lbl,html.is-embedded .timer-lbl{
+  font:600 10px/1.3 'Space Grotesk',sans-serif !important;letter-spacing:.16em !important;text-transform:uppercase;color:#aab3e0 !important}
+html.is-embedded #daily-extra > div > div:first-child,
+html.is-embedded #weekly-extra > div > div > div > div:first-child{color:rgb(var(--acc)) !important;margin-bottom:10px !important}
+
+/* last winner: address readable, prize as a figure */
+html.is-embedded #last-winner-addr{font:600 14px/1.2 'Space Grotesk',sans-serif !important;color:#f3f5ff !important;letter-spacing:.02em}
+html.is-embedded #last-winner-prize{font:700 26px/1 'Chakra Petch',sans-serif !important;color:var(--t1) !important}
+html.is-embedded #last-winner-date{font:600 14px/1 'Chakra Petch',sans-serif !important;color:#dfe3ff !important}
+html.is-embedded #daily-extra [style*="gap:16px"]{gap:28px !important;margin-top:12px !important}
+
+/* free entries: body copy at body size */
+html.is-embedded #weekly-extra [style*="font-size:11px"],
+html.is-embedded #weekly-extra [style*="font-size:10.5px"]{font-size:13px !important;line-height:1.55 !important;color:#cdd3f2 !important}
+html.is-embedded #weekly-free-entries{font:700 34px/1 'Chakra Petch',sans-serif !important;text-shadow:0 0 16px rgba(0,212,255,.45) !important}
+
+/* stat figures and podium */
+html.is-embedded .stat-val{font:700 26px/1.1 'Chakra Petch',sans-serif !important}
+html.is-embedded .podium-card [style*="font-size:22px"]{font-size:30px !important;font-weight:700 !important}
+html.is-embedded .podium-card [style*="font-size:14px"]{font-size:15px !important;font-weight:600 !important}
+html.is-embedded .pool-tickets,html.is-embedded #weekly-pool-tickets{font-size:13px !important;color:#cdd3f2 !important;letter-spacing:.01em !important}
+html.is-embedded .pool-usd{font-size:14px !important;color:#cdd3f2 !important}

@@ -156,7 +156,7 @@
     return '<span class="cs-chip t-' + m.tier + (fresh ? ' is-new' : '') + (me ? ' is-me' : '') + '">' +
       '<b>' + (me ? 'You' : short(m.addr)) + '</b>' +
       '<em>' + m.tier + ' +' + m.entries + '</em>' +
-      '<small>' + ago(m.time) + '</small></span>';
+      (Date.now() / 1000 - m.time < 8 * 86400 ? '<small>' + ago(m.time) + '</small>' : '') + '</span>';
   }
   function feed() {
     var box = $('cs-feed'); if (!box) return;
@@ -194,7 +194,30 @@
     h.insertAdjacentElement('beforebegin', p);
   }
 
+  // ---------- money figures: number big, currency small ----------
+  // The writers set plain text ("74.1K LUNC"); we split off the unit right
+  // after each write. A space is kept, so textContent reads the same.
+  var UNIT_IDS = ['pool-lunc', 'weekly-pool-total', 'last-winner-prize', 'podium-prize-1', 'podium-prize-2', 'podium-prize-3', 'stat-burned'];
+  function splitUnit(el) {
+    if (!el || el.querySelector('.cs-u')) return;
+    var m = String(el.textContent).trim().match(/^(.+?)\s+(LUNC|USTC|TCO)$/);
+    if (!m) return;
+    el.textContent = '';
+    el.appendChild(document.createTextNode(m[1] + ' '));
+    var u = document.createElement('span'); u.className = 'cs-u'; u.textContent = m[2];
+    el.appendChild(u);
+  }
+  function mountUnits() {
+    UNIT_IDS.forEach(function (id) {
+      var el = $(id); if (!el || el.dataset.csUnit) return;
+      el.dataset.csUnit = '1';
+      splitUnit(el);
+      new MutationObserver(function () { splitUnit(el); }).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+  }
+
   function start() {
+    mountUnits();
     mountBulbs(); mountOdds(); mountFeed(); mountLive();
     heat(); odds(); feed();
     setInterval(function () { heat(); odds(); }, 500);
