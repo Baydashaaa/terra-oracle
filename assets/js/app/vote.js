@@ -745,7 +745,7 @@ async function renderOracleBagFromNFTs(wallet, allNFTs, meta = {}) {
         empty.style.display = 'block';
         const msg = empty.querySelector('div');
         if (msg) msg.innerHTML = `No Oracle Mask NFTs in your wallet<br>
-          <a href="https://draw.terraoracle.io/" target="_blank"
+          <a href="?v=draw" data-view="draw"
             style="display:inline-block;margin-top:12px;padding:8px 20px;border-radius:8px;
             border:1px solid rgba(244,208,63,0.4);background:rgba(244,208,63,0.08);
             color:#f4d03f;text-decoration:none;font-size:11px;">Mint on Oracle Draw →</a>`;

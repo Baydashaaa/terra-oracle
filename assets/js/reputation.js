@@ -667,7 +667,7 @@ async function loadStatsData() {
     if (drawEl) {
       if (drawRepTotal === 0 && drawRepHistory.length === 0) {
         drawEl.innerHTML = `<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px;">
-          No Oracle Draw activity yet · <a href="https://draw.terraoracle.io/" target="_blank"
+          No Oracle Draw activity yet · <a href="?v=draw" data-view="draw"
           style="color:var(--accent);text-decoration:none;">Mint your first NFT →</a></div>`;
       } else {
         // Count mints per tier

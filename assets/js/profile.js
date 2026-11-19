@@ -1210,7 +1210,7 @@ function renderHistoryTab(tab, myAnswers, myQuestions) {
         if (!history.length) {
           el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:14px;padding:30px;">
             No Oracle Draw activity yet ·
-            <a href="https://baydashaaa.github.io/oracle-draw/" target="_blank"
+            <a href="?v=draw" data-view="draw"
               style="color:var(--accent);text-decoration:none;">Mint your first NFT →</a>
           </div>`;
           return;
