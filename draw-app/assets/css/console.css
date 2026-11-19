@@ -661,3 +661,78 @@ html.is-embedded #verify-notfound button{
   html.is-embedded #page-verify .vf-wrap:nth-of-type(1) .vf-card::after{display:none}
   html.is-embedded #page-verify .section-title{font-size:26px !important}
 }
+
+/* ==================================================================
+   MINT MODAL in the console language
+   Inline styles in the markup are overridden here (embed only).
+   ================================================================== */
+html.is-embedded #modal-inner{
+  background:linear-gradient(180deg,#15143a,#090b1d) padding-box,
+             linear-gradient(180deg,rgba(175,155,255,.4),rgba(120,110,230,.06) 60%,rgba(120,110,230,.18)) border-box !important;
+  border:1px solid transparent !important;border-radius:22px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 30px 70px -20px rgba(0,0,0,.95) !important}
+html.is-embedded #modal-title{font:700 24px/1.1 'Chakra Petch',sans-serif !important;letter-spacing:.01em;color:#f6f7ff !important;
+  text-shadow:0 2px 0 #4d5486,0 4px 10px rgba(0,0,0,.5)}
+html.is-embedded #modal-sub{font-size:13px !important;color:#b9c1e8 !important;margin-bottom:18px !important}
+html.is-embedded .modal-close{color:#aab3e0 !important}
+
+/* step heads: violet number key + tracked caps */
+html.is-embedded #modal-inner .modal-body > div[style*="gap:8px;margin-bottom:10px"]{margin:6px 0 12px !important}
+html.is-embedded #modal-inner .modal-body > div[style*="gap:8px;margin-bottom:10px"] > div:first-child{
+  width:26px !important;height:26px !important;border:0 !important;border-radius:8px !important;color:#fff !important;
+  font:700 13px/1 'Chakra Petch',sans-serif !important;background:var(--c-key) !important;box-shadow:var(--c-key-sh) !important}
+html.is-embedded #modal-inner .modal-body > div[style*="gap:8px;margin-bottom:10px"] > div:last-child{
+  font:600 11px/1 'Space Grotesk',sans-serif !important;letter-spacing:.2em !important;color:#d9c6ff !important}
+
+/* draw choice and tiers: recessed wells, the picked one lit in its colour */
+html.is-embedded #pool-daily,html.is-embedded #pool-weekly,
+html.is-embedded #tier-common,html.is-embedded #tier-rare,html.is-embedded #tier-legendary{
+  border:0 !important;border-radius:14px !important;background:var(--c-well) !important;
+  box-shadow:var(--c-well-sh) !important}
+html.is-embedded #pool-daily{--k:244,197,66}
+html.is-embedded #pool-weekly{--k:176,132,255}
+html.is-embedded #tier-common{--k:209,213,219}
+html.is-embedded #tier-rare{--k:96,165,250}
+html.is-embedded #tier-legendary{--k:251,146,60}
+/* the scripts mark the choice by raising opacity / border alpha; the
+   chosen card is the one without a dimmed opacity */
+html.is-embedded #pool-daily:not([style*="opacity: 0.4"]):not([style*="opacity:0.4"]),
+html.is-embedded #pool-weekly:not([style*="opacity: 0.4"]):not([style*="opacity:0.4"]){
+  background:linear-gradient(180deg,rgba(var(--k),.16),rgba(8,10,26,.7)) !important;
+  box-shadow:inset 0 0 0 1.5px rgba(var(--k),.85),0 0 24px -8px rgba(var(--k),.8) !important}
+html.is-embedded #pool-daily[style*="opacity: 0.4"],html.is-embedded #pool-daily[style*="opacity:0.4"],
+html.is-embedded #pool-weekly[style*="opacity: 0.4"],html.is-embedded #pool-weekly[style*="opacity:0.4"]{opacity:.6 !important}
+html.is-embedded [id^="tier-"][style*="opacity: 0.4"]{opacity:.6 !important}
+html.is-embedded #pool-daily > div:nth-child(2),html.is-embedded #pool-weekly > div:nth-child(2){
+  font:700 13px/1.2 'Chakra Petch',sans-serif !important;letter-spacing:.1em !important}
+html.is-embedded #pool-daily > div:nth-child(3),html.is-embedded #pool-weekly > div:nth-child(3){font-size:11.5px !important;color:#b9c1e8 !important}
+html.is-embedded [id^="tier-"] > div:nth-child(2){font:700 11px/1 'Chakra Petch',sans-serif !important;letter-spacing:.14em !important}
+html.is-embedded [id^="tier-"] > div:nth-child(3){font:700 16px/1.1 'Chakra Petch',sans-serif !important}
+html.is-embedded [id^="tier-"] > div:nth-child(4){font-size:11.5px !important}
+html.is-embedded [id^="tier-"] img{filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+html.is-embedded #tier-common:not([style*="opacity: 0.4"]),html.is-embedded #tier-rare:not([style*="opacity: 0.4"]),html.is-embedded #tier-legendary:not([style*="opacity: 0.4"]){
+  background:linear-gradient(180deg,rgba(var(--k),.18),rgba(8,10,26,.7)) !important;
+  box-shadow:inset 0 0 0 1.5px rgba(var(--k),.9),0 0 26px -8px rgba(var(--k),.85) !important}
+
+/* flow chips */
+html.is-embedded #modal-inner .modal-body > div[style*="justify-content:center;margin-bottom:16px"] > div[style*="border-radius:20px"]{
+  font-size:11px !important;padding:6px 11px !important;background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh)}
+
+/* total */
+html.is-embedded .modal-total{background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh) !important;border-radius:16px !important}
+html.is-embedded .modal-total-label{font:600 10.5px/1 'Space Grotesk',sans-serif !important;letter-spacing:.2em !important;color:#aab3e0 !important}
+html.is-embedded .modal-total-val{font:700 30px/1.1 'Chakra Petch',sans-serif !important;color:#ffd76a !important;text-shadow:0 0 18px rgba(244,197,66,.35) !important}
+
+/* connect / connected / mint */
+html.is-embedded #draw-not-connected button,
+html.is-embedded #draw-buy-btn{
+  min-height:52px;border:0 !important;border-radius:14px !important;color:#fff !important;width:100%;
+  font:700 14px/1 'Chakra Petch',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;
+  background:var(--c-key) !important;box-shadow:var(--c-key-sh) !important}
+html.is-embedded #draw-not-connected button .oi{filter:brightness(2)}
+html.is-embedded #draw-connected > div{background:var(--c-well) !important;border:0 !important;box-shadow:var(--c-well-sh),inset 3px 0 0 #22c55e !important;border-radius:12px !important;padding:12px 14px !important}
+html.is-embedded #draw-addr-display{font:600 13px/1 'Space Grotesk',sans-serif;color:#d1fae5}
+html.is-embedded .modal-note{font-size:11.5px !important;line-height:1.55 !important;color:#aab3e0 !important}
+@media (max-width:520px){
+  html.is-embedded #draw-buy-btn,html.is-embedded #draw-not-connected button{font-size:12.5px !important;letter-spacing:.05em !important;padding:0 12px !important}
+}
