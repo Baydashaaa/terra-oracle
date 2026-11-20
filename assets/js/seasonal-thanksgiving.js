@@ -50,7 +50,32 @@
     st.textContent = '@media (max-width:860px){.topbar::before{background-image:url("' + DIR + 'logo-256.webp") !important}}';
     document.head.appendChild(st);
   }
+  // "Happy Thanksgiving" lettering on the main hero slide (Nans' art).
+  // Inserted right after the veil, so the news / Delfos slides, which are
+  // later siblings, still cover it when they are shown.
+  function lettering() {
+    var hero = document.querySelector('#page-home .hero, .hero');
+    if (!hero || hero.querySelector('.tg-lettering')) return;
+    var img = document.createElement('img');
+    img.className = 'tg-lettering';
+    img.src = DIR + 'happy-thanksgiving.webp';
+    img.alt = 'Happy Thanksgiving';
+    img.width = 1400; img.height = 688;
+    img.decoding = 'async';
+    var veil = hero.querySelector('.veil');
+    if (veil) veil.insertAdjacentElement('afterend', img); else hero.appendChild(img);
+    var st = document.createElement('style');
+    // Crisp on purpose: no glow filter, no rotation (both blurred the
+    // letters on a scaled image), only a tight shadow to lift it off the sky.
+    st.textContent =
+      '.hero .tg-lettering{position:absolute;z-index:1;pointer-events:none;height:auto;' +
+      'left:43%;top:2%;width:clamp(240px,25%,400px);image-rendering:auto;' +
+      'filter:drop-shadow(0 2px 2px rgba(0,0,0,.7)) drop-shadow(0 6px 10px rgba(0,0,0,.45))}' +
+      '@media (max-width:700px){.hero .tg-lettering{left:auto;right:5%;top:3%;width:42%}}';
+    document.head.appendChild(st);
+  }
   function start() {
+    lettering();
     swapLogo();
     scan(document);
     new MutationObserver(function (list) {
