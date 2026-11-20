@@ -69,9 +69,9 @@
     // letters on a scaled image), only a tight shadow to lift it off the sky.
     st.textContent =
       '.hero .tg-lettering{position:absolute;z-index:1;pointer-events:none;height:auto;' +
-      'left:43%;top:2%;width:clamp(240px,25%,400px);image-rendering:auto;' +
-      'filter:drop-shadow(0 2px 2px rgba(0,0,0,.7)) drop-shadow(0 6px 10px rgba(0,0,0,.45))}' +
-      '@media (max-width:700px){.hero .tg-lettering{left:auto;right:5%;top:3%;width:42%}}';
+      'left:12.5%;top:1.5%;width:clamp(200px,21%,330px);opacity:.92;mix-blend-mode:screen;' +
+      'filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}' +
+      '@media (max-width:700px){.hero .tg-lettering{left:25%;top:2.5%;width:48%}}';
     document.head.appendChild(st);
   }
   function start() {
