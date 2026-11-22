@@ -2430,3 +2430,10 @@
   #page-chat .chat-head{padding-top:12px !important;padding-bottom:12px !important}
   #page-chat .chat-head p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* chat send button while the wallet signs: the icon stays, a ring spins */
+#page-chat #chat-page-send-btn.is-busy{position:relative;color:transparent !important;pointer-events:none}
+#page-chat #chat-page-send-btn.is-busy svg{opacity:0}
+#page-chat #chat-page-send-btn.is-busy::after{content:'';position:absolute;inset:0;margin:auto;width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:chat-spin .8s linear infinite}
+@keyframes chat-spin{to{transform:rotate(360deg)}}

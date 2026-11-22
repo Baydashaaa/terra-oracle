@@ -42,7 +42,10 @@ window.sendChatMessage = async function() {
   if (!text) { alert('Write a message first!'); return; }
   if (!globalWalletAddress) { alert('Connect your wallet first!'); return; }
   if (!getActiveKeplr()) { alert(getActiveProvider() === 'luncdash' ? VIEW_ONLY_MSG : 'Wallet not found. Please connect a wallet.'); return; }
-  btn.textContent = '⏳ Waiting for wallet...'; btn.disabled = true;
+  // The button is an icon: writing text into it ("Send Message →") replaced
+  // the arrow and the text spilled over the input. Only toggle a busy state.
+  if (!btn._icon) btn._icon = btn.innerHTML;
+  btn.classList.add('is-busy'); btn.disabled = true; btn.setAttribute('aria-busy', 'true');
   statusEl.style.display = 'none';
   try {
     await enableActive('columbus-5');
@@ -62,11 +65,8 @@ window.sendChatMessage = async function() {
     localStorage.setItem('dao_chat_pending', JSON.stringify(stored));
 
     // ── Track message count via Worker (server-side, tamper-proof) ──
-    fetch(`${WORKER_URL}/chat/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet: sender, txHash: result.transactionHash }),
-    }).then(r => r.json()).then(data => {
+    countChatMessage(sender, result.transactionHash).then(data => {
+      if (!data) return;
       if (data && typeof data.newCount === 'number') updateChatEntryProgress(data.newCount);
       if (data.milestoneEntry && data.newCount) {
         setTimeout(() => {
@@ -75,7 +75,7 @@ window.sendChatMessage = async function() {
           setTimeout(() => { statusEl.style.display = 'none'; }, 8000);
         }, 3000);
       }
-    }).catch(() => {});
+    });
     // ─────────────────────────────────────────────────────────────
 
     document.getElementById('chat-page-input').value = '';
@@ -83,16 +83,84 @@ window.sendChatMessage = async function() {
     document.getElementById('chat-ring').style.strokeDashoffset = '87.96';
     document.getElementById('chat-ring').style.stroke = 'var(--accent)';
     window.clearChatReply();
-    btn.textContent = 'Send Message →'; btn.disabled = false;
+    resetSendBtn(btn);
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(102,255,170,0.06);border:1px solid rgba(102,255,170,0.25);color:var(--green);margin-top:10px;';
     statusEl.innerHTML = '✅ Sent! <a href="https://finder.terraport.finance/mainnet/tx/' + result.transactionHash + '" target="_blank" style="color:var(--green);text-decoration:underline;">' + result.transactionHash.slice(0,16) + '...</a><br><span style="font-size:10px;opacity:0.7;">Message will appear after blockchain confirmation (~6s)</span>';
+    loadChatFromChain();
     setTimeout(() => { loadChatFromChain(); }, 8000);
     setTimeout(() => { statusEl.style.display = 'none'; }, 10000);
   } catch(e) {
-    btn.textContent = 'Send Message →'; btn.disabled = false;
+    resetSendBtn(btn);
     statusEl.style.cssText = 'display:block;border-radius:8px;padding:10px 14px;font-size:12px;background:rgba(255,60,60,0.06);border:1px solid rgba(255,60,60,0.25);color:#ff6060;margin-top:10px;';
     statusEl.textContent = '❌ ' + (e.message || 'Transaction cancelled or failed.');
   }
+}
+
+
+function resetSendBtn(btn) {
+  btn.classList.remove('is-busy'); btn.disabled = false; btn.removeAttribute('aria-busy');
+  if (btn._icon) btn.innerHTML = btn._icon;
+}
+
+// Counts a paid message on the worker. The worker checks the payment on
+// chain, and right after the block it may not see the tx yet - the reply was
+// never read and a failed count was silently lost (paid, not counted).
+// Retries a few times, spaced out.
+async function countChatMessage(wallet, txHash) {
+  for (let i = 0; i < 4; i++) {
+    if (i) await new Promise(r => setTimeout(r, 6000 * i));
+    try {
+      const r = await fetch(`${WORKER_URL}/chat/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet, txHash }),
+      });
+      const data = await r.json().catch(() => null);
+      if (r.ok && data && (typeof data.newCount === 'number' || data.ok || data.duplicate)) return data;
+      console.warn('Chat count not accepted yet:', r.status, data);
+    } catch (e) { console.warn('Chat count failed:', e.message); }
+  }
+  return null;
+}
+
+// Paid messages of this wallet that the counter never got (sent before the
+// retry above existed, or while the worker was down): count them now.
+// Only the last 14 days, each hash at most once per page load.
+const _chatRecounted = new Set();
+async function reconcileChatCount(msgs) {
+  const me = (typeof globalWalletAddress !== 'undefined' && globalWalletAddress) || null;
+  if (!me) return;
+  const since = Date.now() - 14 * 864e5;
+  const mine = msgs.filter(m => m.fullAddr === me && m.txHash && m.ts > since && !m.pending && !_chatRecounted.has(m.txHash));
+  if (!mine.length) return;
+  let counted;
+  try {
+    const r = await fetch(`${WORKER_URL}/chat/count?wallet=${me}`, { signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    counted = new Set((d.history || []).map(h => String(h.txHash || '').toUpperCase()));
+  } catch (e) { return; }
+  let last = null;
+  for (const m of mine) {
+    _chatRecounted.add(m.txHash);
+    if (counted.has(m.txHash.toUpperCase())) continue;
+    last = await countChatMessage(me, m.txHash) || last;
+  }
+  if (last && typeof last.newCount === 'number') updateChatEntryProgress(last.newCount);
+}
+
+// Recent payments to the chat wallet straight from the chain. The
+// oracle-chat worker can lag far behind (on 22 Nov 2026 its newest message
+// was from 5 Aug, so a paid "Hello" never showed). Merged with the worker's
+// list by tx hash.
+async function fetchRecentChatTxs() {
+  const q = encodeURIComponent(`transfer.recipient='${CHAT_WALLET}'`);
+  const url = `https://terra-classic-lcd.publicnode.com/cosmos/tx/v1beta1/txs?query=${q}&order_by=2&pagination.limit=50`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return { txs: d.txs || [], tx_responses: d.tx_responses || [] };
+  } catch (e) { return null; }
 }
 
 // ─── BLOCKCHAIN CHAT ──────────────────────────────────────────
@@ -478,6 +546,7 @@ async function loadChatFromChain() {
   }
   // Use Oracle Draw Worker proxy - bypasses CORS/DNS issues and falls back across multiple nodes server-side
   let txList = null;
+  const recentP = fetchRecentChatTxs();
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 12000);
@@ -523,6 +592,16 @@ async function loadChatFromChain() {
     }
   } catch(e) {
     console.warn('Chat: oracle-chat worker failed:', e.message);
+  }
+  const recent = await recentP;
+  if (recent && recent.tx_responses.length) {
+    if (!txList) txList = { txs: [], tx_responses: [] };
+    const have = new Set(txList.tx_responses.map(t => String(t.txhash).toUpperCase()));
+    recent.tx_responses.forEach((resp, i) => {
+      if (!resp || resp.code || have.has(String(resp.txhash).toUpperCase())) return;
+      txList.txs.push(recent.txs[i]);
+      txList.tx_responses.push(resp);
+    });
   }
   if (!txList) {
     if (!cachedMsgs.length) {
@@ -597,12 +676,28 @@ async function loadChatFromChain() {
       });
     } catch(e) { continue; }
   }
+  // Sent from this browser but not on the lists yet: show them at once,
+  // marked as pending, for up to an hour.
+  try {
+    const seen = new Set(msgs.map(m => String(m.txHash).toUpperCase()));
+    const pend = JSON.parse(localStorage.getItem('dao_chat_pending') || '[]')
+      .filter(p => p && p.txHash && Date.now() - (p.timestamp || 0) < 3600e3);
+    localStorage.setItem('dao_chat_pending', JSON.stringify(pend));
+    pend.forEach(p => {
+      if (seen.has(String(p.txHash).toUpperCase())) return;
+      const ts = new Date(p.timestamp);
+      msgs.push({ author: p.author, fullAddr: p.fullAddr, text: p.text, replyTo: null, amount: '5,000',
+        txHash: p.txHash, ts: p.timestamp, pending: true,
+        time: ts.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+    });
+  } catch (e) { /* no storage */ }
   msgs.sort((a, b) => a.ts - b.ts);
   // Badges and avatar rings read window._walletScores, which a questions reload
   // may have reset in the meantime.
   if (typeof applyWalletScores === 'function') applyWalletScores();
   if (typeof upgradeWalletScores === 'function') upgradeWalletScores();
   renderChatMessages(msgs);
+  reconcileChatCount(msgs);
   // Prefetch profiles for chat authors (background, no re-render)
   if (typeof prefetchProfiles === 'function') {
     const addrs = [...new Set(msgs.map(m => m.fullAddr).filter(Boolean))];
