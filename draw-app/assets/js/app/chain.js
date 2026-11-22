@@ -40,7 +40,8 @@ async function fetchTickets(wallet, isDaily) {
     const limit = 50;
     while (true) {
       // LCD returns txs[] (bodies) + tx_responses[] (metadata with timestamp)  parallel arrays
-      const url = `${LCD_BASE}/cosmos/tx/v1beta1/txs?events=transfer.recipient=%27${wallet}%27&pagination.limit=${limit}&order_by=2&pagination.offset=${offset}`;
+      // `query=` + page/limit: the LCD no longer accepts `events=` (SDK upgrade)
+      const url = `${LCD_BASE}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(`transfer.recipient='${wallet}'`)}&order_by=2&limit=${limit}&page=${offset / limit + 1}`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) break;
       const data = await res.json();

@@ -501,12 +501,16 @@ async function fetchChatStats(address) {
   const days   = {};
   let   qaCount = 0;
 
-  // FCD is primary - reliably indexes all tx types on columbus-5
+  // LCD first, with `query=`: since the chain's SDK upgrade the LCD rejects
+  // the old `events=` form (and ignores pagination.*: it takes page/limit).
+  // The FCDs no longer answer. A node that fails now hands over to the next
+  // one instead of ending the search - before, the first failing node
+  // stopped everything and every profile showed 0 chat messages.
   const allNodes = [
-    { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
-    { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
     { base: 'https://terra-classic-lcd.publicnode.com',    type: 'lcd' },
     { base: 'https://lcd.terra-classic.hexxagon.io',       type: 'lcd' },
+    { base: 'https://fcd.terra-classic.hexxagon.io',       type: 'fcd' },
+    { base: 'https://terra-classic-fcd.publicnode.com',    type: 'fcd' },
   ];
 
   for (const { base, type } of allNodes) {
@@ -518,12 +522,13 @@ async function fetchChatStats(address) {
         if (type === 'fcd') {
           url = `${base}/v1/txs?account=${address}&limit=100&offset=${offset}`;
           const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
-          if (!res.ok) break;
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           data = await res.json();
         } else {
-          url = `${base}/cosmos/tx/v1beta1/txs?events=transfer.sender=%27${address}%27&pagination.limit=50&order_by=2&pagination.offset=${offset}`;
+          const q = encodeURIComponent(`transfer.sender='${address}'`);
+          url = `${base}/cosmos/tx/v1beta1/txs?query=${q}&order_by=2&limit=50&page=${offset / 50 + 1}`;
           const res = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
-          if (!res.ok) break;
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           data = await res.json();
         }
         if (!data) break;
