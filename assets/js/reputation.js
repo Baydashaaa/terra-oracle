@@ -652,14 +652,32 @@ async function loadStatsData() {
       if (!note) {
         note = document.createElement('div');
         note.id = 'stats-rep-pending';
-        note.style.cssText = 'flex-basis:100%;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6;';
+        note.className = 'rp-pend';
         totalBox.style.flexWrap = 'wrap';
         totalBox.appendChild(note);
+        injectPendingStyles();
       }
-      note.textContent = pending > 0
-        ? 'Awaiting on-chain: +' + pending.toLocaleString() + ' REP. New activity is recorded to the contract every hour; the total shows what is already recorded.'
-        : '';
-      note.style.display = pending > 0 ? '' : 'none';
+      if (pending > 0) {
+        // Live "being recorded" strip: pulsing chain dot, the amount on its
+        // way, and a bar + countdown to the next attestor run (:20 UTC hourly).
+        note.innerHTML =
+          '<div class="rp-pend-top">' +
+            '<span class="rp-pend-dot"></span>' +
+            '<span class="rp-pend-lbl">Recording on-chain</span>' +
+            '<b class="rp-pend-amt">+' + pending.toLocaleString() + ' REP</b>' +
+            '<span class="rp-pend-eta"></span>' +
+          '</div>' +
+          '<div class="rp-pend-bar"><i></i></div>' +
+          '<div class="rp-pend-sub">New activity is written to the reputation contract every hour. ' +
+            'The total above shows what is already on-chain.</div>';
+        note.style.display = '';
+        tickPendingEta();
+        if (!window._rpPendTimer) window._rpPendTimer = setInterval(tickPendingEta, 1000);
+      } else {
+        note.innerHTML = '';
+        note.style.display = 'none';
+        clearInterval(window._rpPendTimer); window._rpPendTimer = null;
+      }
     }
 
     // Draw REP section
@@ -1068,3 +1086,55 @@ async function fetchChatStats(wallet) {
   }
 }
 window.fetchChatStats = fetchChatStats;
+
+// ── "Recording on-chain" strip (Your stats) ─────────────────────────────────
+// The attestor workflow runs at minute 20 of every hour, UTC. GitHub may start
+// a scheduled run late, so past the slot the strip says "any minute now"
+// instead of counting into the negative.
+function nextAttestRun() {
+  const now = new Date();
+  const t = new Date(now); t.setUTCMinutes(20, 0, 0);
+  if (t <= now) t.setUTCHours(t.getUTCHours() + 1);
+  return t;
+}
+function tickPendingEta() {
+  const note = document.getElementById('stats-rep-pending');
+  if (!note || note.style.display === 'none') return;
+  const eta = note.querySelector('.rp-pend-eta'), bar = note.querySelector('.rp-pend-bar i');
+  if (!eta || !bar) return;
+  const left = nextAttestRun() - Date.now();          // 0 .. 60 min
+  const frac = 1 - left / 3600e3;
+  bar.style.width = (Math.max(0.02, frac) * 100).toFixed(1) + '%';
+  const m = Math.floor(left / 60000), sec = Math.floor(left / 1000) % 60;
+  eta.textContent = left > 58 * 60e3 ? 'next write any minute'
+    : 'next write in ' + (m ? m + 'm ' : '') + String(sec).padStart(2, '0') + 's';
+}
+function injectPendingStyles() {
+  if (document.getElementById('rp-pend-css')) return;
+  const st = document.createElement('style');
+  st.id = 'rp-pend-css';
+  st.textContent = `
+.rp-pend{flex-basis:100%;margin-top:12px;padding:12px 14px;border-radius:12px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(3,5,14,.7),rgba(10,10,30,.55));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.55),inset 0 0 0 1px rgba(168,85,247,.28)}
+.rp-pend::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 30%,rgba(168,85,247,.14) 50%,transparent 70%);
+  transform:translateX(-100%);animation:rp-sweep 3.2s ease-in-out infinite}
+@keyframes rp-sweep{to{transform:translateX(100%)}}
+.rp-pend-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative}
+.rp-pend-dot{width:9px;height:9px;border-radius:50%;background:#a855f7;flex:none;animation:rp-ping 1.6s infinite}
+@keyframes rp-ping{0%{box-shadow:0 0 0 0 rgba(168,85,247,.75)}80%,100%{box-shadow:0 0 0 9px rgba(168,85,247,0)}}
+.rp-pend-lbl{font:600 10.5px/1 'Space Grotesk',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#d9c6ff}
+.rp-pend-amt{font:700 15px/1 'Chakra Petch',sans-serif;color:#86efac;text-shadow:0 0 12px rgba(134,239,172,.55);animation:rp-float 2.4s ease-in-out infinite}
+@keyframes rp-float{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(-3px);opacity:.75}}
+.rp-pend-eta{margin-left:auto;font:500 11.5px/1 'Space Grotesk',sans-serif;color:#aab3e0;font-variant-numeric:tabular-nums}
+.rp-pend-bar{position:relative;height:6px;margin:10px 0 8px;border-radius:99px;background:rgba(0,0,0,.45);overflow:hidden}
+.rp-pend-bar i{display:block;height:100%;width:0;border-radius:99px;transition:width 1s linear;
+  background:linear-gradient(90deg,#7c3aed,#a855f7,#c4a5ff);box-shadow:0 0 10px rgba(168,85,247,.8);
+  background-size:200% 100%;animation:rp-flow 2s linear infinite}
+@keyframes rp-flow{to{background-position:-200% 0}}
+.rp-pend-sub{position:relative;font-size:11.5px;line-height:1.55;color:#9aa3cf}
+@media (prefers-reduced-motion:reduce){.rp-pend::before,.rp-pend-dot,.rp-pend-amt,.rp-pend-bar i{animation:none}}
+@media (max-width:600px){.rp-pend-eta{margin-left:0;flex-basis:100%}}`;
+  document.head.appendChild(st);
+}
