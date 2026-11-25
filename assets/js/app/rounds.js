@@ -466,9 +466,17 @@
     // Одна сторона пустая - казна закроет её за минуту до старта.
     const empty = u && !d ? 'DOWN' : d && !u ? 'UP' : !u && !d ? 'the other side' : '';
     const houseAt = hm(r.epoch * R() - 60);  // за минуту до старта этого раунда
-    el.querySelector('.rd-house').textContent = empty
+    // Ставка больше потолка казны в пустом раунде: казна закроет только
+    // houseMax, и выигрыш будет намного меньше ставки. Говорим это прямо.
+    const mineSide = side === null ? 0 : (side ? u : d) / 1e6 + (amount || 0);
+    const otherEmpty = side !== null && (side ? !d : !u);
+    const capped = otherEmpty && mineSide > NET.houseMax;
+    el.querySelector('.rd-house').textContent = capped
+      ? `The house matches at most ${NET.houseMax.toLocaleString('en-US')} LUNC. Above that your win is limited: with nobody else on the other side you win ${amount ? 'about ' + lunc(estimate(r, side, BigInt(Math.round(amount)) * 1000000n) || 0n) + ' in total' : 'less than you stake'}.`
+      : empty
       ? `Nobody on ${empty} yet. At ${houseAt} the house takes it with the same amount, up to ${NET.houseMax.toLocaleString('en-US')} LUNC.`
       : '';
+    el.querySelector('.rd-house').classList.toggle('warn', capped);
     paintChips();
 
     const go = el.querySelector('.rd-go');
