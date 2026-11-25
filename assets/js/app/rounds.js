@@ -13,7 +13,7 @@
   'use strict';
 
   const NET = (typeof PROPHECY_TESTNET !== 'undefined' && PROPHECY_TESTNET)
-    ? { contract: 'terra1erumnyvvtjkxkgedwrasuefhczetzd2qcdms650g76f3dq658qlsu3fw99', houseMax: 500,
+    ? { contract: 'terra1dq50n8a6dg76hnj46t056xjtx4evmfdctyxjh2w2f6m0kuskh00qxzy84t', houseMax: 500,
         worker: 'https://oracle-rounds-keeper.vladislav-baydan.workers.dev' }
     : { contract: '', houseMax: 50000,      // mainnet: адрес появится после деплоя
         worker: 'https://oracle-rounds-keeper-main.vladislav-baydan.workers.dev' };
